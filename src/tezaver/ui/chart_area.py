@@ -533,20 +533,22 @@ def build_coin_chart_figure(
 def render_rally_event_chart(
     symbol: str,
     timeframe: str,
-    event_time: Optional[pd.Timestamp] = None,
-    bars_to_peak: int = 0,
+    event_time: pd.Timestamp,
+    bars_to_peak: int,
     window_before: int = 30,
     window_after: int = 20,
 ) -> None:
     """
-    Renders candlestick chart around a rally event or latest data.
-    Acts as the Single Truth Chart for the application.
+    Renders candlestick chart around a rally event with event highlight and bars_to_peak shaded region.
+    Generic version supporting any timeframe.
     
     Args:
         symbol: Coin symbol
-        timeframe: Timeframe string
-        event_time: Optional event time. If None, shows latest data.
-        bars_to_peak: For shading rally duration.
+        timeframe: Timeframe string (e.g. "15m", "1h", "4h")
+        event_time: Event timestamp
+        bars_to_peak: Number of bars to peak (for shading)
+        window_before: Bars before event
+        window_after: Bars after event
     """
     try:
         # Load data for specific timeframe
@@ -559,12 +561,14 @@ def render_rally_event_chart(
         
         # Merge features if available
         if df_features is not None and not df_features.empty:
+            # Robust timezone normalization
             try:
-                # Ensure datetime and remove timezone
+                # Ensure datetime and remove timezone for history
                 df_history['open_time'] = pd.to_datetime(df_history['open_time'], errors='coerce')
                 if df_history['open_time'].dt.tz is not None:
                     df_history['open_time'] = df_history['open_time'].dt.tz_localize(None)
                 
+                # Ensure datetime and remove timezone for features
                 df_features['open_time'] = pd.to_datetime(df_features['open_time'], errors='coerce')
                 if df_features['open_time'].dt.tz is not None:
                     df_features['open_time'] = df_features['open_time'].dt.tz_localize(None)
@@ -576,6 +580,7 @@ def render_rally_event_chart(
                     how='left'
                 )
             except Exception as e:
+                st.warning(f"Feature merge failed (gösterim devam ediyor): {e}")
                 df = df_history
         else:
             df = df_history
@@ -583,23 +588,30 @@ def render_rally_event_chart(
         # --- TIMEZONE FIX: SHIFT +3 HOURS ---
         if 'open_time' in df.columns:
              df['open_time'] = df['open_time'] + timedelta(hours=3)
-        if event_time is not None:
-             event_time = pd.to_datetime(event_time) + timedelta(hours=3)
+        # Shift event time as well to match
+        event_time = pd.to_datetime(event_time) + timedelta(hours=3)
         # ------------------------------------
             
-        # Indicators Check (RSI, RSI EMA, MACD)
+        # Calculate RSI if missing or empty
+        # Note: Using Wilder's Smoothing (alpha=1/period) to match indicator_engine
         if 'rsi' not in df.columns or df['rsi'].isnull().all():
             period = DEFAULT_INDICATOR_SETTINGS['rsi']['period']
             delta = df['close'].diff()
-            gain = delta.where(delta > 0, 0).ewm(alpha=1/period, adjust=False).mean()
-            loss = -delta.where(delta < 0, 0).ewm(alpha=1/period, adjust=False).mean()
-            rs = gain / loss
+            gain = delta.where(delta > 0, 0)
+            loss = -delta.where(delta < 0, 0)
+            
+            avg_gain = gain.ewm(alpha=1/period, adjust=False).mean()
+            avg_loss = loss.ewm(alpha=1/period, adjust=False).mean()
+            
+            rs = avg_gain / avg_loss
             df['rsi'] = 100 - (100 / (1 + rs))
             
+        # Calculate RSI EMA if missing
         if 'rsi_ema' not in df.columns or df['rsi_ema'].isnull().all():
              period_ema = DEFAULT_INDICATOR_SETTINGS['rsi_ema']['period']
              df['rsi_ema'] = df['rsi'].ewm(span=period_ema, adjust=False).mean()
         
+        # Calculate MACD if missing or empty
         if 'macd' not in df.columns or df['macd'].isnull().all():
             fast = DEFAULT_INDICATOR_SETTINGS['macd']['fast']
             slow = DEFAULT_INDICATOR_SETTINGS['macd']['slow']
@@ -611,99 +623,244 @@ def render_rally_event_chart(
             df['macd_signal'] = df['macd'].ewm(span=signal, adjust=False).mean()
             df['macd_hist'] = df['macd'] - df['macd_signal']
         
-        # Sort
+        # Sort and find event index
         df = df.sort_values('open_time').reset_index(drop=True)
         
-        # Determine Window
-        if event_time is None:
-            # Default View: Last N bars
-            df_window = df.copy() # Use full data for panning, but zoom to end
-            
-            # Initial Range: Last 150 bars
-            initial_range_start = df['open_time'].iloc[-150] if len(df) > 150 else df['open_time'].iloc[0]
-            initial_range_end = df['open_time'].iloc[-1]
-            # Add buffer
-            initial_range_end = initial_range_end + (initial_range_end - df['open_time'].iloc[-2]) * 5
-            
-            chart_title = f"{symbol} {timeframe}"
-            
-        else:
-            # Event View: Focus on Event
-            event_time_normalized = pd.to_datetime(event_time)
-            if event_time_normalized.tzinfo is not None:
-                event_time_normalized = event_time_normalized.tz_localize(None)
-            
-            time_diff = (df['open_time'] - event_time_normalized).abs()
-            event_idx = int(time_diff.to_numpy().argmin())
-            
-            # WIDE Window for context
-            wide_start_idx = max(0, event_idx - 500)
-            wide_end_idx = min(len(df), event_idx + 500)
-            df_window = df.iloc[wide_start_idx:wide_end_idx].copy()
-            
-            # Recalculate event_idx relative to window
-            event_window_idx = event_idx - wide_start_idx
-            
-            # Zoom Range
-            initial_range_start = df['open_time'].iloc[max(0, event_idx - window_before)]
-            initial_range_end = df['open_time'].iloc[min(len(df)-1, event_idx + window_after + 10)]
-            
-            chart_title = f"{symbol} {timeframe} - Rally Event"
-            
-        if df_window.empty:
-            st.warning("Grafik verisi boş.")
-            return
+        # Normalize event_time to ensure compatibility
+        event_time_normalized = pd.to_datetime(event_time)
+        if event_time_normalized.tzinfo is not None:
+            event_time_normalized = event_time_normalized.tz_localize(None)
+        
+        # Find closest timestamp using numpy argmin (returns integer position)
+        if df.empty:
+             st.warning("Veri işleme sonrası boş tablo.")
+             return
 
-        # Build Figure
+        time_diff = (df['open_time'] - event_time_normalized).abs()
+        event_idx = int(time_diff.to_numpy().argmin())
+        
+        # Slice window
+        # WIDE Window for panning (+/- 500 bars)
+        wide_start_idx = max(0, event_idx - 500)
+        wide_end_idx = min(len(df), event_idx + 500)
+        df_window = df.iloc[wide_start_idx:wide_end_idx].copy()
+        
+        # ZOOM Window (Initial View)
+        zoom_start = max(0, event_idx - window_before)
+        zoom_end = min(len(df), event_idx + window_after + 1)
+        
+        if zoom_start < len(df) and zoom_end <= len(df):
+             zoom_start_ts = df.iloc[zoom_start]['open_time']
+             zoom_end_ts = df.iloc[min(zoom_end, len(df)-1)]['open_time']
+        else:
+             zoom_start_ts = None
+             zoom_end_ts = None
+
+        if df_window.empty:
+            st.warning("Grafik için yeterli veri bulunamadı.")
+            return
+        
+        # Create figure with 4 subplots (Price, Volume, MACD, RSI)
         fig = make_subplots(
             rows=4, cols=1,
             shared_xaxes=True,
             vertical_spacing=0.02,
             row_heights=[0.5, 0.15, 0.15, 0.2],
             specs=[[{}], [{}], [{}], [{}]],
-            subplot_titles=(chart_title, "Hacim", "MACD", "RSI")
+            subplot_titles=(f"{symbol} {timeframe} - Rally Event", "Hacim", "MACD", "RSI")
         )
         
-        # Row 1: Candle
+        # Candlestick (Row 1)
         fig.add_trace(
             go.Candlestick(
                 x=df_window['open_time'],
-                open=df_window['open'], high=df_window['high'],
-                low=df_window['low'], close=df_window['close'],
+                open=df_window['open'],
+                high=df_window['high'],
+                low=df_window['low'],
+                close=df_window['close'],
                 name='Fiyat',
-                increasing_line_color='#089981', decreasing_line_color='#F23645',
+                increasing_line_color=DEFAULT_INDICATOR_SETTINGS['candles']['sync_with_volume'] and DEFAULT_INDICATOR_SETTINGS['volume']['up_color'] or '#089981',
+                decreasing_line_color=DEFAULT_INDICATOR_SETTINGS['candles']['sync_with_volume'] and DEFAULT_INDICATOR_SETTINGS['volume']['down_color'] or '#F23645',
                 showlegend=False
-            ), row=1, col=1
+            ),
+            row=1, col=1
         )
         
-        # Row 2: Volume
-        colors = ['#089981' if c >= o else '#F23645' for c, o in zip(df_window['close'], df_window['open'])]
+        # Volume bars (Row 2)
+        colors = [DEFAULT_INDICATOR_SETTINGS['volume']['up_color'] if close >= open else DEFAULT_INDICATOR_SETTINGS['volume']['down_color'] 
+                  for close, open in zip(df_window['close'], df_window['open'])]
+        
         fig.add_trace(
-            go.Bar(x=df_window['open_time'], y=df_window['volume'], name="Volume", marker_color=colors, opacity=0.5),
+            go.Bar(
+                x=df_window['open_time'],
+                y=df_window['volume'],
+                name="Volume",
+                marker_color=colors,
+                opacity=0.5
+            ),
             row=2, col=1
         )
         
-        # Row 3: MACD
-        if 'macd' in df_window.columns:
-            fig.add_trace(
-                 go.Bar(x=df_window['open_time'], y=df_window['macd_hist'], name='Hist', marker_color='gray'),
-                 row=3, col=1
+        # Event vertical line - use explicit integer for indexing
+        event_window_idx = int(event_idx - wide_start_idx)
+        # Check bounds just in case
+        if 0 <= event_window_idx < len(df_window):
+            event_row = df_window.iloc[event_window_idx]
+            fig.add_vline(
+                x=event_row['open_time'],
+                line_dash="solid",
+                line_color="gold",
+                line_width=2,
+                row=1, col=1
             )
+            
+            # Add annotation manually
+            fig.add_annotation(
+                x=event_row['open_time'],
+                y=1,
+                yref="y domain",
+                text="Event",
+                showarrow=False,
+                yshift=10,
+                row=1, col=1
+            )
+            
+            # Rally Highlighting Logic
+            if bars_to_peak > 0:
+                try:
+                    peak_idx = min(int(event_idx + bars_to_peak), len(df) - 1)
+                    highlight_end = df.iloc[peak_idx]['open_time']
+                    label_text = f"Rally ({bars_to_peak} bars)"
+                    
+                    fig.add_vrect(
+                        x0=event_time,
+                        x1=highlight_end,
+                        fillcolor="yellow",
+                        opacity=0.2,
+                        line_width=0,
+                        row=1
+                    )
+                    
+                    # Add vertical line at the END of the rally
+                    fig.add_vline(
+                        x=highlight_end,
+                        line_dash="solid",
+                        line_color="gold",
+                        line_width=2,
+                        row=1, col=1
+                    )
+                    
+                    # Add annotation manually for label
+                    fig.add_annotation(
+                        x=event_time,
+                        y=1,
+                        yref="y domain",
+                        text=label_text,
+                        showarrow=False,
+                        xanchor="left",
+                        yshift=10,
+                        row=1, col=1
+                    )
+                except Exception as e:
+                    st.error(f"YELLOW BOX ERROR: {e}")
+                    # Print full traceback to console
+                    import traceback
+                    print(traceback.format_exc())
+
+        
+        # MACD subplot (Row 3)
+        if 'macd' in df_window.columns:
+            # --- Load User Settings for MACD ---
+            from tezaver.core.settings_manager import settings_manager
+            user_settings = settings_manager.load_settings()
+            macd_cfg = user_settings.get('indicators', {}).get('macd', {})
+            
+            # Use user settings or fallback to explicit defaults if missing
+            line_color = macd_cfg.get('macd_color', '#2962FF')
+            sig_color = macd_cfg.get('signal_color', '#FF9800')
+            
+            # MACD Line
             fig.add_trace(
                 go.Scatter(
                     x=df_window['open_time'],
                     y=df_window['macd'],
                     name='MACD',
-                    line=dict(color='#2962FF', width=1.5)
+                    line=dict(color=line_color, width=1.5)
                 ),
                 row=3, col=1
             )
+            # Signal Line
             fig.add_trace(
                 go.Scatter(
                     x=df_window['open_time'],
                     y=df_window['macd_signal'],
                     name='Signal',
-                    line=dict(color='#FF9800', width=1.5)
+                    line=dict(color=sig_color, width=1.5)
+                ),
+                row=3, col=1
+            )
+            
+            # Histogram Coloring with Tolerance Logic
+            cols = {
+                'pos_inc': macd_cfg.get('hist_pos_inc_color', '#00E676'),
+                'pos_dec': macd_cfg.get('hist_pos_dec_color', '#D500F9'),
+                'neg_inc': macd_cfg.get('hist_neg_inc_color', '#FF1744'),
+                'neg_dec': macd_cfg.get('hist_neg_dec_color', '#FFEA00')
+            }
+            
+            tolerance_pct = float(macd_cfg.get('color_tolerance', 0.0)) / 100.0
+            
+            # Prepare data
+            hist_vals = df_window['macd_hist'].fillna(0).values
+            prev_vals = df_window['macd_hist'].shift(1).fillna(0).values
+            
+            colors_macd = []
+            previous_color = cols['pos_inc'] # Initial dummy state
+            
+            for i, h in enumerate(hist_vals):
+                prev = prev_vals[i]
+                
+                # Determine "Target" Color based on strict physics (Rise/Fall)
+                if h >= 0:
+                    if h > prev: target_color = cols['pos_inc']
+                    else: target_color = cols['pos_dec']
+                else:
+                    if h < prev: target_color = cols['neg_inc'] # Deepening (Red)
+                    else: target_color = cols['neg_dec'] # Recovering (Yellow)
+                
+                # Apply Tolerance Logic
+                # If tolerance > 0, we check if the change is significant enough to switch color
+                if tolerance_pct > 0 and i > 0:
+                     # Calculate change pct relative to previous bar amplitude
+                     # Avoid div/0
+                     denom = abs(prev) if abs(prev) > 1e-9 else 1.0 
+                     change_ratio = abs(h - prev) / denom
+                     
+                     # Check if we are staying in the same visual group (Positive or Negative)
+                     # Tolerance mainly makes sense for Dec/Inc switches within same polarity (e.g. Green->Purple)
+                     # Or Negative Deep->Recover (Red->Yellow)
+                     # Switching from Positive to Negative (Green->Red) implies crossing zero, which is structural change.
+                     # We usually enforce strict zero crossing. Color tolerance applies to momentum shifts.
+                     
+                     same_polarity = (h >= 0 and prev >= 0) or (h < 0 and prev < 0)
+                     
+                     if same_polarity and change_ratio < tolerance_pct:
+                         # Change is too small, keep previous color (hysteresis)
+                         final_color = previous_color
+                     else:
+                         final_color = target_color
+                else:
+                    final_color = target_color
+                
+                colors_macd.append(final_color)
+                previous_color = final_color
+
+            fig.add_trace(
+                go.Bar(
+                    x=df_window['open_time'],
+                    y=df_window['macd_hist'],
+                    name='Hist',
+                    marker_color=colors_macd
                 ),
                 row=3, col=1
             )
@@ -1250,3 +1407,199 @@ def render_rally_family_example_chart(
     """
     # Reuse pattern chart logic
     render_pattern_example_chart(symbol, example, base_timeframe, window_bars)
+
+def render_universal_chart(
+    symbol: str,
+    timeframe: str,
+    event_time: Optional[pd.Timestamp] = None,
+    bars_to_peak: int = 0,
+    window_before: int = 30,
+    window_after: int = 20,
+) -> None:
+    """
+    Universal Chart Renderer based on the render_rally_event_chart engine.
+    Supports both Event View (with highlight) and General View (latest data).
+    
+    Args:
+        symbol: Coin symbol
+        timeframe: Timeframe (e.g. "1h")
+        event_time: Optional event time. If None, shows latest data.
+        bars_to_peak: For rally highlighting.
+    """
+    try:
+        # Load data
+        df_history = load_history_data(symbol, timeframe)
+        df_features = load_features_data(symbol, timeframe)
+        
+        if df_history is None or df_history.empty:
+            st.warning(f"{symbol} için {timeframe} veri yok.")
+            return
+            
+        # Merge features if available
+        if df_features is not None and not df_features.empty:
+            try:
+                # Timezone normalization
+                df_history['open_time'] = pd.to_datetime(df_history['open_time'], errors='coerce')
+                if df_history['open_time'].dt.tz is not None:
+                    df_history['open_time'] = df_history['open_time'].dt.tz_localize(None)
+                
+                df_features['open_time'] = pd.to_datetime(df_features['open_time'], errors='coerce')
+                if df_features['open_time'].dt.tz is not None:
+                    df_features['open_time'] = df_features['open_time'].dt.tz_localize(None)
+                    
+                df = pd.merge(
+                    df_history,
+                    df_features[['open_time', 'rsi', 'rsi_ema']],
+                    on='open_time',
+                    how='left'
+                )
+            except:
+                df = df_history
+        else:
+            df = df_history
+            
+        # Timezone Shift (+3h)
+        if 'open_time' in df.columns:
+             df['open_time'] = df['open_time'] + timedelta(hours=3)
+        if event_time is not None:
+             event_time = pd.to_datetime(event_time) + timedelta(hours=3)
+             
+        # Indicators (RSI, MACD) - Fast calculation if missing
+        if 'rsi' not in df.columns or df['rsi'].isnull().all():
+            period = DEFAULT_INDICATOR_SETTINGS['rsi']['period']
+            delta = df['close'].diff()
+            gain = delta.where(delta > 0, 0).ewm(alpha=1/period, adjust=False).mean()
+            loss = -delta.where(delta < 0, 0).ewm(alpha=1/period, adjust=False).mean()
+            rs = gain / loss
+            df['rsi'] = 100 - (100 / (1 + rs))
+            
+        if 'rsi_ema' not in df.columns or df['rsi_ema'].isnull().all():
+             period_ema = DEFAULT_INDICATOR_SETTINGS['rsi_ema']['period']
+             df['rsi_ema'] = df['rsi'].ewm(span=period_ema, adjust=False).mean()
+             
+        if 'macd' not in df.columns or df['macd'].isnull().all():
+            fast = DEFAULT_INDICATOR_SETTINGS['macd']['fast']
+            slow = DEFAULT_INDICATOR_SETTINGS['macd']['slow']
+            signal = DEFAULT_INDICATOR_SETTINGS['macd']['signal']
+            
+            exp12 = df['close'].ewm(span=fast, adjust=False).mean()
+            exp26 = df['close'].ewm(span=slow, adjust=False).mean()
+            df['macd'] = exp12 - exp26
+            df['macd_signal'] = df['macd'].ewm(span=signal, adjust=False).mean()
+            df['macd_hist'] = df['macd'] - df['macd_signal']
+            
+        # Determine Window
+        df = df.sort_values('open_time').reset_index(drop=True)
+        
+        if event_time is None:
+            # Universal Mode: Latest Data
+            df_window = df.iloc[-1000:].copy() if len(df) > 1000 else df.copy()
+            
+            # Initial Zoom: Last 150 bars
+            initial_start = df_window['open_time'].iloc[-150] if len(df_window) > 150 else df_window['open_time'].iloc[0]
+            initial_end = df_window['open_time'].iloc[-1]
+            # Buffer
+            initial_end = initial_end + (initial_end - df_window['open_time'].iloc[-2]) * 5
+            
+            title = f"{symbol} {timeframe}"
+        else:
+            # Event Mode
+            e_norm = pd.to_datetime(event_time)
+            if e_norm.tzinfo: e_norm = e_norm.tz_localize(None)
+            
+            time_diff = (df['open_time'] - e_norm).abs()
+            event_idx = int(time_diff.to_numpy().argmin())
+            
+            start_i = max(0, event_idx - 500)
+            end_i = min(len(df), event_idx + 500)
+            df_window = df.iloc[start_i:end_i].copy()
+            
+            # Zoom
+            initial_start = df['open_time'].iloc[max(0, event_idx - window_before)]
+            initial_end = df['open_time'].iloc[min(len(df)-1, event_idx + window_after + 10)]
+            
+            title = f"{symbol} {timeframe} - Rally"
+
+        if df_window.empty:
+            st.warning("Veri yok.")
+            return
+
+        # Build Chart
+        fig = make_subplots(
+            rows=4, cols=1,
+            shared_xaxes=True,
+            vertical_spacing=0.02,
+            row_heights=[0.5, 0.15, 0.15, 0.2],
+            specs=[[{}], [{}], [{}], [{}]],
+            subplot_titles=(title, "Hacim", "MACD", "RSI")
+        )
+
+        # 1. Price
+        fig.add_trace(go.Candlestick(
+            x=df_window['open_time'],
+            open=df_window['open'], high=df_window['high'],
+            low=df_window['low'], close=df_window['close'],
+            name='Fiyat',
+            increasing_line_color='#089981', decreasing_line_color='#F23645',
+            showlegend=False
+        ), row=1, col=1)
+
+        # 2. Volume
+        colors = ['#089981' if c >= o else '#F23645' for c, o in zip(df_window['close'], df_window['open'])]
+        fig.add_trace(go.Bar(
+            x=df_window['open_time'], y=df_window['volume'],
+            name="Volume", marker_color=colors, opacity=0.5
+        ), row=2, col=1)
+
+        # 3. MACD
+        if 'macd' in df_window.columns:
+            fig.add_trace(go.Bar(x=df_window['open_time'], y=df_window['macd_hist'], name='Hist', marker_color='gray'), row=3, col=1)
+            fig.add_trace(go.Scatter(x=df_window['open_time'], y=df_window['macd'], name='MACD', line=dict(color='#2962FF', width=1)), row=3, col=1)
+            fig.add_trace(go.Scatter(x=df_window['open_time'], y=df_window['macd_signal'], name='Signal', line=dict(color='#FF9800', width=1)), row=3, col=1)
+
+        # 4. RSI
+        if 'rsi' in df_window.columns:
+            fig.add_trace(go.Scatter(x=df_window['open_time'], y=df_window['rsi'], name='RSI', line=dict(color='#7E57C2', width=1.5)), row=4, col=1)
+            if 'rsi_ema' in df_window.columns:
+                fig.add_trace(go.Scatter(x=df_window['open_time'], y=df_window['rsi_ema'], name='EMA', line=dict(color='#FFC107', width=1.5)), row=4, col=1)
+            
+            fig.add_hline(y=70, line_dash="dot", line_color="red", row=4, col=1)
+            fig.add_hline(y=30, line_dash="dot", line_color="green", row=4, col=1)
+
+        # Event Highlight (Only if event_time)
+        if event_time is not None:
+             fig.add_vline(x=event_time, line_color="gold", line_width=2, row=1, col=1)
+             if bars_to_peak > 0:
+                 try:
+                     # Re-find index in window
+                     # Simplified: just use time calculation
+                     # We assume event_time is exact match in df (it usually is if sourced from it)
+                     # But we need to highlight Area.
+                     
+                     # Find end time
+                     # We can iterate or use simple offset if bars known?
+                     # Let's use logic: find event index in GLOBAL df, calculate peak index, get time.
+                     time_diff = (df['open_time'] - event_time).abs()
+                     e_idx = int(time_diff.to_numpy().argmin())
+                     p_idx = min(len(df)-1, e_idx + bars_to_peak)
+                     end_time = df.iloc[p_idx]['open_time']
+                     
+                     fig.add_vrect(x0=event_time, x1=end_time, fillcolor="yellow", opacity=0.2, line_width=0, row=1)
+                     fig.add_vline(x=end_time, line_color="gold", line_width=2, row=1, col=1)
+                 except: pass
+
+        # Layout
+        fig.update_layout(
+             height=800, margin=dict(l=10, r=10, t=30, b=10),
+             hovermode='x unified', showlegend=False, dragmode='pan',
+             xaxis_rangeslider_visible=False
+        )
+        
+        # Initial Zoom
+        if initial_start and initial_end:
+             fig.update_xaxes(range=[initial_start, initial_end], row=4, col=1)
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    except Exception as e:
+        st.error(f"Grafik hatası: {e}")

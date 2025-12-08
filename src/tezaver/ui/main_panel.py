@@ -359,6 +359,8 @@ def render_coin_header(symbol: str):
         
     st.markdown("---")
 
+from tezaver.ui.chart_area import load_history_data, render_universal_chart
+
 def render_main_price_chart(symbol: str):
     """
     Renders the main price chart using Chart Area module.
@@ -369,12 +371,11 @@ def render_main_price_chart(symbol: str):
         tf = st.selectbox("Grafik", ["15m", "1h", "4h", "1d"], index=1, key=f"main_chart_tf_{symbol}")
     
     with c_right:
-        st.caption(f"Ana Grafik ({tf})")
+        st.caption(f"Tezaver Grafik ({tf})")
 
     # Render Chart using Universal Function
     try:
-        from tezaver.ui.chart_area import render_rally_event_chart
-        render_rally_event_chart(
+        render_universal_chart(
             symbol=symbol,
             timeframe=tf,
             event_time=None, # General view

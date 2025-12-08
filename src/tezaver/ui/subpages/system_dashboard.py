@@ -12,6 +12,7 @@ from typing import Optional
 from tezaver.core.settings_manager import settings_manager
 from tezaver.core import system_state, coin_cell_paths
 from tezaver.core.config import get_turkey_now, to_turkey_time
+from tezaver.core.seal_manager import seal_manager
 
 # Helper for standard button rendering (migrated from main_panel)
 def _render_scan_button(label: str, path: Optional[Path], key: str, help_text: str, run_func):
@@ -131,10 +132,11 @@ def render_system_dashboard():
     st.markdown("---")
     
     # Navigation Tabs
-    tab_status, tab_scans, tab_settings, tab_dev = st.tabs([
+    tab_status, tab_scans, tab_settings, tab_seals, tab_dev = st.tabs([
         "📡 Durum & Kontrol", 
         "🛠️ Taramalar", 
         "⚙️ Ayarlar", 
+        "🔐 Mühürler",
         "👨‍💻 Geliştirici"
     ])
     
@@ -275,7 +277,7 @@ def render_system_dashboard():
                          # OR, simpler: do the recording here if possible. But st.button callback is tricky.
                          # Actually _run_script does subprocess.run. 
                          # Let's modify _run_script in the next step to support recording state.
-                         pass
+                     
 
         # 3. Header & Master Button
         c_head, c_btn = st.columns([2, 1])
@@ -555,7 +557,87 @@ def render_system_dashboard():
         settings['indicators'] = indicators
         st.session_state.user_settings = settings
 
-    # ================= TAB 4: DEVELOPER =================
+    # ================= TAB 4: MÜHÜRLER (SEAL REGISTRY) =================
+    with tab_seals:
+        st.subheader("🔐 Mühür Defteri (Seal Registry)")
+        st.info("Kritik sistem bileşenlerini ve ayarlarını kilitler (mühürler). Mühürlü öğeler değiştirilemez.")
+        
+        # 1. Mühürleme Formu (Demo keys for now)
+        with st.expander("➕ Yeni Mühür Ekle", expanded=False):
+            c_key, c_reason, c_act = st.columns([2, 2, 1])
+            with c_key:
+                new_key = st.selectbox("Öğe Seçin", [
+                    "Sistem Ayarları (Global)", 
+                    "Strateji Parametreleri", 
+                    "Üretim Modu (Production)", 
+                    "Test Verileri"
+                ], key="seal_new_key_select")
+            with c_reason:
+                new_reason = st.text_input("Mühürleme Nedeni", placeholder="Örn: Stabil sürüm v1.0", key="seal_new_reason")
+            with c_act:
+                st.markdown("<br>", unsafe_allow_html=True)
+                if st.button("Mühürle 🔒", use_container_width=True, type="primary"):
+                    if seal_manager.seal_item(new_key, new_reason or "Belirtilmedi"):
+                        st.success(f"'{new_key}' mühürlendi!")
+                        time.sleep(1)
+                        st.rerun()
+                    else:
+                        st.warning("Bu öğe zaten mühürlü.")
+
+        st.divider()
+
+        # 2. Mühürlü Öğeler Listesi
+        seals = seal_manager.get_all_seals()
+        if not seals:
+            st.caption("Henüz mühürlenmiş bir öğe yok.")
+        else:
+            for key, info in seals.items():
+                # Card Style
+                with st.container():
+                    c_icon, c_det, c_act = st.columns([1, 6, 2])
+                    with c_icon:
+                        st.markdown("# 🛡️")
+                    with c_det:
+                        st.markdown(f"**{key}**")
+                        st.caption(f"📅 **Tarih:** {info.get('sealed_at')} | 👤 **Tarafından:** {info.get('owner')}")
+                        st.info(f"📝 **Mühür Nedeni:** {info.get('reason')}")
+                    with c_act:
+                        st.markdown("<br>", unsafe_allow_html=True)
+                        
+                        # UNSEAL LOGIC WITH DOUBLE CONFIRMATION
+                        # Context Key for this specific item's unseal process
+                        unseal_state_key = f"unseal_step_{key}"
+                        
+                        # Current step: 0 (Idle), 1 (Warn 1), 2 (Warn 2)
+                        current_step = st.session_state.get(unseal_state_key, 0)
+                        
+                        if current_step == 0:
+                            if st.button("Mührü Kır 🔓", key=f"btn_break_{key}"):
+                                st.session_state[unseal_state_key] = 1
+                                st.rerun()
+                        
+                        elif current_step == 1:
+                            st.warning(f"⚠️ {info.get('sealed_at')} tarihinde mühürlendi.")
+                            if st.button("Yine de Devam Et", key=f"btn_confirm1_{key}"):
+                                st.session_state[unseal_state_key] = 2
+                                st.rerun()
+                            if st.button("İptal", key=f"btn_cancel1_{key}"):
+                                st.session_state[unseal_state_key] = 0
+                                st.rerun()
+                                
+                        elif current_step == 2:
+                            st.error("🔥 Bu son uyarı! Mühür kırılacak.")
+                            if st.button("ONAYLIYORUM (KIR)", key=f"btn_confirm2_{key}", type="primary"):
+                                seal_manager.unseal_item(key)
+                                del st.session_state[unseal_state_key]
+                                st.success("Mühür kırıldı!")
+                                time.sleep(1)
+                                st.rerun()
+                            if st.button("Vazgeç", key=f"btn_cancel2_{key}"):
+                                st.session_state[unseal_state_key] = 0
+                                st.rerun()
+                    
+                    st.divider()
     with tab_dev:
         st.subheader("Sistem Logları & JSON")
         
