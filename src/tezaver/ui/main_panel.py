@@ -20,13 +20,15 @@ from tezaver.core import system_state
 from tezaver.wisdom.pattern_stats import get_coin_profile_dir
 from tezaver.ui.subpages.system_dashboard import render_system_dashboard
 from tezaver.ui.insight_tab import render_insight_tab
-from tezaver.ui.data_health_tab import render_data_health_page
 from tezaver.ui.fast15_lab_tab import render_fast15_lab_tab
+from tezaver.ui.time_labs_tab import render_time_labs_tab
+from tezaver.ui.rally_radar_tab import render_rally_radar_tab
+from tezaver.ui.rally_quality_tab import render_rally_quality_tab
+from tezaver.ui.rally_families_tab import render_rally_families_tab
 from tezaver.ui.sim_lab_tab import render_sim_lab_tab
-from tezaver.ui.chart_area import load_history_data, render_rally_event_chart
+from tezaver.ui.risk_cards import render_risk_tab
 from tezaver.ui.pattern_story_view import render_pattern_story_panel, PatternStoryKey
 from tezaver.ui.explanation_cards import TRIGGER_LABELS_TR
-from tezaver.ui.risk_cards import render_risk_tab
 import plotly.graph_objects as go
 
 # --- HELPER FUNCTIONS ---
@@ -391,10 +393,10 @@ def render_coin_detail_page(symbol: str):
     render_coin_header(symbol)
     
     # TABS
-    # Definition: Bilgelik, Grafik, Yükseliş Lab, Risk, Sim Lab, Bulut, Paternler, Seviyeler
+    # Definition: Bilgelik, Rally, Sim Lab, Risk, Bulut, Paternler, Seviyeler, Ana Grafik
     tab_names = [
         "💡 Bilgelik", 
-        "📈 Yükseliş Lab", 
+        "🚀 Rally", 
         "🧪 Sim Lab",
         "🛡️ Risk", 
         "☁️ Bulut Paketi",
@@ -410,9 +412,9 @@ def render_coin_detail_page(symbol: str):
         from tezaver.ui.explanation_cards import render_coin_explanation_cards
         render_coin_explanation_cards(symbol)
 
-    # 2. Yükseliş Lab (Fast15 + Time-Labs)
+    # 2. Rally (Fast15 + Time-Labs + Radar + Quality + Families)
     with tabs[1]:
-        sub_tabs = st.tabs(["⚡ 15 Dakika", "⏱ 1 Saat", "⏱ 4 Saat"])
+        sub_tabs = st.tabs(["⚡ 15 Dakika", "⏱ 1 Saat", "⏱ 4 Saat", "📡 Rally Radar", "🎯 Rally Quality", "🧬 Rally Aileleri"])
         
         with sub_tabs[0]:
             render_fast15_lab_tab(symbol)
@@ -420,6 +422,12 @@ def render_coin_detail_page(symbol: str):
             render_time_labs_tab(symbol, "1h")
         with sub_tabs[2]:
             render_time_labs_tab(symbol, "4h")
+        with sub_tabs[3]:
+            render_rally_radar_tab(symbol)
+        with sub_tabs[4]:
+            render_rally_quality_tab(symbol)
+        with sub_tabs[5]:
+            render_rally_families_tab(symbol)
             
     # 3. Sim Lab (Backtest)
     with tabs[2]:

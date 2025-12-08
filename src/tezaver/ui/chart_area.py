@@ -1048,7 +1048,7 @@ def render_pattern_example_chart(
     symbol: str,
     example,  # ExampleEvent from pattern_story_view
     timeframe: str,
-    window_bars: int = 120
+    window_bars: int = 100
 ) -> None:
     """
     Render candlestick chart for pattern example.
@@ -1147,14 +1147,23 @@ def render_pattern_example_chart(
         # But set initial ZOOM to the specific event window (e.g. -40 / +40).
         
         # 1. Wide Data Window (for panning)
+        # Load +/- 500 bars as requested by user
         wide_start_idx = max(0, event_idx - 500)
         wide_end_idx = min(len(df), event_idx + 500)
         df_window = df.iloc[wide_start_idx:wide_end_idx].copy()
         
         # 2. Initial Zoom Logic
-        # Focus window: 80 bars before (context), rest after
-        zoom_start_idx = max(0, event_idx - 80)
-        zoom_end_idx = min(len(df), event_idx + (window_bars - 80))
+        # User Requirement: 100 bars visible on screen.
+        # Strategy: 70 bars BEFORE event, 30 bars AFTER event.
+        # This keeps the event in context (result visible) but focus on formation.
+        zoom_start_idx = max(0, event_idx - 70)
+        # We want exactly 100 bars total. So end is start + 100? 
+        # Or relative to event: event + 30.
+        zoom_end_idx = min(len(df), event_idx + 30)
+        
+        # If we hit an edge (beginning of data), ensure we still try to show 100 bars if possible
+        if zoom_start_idx == 0:
+            zoom_end_idx = min(len(df), 100)
         
         # Get timestamps for range slider
         if zoom_start_idx < len(df) and zoom_end_idx <= len(df):
