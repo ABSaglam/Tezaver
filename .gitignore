@@ -1,0 +1,49 @@
+# .gitignore – Tezaver-Mac
+
+# Python temel
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.dll
+
+# Virtual env
+venv/
+.env
+.env.*
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Test cache
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Logs
+*.log
+logs/
+
+# Streamlit cache
+.streamlit/
+
+# Local data (iters)
+/library/
+/data/
+coin_cells/*/data/
+*.parquet
+
+# Build / dist
+dist/
+build/
+*.egg-info/
+
+# Backups & Archives
+backups/
+*.zip

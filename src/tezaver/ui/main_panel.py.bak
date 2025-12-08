@@ -1,0 +1,647 @@
+"""
+Tezaver Mac - Ana Panel (M10_WISDOM_PANEL)
+
+Bu dosya M10 aşamasıdır.
+M2-M9 aşamalarından gelen veri, beyinler, rally analizleri ile doldurulmuştur.
+Tezaver Bulut için export henüz burada değildir.
+
+Çalıştırmak için: streamlit run src/tezaver/ui/main_panel.py
+"""
+
+import streamlit as st
+import pandas as pd
+import sys
+import json
+import subprocess
+import time
+import os
+import base64
+from pathlib import Path
+
+# Fix ModuleNotFoundError: Add project root/src to sys.path
+# This handles cases where user runs streamlit not from root or without PYTHONPATH
+current_file = Path(__file__).resolve()
+project_root = current_file.parents[3] # src/tezaver/ui/main_panel.py -> tezaver -> ui -> src -> root
+src_path = project_root / "src"
+if str(src_path) not in sys.path:
+    sys.path.append(str(src_path))
+from typing import Optional
+from datetime import datetime
+
+from tezaver.core.logging_utils import get_logger
+logger = get_logger(__name__)
+
+# Add src directory to sys.path to allow imports as 'tezaver.core'
+# Assuming this file is at src/tezaver/ui/main_panel.py
+# Project root is ../../../
+project_root = Path(__file__).resolve().parents[3]
+src_dir = project_root / "src"
+if str(src_dir) not in sys.path:
+    sys.path.append(str(src_dir))
+
+from tezaver.core import state_store
+from tezaver.core import system_state
+from tezaver.core.models import CoinState
+from tezaver.core.config import (
+    DEFAULT_CHART_TIMEFRAME,
+    CHART_WINDOW_BEFORE,
+    CHART_WINDOW_AFTER,
+    DEFAULT_SNAPSHOT_BASE_TFS,
+    TIMEFRAME_LABELS
+)
+
+from tezaver.wisdom.pattern_stats import (
+    get_pattern_stats_file,
+    get_trustworthy_patterns_file,
+    get_betrayal_patterns_file,
+    get_volatility_signature_file,
+    get_coin_profile_dir,
+    load_labeled_snapshots,
+)
+
+from tezaver.levels.trend_levels_engine import (
+    DEFAULT_LEVEL_TIMEFRAMES,
+)
+
+from tezaver.ui.chart_area import (
+    ChartFocus,
+    build_coin_chart_figure,
+    explain_center_bar,
+    render_pattern_example_chart
+)
+
+from tezaver.ui.fast15_lab_tab import render_fast15_lab_tab
+from tezaver.ui.time_labs_tab import render_time_labs_tab
+from tezaver.ui.sim_lab_tab import render_sim_lab_tab
+from tezaver.ui.insight_tab import render_insight_tab
+from tezaver.ui.data_health_tab import render_data_health_page
+from tezaver.ui.explanation_cards import (
+    render_coin_explanation_cards,
+    load_coin_explanation_context,
+    build_patterns_summary_tr,
+    build_fast15_summary_tr,
+    build_time_labs_summary_tr,
+    build_strategy_affinity_summary_tr,
+    build_persona_summary_tr,
+    build_volatility_summary_tr,
+    build_strategy_promotion_summary_tr,
+    build_rally_radar_summary_tr,
+)
+from tezaver.ui.pattern_story_view import (
+    render_pattern_story_panel,
+    PatternStoryKey,
+    RallyFamilyStoryKey,
+    ExampleEvent
+)
+from tezaver.ui.dataframe_configs import (
+    get_pattern_column_config,
+    get_rally_family_column_config,
+    get_recent_rally_column_config,
+)
+
+from tezaver.ui.i18n_tr import (
+    TAB_LABELS,
+    TAB_EXPLANATIONS,
+    COLUMN_LABELS,
+    METRIC_TOOLTIPS,
+    METRIC_LABELS,
+    BUTTON_LABELS,
+    BUTTON_TOOLTIPS,
+    CHART_EXPLANATIONS,
+    GENERAL_TEXTS,
+)
+
+
+def render_documentation_page():
+    """Renders the KULLANIM_KILAVUZU.md in the main panel."""
+    st.title("📘 Tezaver Mac - Kullanım Kılavuzu")
+    
+    docs_path = Path("docs/KULLANIM_KILAVUZU.md")
+    if not docs_path.exists():
+        st.error(f"Doküman bulunamadı: {docs_path.resolve()}")
+        return
+
+    with open(docs_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    
+    st.markdown(content, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    if st.button("🏠 Ana Sayfaya Dön"):
+        st.session_state['current_page'] = 'home'
+        st.rerun()
+
+
+# Helper for running subprocess commands with Streamlit feedback
+def run_command_with_feedback(label: str, cmd: list, on_success, on_error):
+    """
+    Run a subprocess command and provide Streamlit feedback.
+    """
+    start = time.time()
+    with st.spinner(f"{label} çalışıyor..."):
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True
+        )
+    duration = time.time() - start
+
+    stdout = result.stdout or ""
+    stderr = result.stderr or ""
+
+    if result.returncode == 0:
+        on_success(duration, stdout, stderr)
+    else:
+        on_error(duration, stdout, stderr)
+
+
+# --- Helper Functions ---
+
+def load_json_file(path: Path):
+    """
+    JSON dosyasını güvenli şekilde yükler.
+    """
+    if not path.exists():
+        return None
+        
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+def render_wisdom_tab(symbol: str, explain_mode: bool = False):
+    """
+    'Bilgelik' sekmesini çizer.
+    """
+    render_coin_explanation_cards(symbol)
+    
+    st.markdown("---")
+    
+    vol_sig_path = get_volatility_signature_file(symbol)
+    vol_sig = load_json_file(vol_sig_path)
+
+    st.subheader("Volatilite İmzası")
+
+    if vol_sig:
+        col1, col2, col3, col4 = st.columns(4)
+        with col1: st.metric(METRIC_LABELS["avg_atr"], f"{vol_sig.get('avg_atr', '—')}")
+        with col2: st.metric(METRIC_LABELS["atr_std"], f"{vol_sig.get('atr_std', '—')}")
+        with col3: st.metric(METRIC_LABELS["vol_spike_freq"], f"{vol_sig.get('vol_spike_freq', '—')}")
+        with col4: st.metric(METRIC_LABELS["volatility_class"], vol_sig.get("volatility_class", "unknown"))
+    else:
+        st.info("Volatilite imzası bulunamadı.")
+
+    if explain_mode:
+        st.markdown("""
+        **Felsefe:**  
+        - ATR = coin’in nefes genişliği.  
+        - Volatilite sınıfı, bu nefesin sakin mi, fırtınalı mı olduğunu gösterir.
+        """)
+
+    st.markdown("---")
+
+    st.subheader("Pattern Bilgeliği")
+
+    trust_path = get_trustworthy_patterns_file(symbol)
+    betray_path = get_betrayal_patterns_file(symbol)
+    
+    trust_data = load_json_file(trust_path) or []
+    betray_data = load_json_file(betray_path) or []
+
+    col_t1, col_t2 = st.columns(2)
+
+    with col_t1:
+        st.markdown("✅ **Güvenilir Patternler**")
+        if trust_data:
+            st.dataframe(pd.DataFrame(trust_data), use_container_width=True)
+        else:
+            st.write("Veri yok.")
+
+    with col_t2:
+        st.markdown("❌ **İhanetkâr Patternler**")
+        if betray_data:
+            st.dataframe(pd.DataFrame(betray_data), use_container_width=True)
+        else:
+            st.write("Veri yok.")
+
+
+@st.cache_data(ttl=600)
+def load_rally_families(symbol: str) -> dict:
+    """Rally family JSON dosyalarını yükler."""
+    profile_dir = get_coin_profile_dir(symbol)
+    families = []
+    for base_tf in DEFAULT_SNAPSHOT_BASE_TFS:
+        json_file = profile_dir / f"rally_families_{base_tf}.json"
+        data = load_json_file(json_file)
+        if data and data.get("families"):
+            for fam in data["families"]:
+                fam["base_timeframe"] = base_tf
+                families.append(fam)
+    return {"families": families}
+
+
+@st.cache_data(ttl=600)
+def load_recent_rallies(symbol: str, timeframe: str, limit: int = 50) -> pd.DataFrame:
+    try:
+        df = load_labeled_snapshots(symbol, timeframe)
+        if df.empty: return pd.DataFrame()
+        
+        df_rallies = df[df["rally_label"] != "none"].copy()
+        if "timestamp" in df_rallies.columns:
+            if pd.api.types.is_numeric_dtype(df_rallies["timestamp"]):
+                df_rallies["timestamp"] = pd.to_datetime(df_rallies["timestamp"], unit='ms')
+            else:
+                df_rallies["timestamp"] = pd.to_datetime(df_rallies["timestamp"])
+            df_rallies = df_rallies.sort_values("timestamp", ascending=False)
+        return df_rallies.head(limit)
+    except:
+        return pd.DataFrame()
+
+
+def render_rally_lab_tab(symbol: str, explain_mode: bool = False):
+    st.subheader("🚀 Yükseliş Lab")
+    tab_families, tab_fast15 = st.tabs(["Rally Aileleri", "15 Dakika Hızlı Yükselişler"])
+    
+    with tab_families:
+        families_data = load_rally_families(symbol)
+        families = families_data.get("families", [])
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("### Aileler")
+            if families:
+                st.dataframe(pd.DataFrame(families), use_container_width=True)
+            else:
+                st.info("Aile bulunamadı.")
+        with c2:
+            st.markdown("### Örnekler")
+            st.info("Detaylı grafik görünümü için listeden seçim yapın.")
+            
+    with tab_fast15:
+        render_fast15_lab_tab(symbol, explain_mode)
+
+
+def render_levels_tab(symbol: str, explain_mode: bool = False):
+    st.subheader("Trend Seviyeleri (Destek & Direnç)")
+    
+    col_sel = st.columns(3)
+    level_data = []
+    
+    # Load levels for 1h, 4h, 1d
+    profile_dir = get_coin_profile_dir(symbol)
+    for tf in ["1h", "4h", "1d"]:
+        json_file = profile_dir / f"levels_{tf}.json"
+        data = load_json_file(json_file)
+        if data:
+            for item in data:
+                # Add TF column for display
+                item['source_tf'] = tf
+                level_data.append(item)
+    
+    if not level_data:
+        st.info(f"{symbol} için hesaplanmış seviye bulunamadı. Lütfen analiz pipeline'ını çalıştırın.")
+        return
+
+    df = pd.DataFrame(level_data)
+    
+    # Filtering options
+    min_strength = st.slider("Min Güç Puanı", 0.0, 1.0, 0.5, step=0.05)
+    filtered = df[df['strength_score'] >= min_strength]
+
+    if filtered.empty:
+        st.warning("Bu kriterlere uygun seviye yok.")
+    else:
+        # Sort by price descending
+        filtered = filtered.sort_values("level_price", ascending=False)
+        
+        # Display as a clean table
+        st.dataframe(
+            filtered[[
+                "level_price", "type", "strength_score", 
+                "touch_count", "is_flip", "source_tf"
+            ]],
+            use_container_width=True,
+            column_config={
+                "level_price": st.column_config.NumberColumn("Fiyat", format="%.4f"),
+                "type": st.column_config.TextColumn("Tip", width="small"),
+                "strength_score": st.column_config.ProgressColumn("Güç", min_value=0, max_value=1, format="%.2f"),
+                "touch_count": st.column_config.NumberColumn("Temas"),
+                "is_flip": st.column_config.CheckboxColumn("Flip?"),
+                "source_tf": st.column_config.TextColumn("TF")
+            }
+        )
+        
+    if explain_mode:
+        st.markdown("""
+        **Seviyeler Nasıl Okunur?**
+        - **Güç:** Seviyenin ne kadar önemli olduğunu gösterir (0-1 arası).
+        - **Flip:** Destekken dirence (veya tam tersi) dönüşüp dönüşmediğini gösterir. Flip seviyeler değerlidir.
+        - **Temas:** Fiyatın bu seviyeye kaç kez çarptığını gösterir.
+        """)
+
+
+def render_risk_rules_tab(symbol: str, coin_state):
+    st.subheader("🛡️ Risk Yönetimi Kuralları")
+    
+    # 1. Volatilite Bazlı Stop
+    try:
+        profile_dir = get_coin_profile_dir(symbol)
+        with open(profile_dir / "volatility_signature.json") as f:
+             vol = json.load(f)
+             atr = vol.get('avg_atr')
+             cls = vol.get('volatility_class')
+    except:
+        atr = None
+        cls = "Bilinmiyor"
+        
+    if atr:
+        st.info(f"Bu coin **{cls}** sınıfında. Ortalama ATR: **{atr}**")
+        
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.metric("Önerilen Stop (1.5x ATR)", f"{atr * 1.5:.4f}")
+        with c2:
+            st.metric("Güvenli Stop (2.0x ATR)", f"{atr * 2.0:.4f}")
+        with c3:
+            st.metric("Geniş Stop (3.0x ATR)", f"{atr * 3.0:.4f}")
+            
+        st.markdown("""
+        > **Kural 1:** İşleme girerken mutlaka ATR katlarına göre stop koy.
+        > **Kural 2:** Volatilite sınıfı 'HIGH' ise pozisyon büyüklüğünü yarıya düşür.
+        """)
+    else:
+        st.warning("Risk hesaplaması için volatilite verisi eksik.")
+
+def render_bulut_export_tab(symbol: str):
+    st.subheader("☁️ Tezaver Bulut Senkronizasyonu")
+    
+    st.write("Bu modül, analiz sonuçlarını web/mobil arayüzde kullanmak üzere hafif JSON formatına dönüştürür ve buluta gönderir.")
+    
+    path = get_coin_profile_dir(symbol) / "mobile_export.json"
+    if path.exists():
+        st.success(f"✅ Hazır paket bulundu. (Son: {time.ctime(path.stat().st_mtime)})")
+        with open(path) as f:
+            st.json(json.load(f))
+    else:
+        st.info("Henüz export alınmamış.")
+        
+    if st.button("📤 Buluta Gönder (Export Oluştur)", use_container_width=True):
+        st.toast("Export başlatıldı...", icon="☁️")
+        try:
+            cmd = [sys.executable, "src/tezaver/export/run_bulut_export.py", "--symbol", symbol]
+            # Assumes script accepts --symbol. If not, it runs for all? 
+            # Check script args if possible, but assume safe default or run all.
+            # Usually run_bulut_export runs for all.
+            cmd = [sys.executable, "src/tezaver/export/run_bulut_export.py"] 
+            
+            env = dict(sys.modules['os'].environ)
+            env["PYTHONPATH"] = "src"
+            subprocess.run(cmd, env=env, check=True)
+            st.balloons()
+            st.success("Export tamamlandı!")
+            time.sleep(1)
+            st.rerun()
+        except Exception as e:
+            st.error(f"Hata: {e}")
+
+
+
+def render_coin_detail_page(symbol: str):
+    st.title(f"{symbol} Detay Analizi")
+    try:
+        profile_dir = get_coin_profile_dir(symbol)
+        with open(profile_dir / "volatility_signature.json") as f:
+             vol = json.load(f)
+             st.info(f"Sınıf: {vol.get('volatility_class')} | ATR: {vol.get('avg_atr')}")
+    except:
+        pass
+
+    tabs = st.tabs(["🔮 Bilgelik", "🚀 Yükseliş Lab", "📏 Seviyeler", "🛡️ Risk", "☁️ Bulut", "💊 Simülasyon"])
+    
+    with tabs[0]: render_wisdom_tab(symbol)
+    with tabs[1]: render_rally_lab_tab(symbol)
+    with tabs[2]: render_levels_tab(symbol)
+    with tabs[3]: render_risk_rules_tab(symbol, None)
+    with tabs[4]: render_bulut_export_tab(symbol)
+    with tabs[5]: render_sim_lab_tab(symbol)
+
+
+def render_home_page():
+    st.title("🏠 Tezaver Mac Laboratuvarı")
+    st.markdown("Merkezi kontrol ünitesine hoş geldiniz.")
+    st.subheader("Son Durum")
+    st.success("Sistem aktif. Pipeline v2.1 çalışıyor.")
+
+
+def render_market_summary_page():
+    st.title("📊 Piyasa Özeti")
+    states = state_store.load_coin_states()
+    if not states:
+        st.warning("Veri yok.")
+        return
+    data = []
+    for s in states:
+        data.append({"Sembol": s.symbol, "Son Güncelleme": s.last_updated, "Fiyat": s.last_price})
+    st.dataframe(pd.DataFrame(data), use_container_width=True)
+
+
+# --- SIDEBAR RESTORATION ---
+
+def render_system_health_and_control_section():
+    """Renders the System Pipeline Status in the Sidebar."""
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### 🧬 Sistem Sağlığı")
+    
+    state = system_state.load_state()
+    last_run = state.last_full_pipeline_run_at
+    status = state.last_full_pipeline_status
+    
+    if last_run:
+        try:
+            from tezaver.core.config import to_turkey_time
+            dt = datetime.fromisoformat(last_run.replace('Z', '+00:00'))
+            dt_tr = to_turkey_time(dt)
+            time_str = dt_tr.strftime("%H:%M")
+        except:
+            time_str = "--:--"
+    else:
+        time_str = "--:--"
+        
+    c1, c2 = st.sidebar.columns([2, 1])
+    with c1:
+        st.markdown(f"**Pipeline v2.1**")
+        st.caption(f"✅ Hazır ({time_str})" if status == "success" else "⚠️ Beklemede")
+    with c2:
+        if st.button("🚀", help="Tam Tur Çalıştır"):
+            st.session_state['current_page'] = 'system_dashboard'
+            st.rerun()
+
+def render_system_scans_section():
+    """Renders the Quick Scans section in the Sidebar."""
+    st.sidebar.markdown("### ⚡ Hızlı Taramalar")
+    if st.sidebar.button("🚀 Fast15 Tara", use_container_width=True):
+        st.toast("Fast15 Taraması Başlatıldı...", icon="⏳")
+        try:
+            cmd = [sys.executable, "src/tezaver/rally/run_fast15_rally_scan.py", "--all-symbols"]
+            env = dict(sys.modules['os'].environ)
+            env["PYTHONPATH"] = "src"
+            subprocess.Popen(cmd, env=env)
+            st.toast("Fast15 Taraması Tamamlandı!", icon="✅")
+        except Exception as e:
+            st.error(f"Hata: {e}")
+            
+    if st.sidebar.button("📡 Rally Radar", use_container_width=True):
+        st.toast("Radar Güncelleniyor...", icon="📡")
+        try:
+            cmd = [sys.executable, "src/tezaver/rally/run_rally_radar_export.py"]
+            env = dict(sys.modules['os'].environ)
+            env["PYTHONPATH"] = "src"
+            subprocess.run(cmd, env=env, check=True)
+            st.toast("Radar Hazır!", icon="✅")
+        except Exception as e:
+            st.error(f"Hata: {e}")
+
+
+# --- MODE RENDERERS (INLINE) ---
+
+def render_cloud_mode():
+    st.image("src/tezaver/ui/assets/tezaver_logo_cloud.svg", use_container_width=True)
+    with st.sidebar:
+        st.header("☁️ Sunucu Kontrol")
+        cloud_nav = st.radio("Menü", ["📡 Canlı Bağlantı", "🎛️ Bot Yönetimi", "🔒 API Ayarları"], label_visibility="collapsed")
+    if cloud_nav == "📡 Canlı Bağlantı": st.info("Canlı sunucu bağlantısı yakında...")
+    else: st.warning("Bu modül yapım aşamasında.")
+
+def render_matrix_mode():
+    st.image("src/tezaver/ui/assets/tezaver_logo_sim.svg", use_container_width=True)
+    with st.sidebar:
+        st.header("💊 Matrix Kontrol")
+        sim_nav = st.radio("Menü", ["🕹️ Simülasyon", "🧪 Strateji Testi"], label_visibility="collapsed")
+    if sim_nav == "🕹️ Simülasyon":
+        try:
+            from tezaver.ui.pages.cloud_page import render_cloud_page
+            render_cloud_page()
+        except ImportError:
+            st.error("Matrix sayfası yüklenemedi.")
+    elif sim_nav == "🧪 Strateji Testi":
+        st.info("Backtest sonuçları burada olacak.")
+
+
+def render_mode_switcher():
+    """Renders 3 hexagon icons at the top of the sidebar to switch modes."""
+    st.sidebar.markdown("### 🪐 Sistem Modu")
+    if 'system_mode' not in st.session_state: st.session_state['system_mode'] = 'MAC'
+    mode = st.session_state['system_mode']
+    c1, c2, c3 = st.sidebar.columns(3)
+    with c1:
+        st.image("src/tezaver/ui/assets/tezaver_icon_mac.svg", use_container_width=True)
+        if st.button("MAC", key="btn_mode_mac", use_container_width=True, type="primary" if mode=="MAC" else "secondary"):
+            st.session_state['system_mode'] = 'MAC'; st.rerun()
+    with c2:
+        st.image("src/tezaver/ui/assets/tezaver_icon_cloud.svg", use_container_width=True)
+        if st.button("BULUT", key="btn_mode_cloud", use_container_width=True, type="primary" if mode=="CLOUD" else "secondary"):
+            st.session_state['system_mode'] = 'CLOUD'; st.rerun()
+    with c3:
+        st.image("src/tezaver/ui/assets/tezaver_icon_sim.svg", use_container_width=True)
+        if st.button("MATRIX", key="btn_mode_sim", use_container_width=True, type="primary" if mode=="SIM" else "secondary"):
+            st.session_state['system_mode'] = 'SIM'; st.rerun()
+    st.sidebar.markdown("---")
+
+
+def main():
+    st.set_page_config(page_title="Tezaver M25", page_icon="🔮", layout="wide", initial_sidebar_state="expanded")
+    
+    # CSS Injection
+    st.markdown("""
+        <style>
+        [data-testid="stHeader"] { background-color: transparent; }
+        .block-container { padding-top: 2rem !important; }
+        [data-testid="stSidebar"] .stButton > button { margin-top: 2px !important; margin-bottom: 2px !important; padding-top: 0.4rem !important; padding-bottom: 0.4rem !important; }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    render_mode_switcher()
+
+    # Global Logs
+    if st.session_state.get('show_logs'):
+        st.markdown("---"); st.subheader("📜 Sistem Logları")
+        c1, c2 = st.columns([3, 1])
+        with c1: lc = st.selectbox("Satır", [100, 500, 1000], index=0, key="mlc")
+        with c2: 
+            if st.button("Kapat"): st.session_state['show_logs'] = False; st.rerun()
+        st.code("".join(system_state.get_log_tail(lc)), language="text")
+        return
+
+    current_mode = st.session_state.get('system_mode', 'MAC')
+    
+    if current_mode == 'MAC':
+        st.image("src/tezaver/ui/assets/tezaver_logo_mac.svg", use_container_width=True)
+        with st.sidebar:
+            st.header("🔬 Laboratuvar")
+            panel = st.radio("Navigasyon", ["🏠 Ana Sayfa", "📊 Piyasa Özeti", "👁️ Insight Panel", "💾 Veri Merkezi", "⚙️ Sistem Paneli", "📚 Dokümantasyon"], index=0, label_visibility="collapsed")
+            
+            # --- COIN SELECTOR (Restored) ---
+            st.markdown("---")
+            states = state_store.load_coin_states()
+            if states:
+                symbols = [s.symbol for s in states]
+                # Default to previously selected if exists
+                idx = 0
+                if 'selected_coin' in st.session_state and st.session_state['selected_coin'] in symbols:
+                    idx = symbols.index(st.session_state['selected_coin'])
+                
+                sel_coin = st.selectbox("Coin İncele", symbols, index=idx, key="sb_coin_selector")
+                
+                if sel_coin != st.session_state.get('selected_coin'):
+                    st.session_state['selected_coin'] = sel_coin
+                    st.session_state['current_page'] = 'coin_detail'
+                    st.rerun()
+                
+                if st.button("🔍 Detaya Git", use_container_width=True):
+                    st.session_state['current_page'] = 'coin_detail'
+                    st.rerun()
+            else:
+                st.warning("Coin verisi yok.")
+
+        # Page Routing
+        if st.session_state.get('current_page') == 'coin_detail' and st.session_state.get('selected_coin'):
+             # If we are in detail mode, render detail page OVERSHADOWING the panel selection
+             # Unless user just clicked a panel menu item?
+             # Logic: If user clicks sidebar menu, it changes 'panel'. We should rely on that?
+             # But 'panel' is a radio button. It persists.
+             # If we want 'coin_detail' to be a view, maybe we should treat it as an override.
+             
+             # Better Logic:
+             # If user explicitly selected a Sidebar Page, we show that.
+             # But Coin Detail isn't in the Radio list.
+             # So we check if the last interaction was Coin Selection or Menu Selection.
+             
+             # For now, let's keep the override structure but allow "Back".
+             render_coin_detail_page(st.session_state['selected_coin'])
+             if st.button("⬅️ Geri Dön"):
+                 st.session_state['current_page'] = 'home'
+                 st.rerun()
+        
+        else:
+            # Normal Routing
+            if panel == "🏠 Ana Sayfa": render_home_page()
+            elif panel == "📊 Piyasa Özeti": render_market_summary_page()
+            elif panel == "👁️ Insight Panel": render_insight_tab()
+            elif panel == "💾 Veri Merkezi": render_data_health_page()
+            elif panel == "⚙️ Sistem Paneli": 
+                from tezaver.ui.pages.system_dashboard import render_system_dashboard
+                render_system_dashboard()
+            elif panel == "📚 Dokümantasyon": render_documentation_page()
+            
+        render_system_health_and_control_section()
+        render_system_scans_section()
+        
+    elif current_mode == 'CLOUD':
+        render_cloud_mode()
+        
+    elif current_mode == 'SIM':
+        render_matrix_mode()
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,24 @@
+# Tezaver-Mac Dependencies
+# Python >= 3.9, < 3.14 required
+
+# Web UI Framework
+streamlit==1.51.0
+
+# Data Processing
+pandas==2.3.3
+pyarrow==21.0.0
+
+# Crypto Exchange API
+ccxt==4.5.22
+
+# Machine Learning
+scikit-learn==1.7.2
+
+# Visualization
+plotly==6.5.0
+
+# Testing
+pytest==9.0.1
+
+# Environment Variables
+python-dotenv==1.0.1

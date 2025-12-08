@@ -1,0 +1,18 @@
+# Tezaver-Mac Development Dependencies
+# Include production requirements
+-r requirements.txt
+
+# Code Quality Tools
+black==23.12.1
+flake8==6.1.0
+mypy==1.7.1
+
+# Testing Tools
+pytest-cov==4.1.0
+
+# Pre-commit Hooks (optional)
+pre-commit==3.6.0
+
+# Type Stubs
+types-requests==2.31.0.10
+pandas-stubs==2.1.4.231227
