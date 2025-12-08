@@ -1048,7 +1048,7 @@ def render_pattern_example_chart(
     symbol: str,
     example,  # ExampleEvent from pattern_story_view
     timeframe: str,
-    window_bars: int = 80
+    window_bars: int = 120
 ) -> None:
     """
     Render candlestick chart for pattern example.
@@ -1152,9 +1152,9 @@ def render_pattern_example_chart(
         df_window = df.iloc[wide_start_idx:wide_end_idx].copy()
         
         # 2. Initial Zoom Logic
-        # Focus window: 40 bars before, rest of window_bars after
-        zoom_start_idx = max(0, event_idx - 40)
-        zoom_end_idx = min(len(df), event_idx + (window_bars - 40))
+        # Focus window: 80 bars before (context), rest after
+        zoom_start_idx = max(0, event_idx - 80)
+        zoom_end_idx = min(len(df), event_idx + (window_bars - 80))
         
         # Get timestamps for range slider
         if zoom_start_idx < len(df) and zoom_end_idx <= len(df):
