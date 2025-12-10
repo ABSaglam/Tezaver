@@ -50,6 +50,6 @@
       <text x="215" y="55" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="200" font-size="36" fill="url(#grad1)" letter-spacing="0">mac</text>
       
       <!-- Version Text -->
-      <text x="305" y="75" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#888888" letter-spacing="0">by Ali Sağlam (v0.07 Çınar)</text>
+      <text x="305" y="75" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#888888" letter-spacing="0">by Ali Sağlam (v0.08 Coin Lab)</text>
   </g>
 </svg>

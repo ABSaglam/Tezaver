@@ -25,10 +25,12 @@ from tezaver.ui.time_labs_tab import render_time_labs_tab
 from tezaver.ui.rally_radar_tab import render_rally_radar_tab
 from tezaver.ui.rally_quality_tab import render_rally_quality_tab
 from tezaver.ui.rally_families_tab import render_rally_families_tab
+from tezaver.ui.kartal_goz_tab import render_kartal_goz_tab
 from tezaver.ui.sim_lab_tab import render_sim_lab_tab
 from tezaver.ui.risk_cards import render_risk_tab
 from tezaver.ui.pattern_story_view import render_pattern_story_panel, PatternStoryKey
 from tezaver.ui.explanation_cards import TRIGGER_LABELS_TR
+from tezaver.ui.data_health_tab import render_data_health_page
 import plotly.graph_objects as go
 
 # --- HELPER FUNCTIONS ---
@@ -306,59 +308,28 @@ def render_bulut_export_tab(symbol: str):
 
 def render_coin_header(symbol: str):
     """
-    Renders rich header with Price, 24h Change, Volume.
-    Calculates 24h stats from history data on-the-fly.
+    Simplified header showing only coin name.
+    Example: BTC - Bitcoin
     """
-    # 1. Get base info
-    states = state_store.load_coin_states()
-    coin_state = state_store.find_coin_state(states, symbol)
-    price = getattr(coin_state, 'last_price', 0.0)
+    # Coin name mapping (symbol -> short name, full name)
+    coin_names = {
+        'BTCUSDT': ('BTC', 'Bitcoin'),
+        'ETHUSDT': ('ETH', 'Ethereum'),
+        'BNBUSDT': ('BNB', 'BNB'),
+        'SOLUSDT': ('SOL', 'Solana'),
+        'XRPUSDT': ('XRP', 'Ripple'),
+        'ADAUSDT': ('ADA', 'Cardano'),
+        'DOGEUSDT': ('DOGE', 'Dogecoin'),
+        'DOTUSDT': ('DOT', 'Polkadot'),
+        'MATICUSDT': ('MATIC', 'Polygon'),
+        'LTCUSDT': ('LTC', 'Litecoin'),
+    }
     
-    # 2. Calculate 24h stats from history
-    change_pct = 0.0
-    vol_24h = 0.0
-    color = "gray"
+    # Get short and full name
+    short_name, full_name = coin_names.get(symbol, (symbol.replace('USDT', ''), symbol.replace('USDT', '')))
     
-    try:
-        df = load_history_data(symbol, "1h")
-        if df is not None and not df.empty and len(df) > 24:
-            # Last candle
-            current_close = df.iloc[-1]['close']
-            # 24 hours ago
-            prev_close = df.iloc[-25]['close']
-            
-            change_pct = ((current_close - prev_close) / prev_close) * 100
-            
-            # Volume 24h
-            vol_24h = df.iloc[-24:]['volume'].sum()
-            
-            # Use real-time price if available and fresher, otherwise history
-            # Actually history is usually the source of truth in offline mode.
-            price = current_close
-            
-            if change_pct > 0: color = "green"
-            elif change_pct < 0: color = "red"
-    except Exception as e:
-        pass
-
-    # 3. Render
-    c1, c2, c3, c4 = st.columns([1, 2, 2, 4])
-    
-    with c1:
-        # Mini Logo
-        logo_path = f"src/tezaver/ui/assets/coins/{symbol.replace('USDT','').lower()}.png"
-        # We don't have these logos yet, use generic emoji or just symbol
-        st.markdown(f"## {symbol}")
-        
-    with c2:
-        st.metric("Fiyat", f"${price:,.2f}")
-        
-    with c3:
-        st.metric("24h Değişim", f"{change_pct:+.2f}%", delta=f"{change_pct:.2f}%")
-        
-    with c4:
-        st.metric("24h Hacim", f"{vol_24h:,.0f}")
-        
+    # Simple header
+    st.markdown(f"## {short_name} - {full_name}")
     st.markdown("---")
 
 from tezaver.ui.chart_area import load_history_data, render_universal_chart
@@ -393,10 +364,10 @@ def render_coin_detail_page(symbol: str):
     render_coin_header(symbol)
     
     # TABS
-    # Definition: Bilgelik, Rally, Sim Lab, Risk, Bulut, Paternler, Seviyeler, Ana Grafik
+    # Definition: Rally, Bilgelik, Sim Lab, Risk, Bulut, Paternler, Seviyeler, Ana Grafik
     tab_names = [
-        "💡 Bilgelik", 
-        "🚀 Rally", 
+        "🚀 Rally",
+        "💡 Bilgelik",  
         "🧪 Sim Lab",
         "🛡️ Risk", 
         "☁️ Bulut Paketi",
@@ -405,29 +376,33 @@ def render_coin_detail_page(symbol: str):
         "📊 Ana Grafik"
     ]
     
+    
     tabs = st.tabs(tab_names)
     
-    # 1. Bilgelik (Wisdom)
-    with tabs[0]: 
+    # 1. Rally (Fast15 + Time-Labs + Radar + Quality + Families) - MOVED TO FIRST
+    with tabs[0]:
+        sub_tabs = st.tabs(["🦅 Kartal Göz", "⚡ 15 Dakika", "⏱ 1 Saat", "⏱ 4 Saat", "📡 Rally Radar", "🎯 Rally Quality", "🧬 Rally Aileleri"])
+        
+        with sub_tabs[0]:
+            render_kartal_goz_tab(symbol)
+        with sub_tabs[1]:
+            render_fast15_lab_tab(symbol)
+        with sub_tabs[2]:
+            render_time_labs_tab(symbol, "1h")
+        with sub_tabs[3]:
+            render_time_labs_tab(symbol, "4h")
+        with sub_tabs[4]:
+            render_rally_radar_tab(symbol)
+        with sub_tabs[5]:
+            render_rally_quality_tab(symbol)
+        with sub_tabs[6]:
+            render_rally_families_tab(symbol)
+
+    # 2. Bilgelik (Wisdom) - MOVED TO SECOND
+    with tabs[1]: 
         from tezaver.ui.explanation_cards import render_coin_explanation_cards
         render_coin_explanation_cards(symbol)
 
-    # 2. Rally (Fast15 + Time-Labs + Radar + Quality + Families)
-    with tabs[1]:
-        sub_tabs = st.tabs(["⚡ 15 Dakika", "⏱ 1 Saat", "⏱ 4 Saat", "📡 Rally Radar", "🎯 Rally Quality", "🧬 Rally Aileleri"])
-        
-        with sub_tabs[0]:
-            render_fast15_lab_tab(symbol)
-        with sub_tabs[1]:
-            render_time_labs_tab(symbol, "1h")
-        with sub_tabs[2]:
-            render_time_labs_tab(symbol, "4h")
-        with sub_tabs[3]:
-            render_rally_radar_tab(symbol)
-        with sub_tabs[4]:
-            render_rally_quality_tab(symbol)
-        with sub_tabs[5]:
-            render_rally_families_tab(symbol)
             
     # 3. Sim Lab (Backtest)
     with tabs[2]:
@@ -537,7 +512,7 @@ def render_mode_switcher():
     st.sidebar.markdown(html_code, unsafe_allow_html=True)
 
 def main():
-    st.set_page_config(page_title="Tezaver Restore V1", page_icon="🔮", layout="wide")
+    st.set_page_config(page_title="Tezaver", page_icon="🔮", layout="wide")
     
     # --- 1. Query Param Handler ---
     try:
@@ -559,7 +534,15 @@ def main():
             
     except Exception as e:
         pass
+    
+    # --- Initialize Default View: Coin Detail (Rally Tab) ---
+    # Set default page to coin detail on first load
+    if 'initialized' not in st.session_state:
+        st.session_state['initialized'] = True
+        st.session_state['current_page'] = 'coin_detail'
+        st.session_state['selected_coin'] = 'BTCUSDT'  # Default coin
         
+
     # --- 2. Determine Colors ---
     current_mode = st.session_state.get('system_mode', 'MAC')
     
@@ -658,16 +641,12 @@ def main():
                 # Label is hidden as per user request ("Coin İncele" removed)
                 sel_coin = st.selectbox("Coin İncele", symbols, index=idx, key="sb_coin_selector", label_visibility="collapsed")
                 
-                # Logic: Only redirect if user explicitly changes coin (not on init/reset)
-                previous_coin = st.session_state.get('selected_coin')
-                
-                if sel_coin != previous_coin:
+                # CRITICAL FIX: NO AUTOMATIC REDIRECT!
+                # Just update session state, DON'T call st.rerun()
+                # User must click "Detaya Git" button to navigate
+                if sel_coin != st.session_state.get('selected_coin'):
                     st.session_state['selected_coin'] = sel_coin
-                    # Only redirect if we had a previous selection (active session)
-                    # If previous was None (just reset/started), stay on Home.
-                    if previous_coin is not None:
-                        st.session_state['current_page'] = 'coin_detail'
-                        st.rerun()
+                    # NO st.rerun() here! This prevents unwanted navigation
                 
                 if st.button("🔍 Detaya Git", use_container_width=True):
                     st.session_state['current_page'] = 'coin_detail'

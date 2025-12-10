@@ -174,10 +174,16 @@ CHART_WINDOW_BEFORE: int = 60  # bars before event
 CHART_WINDOW_AFTER: int = 40   # bars after event
 DEFAULT_CHART_TIMEFRAME: str = "1h"  # fallback timeframe if not specified
 
+# --- Rally System (Fast15) ---
+# Rally Oracle v1 - GOLDEN_77 Baseline
+# This path references the preserved 77-rally baseline for SOL 15m.
+# READ-ONLY: This file should NEVER be overwritten by any process.
+GOLDEN_FAST15_SOL_77_PATH = 'library/fast15_rallies/SOLUSDT/fast15_rallies_GOLDEN_77rallies_max_lookback300.parquet'
+
 # --- Fast15 Rally Scanner Settings ---
 FAST15_RALLY_TF: str = "15m"
 FAST15_LOOKAHEAD_BARS: int = 21  # 1-21 bars lookahead window
-FAST15_RALLY_BUCKETS: List[float] = [0.05, 0.10, 0.20, 0.30]  # 5%, 10%, 20%, 30%
+FAST15_RALLY_BUCKETS: tuple[float, ...] = (0.05, 0.10, 0.20, 0.30)  # 5%, 10%, 20%, 30%
 FAST15_MIN_GAIN: float = 0.05  # Minimum 5% gain to qualify as rally
 FAST15_EVENT_GAP: int = 3  # Minimum 3 bars between events to prevent overlap
 

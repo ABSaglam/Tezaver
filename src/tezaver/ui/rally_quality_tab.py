@@ -100,6 +100,49 @@ def render_rally_quality_tab(symbol: str) -> None:
             render_quality_timeframe(symbol, tf)
 
 
+def consolidate_overlapping_rallies(df: pd.DataFrame, timeframe: str) -> pd.DataFrame:
+    """Consolidate overlapping rallies - keep only best (highest gain)."""
+    if df.empty:
+        return df
+    
+    # Calculate bar duration
+    if timeframe == "4h":
+        bar_delta = pd.Timedelta(hours=4)
+    elif timeframe == "1h":
+        bar_delta = pd.Timedelta(hours=1)
+    else:
+        bar_delta = pd.Timedelta(minutes=15)
+    
+    # Calculate end_time
+    df = df.copy()
+    df['end_time'] = df['event_time'] + df['bars_to_peak'].astype(int) * bar_delta
+    
+    # Sort by gain descending
+    df = df.sort_values('future_max_gain_pct', ascending=False).reset_index(drop=True)
+    
+    # Greedy consolidation
+    kept_indices = []
+    kept_ranges = []
+    
+    for idx, row in df.iterrows():
+        start = row['event_time']
+        end = row['end_time']
+        
+        overlaps = False
+        for kept_start, kept_end in kept_ranges:
+            if start < kept_end and kept_start < end:
+                overlaps = True
+                break
+        
+        if not overlaps:
+            kept_indices.append(idx)
+            kept_ranges.append((start, end))
+    
+    result = df.loc[kept_indices].drop(columns=['end_time'], errors='ignore')
+    result = result.sort_values('event_time').reset_index(drop=True)
+    return result
+
+
 def render_quality_timeframe(symbol: str, timeframe: str) -> None:
     """Render quality analysis for a specific timeframe."""
     
@@ -113,6 +156,12 @@ def render_quality_timeframe(symbol: str, timeframe: str) -> None:
         2. Rally Quality Engine otomatik olarak kalite skorları ekleyecektir
         """)
         return
+    
+    # Consolidate overlapping rallies FIRST
+    df = consolidate_overlapping_rallies(df, timeframe)
+    
+    # Show stats after consolidation
+    st.info(f"📊 **{len(df)} rally** (overlap temizlendi)")
     
     # Summary Statistics
     st.markdown(f"#### 📊 Özet ({len(df)} Rally)")
@@ -159,7 +208,8 @@ def render_quality_timeframe(symbol: str, timeframe: str) -> None:
         shape_filter = st.multiselect(
             "Şekil Filtresi",
             options=unique_shapes,
-            default=unique_shapes
+            default=unique_shapes,
+            key=f"shape_filter_{symbol}_{timeframe}"
         )
         
         df_filtered = df[df['rally_shape'].isin(shape_filter)].copy()

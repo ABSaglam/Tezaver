@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from tezaver.engine.interfaces import AccountState, IStrategist, MarketSignal, TradeDecision
 
+
 @dataclass
 class GuardrailProfile:
     """Intelligence snapshot for a symbol."""
@@ -23,6 +24,10 @@ class GuardrailProfile:
     promotion_status: str     # APPROVED / CANDIDATE / REJECTED / UNKNOWN
     affinity_score: float     # 0-100
     last_updated_at: datetime
+    # Scenario-based filtering (Phase 2)
+    blocked_scenarios: List[str] = None  # Scenarios to block (e.g., ['SCENARIO_SURF'])
+    allowed_scenarios: List[str] = None  # If set, only these scenarios allowed
+
 
 def load_guardrail_profile(symbol: str, data_root: str = "data") -> GuardrailProfile:
     """
@@ -60,13 +65,33 @@ def load_guardrail_profile(symbol: str, data_root: str = "data") -> GuardrailPro
         except:
             pass
             
+    # C. Load Scenario Preferences
+    blocked_scenarios = None
+    allowed_scenarios = None
+    scenario_config_path = os.path.join(profile_dir, "scenario_config.json")
+    if os.path.exists(scenario_config_path):
+        try:
+            with open(scenario_config_path, "r") as f:
+                scenario_cfg = json.load(f)
+                blocked_scenarios = scenario_cfg.get("blocked_scenarios")
+                allowed_scenarios = scenario_cfg.get("allowed_scenarios")
+        except:
+            pass
+    
+    # Default: Block high-risk scenarios if no config exists
+    if blocked_scenarios is None:
+        blocked_scenarios = ["SCENARIO_SURF", "SCENARIO_EXHAUSTION"]  # High-risk by default
+            
     return GuardrailProfile(
         symbol=symbol,
         env_status=env_status,
         promotion_status=promotion_status,
         affinity_score=affinity_score,
-        last_updated_at=datetime.now()
+        last_updated_at=datetime.now(),
+        blocked_scenarios=blocked_scenarios,
+        allowed_scenarios=allowed_scenarios
     )
+
 
 @dataclass
 class GuardrailDecision:
@@ -75,11 +100,17 @@ class GuardrailDecision:
     reason_code: str         # ALLOW / BLOCK_RADAR_COLD / BLOCK_STRATEGY_REJECTED ...
     details: Dict[str, Any]  # Extra context for logging
 
+
 class GuardrailStrategistProxy(IStrategist):
     """
     Wraps a real Strategist to enforce Guardrail policies.
     """
-    def __init__(self, real_strategist: IStrategist, controller: "GuardrailController", on_decision_callback: Optional[Callable[[str, "GuardrailDecision"], None]] = None):
+    def __init__(
+        self, 
+        real_strategist: IStrategist, 
+        controller: "GuardrailController", 
+        on_decision_callback: Optional[Callable[[str, "GuardrailDecision"], None]] = None
+    ):
         self.real = real_strategist
         self.controller = controller
         self.on_decision_callback = on_decision_callback
@@ -96,7 +127,7 @@ class GuardrailStrategistProxy(IStrategist):
         if decision['action'] == "BUY":
             symbol = decision['symbol']
             
-            # Use detailed check
+            # Use detailed check (Radar + Promotion + Score)
             g_decision = self.controller.check_open_new_long(symbol, account_state)
             
             # Create a detailed log via callback if wired
@@ -106,13 +137,17 @@ class GuardrailStrategistProxy(IStrategist):
             if not g_decision.allow:
                 # Log rejection (Future: could inject into a structured log)
                 # For now, we return None (Silent Block)
-                # Ideally, we should report this block somewhere.
                 return None
                 
         return decision
 
+
 class GuardrailController:
-    def __init__(self, global_limits: Dict[str, int], symbols: List[str]):
+    def __init__(
+        self,
+        global_limits: Dict[str, int],
+        symbols: List[str],
+    ):
         """
         Args:
             global_limits: e.g. {"max_open_positions": 5}
@@ -162,12 +197,42 @@ class GuardrailController:
         if profile.env_status in ["COLD", "CHAOTIC"]:
             return GuardrailDecision(False, f"BLOCK_RADAR_{profile.env_status}", details)
             
-        # C. Score Check (Strict Mode for War Game v2)
-        # Assuming minimal score of 60 for APPROVED strategies
+        # C. Score Check (Strict Mode)
         if profile.affinity_score < 60:
              return GuardrailDecision(False, "BLOCK_STRATEGY_LOW_SCORE", details)
             
         return GuardrailDecision(True, "ALLOW", details)
+    
+    def check_scenario_allowed(self, symbol: str, scenario_id: str) -> GuardrailDecision:
+        """
+        Check if a specific scenario is allowed for trading.
+        
+        Args:
+            symbol: Coin symbol
+            scenario_id: Scenario ID from rally_narrative_engine
+        
+        Returns:
+            GuardrailDecision indicating if scenario is allowed
+        """
+        profile = self.profiles.get(symbol)
+        if not profile:
+            return GuardrailDecision(False, "BLOCK_NO_PROFILE", {})
+        
+        details = {
+            "scenario_id": scenario_id,
+            "blocked_scenarios": profile.blocked_scenarios,
+            "allowed_scenarios": profile.allowed_scenarios
+        }
+        
+        # Check blocked list
+        if profile.blocked_scenarios and scenario_id in profile.blocked_scenarios:
+            return GuardrailDecision(False, f"BLOCK_SCENARIO_{scenario_id}", details)
+        
+        # Check allowed list (if defined, must be in list)
+        if profile.allowed_scenarios and scenario_id not in profile.allowed_scenarios:
+            return GuardrailDecision(False, f"BLOCK_SCENARIO_NOT_ALLOWED_{scenario_id}", details)
+        
+        return GuardrailDecision(True, "ALLOW_SCENARIO", details)
 
     def can_open_new_long(self, symbol: str, account_state: AccountState) -> bool:
         """

@@ -99,6 +99,61 @@ def assign_macd_phase(hist: pd.Series) -> pd.Series:
     phase = np.select(conditions, choices, default="flat")
     return pd.Series(phase, index=hist.index)
 
+
+def compute_macd_hist_color(hist: pd.Series) -> pd.Series:
+    """
+    4-Renk MACD Histogram sistemi:
+    - green (pos_inc): Pozitif ve büyüyor (güçlü boğa)
+    - lime (pos_dec): Pozitif ama azalıyor (boğa zayıflıyor)
+    - red (neg_inc): Negatif ve büyüyor (güçlü ayı)
+    - orange (neg_dec): Negatif ama azalıyor (ayı zayıflıyor)
+    """
+    prev_hist = hist.shift(1)
+    
+    conditions = [
+        (hist > 0) & (hist > prev_hist),   # Positive and increasing
+        (hist > 0) & (hist <= prev_hist),  # Positive but decreasing
+        (hist < 0) & (hist < prev_hist),   # Negative and decreasing (more negative)
+        (hist < 0) & (hist >= prev_hist)   # Negative but increasing (less negative)
+    ]
+    choices = ["green", "lime", "red", "orange"]
+    
+    color = np.select(conditions, choices, default="gray")
+    return pd.Series(color, index=hist.index)
+
+
+def compute_macd_cross(macd_line: pd.Series, signal_line: pd.Series) -> pd.Series:
+    """
+    MACD çizgisi ve Sinyal çizgisi kesişimlerini tespit eder.
+    - bullish_cross: MACD, Signal'ı aşağıdan yukarı kesti
+    - bearish_cross: MACD, Signal'ı yukarıdan aşağı kesti
+    - none: Kesişim yok
+    """
+    prev_macd = macd_line.shift(1)
+    prev_signal = signal_line.shift(1)
+    
+    # Bullish cross: MACD was below signal, now above
+    bullish = (prev_macd < prev_signal) & (macd_line >= signal_line)
+    
+    # Bearish cross: MACD was above signal, now below
+    bearish = (prev_macd > prev_signal) & (macd_line <= signal_line)
+    
+    result = pd.Series("none", index=macd_line.index)
+    result[bullish] = "bullish_cross"
+    result[bearish] = "bearish_cross"
+    
+    return result
+
+
+def compute_rsi_ema_diff(rsi: pd.Series, rsi_ema: pd.Series) -> pd.Series:
+    """
+    RSI ve RSI EMA arasındaki farkı hesaplar.
+    - Pozitif: RSI, EMA'sının üstünde (momentum güçleniyor)
+    - Negatif: RSI, EMA'sının altında (momentum zayıflıyor)
+    """
+    return rsi - rsi_ema
+
+
 def compute_atr(df: pd.DataFrame, period: int = ATR_PERIOD) -> pd.Series:
     """
     Calculates Average True Range (ATR).
@@ -131,6 +186,35 @@ def compute_ema_trio(
         "ema_mid": close.ewm(span=mid, adjust=False).mean(),
         "ema_slow": close.ewm(span=slow, adjust=False).mean(),
     }
+
+
+def compute_ema_extended(close: pd.Series) -> Dict[str, pd.Series]:
+    """
+    Genişletilmiş EMA hesabı - 9, 21, 50, 200 periyotlar.
+    """
+    return {
+        "ema_9": close.ewm(span=9, adjust=False).mean(),
+        "ema_21": close.ewm(span=21, adjust=False).mean(),
+        "ema_50": close.ewm(span=50, adjust=False).mean(),
+        "ema_200": close.ewm(span=200, adjust=False).mean(),
+    }
+
+
+def compute_ema_alignment(ema_9: pd.Series, ema_21: pd.Series, ema_50: pd.Series, ema_200: pd.Series) -> pd.Series:
+    """
+    EMA sıralamasını belirler.
+    - bullish: 9 > 21 > 50 > 200 (güçlü yükselis trendi)
+    - bearish: 9 < 21 < 50 < 200 (güçlü düşüş trendi)
+    - mixed: Karışık sıralama
+    """
+    bullish = (ema_9 > ema_21) & (ema_21 > ema_50) & (ema_50 > ema_200)
+    bearish = (ema_9 < ema_21) & (ema_21 < ema_50) & (ema_50 < ema_200)
+    
+    result = pd.Series("mixed", index=ema_9.index)
+    result[bullish] = "bullish"
+    result[bearish] = "bearish"
+    
+    return result
 
 def compute_volume_features(
     df: pd.DataFrame, 
@@ -177,6 +261,7 @@ def build_features_for_history_df(df: pd.DataFrame) -> pd.DataFrame:
     rsi_ema = compute_rsi_ema(rsi)
     df["rsi"] = rsi
     df["rsi_ema"] = rsi_ema
+    df["rsi_ema_diff"] = compute_rsi_ema_diff(rsi, rsi_ema)  # NEW: RSI-EMA relationship
     
     # MACD
     macd_dict = compute_macd(df["close"])
@@ -184,15 +269,27 @@ def build_features_for_history_df(df: pd.DataFrame) -> pd.DataFrame:
     df["macd_signal"] = macd_dict["macd_signal"]
     df["macd_hist"] = macd_dict["macd_hist"]
     df["macd_phase"] = assign_macd_phase(df["macd_hist"])
+    df["macd_hist_color"] = compute_macd_hist_color(df["macd_hist"])  # NEW: 4-color
+    df["macd_cross"] = compute_macd_cross(df["macd_line"], df["macd_signal"])  # NEW: Cross detection
     
     # ATR
     df["atr"] = compute_atr(df)
     
-    # EMAs
+    # EMAs (original trio: 20/50/200)
     ema_trio = compute_ema_trio(df["close"])
     df["ema_fast"] = ema_trio["ema_fast"]
     df["ema_mid"] = ema_trio["ema_mid"]
     df["ema_slow"] = ema_trio["ema_slow"]
+    
+    # NEW: Extended EMAs (9/21/50/200) and alignment
+    ema_ext = compute_ema_extended(df["close"])
+    df["ema_9"] = ema_ext["ema_9"]
+    df["ema_21"] = ema_ext["ema_21"]
+    df["ema_50"] = ema_ext["ema_50"]
+    df["ema_200"] = ema_ext["ema_200"]
+    df["ema_alignment"] = compute_ema_alignment(
+        df["ema_9"], df["ema_21"], df["ema_50"], df["ema_200"]
+    )
     
     # Volume
     vol_feats = compute_volume_features(df)

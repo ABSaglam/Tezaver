@@ -215,34 +215,43 @@ def detect_rallies_oracle_mode(
     
     raw_events = []
     
+    # Maximum lookahead for peak search (60 bars = 15 hours for 15m)
+    MAX_PEAK_LOOKAHEAD = 60
+    
     # First Pass: Find all potential dip-peak pairs
     for dip_idx in dip_indices:
-        # Find subsequent peaks
-        future_peaks = [p for p in peak_indices if p > dip_idx]
+        # Find subsequent peaks within lookahead window
+        future_peaks = [p for p in peak_indices if dip_idx < p <= dip_idx + MAX_PEAK_LOOKAHEAD]
         
         if not future_peaks:
             continue
-            
-        # The nearest peak
-        peak_idx = future_peaks[0]
         
-        dip_price = df.at[dip_idx, 'close'] 
-        peak_price = df.at[peak_idx, 'high']
-        
+        dip_price = df.at[dip_idx, 'close']
         if dip_price <= 0:
             continue
-            
-        gain_pct = (peak_price - dip_price) / dip_price
         
-        if gain_pct >= min_gain:
-            bars_to_peak = peak_idx - dip_idx
+        # Find the peak with MAXIMUM gain (not just first peak)
+        best_peak_idx = None
+        best_gain = 0
+        
+        for peak_idx in future_peaks:
+            peak_price = df.at[peak_idx, 'high']
+            gain_pct = (peak_price - dip_price) / dip_price
+            
+            if gain_pct > best_gain:
+                best_gain = gain_pct
+                best_peak_idx = peak_idx
+        
+        # Only include if best gain meets threshold
+        if best_gain >= min_gain and best_peak_idx is not None:
+            bars_to_peak = best_peak_idx - dip_idx
             
             raw_events.append({
                 'event_index': dip_idx,
                 'event_time': df.at[dip_idx, 'timestamp'],
-                'future_max_gain_pct': gain_pct,
+                'future_max_gain_pct': best_gain,
                 'bars_to_peak': bars_to_peak,
-                'peak_index': peak_idx,  # Used for dedup
+                'peak_index': best_peak_idx,  # Used for dedup
                 'dip_price': df.at[dip_idx, 'low'] # Used for finding 'lowest' dip
             })
             

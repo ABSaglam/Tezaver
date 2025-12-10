@@ -167,13 +167,14 @@ def build_coin_chart_figure(
     if df is None or df.empty:
         return None, None, None
     
-    # --- TIMEZONE FIX: SHIFT +3 HOURS ---
-    # Apply global offset for TR time
+    
+    # Convert timestamps to Turkey Time using standard function
+    from tezaver.core.config import to_turkey_time
     if 'open_time' in df.columns:
-        df['open_time'] = df['open_time'] + timedelta(hours=3)
-        if isinstance(df.index, pd.DatetimeIndex):
-             df.index = df.index + timedelta(hours=3)
-    # ------------------------------------
+        df['open_time'] = df['open_time'].apply(lambda x: to_turkey_time(x) if pd.notna(x) else x)
+    if isinstance(df.index, pd.DatetimeIndex):
+        df.index = df.index.map(to_turkey_time)
+    
     
     # Calculate EMAs if not present (though usually present in features)
     if 'ema_fast' not in df.columns:
@@ -585,12 +586,13 @@ def render_rally_event_chart(
         else:
             df = df_history
         
-        # --- TIMEZONE FIX: SHIFT +3 HOURS ---
+        # --- TIMEZONE: Convert to Turkey Time (UTC+3) ---
+        from tezaver.core.config import to_turkey_time
         if 'open_time' in df.columns:
-             df['open_time'] = df['open_time'] + timedelta(hours=3)
-        # Shift event time as well to match
-        event_time = pd.to_datetime(event_time) + timedelta(hours=3)
-        # ------------------------------------
+            df['open_time'] = df['open_time'].apply(lambda x: to_turkey_time(x) if pd.notna(x) else x)
+        # Convert event_time to Turkey Time
+        event_time = to_turkey_time(pd.to_datetime(event_time))
+        # ------------------------------------------------
             
         # Calculate RSI if missing or empty
         # Note: Using Wilder's Smoothing (alpha=1/period) to match indicator_engine
@@ -628,6 +630,14 @@ def render_rally_event_chart(
         
         # Normalize event_time to ensure compatibility
         event_time_normalized = pd.to_datetime(event_time)
+        
+        # CRITICAL: Make both timezone-naive for comparison
+        # to_turkey_time() returns tz-aware, but we need naive for time_diff calculation
+        if 'open_time' in df.columns:
+            df['open_time_naive'] = df['open_time'].dt.tz_localize(None) if hasattr(df['open_time'].dtype, 'tz') else df['open_time']
+        else:
+            df['open_time_naive'] = df['open_time']
+            
         if event_time_normalized.tzinfo is not None:
             event_time_normalized = event_time_normalized.tz_localize(None)
         
@@ -636,7 +646,7 @@ def render_rally_event_chart(
              st.warning("Veri işleme sonrası boş tablo.")
              return
 
-        time_diff = (df['open_time'] - event_time_normalized).abs()
+        time_diff = (df['open_time_naive'] - event_time_normalized).abs()
         event_idx = int(time_diff.to_numpy().argmin())
         
         # Slice window
@@ -893,6 +903,45 @@ def render_rally_event_chart(
         fig.add_hline(y=70, line_dash="solid", line_color="green", line_width=1, opacity=0.5, row=4, col=1)
         fig.add_hline(y=50, line_dash="solid", line_color="gray", line_width=1, opacity=0.3, row=4, col=1)
         
+        # ====================================================================
+        # RALLY HIGHLIGHT: Yellow shaded area from event_time to peak
+        # ====================================================================
+        # CRITICAL: This must happen BEFORE timezone shift and AFTER finding event_idx
+        # because bars_to_peak is relative to the ORIGINAL (pre-shifted) dataframe
+        try:
+            # We already found event_idx earlier (line 640) using event_time_normalized
+            # event_idx is the position in the FULL df (before windowing)
+            # bars_to_peak tells us how many bars FORWARD from event_idx to the peak
+            
+            rally_start_idx = event_idx  # This is already correct
+            rally_peak_idx = event_idx + bars_to_peak
+            
+            # Safety check
+            if rally_peak_idx >= len(df):
+                st.caption(f"⚠️ Peak is outside data range (peak_idx={rally_peak_idx}, len={len(df)})")
+            else:
+                # Get the ORIGINAL timestamps (before timezone shift was applied on line 590)
+                # But we need the SHIFTED versions for plotting
+                rally_start_time = df.iloc[rally_start_idx]['open_time']  # Already shifted +3
+                rally_peak_time = df.iloc[rally_peak_idx]['open_time']  # Already shifted +3
+                
+                # Add yellow vertical rectangle
+                fig.add_vrect(
+                    x0=rally_start_time,
+                    x1=rally_peak_time,
+                    fillcolor="rgba(255, 215, 0, 0.3)",  # Gold/yellow with 30% opacity
+                    layer="below",
+                    line_width=0,
+                    annotation_text="",  # Remove annotation for cleaner look
+                )
+                
+        except Exception as e:
+            st.error(f"🔴 Rally highlight başarısız: {e}")
+            import traceback
+            with st.expander("Debug Traceback"):
+                st.code(traceback.format_exc())
+        # ====================================================================
+        
         # Layout
         fig.add_hline(y=50, line_dash="solid", line_color="gray", line_width=1, opacity=0.3, row=4, col=1)
         
@@ -1099,9 +1148,10 @@ def render_pattern_example_chart(
             return
 
         # --- TIMEZONE FIX: SHIFT +3 HOURS ---
-        from datetime import timedelta
+        # Convert timestamp to Turkey Time
+        from tezaver.core.config import to_turkey_time
         if 'timestamp' in df.columns:
-             df['timestamp'] = df['timestamp'] + timedelta(hours=3)
+            df['timestamp'] = df['timestamp'].apply(lambda x: to_turkey_time(x) if pd.notna(x) else x)
         # ------------------------------------
         
         # Normalize timezone to naive
@@ -1467,11 +1517,12 @@ def render_universal_chart(
         else:
             df = df_history
             
-        # Timezone Shift (+3h)
+        # Convert to Turkey Time
+        from tezaver.core.config import to_turkey_time
         if 'open_time' in df.columns:
-             df['open_time'] = df['open_time'] + timedelta(hours=3)
-        if event_time is not None:
-             event_time = pd.to_datetime(event_time) + timedelta(hours=3)
+            df['open_time'] = df['open_time'].apply(lambda x: to_turkey_time(x) if pd.notna(x) else x)
+        if event_time:
+            event_time = to_turkey_time(pd.to_datetime(event_time))
              
         # Indicators (RSI, MACD) - Fast calculation if missing
         if 'rsi' not in df.columns or df['rsi'].isnull().all():
@@ -1516,7 +1567,10 @@ def render_universal_chart(
             e_norm = pd.to_datetime(event_time)
             if e_norm.tzinfo: e_norm = e_norm.tz_localize(None)
             
-            time_diff = (df['open_time'] - e_norm).abs()
+            # Create naive version for comparison
+            df_open_naive = df['open_time'].dt.tz_localize(None) if hasattr(df['open_time'].dtype, 'tz') else df['open_time']
+            e_norm_naive = e_norm.tz_localize(None) if e_norm.tzinfo else e_norm
+            time_diff = (df_open_naive - e_norm_naive).abs()
             event_idx = int(time_diff.to_numpy().argmin())
             
             start_i = max(0, event_idx - 500)
@@ -1588,7 +1642,10 @@ def render_universal_chart(
                      # Find end time
                      # We can iterate or use simple offset if bars known?
                      # Let's use logic: find event index in GLOBAL df, calculate peak index, get time.
-                     time_diff = (df['open_time'] - event_time).abs()
+                     # Create naive for comparison
+                     df_open_naive = df['open_time'].dt.tz_localize(None) if hasattr(df['open_time'].dtype, 'tz') else df['open_time']
+                     event_time_naive = event_time.tz_localize(None) if event_time.tzinfo else event_time
+                     time_diff = (df_open_naive - event_time_naive).abs()
                      e_idx = int(time_diff.to_numpy().argmin())
                      p_idx = min(len(df)-1, e_idx + bars_to_peak)
                      end_time = df.iloc[p_idx]['open_time']

@@ -1,378 +1,536 @@
 """
-Tezaver Sim Lab UI Tab
-======================
+Tezaver Coin Lab UI Tab
+=======================
 
-Backtesting and simulation interface.
+Clean coin-focused analysis panel.
+- Timeframe selector (15m / 1h / 4h)
+- Coin Fingerprint (rally context sweet spots)
+- Grade Cards (Diamond / Gold / Silver / Bronze)
 """
 
+import json
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+from pathlib import Path
 
-from tezaver.sim import sim_engine
-from tezaver.sim.sim_config import RallySimConfig
-from tezaver.sim import sim_presets
-from tezaver.sim.sim_scoreboard import (
-    run_preset_scoreboard,
-    scores_to_dataframe,
-    generate_affinity_for_symbol,
-)
-from tezaver.sim.sim_promotion import load_sim_promotion
-from dataclasses import asdict
+from tezaver.rally.rally_grade_cards import compute_btc_15m_grade_summaries
+from tezaver.matrix.wargame.runner import SILVER_MULTI_COIN_SUMMARY_PATH
+
+
+# =============================================================================
+# MAIN ENTRY POINT
+# =============================================================================
 
 def render_sim_lab_tab(symbol: str):
     """
-    Render Sim Lab tab for experimental backtesting.
+    Coin Lab görünümü:
+    - Timeframe seçimi (en üstte)
+    - Header + Fingerprint (yan yana expander)
+    - Grade kartları (2x2 expander)
+    - Silver Bilgeliği (expander)
+    - Deneyler (expander)
     """
-    st.markdown("### 🧪 Tezaver Sim Lab v1.1")
+    # 1. En üstte: Timeframe seçimi
+    tf = st.radio(
+        "⏱️ Zaman Dilimi",
+        options=["15m", "1h", "4h"],
+        index=0,
+        horizontal=True,
+        key="coin_lab_timeframe",
+    )
     
-    # --- Scoreboard Section ---
-    st.markdown("### 📊 Preset Performans Panosu")
-
-    @st.cache_data(ttl=600, show_spinner=False)
-    def get_cached_affinity_summary(sym: str):
-        # Calculates affinity and saves JSON side-effect
-        return generate_affinity_for_symbol(symbol=sym)
-
-    if st.button("Bu coin için tüm preset'leri çalıştır", key="btn_run_scoreboard"):
-        with st.spinner("Tüm presetler çalıştırılıyor ve analiz ediliyor..."):
-            summary = get_cached_affinity_summary(symbol)
-
-        if not summary or not summary.presets:
-            st.info("Bu coin için preset sonuçları üretilemedi. (Yetersiz event veya fiyat datası olabilir.)")
-        else:
-            # 1. Show Badge for Best Strategy
-            # 1. Show Badge (Sim v1.5 Promotion > Sim v1.3 Affinity)
-            promo_data = load_sim_promotion(symbol)
-            promo_badge_shown = False
-            
-            if promo_data and 'strategies' in promo_data:
-                strats = promo_data['strategies']
-                # Approved
-                approved = [s for s in strats.values() if s.get('status') == 'APPROVED']
-                if approved:
-                    best_app = max(approved, key=lambda x: x.get('affinity_score', 0))
-                    st.success(f"🛡️ **Bulut Önerisi (APPROVED):** {best_app.get('preset_id')} "
-                                f"(Skor: {best_app.get('affinity_score'):.0f})")
-                    promo_badge_shown = True
-                
-                # If not approved, check Candidate
-                if not promo_badge_shown:
-                    candidates = [s for s in strats.values() if s.get('status') == 'CANDIDATE']
-                    if candidates:
-                        best_cand = max(candidates, key=lambda x: x.get('affinity_score', 0))
-                        st.warning(f"🛡️ **Bulut Adayı (CANDIDATE):** {best_cand.get('preset_id')} "
-                                   f"(Skor: {best_cand.get('affinity_score'):.0f})")
-                        promo_badge_shown = True
-
-            # Fallback to Affinity Badge if no promotion badge shown (or show both?)
-            # Let's show Affinity badge as secondary info if not shown, or just always show it if useful.
-            # But prompt says "If at least one APPROVED... show a small badge...". 
-            # If I show promotion badge, maybe suppress text-heavy affinity badge?
-            # Or keep it as "En Uyumlu Strateji" vs "Bulut Önerisi". They might differ (one is just best score, one is safe).
-            # I'll keep the affinity badge as it gives detailed "Skor: 83, Not: A" info which is nice.
-            
-            if summary.best_overall:
-                best = summary.best_overall
-                # Safe lookup for label
-                all_presets = sim_presets.get_all_presets()
-                pmap = {p.id: p.label_tr for p in all_presets}
-                best_label = pmap.get(best.preset_id, best.preset_id)
-                
-                # If promo badge shown, make this one info or less prominent?
-                # st.success is fine.
-                st.info(
-                    f"🏆 **En Uyumlu Strateji (Affinity):** {best_label} "
-                    f"(Skor: **{best.affinity_score:.0f}**, Not: **{best.affinity_grade}**)"
-                )
-            
-            # 2. Prepare DataFrame from Affinity Results
-            # PresetAffinity has metrics + score + grade
-            rows = []
-            all_presets = sim_presets.get_all_presets()
-            pmap = {p.id: p.label_tr for p in all_presets}
-            
-            for pid, aff in summary.presets.items():
-                row = asdict(aff)
-                row['preset_label_tr'] = pmap.get(pid, pid) # Enrich label
-                rows.append(row)
-                
-            df_scores = pd.DataFrame(rows)
-            
-            # Metrik kartları (Recalculate or extract from rows)
-            total_presets = len(df_scores)
-            best_win = df_scores.loc[df_scores["win_rate"].idxmax()] if not df_scores.empty else None
-            best_pnl = df_scores.loc[df_scores["net_pnl_pct"].idxmax()] if not df_scores.empty else None
-
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("Preset Sayısı", total_presets)
-            with col2:
-                if best_win is not None:
-                    st.metric(
-                        "En Yüksek Win Rate",
-                        f"{best_win['win_rate'] * 100:.1f}%",
-                        best_win['preset_label_tr'],
-                    )
-            with col3:
-                if best_pnl is not None:
-                     st.metric(
-                        "En Yüksek Net PnL",
-                        f"{best_pnl['net_pnl_pct'] * 100:.1f}%",
-                        best_pnl['preset_label_tr'],
-                    )
-
-            st.dataframe(
-                df_scores,
-                hide_index=True,
-                use_container_width=True,
-                column_config={
-                    "preset_label_tr": st.column_config.TextColumn("Strateji"),
-                    "affinity_score": st.column_config.ProgressColumn("Uyum Skoru", min_value=0, max_value=100, format="%.0f"),
-                    "affinity_grade": st.column_config.TextColumn("Not"),
-                    "timeframe": st.column_config.TextColumn("TF"),
-                    "num_trades": st.column_config.NumberColumn("Trade #"),
-                    "win_rate": st.column_config.NumberColumn("Win Rate", format="%.1f%%"),
-                    "net_pnl_pct": st.column_config.NumberColumn("Net PnL", format="%.1f%%"),
-                    "max_drawdown_pct": st.column_config.NumberColumn("Max DD", format="%.1f%%"),
-                    "expectancy_pct": st.column_config.NumberColumn("Beklenti/Trd", format="%.2f%%"),
-                    "preset_id": None, # Hide internal ID
-                    "status": None
-                },
-            )
-            
-            # Simple Chart
-            if not df_scores.empty and 'affinity_score' in df_scores.columns:
-                 # Show Score chart instead of PnL? Or keep PnL? 
-                 # PnL is more tangible. Let's keep PnL but maybe sort by it.
-                 # Actually let's show PnL.
-                 chart_data = df_scores.set_index("preset_label_tr")["net_pnl_pct"]
-                 st.bar_chart(chart_data)
-                 
     st.divider()
-
-    # --- Session State Init ---
-    if "sim_active_preset_id" not in st.session_state:
-        st.session_state.sim_active_preset_id = None
-    if "sim_customized_from" not in st.session_state:
-        st.session_state.sim_customized_from = None
-        
-    presets = sim_presets.get_all_presets()
-    preset_map = {p.id: p for p in presets}
     
-    col_settings, col_results = st.columns([1, 2])
+    # 2. Header + Fingerprint yan yana expander
+    col1, col2 = st.columns(2)
     
-    with col_settings:
-        st.markdown("#### Strateji Ayarları")
-        
-        # --- 0. Preset Selector ---
-        preset_options = ["MANUAL"] + [p.id for p in presets]
-        
-        def format_preset(pid):
-            if pid == "MANUAL":
-                return "📝 Manuel (Custom)"
-            return preset_map[pid].label_tr
-
-        selected_preset_id = st.selectbox(
-            "Strateji Şablonu (Preset)", 
-            options=preset_options,
-            format_func=format_preset,
-            key="sim_preset_selector"
-        )
-        
-        # Handle Preset Selection Change
-        if selected_preset_id != "MANUAL":
-            # If changed to a specific preset
-            p = preset_map[selected_preset_id]
-            st.markdown(f"_{p.description_tr}_")
-            
-            # Apply preset values to session state if just selected or matching
-            # We use a button or direct update? Direct update is better.
-            # But streamllit re-runs. We need to check if we should update widgets.
-            
-            # Force update widgets if active preset matches selection
-            # OR if we want to apply it now. 
-            # Ideally, when selectbox changes, we update the other widgets.
-            if st.session_state.sim_active_preset_id != selected_preset_id:
-               st.session_state.sim_active_preset_id = selected_preset_id
-               st.session_state.sim_customized_from = None
-               # Update widget keys
-               cfg = p.base_config
-               st.session_state.sim_tf = cfg.timeframe
-               st.session_state.sim_qual = int(cfg.min_quality_score)
-               st.session_state.sim_shapes = cfg.allowed_shapes
-               st.session_state.sim_use_trend = (cfg.require_trend_soul_4h_gt is not None)
-               if cfg.require_trend_soul_4h_gt: st.session_state.sim_trend_val = int(cfg.require_trend_soul_4h_gt)
-               st.session_state.sim_use_rsi = (cfg.require_rsi_1d_gt is not None)
-               if cfg.require_rsi_1d_gt: st.session_state.sim_rsi_val = int(cfg.require_rsi_1d_gt)
-               st.session_state.sim_tp = float(cfg.tp_pct * 100)
-               st.session_state.sim_sl = float(cfg.sl_pct * 100)
-               st.session_state.sim_risk = float(cfg.risk_per_trade_pct * 100)
-               st.session_state.sim_horizon = int(cfg.max_horizon_bars)
-               st.rerun()
-
-        elif selected_preset_id == "MANUAL" and st.session_state.sim_active_preset_id is not None:
-             # User explicitly switched to Manual
-             st.session_state.sim_active_preset_id = None
-             st.session_state.sim_customized_from = None
-             st.rerun()
-             
+    with col1:
+        with st.expander("🧪 Coin Lab Hakkında", expanded=False):
+            render_sim_lab_header()
+    
+    with col2:
+        with st.expander(f"📊 Fingerprint – {tf}", expanded=True):
+            render_coin_fingerprint_section(symbol, tf)
+    
+    st.divider()
+    
+    # 3. Grade kartları (2x2 expander, sayılarla)
+    render_grade_cards_section(symbol, tf)
+    
+    # 4. Silver Bilgeliği (tüm TF'ler için, expander içinde)
+    if symbol == "BTCUSDT" and tf in ["15m", "1h", "4h"]:
         st.divider()
-
-        # 1. Scope
-        tf = st.selectbox("Zaman Dilimi", options=["15m", "1h", "4h"], index=1, key="sim_tf")
-        
-        # 2. Filters
-        st.markdown("**Giriş Filtreleri**")
-        min_quality = st.slider("Min Kalite Puanı", 0, 100, 50, key="sim_qual")
-        
-        shapes = st.multiselect(
-            "İzin Verilen Şekiller",
-            options=["clean", "choppy", "spike", "weak", "unknown"],
-            default=["clean", "choppy"],
-            key="sim_shapes"
-        )
-        
-        # Context Filters
-        use_trend = st.checkbox("4h Trend Soul Filtresi", value=False, key="sim_use_trend")
-        trend_thresh = 60
-        if use_trend:
-            trend_thresh = st.slider("Min 4h Trend Soul", 0, 100, 60, key="sim_trend_val")
+        with st.expander(f"🥈 Silver Bilgeliği – {tf} Hikâye & Strateji Kartı", expanded=False):
+            render_silver_story_card(symbol, tf)
+            st.markdown("---")
+            render_silver_strategy_card(symbol, tf)
+    
+    # 5. Deneyler (tüm TF'ler için, expander içinde)
+    if symbol == "BTCUSDT" and tf in ["15m", "1h", "4h"]:
+        st.divider()
+        with st.expander(f"🧪 Deneyler – {tf} Silver Strateji Sim", expanded=False):
+            render_core_strategy_section(symbol, tf)
             
-        use_rsi = st.checkbox("1d RSI Filtresi", value=False, key="sim_use_rsi")
-        rsi_thresh = 50
-        if use_rsi:
-            rsi_thresh = st.slider("Min 1d RSI", 0, 100, 50, key="sim_rsi_val")
-            
-        # 3. Trade Mgmt
-        st.markdown("**İşlem Yönetimi (Spot Long)**")
-        tp_pct = st.slider("Hedef Kâr (TP) %", 1.0, 30.0, 5.0, 0.5, key="sim_tp") / 100.0
-        sl_pct = st.slider("Stop Loss (SL) %", 0.5, 10.0, 2.0, 0.5, key="sim_sl") / 100.0
-        
-        risk_pct = st.slider("İşlem Başına Risk % (Sermaye)", 0.1, 5.0, 1.0, 0.1, key="sim_risk") / 100.0
-        
-        max_bars = st.number_input("Max Bekleme (Bar)", value=48, min_value=5, max_value=200, key="sim_horizon")
-        
-        start_sim = st.button("🚀 Simülasyonu Başlat", use_container_width=True, type="primary")
-
-        # --- Detect Customization ---
-        # If we have an active preset, check if values drifted
-        if st.session_state.sim_active_preset_id:
-            p = preset_map[st.session_state.sim_active_preset_id]
-            c = p.base_config
-            
-            is_modified = False
-            if tf != c.timeframe: is_modified = True
-            if min_quality != int(c.min_quality_score): is_modified = True
-            if set(shapes) != set(c.allowed_shapes): is_modified = True
-            # Check Trend Trigger
-            c_trend = c.require_trend_soul_4h_gt
-            if use_trend != (c_trend is not None): is_modified = True
-            if use_trend and c_trend is not None and float(trend_thresh) != float(c_trend): is_modified = True
-            # Check RSI Trigger
-            c_rsi = c.require_rsi_1d_gt
-            if use_rsi != (c_rsi is not None): is_modified = True
-            if use_rsi and c_rsi is not None and float(rsi_thresh) != float(c_rsi): is_modified = True
-            
-            if abs(tp_pct - c.tp_pct) > 0.0001: is_modified = True
-            if abs(sl_pct - c.sl_pct) > 0.0001: is_modified = True
-            if abs(risk_pct - c.risk_per_trade_pct) > 0.0001: is_modified = True
-            if int(max_bars) != int(c.max_horizon_bars): is_modified = True
-            
-            if is_modified:
-                st.session_state.sim_customized_from = st.session_state.sim_active_preset_id
-                st.session_state.sim_active_preset_id = None
-                # st.rerun() # Optional, but helps UI update "MANUAL" selection immediately
-
-    with col_results:
-        # Header Info
-        if st.session_state.sim_active_preset_id:
-             p = preset_map[st.session_state.sim_active_preset_id]
-             st.info(f"**Aktif Preset:** {p.label_tr}")
-        elif st.session_state.sim_customized_from:
-             p = preset_map[st.session_state.sim_customized_from]
-             st.warning(f"**Modifiye Edildi:** {p.label_tr} üzerinden özelleştirildi.")
-        else:
-             st.caption("Mod: Tamamen Manuel")
-
-        if start_sim:
-            with st.spinner("Geçmiş veriler yükleniyor ve simülasyon çalıştırılıyor..."):
-                # 1. Config
-                cfg = RallySimConfig(
-                    symbol=symbol,
-                    timeframe=tf,
-                    min_quality_score=float(min_quality),
-                    allowed_shapes=shapes,
-                    min_future_max_gain_pct=None, # Not filtering by future gain (honest test)
-                    require_trend_soul_4h_gt=float(trend_thresh) if use_trend else None,
-                    require_rsi_1d_gt=float(rsi_thresh) if use_rsi else None,
-                    tp_pct=tp_pct,
-                    sl_pct=sl_pct,
-                    risk_per_trade_pct=risk_pct,
-                    max_horizon_bars=int(max_bars),
-                    initial_equity=10000.0
-                )
-                
-                # 2. Data
-                events_df = sim_engine.load_rally_events(symbol, tf)
-                prices_df = sim_engine.load_price_series(symbol, tf)
-                
-                if events_df.empty:
-                    st.error(f"'{tf}' için rally olayı verisi bulunamadı. Lütfen önce tarama yapın.")
-                    return
-                if prices_df.empty:
-                    st.error(f"'{tf}' için fiyat verisi bulunamadı.")
-                    return
-                    
-                # 3. Filter
-                filtered_events = sim_engine.filter_events(events_df, cfg)
-                
-                if filtered_events.empty:
-                    st.warning("Seçilen filtre kriterlerine uyan olay kalmadı.")
-                    return
-                    
-                # 4. Simulate
-                trades_df, equity_df = sim_engine.simulate_trades(filtered_events, prices_df, cfg)
-                
-                # Pass preset info
-                results = sim_engine.summarize_results(
-                    trades_df, 
-                    equity_df,
-                    preset_id=st.session_state.sim_active_preset_id,
-                    customized_from=st.session_state.sim_customized_from
-                )
-                
-                # 5. Display
-                # Metrics
-                m1, m2, m3, m4 = st.columns(4)
-                m1.metric("Toplam Trade", results['num_trades'])
-                m2.metric("Win Rate", f"{results['win_rate']*100:.1f}%")
-                m3.metric("Toplam PnL", f"{results['total_pnl_pct']*100:.2f}%", help="Başlangıç sermayesine göre % getiri")
-                m4.metric("Max Drawdown", f"{results['max_drawdown_pct']*100:.2f}%")
-                
+            # ML A/B Test sadece 15m için
+            if tf == "15m":
                 st.markdown("---")
-                
-                # Equity Curve
-                st.markdown("#### Sermaye Eğrisi")
-                if not equity_df.empty:
-                    st.line_chart(equity_df, x='timestamp', y='equity', color="#00ff00")
-                
-                # Trade Analysis
-                st.markdown("#### İşlem Listesi")
-                if not trades_df.empty:
-                    # Format for display
-                    display_df = trades_df.copy()
-                    display_df['PnL %'] = display_df['gross_return_pct'] * 100
-                    display_df = display_df[['event_time', 'exit_time', 'exit_reason', 'PnL %', 'rally_shape', 'equity_after']]
-                    st.dataframe(display_df.sort_values('event_time', ascending=False), use_container_width=True)
+                render_silver_ml_ab_test_section(symbol, tf)
+    
+    # 6. Matrix Preview (15m için)
+    if tf == "15m":
+        st.divider()
+        render_silver_15m_matrix_preview(symbol, tf)
+
+
+
+# =============================================================================
+# HEADER SECTION
+# =============================================================================
+
+def render_sim_lab_header():
+    """Coin Lab açıklaması."""
+    st.subheader("🧪 Coin Lab – BTC Rally Fotoğrafı")
+    st.markdown(
+        """
+        Bu panel coin'den gelen rally verisini **analiz eder ve görselleştirir**.
+
+        - **Fingerprint Kartı:** Timeframe'e göre tatlı bölgeleri gösterir
+        - **Grade Kartları:** Rally'leri performansa göre kategorize eder
+        
+        Şu anki haliyle Coin Lab bir **okuma paneli**dir; strateji ve Matrix entegrasyonu sonraki adımlarda eklenecektir.
+        """
+    )
+
+
+# =============================================================================
+# COIN FINGERPRINT SECTION
+# =============================================================================
+
+def render_coin_fingerprint_section(symbol: str, timeframe: str = "15m") -> None:
+    """
+    Seçilen symbol + timeframe için parmak izi kartını gösterir.
+    """
+    tf_label = {
+        "15m": "15 Dakika",
+        "1h": "1 Saat",
+        "4h": "4 Saat",
+    }.get(timeframe, timeframe)
+    
+    if symbol != "BTCUSDT":
+        st.subheader("🧬 Coin Parmak İzi")
+        st.info("Coin Lab fingerprint kartı şu anda yalnızca BTCUSDT için tanımlı.")
+        return
+
+    st.subheader(f"🧬 Coin Parmak İzi – BTC {tf_label}")
+
+    # Fingerprint ID
+    tf_upper = timeframe.upper()
+    fingerprint_id = f"BTC{tf_upper}_FP_CORE_V1"
+    st.markdown(f"**Fingerprint ID:** `{fingerprint_id}`")
+
+    # JSON path
+    base_dir = Path("data/coin_profiles") / "BTCUSDT" / timeframe
+    report_path = base_dir / "rally_context_score_report_v1.json"
+
+    if not report_path.exists():
+        st.warning(
+            f"BTCUSDT {tf_label} için rally context raporu bulunamadı.\n\n"
+            f"Beklenen dosya: `{report_path}`\n\n"
+            "Bu timeframe için offline analiz pipeline'ını çalıştırdıktan sonra "
+            "parmak izi kartı aktif olacaktır."
+        )
+        return
+
+    try:
+        report = json.loads(report_path.read_text())
+    except Exception as e:
+        st.error(f"Parmak izi raporu okunamadı: {e}")
+        return
+
+    metrics = report.get("metrics", {})
+
+    def _get_sweet(mname):
+        m = metrics.get(mname, {})
+        ss = m.get("recommended_sweet_spot")
+        if not ss or len(ss) != 2:
+            return None
+        return ss
+
+    # Timeframe'e göre metrik isimleri
+    if timeframe == "15m":
+        rsi_key, vol_key, atr_key = "rsi_15m", "volume_rel_15m", "atr_pct_15m"
+    elif timeframe == "1h":
+        rsi_key, vol_key, atr_key = "rsi_1h", "volume_rel_1h", "atr_pct_1h"
+    elif timeframe == "4h":
+        rsi_key, vol_key, atr_key = "rsi_4h", "volume_rel_4h", "atr_pct_4h"
+    else:
+        rsi_key, vol_key, atr_key = "rsi", "volume_rel", "atr_pct"
+
+    rsi_ss = _get_sweet(rsi_key) or _get_sweet("rsi")
+    vol_ss = _get_sweet(vol_key) or _get_sweet("volume_rel")
+    atr_ss = _get_sweet(atr_key) or _get_sweet("atr_pct")
+    score_ss = _get_sweet("quality_score")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("**RSI Tatlı Bölge**")
+        if rsi_ss:
+            st.write(f"{rsi_ss[0]:.1f} – {rsi_ss[1]:.1f}")
         else:
-            if not st.session_state.sim_active_preset_id:
-                st.info("👈 Ayarları yapın ve simülasyonu başlatın.")
-            
-            st.markdown("""
-            **Nasıl Çalışır?**
-            - **Preset Sistemi**: Hazır strateji şablonlarını kullanarak hızlı başlangıç yapın.
-            - **Rally Event**: Sistem taramaları (Time-Labs / 15 Dakika) tarafından tespit edilen sinyalleri kullanır.
-            - **Filtreler**: Sadece belirttiğiniz kalitede ve bağlamdaki (Trend, RSI) sinyallere girer.
-            - **Spot Long**: Kaldıraçsız, tek yönlü alım simülasyonu.
-            """)
+            st.write("Tanımlı değil")
+
+        st.markdown("**Relative Volume Tatlı Bölge**")
+        if vol_ss:
+            st.write(f"{vol_ss[0]:.2f} – {vol_ss[1]:.2f}")
+        else:
+            st.write("Tanımlı değil")
+
+    with col2:
+        st.markdown("**ATR % Tatlı Bölge**")
+        if atr_ss:
+            st.write(f"{atr_ss[0]:.2f}% – {atr_ss[1]:.2f}%")
+        else:
+            st.write("Tanımlı değil")
+
+        st.markdown("**Quality Score Tatlı Bölge**")
+        if score_ss:
+            st.write(f"{score_ss[0]:.1f} – {score_ss[1]:.1f}")
+        else:
+            st.write("Tanımlı değil")
+
+    st.caption(
+        f"Bu parmak izi kartı, BTC {tf_label} zaman dilimindeki iyi rally'lerin "
+        "ortak özelliklerini özetler."
+    )
+
+
+# =============================================================================
+# GRADE CARDS SECTION
+# =============================================================================
+
+def render_grade_cards_section(symbol: str, timeframe: str) -> None:
+    """
+    Diamond / Gold / Silver / Bronze grade kartlarını 2x2 expander olarak gösterir.
+    Her expander başlığında grade ismi ve örnek sayısı görünür.
+    """
+    if symbol != "BTCUSDT":
+        st.info("Grade kartları şu anda yalnızca BTCUSDT için tanımlı.")
+        return
+
+    if timeframe != "15m":
+        st.info(
+            "Grade kartları ilk aşamada sadece 15 Dakika için aktif. "
+            "1 Saat ve 4 Saat desteği daha sonra eklenecek."
+        )
+        return
+
+    try:
+        summaries = compute_btc_15m_grade_summaries()
+    except FileNotFoundError as e:
+        st.warning(str(e))
+        return
+    except Exception as e:
+        st.error(f"Grade kartları hesaplanırken hata oluştu: {e}")
+        return
+
+    grade_order = ["Diamond", "Gold", "Silver", "Bronze"]
+    grade_emojis = {
+        "Diamond": "💎",
+        "Gold": "🥇",
+        "Silver": "🥈",
+        "Bronze": "🥉",
+    }
+
+    # 2x2 grid: first row
+    row1_col1, row1_col2 = st.columns(2)
+    # 2x2 grid: second row
+    row2_col1, row2_col2 = st.columns(2)
+    
+    cols_map = {
+        "Diamond": row1_col1,
+        "Gold": row1_col2,
+        "Silver": row2_col1,
+        "Bronze": row2_col2,
+    }
+
+    for grade in grade_order:
+        summary = summaries.get(grade)
+        col = cols_map[grade]
+        emoji = grade_emojis.get(grade, "🏅")
+        
+        # Count for title
+        count = summary.count if summary and summary.has_enough_samples else 0
+        title = f"{emoji} {grade} ({count} rally)"
+        
+        with col:
+            with st.expander(title, expanded=False):
+                if summary is None or not summary.has_enough_samples or summary.count == 0:
+                    st.write("Bu grade için yeterli rally örneği yok.")
+                    continue
+
+                st.markdown(
+                    f"**Tepe Kazanç:** "
+                    f"{summary.min_gain_pct:.1f}% – {summary.max_gain_pct:.1f}% "
+                    f"(ort: {summary.avg_gain_pct:.1f}%)"
+                )
+                st.markdown(f"**Ort. Tepeye Ulaşma:** {summary.avg_bars_to_peak:.1f} bar")
+
+                if summary.rsi_p25 is not None and summary.rsi_p75 is not None:
+                    st.markdown(f"**RSI:** {summary.rsi_p25:.1f} – {summary.rsi_p75:.1f}")
+
+                if summary.vol_p25 is not None and summary.vol_p75 is not None:
+                    st.markdown(f"**Vol Rel:** {summary.vol_p25:.2f} – {summary.vol_p75:.2f}")
+
+                if summary.atr_p25 is not None and summary.atr_p75 is not None:
+                    st.markdown(f"**ATR %:** {summary.atr_p25:.2f}% – {summary.atr_p75:.2f}%")
+
+                if summary.quality_p25 is not None and summary.quality_p75 is not None:
+                    st.markdown(f"**Quality:** {summary.quality_p25:.1f} – {summary.quality_p75:.1f}")
+
+
+# =============================================================================
+# SILVER ML A/B TEST SECTION
+# =============================================================================
+
+def render_silver_ml_ab_test_section(symbol: str, timeframe: str) -> None:
+    """
+    BTCUSDT 15m Silver Strategy + ML filter A/B test UI.
+    Compares 4 scenarios: baseline, ml_atr, ml_atr_rsi1h, ml_all.
+    """
+    if symbol != "BTCUSDT" or timeframe != "15m":
+        return
+
+    st.subheader("🔬 Silver ML Filter A/B Test – BTC 15 Dakika")
+    st.caption(
+        "Aynı Silver stratejiyi 4 farklı ML filtre kombinasyonu ile test eder:\n"
+        "- **baseline:** ML filtresi yok\n"
+        "- **ml_atr:** Sadece ATR 15m ML bandı\n"
+        "- **ml_atr_rsi1h:** ATR + RSI 1H ML bandı\n"
+        "- **ml_all:** ATR + RSI 1H + 1D RSI Gap"
+    )
+
+    if st.button("🔬 Silver ML A/B Testini Çalıştır", key="btn_silver_ml_ab", use_container_width=True):
+        with st.spinner("Silver ML A/B testi çalışıyor..."):
+            from tezaver.sim.sim_silver_ml_ab_experiments import run_btc_15m_silver_ml_ab_test
+            summary = run_btc_15m_silver_ml_ab_test()
+
+        scenarios = summary.get("scenarios", {})
+
+        import pandas as pd
+
+        rows = []
+        for key, s in scenarios.items():
+            capital_end = s.get("capital_end", 100.0)
+            rows.append({
+                "Senaryo": key,
+                "Events": s["event_count"],
+                "Trades": s["trade_count"],
+                "Win Rate %": round(s["win_rate"] * 100, 1),
+                "Avg PnL %": round(s["avg_pnl"] * 100, 2),
+                "Sum PnL %": round(s["sum_pnl"] * 100, 2),
+                "Max DD %": round(s["max_drawdown"] * 100, 2),
+                "💰 100 → X": f"{capital_end:.1f}",
+            })
+
+        df = pd.DataFrame(rows)
+        st.dataframe(df, use_container_width=True)
+
+        st.info(
+            "💡 **Not:** ML filtreleri uyguldıkça trade sayısı düşer, "
+            "avg_pnl artabilir. '100 → X' sermaye simülasyonu."
+        )
+
+
+# =============================================================================
+# GENERIC MULTI-TIMEFRAME SECTIONS
+# =============================================================================
+
+def render_silver_story_card(symbol: str, timeframe: str) -> None:
+    """Generic Silver Story Card for any timeframe."""
+    if symbol != "BTCUSDT":
+        st.info("Silver Story şu anda sadece BTCUSDT için destekleniyor.")
+        return
+
+    from tezaver.rally.rally_grade_cards import compute_silver_story_v1
+    
+    try:
+        story = compute_silver_story_v1(symbol, timeframe)
+    except Exception as e:
+        st.warning(f"Silver Story yüklenemedi: {e}")
+        return
+    
+    if not story.get("has_enough_samples", False):
+        st.info(f"{timeframe} için yeterli Silver rally bulunamadı.")
+        return
+    
+    st.markdown(f"**🥈 Silver Story – {timeframe}**")
+    st.write(f"Sample Count: **{story.get('sample_count', 0)}**")
+    
+    static_key = f"static_snapshot_{timeframe}"
+    static = story.get(static_key, {})
+    
+    if static:
+        cols = list(static.keys())[:4]
+        if cols:
+            col_objs = st.columns(len(cols))
+            for i, col in enumerate(cols):
+                stats = static.get(col, {})
+                with col_objs[i]:
+                    st.caption(col)
+                    if stats:
+                        mean = stats.get("mean", 0)
+                        p25 = stats.get("p25", 0) 
+                        p75 = stats.get("p75", 0)
+                        st.write(f"mean: {mean:.2f}")
+                        st.write(f"[{p25:.2f}, {p75:.2f}]")
+
+
+def render_silver_strategy_card(symbol: str, timeframe: str) -> None:
+    """Generic Silver Strategy Card for any timeframe."""
+    if symbol != "BTCUSDT":
+        return
+
+    from tezaver.rally.rally_grade_cards import load_silver_strategy_card_v1
+    
+    card = load_silver_strategy_card_v1(symbol, timeframe)
+    
+    if not card or not card.get("ok", False):
+        st.info(f"{timeframe} Strategy Card bulunamadı. Önce 'python -m tezaver.rally.rally_grade_cards' çalıştırın.")
+        return
+    
+    st.markdown(f"**📋 Strategy Card – {timeframe}**")
+    
+    risk = card.get("risk", {})
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("TP", f"{risk.get('tp_pct', 0)*100:.1f}%")
+    with col2:
+        st.metric("SL", f"{risk.get('sl_pct', 0)*100:.1f}%")
+    with col3:
+        st.metric("Horizon", f"{risk.get('max_horizon_bars', 0)} bar")
+    
+    with st.expander("📜 Card JSON", expanded=False):
+        st.json(card)
+
+
+def render_core_strategy_section(symbol: str, timeframe: str) -> None:
+    """Generic Core Strategy test section for any timeframe."""
+    if symbol != "BTCUSDT":
+        st.info("Core Strategy şu anda sadece BTCUSDT için destekleniyor.")
+        return
+    
+    st.markdown(f"**⚙️ Core Strategy Test – {timeframe}**")
+    st.caption(f"Silver Strategy Card {timeframe}'ten config alarak simülasyon çalıştırır.")
+    
+    btn_key = f"btn_core_strategy_{timeframe}"
+    if st.button(f"⚙️ {timeframe} Stratejiyi Test Et", key=btn_key):
+        with st.spinner(f"{timeframe} Silver strateji simülasyonu çalışıyor..."):
+            from tezaver.sim.sim_core_experiments import run_btc_core_strategy_sim
+            result = run_btc_core_strategy_sim(timeframe)
+        
+        if not result.get("ok", False):
+            st.warning(f"Strateji testi çalıştırılamadı: {result.get('reason', 'unknown')}")
+            return
+        
+        perf = result.get("performance", {})
+        event_count = result.get("event_count", 0)
+        
+        trade_count = perf.get("trade_count", 0)
+        win_rate = perf.get("win_rate", 0.0) or 0.0
+        avg_pnl = perf.get("avg_pnl", 0.0) or 0.0
+        sum_pnl = perf.get("sum_pnl", 0.0) or 0.0
+        max_dd = perf.get("max_drawdown", 0.0) or 0.0
+        capital_end = perf.get("capital_end", 100.0) or 100.0
+        
+        col1, col2, col3, col4, col5, col6 = st.columns(6)
+        
+        with col1:
+            st.metric("Trade", trade_count)
+        with col2:
+            st.metric("Win Rate", f"{win_rate * 100:.1f}%")
+        with col3:
+            st.metric("Avg PnL", f"{avg_pnl:.1f}%")
+        with col4:
+            st.metric("Sum PnL", f"{sum_pnl:.1f}%")
+        with col5:
+            st.metric("Max DD", f"{max_dd:.1f}%")
+        with col6:
+            st.metric("💰 Sermaye", f"100 → {capital_end:.1f}")
+        
+        st.caption(f"{event_count} event test edildi.")
+
+
+# =============================================================================
+# SILVER 15M MATRIX PREVIEW SECTION
+# =============================================================================
+
+def render_silver_15m_matrix_preview(symbol: str, timeframe: str) -> None:
+    """
+    Silver 15m Multi-Coin Matrix preview card.
+    Shows War Game results for BTC/ETH/SOL.
+    """
+    if timeframe != "15m":
+        return
+    
+    if not SILVER_MULTI_COIN_SUMMARY_PATH.exists():
+        st.info(
+            "🧭 Silver 15m Matrix ön izlemesi için henüz War Game özeti bulunamadı.\n\n"
+            "CLI ile üret:\n"
+            "```bash\n"
+            "python -m tezaver.matrix.wargame.runner multi_silver_15m_save\n"
+            "```"
+        )
+        return
+    
+    try:
+        with SILVER_MULTI_COIN_SUMMARY_PATH.open("r", encoding="utf-8") as f:
+            summary = json.load(f)
+    except Exception as e:
+        st.error(f"Summary okunamadı: {e}")
+        return
+    
+    rows = summary.get("coins", [])
+    
+    # Sadece 0.01 risk satırları
+    low_risk_rows = [
+        r for r in rows
+        if abs(r.get("risk", 0.0) - 0.01) < 1e-9
+    ]
+    
+    if not low_risk_rows:
+        st.info("Silver 15m Matrix ön izlemesi için 0.01 risk satırı bulunamadı.")
+        return
+    
+    st.subheader("🧭 Silver 15m – Matrix Preview")
+    
+    st.caption(
+        "Bu kart, Silver 15m stratejisinin Matrix War Game sonuçlarını özetler. "
+        "Her satır, coin başına 100 birim sermaye ve %1 risk ile koşulan testin sonucudur."
+    )
+    
+    df = pd.DataFrame([
+        {
+            "Coin": row.get("symbol"),
+            "Risk": f"{row.get('risk', 0):.2%}",
+            "100 → X": f"100.00 → {row.get('capital_end', 0):.2f}",
+            "PnL %": f"{row.get('pnl_pct', 0.0):+.2f}%",
+            "Max DD %": f"{row.get('max_dd_pct', 0.0):.2f}%",
+            "Trades": row.get("trades"),
+        }
+        for row in low_risk_rows
+    ])
+    
+    st.dataframe(df, use_container_width=True, hide_index=True)
+    
+    # Highlight current symbol
+    current_row = next((r for r in low_risk_rows if r.get("symbol") == symbol), None)
+    if current_row:
+        st.caption(
+            f"📍 **{symbol}**: 100 → {current_row.get('capital_end', 0):.2f} "
+            f"({current_row.get('pnl_pct', 0.0):+.2f}%), "
+            f"{current_row.get('trades')} trade"
+        )
+
+

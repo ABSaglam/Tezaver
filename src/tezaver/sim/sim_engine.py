@@ -121,6 +121,7 @@ def filter_events(events: pd.DataFrame, cfg: RallySimConfig) -> pd.DataFrame:
             
     return df
 
+
 def simulate_trades(events: pd.DataFrame, prices: pd.DataFrame, cfg: RallySimConfig) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Run trade simulation.

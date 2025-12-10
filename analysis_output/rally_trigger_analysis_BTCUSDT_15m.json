@@ -1,0 +1,49 @@
+{
+  "symbol": "BTCUSDT",
+  "timeframe": "15m",
+  "total_rallies_analyzed": 46,
+  "single_triggers": {
+    "VOLUME_SPIKE": {
+      "total_samples": 46,
+      "avg_gain_pct": 6.760071442751873,
+      "median_gain_pct": 6.196625443729621,
+      "success_rate_5p": 1.0,
+      "success_rate_10p": 0.06521739130434782,
+      "success_rate_20p": 0.0,
+      "avg_quality_score": 59.17173913043477
+    }
+  },
+  "trigger_combinations": {
+    "CONSOLIDATION_BREAKOUT + RSI_VOL_CONVERGENCE + VOLUME_SPIKE": {
+      "total_samples": 46,
+      "avg_gain_pct": 6.760071442751873,
+      "median_gain_pct": 6.196625443729621,
+      "success_rate_5p": 1.0,
+      "success_rate_10p": 0.06521739130434782,
+      "success_rate_20p": 0.0,
+      "avg_quality_score": 59.17173913043477
+    }
+  },
+  "pattern_frequencies": {
+    "rsi_rising_then_spike": {
+      "count": 46,
+      "frequency_pct": 100.0
+    },
+    "volume_gradual_increase": {
+      "count": 46,
+      "frequency_pct": 100.0
+    },
+    "macd_building_momentum": {
+      "count": 0,
+      "frequency_pct": 0.0
+    },
+    "consolidation_then_breakout": {
+      "count": 46,
+      "frequency_pct": 100.0
+    },
+    "rsi_oversold_bounce": {
+      "count": 0,
+      "frequency_pct": 0.0
+    }
+  }
+}

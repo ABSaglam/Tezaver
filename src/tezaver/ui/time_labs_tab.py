@@ -15,6 +15,7 @@ from tezaver.core import coin_cell_paths
 from tezaver.core.logging_utils import get_logger
 from tezaver.core.config import format_date_tr, to_turkey_time
 from tezaver.ui.chart_area import render_rally_event_chart
+from tezaver.rally.rally_narrative_engine import analyze_scenario, SCENARIO_DEFINITIONS
 
 logger = get_logger(__name__)
 
@@ -87,6 +88,49 @@ def load_time_labs_summary(symbol: str, timeframe: str) -> Optional[Dict]:
         return None
 
 
+def consolidate_overlapping_rallies(df: pd.DataFrame, timeframe: str) -> pd.DataFrame:
+    """Consolidate overlapping rallies - keep only best (highest gain)."""
+    if df.empty:
+        return df
+    
+    # Calculate bar duration
+    if timeframe == "4h":
+        bar_delta = pd.Timedelta(hours=4)
+    elif timeframe == "1h":
+        bar_delta = pd.Timedelta(hours=1)
+    else:
+        bar_delta = pd.Timedelta(minutes=15)
+    
+    # Calculate end_time
+    df = df.copy()
+    df['end_time'] = df['event_time'] + df['bars_to_peak'].astype(int) * bar_delta
+    
+    # Sort by gain descending
+    df = df.sort_values('future_max_gain_pct', ascending=False).reset_index(drop=True)
+    
+    # Greedy consolidation
+    kept_indices = []
+    kept_ranges = []
+    
+    for idx, row in df.iterrows():
+        start = row['event_time']
+        end = row['end_time']
+        
+        overlaps = False
+        for kept_start, kept_end in kept_ranges:
+            if start < kept_end and kept_start < end:
+                overlaps = True
+                break
+        
+        if not overlaps:
+            kept_indices.append(idx)
+            kept_ranges.append((start, end))
+    
+    result = df.loc[kept_indices].drop(columns=['end_time'], errors='ignore')
+    result = result.sort_values('event_time').reset_index(drop=True)
+    return result
+
+
 def render_time_labs_tab(symbol: str, timeframe: str):
     """
     Render a Time-Labs tab for the given timeframe.
@@ -109,7 +153,6 @@ def render_time_labs_tab(symbol: str, timeframe: str):
     events_df = load_time_labs_rallies(symbol, timeframe)
     summary_data = load_time_labs_summary(symbol, timeframe)
     
-    # Handle No Data
     if events_df is None:
         st.info(f"Bu coin için '{timeframe}' zaman diliminde henüz Time-Labs rallisi bulunamadı.")
         if timeframe == "15m":
@@ -119,36 +162,68 @@ def render_time_labs_tab(symbol: str, timeframe: str):
             st.markdown(f"**Taramayı çalıştırmak için:**")
             st.code(f"python src/tezaver/rally/run_time_labs_scan.py --tf {timeframe} --symbol {symbol}", language="bash")
         return
+    
+    # Consolidate overlapping rallies FIRST
+    events_df = consolidate_overlapping_rallies(events_df, timeframe)
+    rally_count_after_consolidation = len(events_df)
+    
+    if events_df.empty:
+        st.warning("Rally bulunamadı.")
+        return
 
     # ===== SECTION 1: Summary + Filters =====
     col_summary, col_filter = st.columns([2, 3])
     
     with col_summary:
-        st.markdown("#### Özet")
-        if summary_data and "summary_tr" in summary_data:
-            st.markdown(summary_data["summary_tr"])
-        else:
-            st.info("Özet bilgisi henüz mevcut değil.")
+        st.markdown("#### 📊 Özet")
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Rally", len(events_df))
+        if 'future_max_gain_pct' in events_df.columns and len(events_df) > 0:
+            avg_gain = events_df['future_max_gain_pct'].mean() * 100
+            c2.metric("Ort. Kazanç", f"%{avg_gain:.1f}")
+        if 'quality_score' in events_df.columns:
+            avg_qual = events_df['quality_score'].mean()
+            c3.metric("Ort. Kalite", f"{avg_qual:.0f}")
             
     with col_filter:
         st.markdown("#### Filtreler")
         
-        # Bucket Filter
-        bucket_labels = {
-            "all": "Tüm Kovalar",
-            "5p_10p": "%5 – %10",
-            "10p_20p": "%10 – %20",
-            "20p_30p": "%20 – %30",
-            "30p_plus": "%30+"
+        # Assign grades FIRST (before building options)
+        if 'rally_grade' not in events_df.columns:
+            def get_grade(pct):
+                if pct >= 0.30: return "💎 Diamond"
+                if pct >= 0.20: return "🥇 Gold"
+                if pct >= 0.10: return "🥈 Silver"
+                if pct >= 0.05: return "🥉 Bronze"
+                return "🎗️ Weak"
+            events_df['rally_grade'] = events_df['future_max_gain_pct'].apply(get_grade)
+        
+        # Build badge options with stats
+        badge_options = ["♾️ Hepsi"]
+        badge_labels = {
+            "♾️ Hepsi": f"♾️ Hepsi ({len(events_df)})"
         }
         
+        for badge in ["💎 Diamond", "🥇 Gold", "🥈 Silver", "🥉 Bronze"]:
+            subset = events_df[events_df['rally_grade'] == badge]
+            count = len(subset)
+            if count > 0:
+                avg_gain = subset['future_max_gain_pct'].mean() * 100
+                avg_qual = subset['quality_score'].mean() if 'quality_score' in subset.columns else 0
+                badge_options.append(badge)
+                badge_labels[badge] = f"{badge} ({count}) %{avg_gain:.0f} Q:{avg_qual:.0f}"
+            else:
+                badge_options.append(badge)
+                badge_labels[badge] = f"{badge} (0)"
+        
+        # Badge (Grade) Filter
         c1, c2 = st.columns(2)
         with c1:
-            selected_bucket = st.selectbox(
-                "Yükseliş Kovası",
-                options=list(bucket_labels.keys()),
-                format_func=lambda k: bucket_labels[k],
-                key=f"tl_bucket_{timeframe}_{symbol}"
+            badge_filter = st.selectbox(
+                "🏆 Rally Sınıfı",
+                options=badge_options,
+                format_func=lambda x: badge_labels.get(x, x),
+                key=f"tl_badge_{timeframe}_{symbol}"
             )
             
         # Quality Filter
@@ -159,33 +234,21 @@ def render_time_labs_tab(symbol: str, timeframe: str):
                 key=f"tl_qual_{timeframe}_{symbol}"
             )
             
-        # Apply Filters
-        filtered_df = events_df.copy()
+    # Apply Filters
+    filtered_df = events_df.copy()
+    
+    if badge_filter != "♾️ Hepsi":
+        filtered_df = filtered_df[filtered_df["rally_grade"] == badge_filter]
         
-        if selected_bucket != "all":
-            filtered_df = filtered_df[filtered_df["rally_bucket"] == selected_bucket]
-            
-        if "quality_score" in filtered_df.columns:
-            filtered_df = filtered_df[filtered_df["quality_score"] >= min_quality]
-            
-        # Metrics line
-        if not filtered_df.empty:
-            m1, m2, m3 = st.columns(3)
-            m1.metric("Olay Sayısı", len(filtered_df))
-            
-            avg_gain = filtered_df["future_max_gain_pct"].mean() * 100
-            m2.metric("Ort. Getiri", f"{avg_gain:.1f}%")
-            
-            if "quality_score" in filtered_df.columns:
-                avg_qual = filtered_df["quality_score"].mean()
-                m3.metric("Ort. Kalite", f"{avg_qual:.1f}")
-        else:
-            st.warning("Seçilen filtrelerde olay bulunamadı.")
-            return
+    if "quality_score" in filtered_df.columns:
+        filtered_df = filtered_df[filtered_df["quality_score"] >= min_quality]
+    
+    if filtered_df.empty:
+        st.warning("Seçilen filtrelerde olay bulunamadı.")
+        return
 
     # ===== SECTION 2: Chart & Snapshot =====
     st.markdown("---")
-    st.markdown("### 📊 Rally Analizi")
     
     col_chart, col_snap = st.columns([3, 2])
     
@@ -195,7 +258,7 @@ def render_time_labs_tab(symbol: str, timeframe: str):
         # Sort by most recent
         display_df = filtered_df.sort_values("event_time", ascending=False).head(50)
         
-        # Build selectbox labels
+        # Build selectbox labels with standard format
         event_opts = []
         for i, row in display_df.iterrows():
              # Handle timestamps
@@ -208,11 +271,19 @@ def render_time_labs_tab(symbol: str, timeframe: str):
             # Localize
             event_dt = to_turkey_time(event_dt)
             
+            # Get values
             gain = row['future_max_gain_pct'] * 100
             qual = int(row.get('quality_score', 0))
-            shape = row.get('rally_shape', 'unk')
+            shape = str(row.get('rally_shape', 'unknown')).capitalize()
             
-            label = f"{event_dt.strftime('%Y-%m-%d %H:%M')} | +{gain:.1f}% | Q:{qual} ({shape})"
+            # Get badge icon
+            if gain >= 30: badge = "💎"
+            elif gain >= 20: badge = "🥇"
+            elif gain >= 10: badge = "🥈"
+            elif gain >= 5: badge = "🥉"
+            else: badge = "🎗️"
+            
+            label = f"{badge} | {event_dt.strftime('%d %b %Y %H:%M')} | %{gain:.1f} ({int(row.get('bars_to_peak', 0))} bar) | Q:{qual} | {shape}"
             event_opts.append(label)
             
         selected_idx = st.selectbox(
@@ -226,13 +297,39 @@ def render_time_labs_tab(symbol: str, timeframe: str):
         sel_event = display_df.iloc[selected_idx]
         sel_dt = pd.to_datetime(sel_event['event_time'])
         
-        # Snapshot Card
-        st.markdown(f"""
-        **Olay:** {format_date_tr(sel_dt)}
-        **Getiri:** %{sel_event['future_max_gain_pct']*100:.1f} ({sel_event['bars_to_peak']} bar)
-        **Kalite:** {safe_fmt(sel_event.get('quality_score', 0), 0)} / 100
-        **Şekil:** {sel_event.get('rally_shape', '-')}
-        """)
+        # Get badge and shape for display
+        gain_pct = sel_event['future_max_gain_pct'] * 100
+        if gain_pct >= 30: badge = "💎 Diamond"
+        elif gain_pct >= 20: badge = "🥇 Gold"
+        elif gain_pct >= 10: badge = "🥈 Silver"
+        elif gain_pct >= 5: badge = "🥉 Bronze"
+        else: badge = "🎗️ Weak"
+        
+        shape_val = str(sel_event.get('rally_shape', 'Unknown')).capitalize()
+        quality_val = safe_fmt(sel_event.get('quality_score', 0), 0)
+        sel_dt_tz = to_turkey_time(sel_dt)
+        
+        # Snapshot Card - Compact horizontal format
+        st.markdown(f"#### {badge}")
+        st.markdown(f"**Kazanç:** %{gain_pct:.1f} | **Süre:** {int(sel_event['bars_to_peak'])} bar | **Tarih:** {sel_dt_tz.strftime('%d %b %Y %H:%M')}")
+        st.markdown(f"**Kalite:** {quality_val}/100 | **Şekil:** {shape_val}")
+        
+        # Scenario/Narrative Display
+        scenario_id = analyze_scenario(sel_event)
+        scenario_def = SCENARIO_DEFINITIONS.get(scenario_id, {})
+        scenario_label = scenario_def.get('label', 'Belirsiz')
+        scenario_risk = scenario_def.get('risk', 'Medium')
+        scenario_desc = scenario_def.get('desc', '')
+        
+        # Risk badge colors
+        risk_colors = {'Low': '🟢', 'Medium': '🟡', 'High': '🔴'}
+        risk_badge = risk_colors.get(scenario_risk, '⚪')
+        
+        st.markdown(f"**Senaryo:** {scenario_label} | **Risk:** {risk_badge} {scenario_risk}")
+        
+        with st.expander("📖 Hikaye", expanded=False):
+            st.markdown(f"**{scenario_label}**")
+            st.info(scenario_desc)
         
         with st.expander("Detaylı Metrikler (Multi-TF)", expanded=True):
             # Use Tabs for cleaner organization of detailed multi-tf data
@@ -279,6 +376,9 @@ def render_time_labs_tab(symbol: str, timeframe: str):
                 with c2:
                     st.markdown(f"**Rejim**: {sel_event.get('regime_1d', '-')}")
                     st.markdown(f"**Risk**: {sel_event.get('risk_level_1d', '-')}")
+        
+        # Info notes
+        st.caption(f"📊 {rally_count_after_consolidation} rally (overlap temizlendi)")
 
     with col_chart:
         render_rally_event_chart(
@@ -313,6 +413,11 @@ def render_time_labs_tab(symbol: str, timeframe: str):
     
     # Format
     display_tbl = out_df[avail_cols].rename(columns=cols_map)
+    
+    # Format shape with emoji
+    if "Şekil" in display_tbl.columns:
+        shape_emoji = {'clean': '✨', 'choppy': '🌊', 'weak': '💤', 'spike': '⚡', 'unknown': '❓'}
+        display_tbl["Şekil"] = display_tbl["Şekil"].apply(lambda x: shape_emoji.get(str(x).lower(), '❓'))
     
     st.dataframe(
         display_tbl, 

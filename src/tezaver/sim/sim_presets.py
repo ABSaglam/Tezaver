@@ -1,22 +1,23 @@
 """
-Tezaver Sim v1.1 - Simulation Preset System
-===========================================
+Tezaver Sim v2 - Simulation Preset System
+==========================================
 
 Defines standard simulation presets for rapid backtesting.
 Each preset maps to a specific RallySimConfig.
 """
 
 from dataclasses import dataclass, replace
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional
 
 from tezaver.sim.sim_config import RallySimConfig
+
 
 @dataclass(frozen=True)
 class SimPreset:
     """
     A stable, versioned simulation strategy preset.
     """
-    id: str                 # Unique ID, e.g. "FAST15_SCALPER_V1"
+    id: str                 # Unique ID
     label_tr: str           # User-facing label (Turkish)
     description_tr: str     # Description for UI tooltip/markdown
     timeframe: str          # "15m", "1h", "4h"
@@ -24,30 +25,31 @@ class SimPreset:
     tags: List[str]
     version: str            # Semver-like string
 
+
 # --- Preset Definitions ---
 
-_FAST15_SCALPER_V1 = SimPreset(
-    id="FAST15_SCALPER_V1",
-    label_tr="⚡ Fast15 – Hızlı Scalper v1",
+_BTC15M_STRATEGY_V1 = SimPreset(
+    id="BTC15M_STRATEGY_V1",
+    label_tr="⚡ BTC 15m – Çekirdek Strateji v1",
     description_tr=(
-        "**Yüksek Kalite Scalp:** Sadece yüksek puanlı ve temiz şekilli 15 dakikalık hızlı yükselişleri hedefler. "
-        "Arka planda 4 saatlik Trend Soul desteği arar. Kısa vadeli (3-4 saat) tutma süresi vardır."
+        "**BTC 15 Dakika Çekirdek:** BTCUSDT 15 dakikalık rally'ler için "
+        "orta kaliteli event'leri hedefler. Basit ve sade bir başlangıç noktası."
     ),
     timeframe="15m",
-    version="1.1.0",
-    tags=["scalp", "high_quality", "fast"],
+    version="1.0.0",
+    tags=["btc", "15m", "core"],
     base_config=RallySimConfig(
-        symbol="UNK", # Placeholder
+        symbol="BTCUSDT",
         timeframe="15m",
-        min_quality_score=70.0,
-        allowed_shapes=["clean", "spike"],
+        min_quality_score=60.0,            # Orta-üst kalite
+        allowed_shapes=["clean", "choppy", "spike"],  # weak hariç
         min_future_max_gain_pct=None,
-        require_trend_soul_4h_gt=60.0,
-        require_rsi_1d_gt=45.0, # Range 45-75 implies min 45. Max not supported by config yet? User prompt said "range". Config has "gt". We use min.
-        tp_pct=0.07,  # ~7%
-        sl_pct=0.035, # ~3.5%
-        max_horizon_bars=14, # ~3.5 hours
-        risk_per_trade_pct=0.01
+        require_trend_soul_4h_gt=None,     # Trend filtresi kapalı
+        require_rsi_1d_gt=None,            # RSI filtresi kapalı
+        tp_pct=0.07,                       # %7 take profit
+        sl_pct=0.035,                      # %3.5 stop loss
+        max_horizon_bars=24,               # 6 saat horizon (15m * 24)
+        risk_per_trade_pct=0.01            # %1 risk per trade
     )
 )
 
@@ -96,18 +98,19 @@ _H4_TREND_V1 = SimPreset(
         require_rsi_1d_gt=45.0,
         tp_pct=0.20,  # ~20%
         sl_pct=0.08,  # ~8%
-        max_horizon_bars=60, # ~10 days (60 * 4h = 240h = 10 days)
+        max_horizon_bars=60, # ~10 days
         risk_per_trade_pct=0.005 # 0.5% risk
     )
 )
 
 _PRESETS: Dict[str, SimPreset] = {
     p.id: p for p in [
-        _FAST15_SCALPER_V1,
+        _BTC15M_STRATEGY_V1,
         _H1_SWING_V1,
         _H4_TREND_V1
     ]
 }
+
 
 # --- Public API ---
 
@@ -115,20 +118,14 @@ def get_all_presets() -> List[SimPreset]:
     """Return list of all registered simulation presets."""
     return list(_PRESETS.values())
 
+
 def get_preset_by_id(preset_id: str) -> Optional[SimPreset]:
     """Retrieve a preset by its unique ID."""
     return _PRESETS.get(preset_id)
 
+
 def build_config_from_preset(preset: SimPreset, symbol: str) -> RallySimConfig:
     """
     Create a fresh RallySimConfig from a preset.
-    
-    Args:
-        preset: The source preset.
-        symbol: The symbol to apply this config to.
-        
-    Returns:
-        A new RallySimConfig instance with preset values.
     """
-    # Create a copy using replace, updating the symbol
     return replace(preset.base_config, symbol=symbol)
