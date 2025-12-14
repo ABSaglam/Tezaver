@@ -1,18 +1,30 @@
 # Matrix V2 Engine Module
 """
 Core engine protocols and UnifiedEngine for Matrix v2.
+
+Supports profile-aware guardrail with CoinPage V2 integration.
 """
 
 from __future__ import annotations
-from typing import Protocol, TYPE_CHECKING
+from typing import Protocol, TYPE_CHECKING, Optional, Dict, Any
 from datetime import datetime
 import uuid
 
 from .types import MarketSignal, TradeDecision, ExecutionReport, MatrixEventLogEntry
 from .account import AccountState, IAccountStore
+from .guardrail import (
+    GuardrailController,
+    GuardrailContext,
+    GuardrailEnvironment,
+)
+from .telemetry import (
+    MatrixEvent,
+    MatrixEventType,
+    IMatrixEventSink,
+)
 
 if TYPE_CHECKING:
-    from .guardrail import GuardrailController
+    from .profile import MatrixProfileRepository, MatrixCellProfile
 
 
 class IAnalyzer(Protocol):
@@ -89,6 +101,8 @@ class UnifiedEngine:
     
     This is the main entry point for processing market data through the
     Matrix trading system.
+    
+    V2: Supports profile-aware guardrail with CoinPage V2 integration.
     """
     
     def __init__(
@@ -97,8 +111,15 @@ class UnifiedEngine:
         analyzer: IAnalyzer,
         strategist: IStrategist,
         executor: IExecutor,
-        guardrail: "GuardrailController",
+        guardrail: GuardrailController,
         account_store: IAccountStore,
+        # V2 fields for profile-aware guardrail
+        symbol: str = "",
+        timeframe: str = "",
+        environment: GuardrailEnvironment = GuardrailEnvironment.WARGAME,
+        profile_repo: Optional["MatrixProfileRepository"] = None,
+        # V3 telemetry
+        event_sink: Optional[IMatrixEventSink] = None,
     ) -> None:
         """
         Initialize the UnifiedEngine.
@@ -110,6 +131,11 @@ class UnifiedEngine:
             executor: Component for order execution.
             guardrail: Controller for risk management rules.
             account_store: Storage for account state.
+            symbol: Trading symbol (e.g., "BTCUSDT") for guardrail context.
+            timeframe: Timeframe (e.g., "15m") for guardrail context.
+            environment: WARGAME or LIVE for guardrail decisions.
+            profile_repo: Repository for loading profiles (for profile-aware guardrail).
+            event_sink: Optional telemetry sink for event logging.
         """
         self.profile_id = profile_id
         self.analyzer = analyzer
@@ -117,6 +143,35 @@ class UnifiedEngine:
         self.executor = executor
         self.guardrail = guardrail
         self.account_store = account_store
+        # V2 fields
+        self.symbol = symbol
+        self.timeframe = timeframe
+        self.environment = environment
+        self.profile_repo = profile_repo
+        # V3 telemetry
+        self._event_sink = event_sink
+        self._tick_index = 0
+    
+    def _log_event(
+        self,
+        event_type: MatrixEventType,
+        details: Dict[str, Any],
+    ) -> None:
+        """Log event to telemetry sink if available."""
+        if self._event_sink is None:
+            return
+        
+        event = MatrixEvent(
+            event_type=event_type,
+            symbol=self.symbol,
+            timeframe=self.timeframe,
+            profile_id=self.profile_id,
+            environment=self.environment,
+            ts=datetime.now(),
+            tick_index=self._tick_index,
+            details=details,
+        )
+        self._event_sink.log(event)
     
     def tick(self, market_snapshot: dict) -> list[MatrixEventLogEntry]:
         """
@@ -125,7 +180,7 @@ class UnifiedEngine:
         Pipeline:
         1. Analyzer generates signals from market data
         2. Strategist evaluates signals and creates decisions
-        3. Guardrail validates decisions against risk rules
+        3. Guardrail validates decisions against risk rules (profile-aware)
         4. Executor executes approved decisions
         5. Account state is updated
         
@@ -138,13 +193,25 @@ class UnifiedEngine:
         events: list[MatrixEventLogEntry] = []
         timestamp = datetime.now()
         
+        # Telemetry: TICK_START
+        self._log_event(MatrixEventType.TICK_START, {"note": "tick start"})
+        
         # Step 1: Load account state
         account = self.account_store.load_account(self.profile_id)
         
         # Step 2: Analyze market
         signals = self.analyzer.analyze(market_snapshot)
         
-        # Log signals
+        # Telemetry: SIGNAL (summary)
+        self._log_event(MatrixEventType.SIGNAL, {
+            "signal_count": len(signals),
+            "signals": [
+                {"type": s.signal_type, "confidence": s.confidence}
+                for s in signals[:3]  # Max 3 for brevity
+            ],
+        })
+        
+        # Log signals (legacy MatrixEventLogEntry)
         for signal in signals:
             events.append(
                 MatrixEventLogEntry(
@@ -166,9 +233,22 @@ class UnifiedEngine:
         for signal in signals:
             decision = self.strategist.evaluate(signal, account)
             if decision is None:
+                # Telemetry: DECISION (no trade)
+                self._log_event(MatrixEventType.DECISION, {
+                    "decision": None,
+                    "reason": "no_trade",
+                })
                 continue
             
-            # Log decision
+            # Telemetry: DECISION
+            self._log_event(MatrixEventType.DECISION, {
+                "action": decision.action,
+                "quantity": getattr(decision, "quantity", None),
+                "tp_pct": getattr(decision, "tp_pct", None),
+                "sl_pct": getattr(decision, "sl_pct", None),
+            })
+            
+            # Log decision (legacy)
             events.append(
                 MatrixEventLogEntry(
                     event_id=str(uuid.uuid4()),
@@ -185,13 +265,64 @@ class UnifiedEngine:
                 )
             )
             
-            # Step 4: Check guardrail
+            # Step 4a: Check profile-aware guardrail (V2)
+            if self.guardrail is not None and self.profile_repo is not None:
+                ctx = GuardrailContext(
+                    symbol=self.symbol,
+                    timeframe=self.timeframe,
+                    profile_id=self.profile_id,
+                    environment=self.environment,
+                    risk_per_trade_requested=getattr(decision, "risk_per_trade", None),
+                )
+                
+                profile: Optional["MatrixCellProfile"] = None
+                if self.profile_id:
+                    profile = self.profile_repo.get_profile(self.profile_id)
+                
+                g_decision = self.guardrail.check_profile_and_risk(profile, ctx)
+                
+                # Telemetry: GUARDRAIL_V2
+                self._log_event(MatrixEventType.GUARDRAIL_V2, {
+                    "allow": g_decision.allow,
+                    "reason_code": g_decision.reason_code,
+                    "profile_status": g_decision.profile_status,
+                    "risk_contract_max": g_decision.risk_contract_max,
+                })
+                
+                # Log profile-aware guardrail decision (legacy)
+                events.append(
+                    MatrixEventLogEntry(
+                        event_id=str(uuid.uuid4()),
+                        profile_id=self.profile_id,
+                        event_type="GUARDRAIL_V2",
+                        timestamp=timestamp,
+                        payload={
+                            "allow": g_decision.allow,
+                            "reason_code": g_decision.reason_code,
+                            "profile_status": g_decision.profile_status,
+                            "risk_contract_max": g_decision.risk_contract_max,
+                        },
+                        severity="info" if g_decision.allow else "warning",
+                    )
+                )
+                
+                if not g_decision.allow:
+                    # Trade blocked by profile-aware guardrail
+                    continue
+            
+            # Step 4b: Check classic guardrail (position limits, daily loss, etc.)
             guardrail_decision = self.guardrail.check_new_trade(
                 self.profile_id, account, decision
             )
             
+            # Telemetry: GUARDRAIL_V1
+            self._log_event(MatrixEventType.GUARDRAIL_V1, {
+                "allow": guardrail_decision.allow,
+                "reason_code": guardrail_decision.reason_code,
+            })
+            
             if not guardrail_decision.allow:
-                # Log guardrail rejection
+                # Log guardrail rejection (legacy)
                 events.append(
                     MatrixEventLogEntry(
                         event_id=str(uuid.uuid4()),
@@ -210,9 +341,21 @@ class UnifiedEngine:
                 continue
             
             # Step 5: Execute if allowed (pass market_snapshot for PnL)
+            equity_before = account.capital
             report = self.executor.execute(decision, account, market_snapshot)
+            equity_after = self.account_store.load_account(self.profile_id).capital
             
-            # Log execution
+            # Telemetry: EXECUTION
+            self._log_event(MatrixEventType.EXECUTION, {
+                "status": report.status,
+                "executed_price": report.executed_price,
+                "executed_quantity": report.executed_quantity,
+                "pnl": getattr(report, "pnl", None),
+                "equity_before": equity_before,
+                "equity_after": equity_after,
+            })
+            
+            # Log execution (legacy)
             events.append(
                 MatrixEventLogEntry(
                     event_id=str(uuid.uuid4()),
@@ -233,4 +376,10 @@ class UnifiedEngine:
             # Reload account state after execution (executor updates equity)
             account = self.account_store.load_account(self.profile_id)
         
+        # Telemetry: TICK_END
+        self._log_event(MatrixEventType.TICK_END, {"note": "tick end"})
+        self._tick_index += 1
+        
         return events
+
+

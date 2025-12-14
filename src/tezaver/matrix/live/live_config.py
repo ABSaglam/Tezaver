@@ -4,30 +4,29 @@ Configuration for live trading.
 """
 
 from dataclasses import dataclass, field
-from pathlib import Path
+from typing import List, Literal
+
+from tezaver.matrix.core.guardrail import GuardrailEnvironment
+
+
+@dataclass
+class LiveStrategyCellConfig:
+    """
+    Tek bir Matrix hücresini (symbol + timeframe + profile) temsil eder.
+    Örnek: BTCUSDT 15m Silver Core.
+    """
+    symbol: str
+    timeframe: str
+    profile_id: str
+    risk_mode: Literal["contract", "experiment"] = "contract"
+    state_file_path: str | None = None  # JSON state file for persistence
 
 
 @dataclass
 class MatrixLiveConfig:
     """
-    Configuration for live trading mode.
+    Matrix Live cluster genel konfigürasyonu.
     """
-    enabled_profiles: list[str] = field(default_factory=list)
+    environment: GuardrailEnvironment = GuardrailEnvironment.LIVE
     initial_capital: float = 1000.0
-
-
-def load_live_config(path: Path) -> MatrixLiveConfig:
-    """
-    Load live configuration from a JSON file.
-    
-    Args:
-        path: Path to the config JSON file.
-        
-    Returns:
-        Parsed MatrixLiveConfig.
-        
-    Raises:
-        NotImplementedError: Implementation pending.
-    """
-    # Placeholder - implementation pending
-    raise NotImplementedError("Live config loading not yet implemented")
+    cells: List[LiveStrategyCellConfig] = field(default_factory=list)

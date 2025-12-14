@@ -23,11 +23,13 @@ from ..core.types import MarketSignal, TradeDecision, ExecutionReport
 from ..core.account import AccountState
 from ..core.guardrail import GuardrailController, GuardrailConfig
 from ..core.profile import MatrixProfileRepository
+from ..core.telemetry import InMemoryEventSink
 from ..strategies.silver_core import (
     SilverStrategyConfig,
     SilverAnalyzer,
     SilverStrategist,
     load_silver_strategy_config_from_card,
+    load_silver_strategy_config_from_profile,
 )
 
 
@@ -356,21 +358,45 @@ def _run_wargame_with_scenario_and_feed(
     # Create account store
     store = WargameAccountStore(initial_capital=scenario.initial_capital)
     
-    # Create Silver components
+    # Create Silver components using profile-based config from CoinPage V2
     # risk_per_trade_pct: 0.01 = 1% of capital → convert to percentage
     risk_pct_for_strategist = scenario.risk_per_trade_pct * 100.0
     
     # Get max_risk from scenario (if set by contract mode)
     max_risk_from_contract = scenario.max_risk_per_trade if scenario.mode == "contract" else None
     
-    analyzer, strategist = _create_silver_components(
-        scenario.profile_id,
-        scenario.symbol,
-        scenario.timeframe,
-        None,  # No strategy card, use defaults
-        risk_per_trade_pct=risk_pct_for_strategist,
-        max_risk_per_trade=max_risk_from_contract,
-    )
+    # Load profile and config from CoinPage V2 for parity with Live cluster
+    # In experiment mode, use relaxed filters based on tightness setting
+    use_relaxed_filters = (scenario.mode == "experiment")
+    tightness = getattr(scenario, "tightness", 100.0)
+    widen_factor = 100.0 / max(tightness, 1.0)  # tightness 100 → 1.0, tightness 50 → 2.0
+    
+    try:
+        profile, strategy_cfg = _load_silver_profile_and_config(scenario.symbol, scenario.profile_id)
+        
+        # Override risk settings from scenario
+        strategy_cfg.max_risk_per_trade = (
+            max_risk_from_contract if max_risk_from_contract is not None 
+            else strategy_cfg.max_risk_per_trade
+        )
+        
+        # In experiment mode, relax filters using the helper
+        if use_relaxed_filters and widen_factor > 1.0:
+            from tezaver.matrix.strategies.silver_core import relax_silver_filters_for_experiment
+            strategy_cfg = relax_silver_filters_for_experiment(strategy_cfg, widen_factor)
+        
+        analyzer = SilverAnalyzer(strategy_cfg)
+        strategist = SilverStrategist(strategy_cfg, risk_per_trade_pct=risk_pct_for_strategist)
+    except Exception:
+        # Fallback to legacy behavior if profile not found
+        analyzer, strategist = _create_silver_components(
+            scenario.profile_id,
+            scenario.symbol,
+            scenario.timeframe,
+            None,  # No strategy card, use defaults
+            risk_per_trade_pct=risk_pct_for_strategist,
+            max_risk_per_trade=max_risk_from_contract,
+        )
     
     # Create SimExecutor for real PnL calculation
     executor = SimExecutor(account_store=store)
@@ -384,7 +410,10 @@ def _run_wargame_with_scenario_and_feed(
         )
     )
     
-    # Create engine
+    # Create telemetry event sink
+    event_sink = InMemoryEventSink()
+    
+    # Create engine with telemetry
     engine = UnifiedEngine(
         profile_id=scenario.profile_id,
         analyzer=analyzer,
@@ -392,6 +421,7 @@ def _run_wargame_with_scenario_and_feed(
         executor=executor,
         guardrail=guardrail,
         account_store=store,
+        event_sink=event_sink,
     )
     
     # Run tick loop
@@ -410,6 +440,9 @@ def _run_wargame_with_scenario_and_feed(
     wins = sum(1 for e in ledger if e.get("event_type") == "TRADE" and e.get("pnl", 0) > 0)
     win_rate = wins / trade_count if trade_count > 0 else 0.0
     
+    # Combine ledger events with telemetry events
+    telemetry_events = [e.to_dict() for e in event_sink.get_events()]
+    
     return WargameReport(
         scenario_id=scenario.scenario_id,
         profile_id=scenario.profile_id,
@@ -420,7 +453,7 @@ def _run_wargame_with_scenario_and_feed(
         max_drawdown=abs(max_dd_pct),
         equity_curve=equity_curve,
         max_drawdown_pct=max_dd_pct,
-        events=ledger,
+        events=telemetry_events,  # Use telemetry events
     )
 
 
@@ -481,6 +514,7 @@ def run_silver_15m_from_patterns_for_symbol(
     symbol: str,
     risk_per_trade_pct: float = 0.01,
     mode: str = "contract",  # "contract" = enforce cap, "experiment" = bypass cap
+    tightness: float = 100.0,  # 100 = card as-is, lower = wider filters
 ) -> WargameReport:
     """
     Generic Silver 15m runner for any symbol.
@@ -489,6 +523,8 @@ def run_silver_15m_from_patterns_for_symbol(
         symbol: Trading symbol (e.g., "BTCUSDT", "ETHUSDT", "SOLUSDT").
         risk_per_trade_pct: Risk per trade (0.01 = 1%, 1.0 = 100%).
         mode: "contract" = enforce risk_contract_v1 cap, "experiment" = bypass cap.
+        tightness: Filter tightness (100 = card as-is, 50 = 2x wider ranges).
+            Only applies in experiment mode.
         
     Returns:
         WargameReport with simulation results.
@@ -498,6 +534,7 @@ def run_silver_15m_from_patterns_for_symbol(
     """
     scenario = build_silver_15m_patterns_scenario(symbol, risk_per_trade_pct)
     scenario.mode = mode
+    scenario.tightness = tightness  # Store for reference
     
     # Load risk contract from profile if in contract mode
     max_risk: float | None = None
@@ -509,9 +546,382 @@ def run_silver_15m_from_patterns_for_symbol(
     return _run_wargame_with_scenario_and_feed(scenario, feed)
 
 
+# =============================================================================
+# Full Replay Mode (bar-by-bar 15m data for 2 years)
+# =============================================================================
+
+def run_silver_15m_full_replay_for_symbol(
+    symbol: str,
+    risk: float,
+    mode: str = "contract",
+    tightness: int = 50,
+    start: str | None = None,
+    end: str | None = None,
+) -> WargameReport:
+    """
+    Silver 15m stratejisini full replay (bar bar) modunda çalıştırır.
+    
+    Bu mod, pattern dataseti yerine 2 yıllık 15m bar datasını bar bar
+    oynatarak gerçek sinyalleri tespit eder ve trade simüle eder.
+    
+    Args:
+        symbol: Trading symbol (e.g., "BTCUSDT").
+        risk: Risk per trade (0.01 = 1%, 1.0 = 100%).
+        mode: "contract" = enforce risk_contract_v1 cap, "experiment" = bypass cap.
+        tightness: Filter tightness (0-100). 100 = card as-is, 0 = global min/max.
+        start: Optional start date (ISO format, e.g., "2022-01-01").
+        end: Optional end date (ISO format, e.g., "2024-01-01").
+        
+    Returns:
+        WargameReport with simulation results.
+        
+    Raises:
+        FileNotFoundError: If full replay dataset doesn't exist.
+        
+    TODO: UI entegrasyonu - Matrix Operator "Veri Kaynağı" selectbox ekle.
+    """
+    from datetime import timezone
+    
+    # Build scenario for full replay
+    profile_id = DEFAULT_SILVER_15M_PROFILE_IDS.get(symbol, f"{symbol[:3]}_SILVER_15M_CORE_V1")
+    
+    # Load full replay feed first (so we fail fast on missing file)
+    feed = ReplayDataFeed.from_symbol_timeframe_full_replay(
+        symbol=symbol,
+        timeframe="15m",
+        start=start,
+        end=end,
+    )
+    
+    scenario = WargameScenario(
+        scenario_id=f"silver_15m_full_replay_{symbol.lower()}_{uuid.uuid4().hex[:8]}",
+        profile_id=profile_id,
+        symbol=symbol,
+        timeframe="15m",
+        start_ts=datetime.now(timezone.utc),
+        end_ts=datetime.now(timezone.utc),
+        initial_capital=100.0,
+        risk_per_trade_pct=risk,
+        mode=mode,
+    )
+    scenario.tightness = float(tightness)
+    
+    # Load risk contract if in contract mode
+    if mode == "contract":
+        max_risk = _load_risk_contract_max_for_profile(profile_id)
+        scenario.max_risk_per_trade = max_risk
+    
+    return _run_wargame_with_scenario_and_feed(scenario, feed)
+
+
+# =============================================================================
+# Sniper Full Replay Mode (bar-by-bar using sniper entries as signals)
+# =============================================================================
+
+def run_sniper_full_replay_for_symbol(
+    symbol: str,
+    timeframe: str = "15m",
+    risk: float = 1.0,
+    tp_pct: float = 0.08,  # Take profit: 8%
+    sl_pct: float = 0.03,  # Stop loss: 3%
+    max_bars: int = 50,    # Max bars to hold
+) -> WargameReport:
+    """
+    Sniper entries üzerinden bar-bar full replay simülasyonu.
+    
+    Bu mod:
+    1. sniper_entries_v1.parquet'den entry timestamp'leri alır
+    2. 2 yıllık 15m bar datasını yükler
+    3. Sadece sniper entry zamanlarında işleme girer
+    4. TP/SL veya max bars ile çıkar
+    
+    Args:
+        symbol: Trading symbol (e.g., "BTCUSDT").
+        timeframe: Timeframe (e.g., "15m").
+        risk: Risk per trade (1.0 = full equity).
+        tp_pct: Take profit percentage (0.08 = 8%).
+        sl_pct: Stop loss percentage (0.03 = 3%).
+        max_bars: Maximum bars to hold position.
+        
+    Returns:
+        WargameReport with bar-by-bar simulation results.
+    """
+    import pandas as pd
+    import numpy as np
+    from pathlib import Path
+    
+    symbol = symbol.upper()
+    
+    # 1) Load sniper entries
+    entries_path = Path(f"data/ai_datasets/{symbol}/{timeframe}/sniper_entries_v1.parquet")
+    if not entries_path.exists():
+        raise FileNotFoundError(f"Sniper entries not found: {entries_path}")
+    
+    entries_df = pd.read_parquet(entries_path)
+    entries_df = entries_df.loc[:, ~entries_df.columns.duplicated()]
+    
+    # Find timestamp column
+    ts_col = None
+    for c in ["event_time", "ts", "timestamp", "entry_ts"]:
+        if c in entries_df.columns:
+            ts_col = c
+            break
+    
+    if ts_col is None:
+        raise ValueError(f"No timestamp column found in sniper entries: {entries_df.columns.tolist()}")
+    
+    entries_df["entry_ts"] = pd.to_datetime(entries_df[ts_col])
+    entry_timestamps = set(entries_df["entry_ts"].dt.strftime("%Y-%m-%d %H:%M"))
+    
+    # 2) Load full replay bar data
+    bars_path = Path(f"data/replay/{symbol}/{timeframe}/full_replay_bars_v1.parquet")
+    if not bars_path.exists():
+        raise FileNotFoundError(f"Full replay bars not found: {bars_path}")
+    
+    bars_df = pd.read_parquet(bars_path)
+    bars_df = bars_df.loc[:, ~bars_df.columns.duplicated()]
+    
+    # Find timestamp column in bars
+    bar_ts_col = None
+    for c in ["ts", "timestamp", "time", "datetime"]:
+        if c in bars_df.columns:
+            bar_ts_col = c
+            break
+    
+    if bar_ts_col is None:
+        raise ValueError(f"No timestamp column found in bars: {bars_df.columns.tolist()}")
+    
+    bars_df["bar_ts"] = pd.to_datetime(bars_df[bar_ts_col])
+    bars_df = bars_df.sort_values("bar_ts").reset_index(drop=True)
+    
+    # 3) Simulation loop
+    capital = 100.0
+    equity = capital
+    equity_curve = [equity]
+    trades = []
+    
+    in_position = False
+    entry_price = 0.0
+    entry_idx = 0
+    position_size = 0.0
+    
+    for i, row in bars_df.iterrows():
+        bar_ts_str = row["bar_ts"].strftime("%Y-%m-%d %H:%M")
+        
+        # Get OHLC
+        close = row.get("close", row.get("Close", 0))
+        high = row.get("high", row.get("High", close))
+        low = row.get("low", row.get("Low", close))
+        
+        if close == 0:
+            continue
+        
+        if in_position:
+            # Check exit conditions
+            bars_held = i - entry_idx
+            pnl_pct = (close / entry_price - 1.0)
+            high_pnl = (high / entry_price - 1.0)
+            low_pnl = (low / entry_price - 1.0)
+            
+            # Check TP (using high)
+            if high_pnl >= tp_pct:
+                profit = position_size * tp_pct
+                equity += profit
+                trades.append({
+                    "entry_idx": entry_idx,
+                    "exit_idx": i,
+                    "pnl_pct": tp_pct,
+                    "exit_reason": "TP",
+                })
+                in_position = False
+            # Check SL (using low)
+            elif low_pnl <= -sl_pct:
+                profit = position_size * (-sl_pct)
+                equity += profit
+                trades.append({
+                    "entry_idx": entry_idx,
+                    "exit_idx": i,
+                    "pnl_pct": -sl_pct,
+                    "exit_reason": "SL",
+                })
+                in_position = False
+            # Check max bars
+            elif bars_held >= max_bars:
+                profit = position_size * pnl_pct
+                equity += profit
+                trades.append({
+                    "entry_idx": entry_idx,
+                    "exit_idx": i,
+                    "pnl_pct": pnl_pct,
+                    "exit_reason": "MAX_BARS",
+                })
+                in_position = False
+        
+        else:
+            # Check for entry signal
+            if bar_ts_str in entry_timestamps:
+                in_position = True
+                entry_price = close
+                entry_idx = i
+                position_size = equity * risk
+        
+        equity_curve.append(equity)
+    
+    # 4) Calculate metrics
+    trade_count = len(trades)
+    wins = sum(1 for t in trades if t["pnl_pct"] > 0)
+    win_rate = (wins / trade_count * 100.0) if trade_count > 0 else 0.0
+    
+    pnl_pct = (equity / capital - 1.0) * 100.0
+    max_dd_pct = compute_max_drawdown_pct(equity_curve) * 100.0
+    
+    return WargameReport(
+        scenario_id=f"sniper_full_replay_{symbol.lower()}_{uuid.uuid4().hex[:8]}",
+        profile_id=f"{symbol}_SNIPER_{timeframe.upper()}_V1",
+        capital_start=capital,
+        capital_end=round(equity, 2),
+        trade_count=trade_count,
+        win_rate=round(win_rate / 100.0, 4),  # Store as decimal
+        max_drawdown=0.0,
+        equity_curve=equity_curve,
+        max_drawdown_pct=round(max_dd_pct / 100.0, 4),  # Store as decimal
+        events=[],
+    )
+
+
+# =============================================================================
+# Hybrid War Game (Pattern + Full Replay)
+# =============================================================================
+
+def run_silver_15m_hybrid_for_symbol(
+    symbol: str,
+    risk: float,
+    mode: str = "contract",
+    tightness: int = 50,
+) -> "HybridWargameResult":
+    """
+    Pattern dataset + full replay sonuçlarını aynı parametrelerle çalıştırıp
+    yan yana döndürür.
+    
+    Args:
+        symbol: Trading symbol (e.g., "BTCUSDT").
+        risk: Risk per trade (0.01 = 1%, 1.0 = 100%).
+        mode: "contract" or "experiment".
+        tightness: Filter tightness (0-100).
+        
+    Returns:
+        HybridWargameResult with both reports.
+        
+    TODO: Hybrid v2 – pattern dataset'te sinyal olan timestamp set'ini al,
+          full replay'de sadece o timestamp'lerde sinyal üret.
+    """
+    from .reports import HybridWargameResult
+    
+    pattern_report = run_silver_15m_from_patterns_for_symbol(
+        symbol=symbol,
+        risk_per_trade_pct=risk,
+        mode=mode,
+        tightness=float(tightness),
+    )
+    
+    full_report = run_silver_15m_full_replay_for_symbol(
+        symbol=symbol,
+        risk=risk,
+        mode=mode,
+        tightness=tightness,
+        start=None,
+        end=None,
+    )
+    
+    return HybridWargameResult(
+        symbol=symbol,
+        timeframe="15m",
+        profile_id=pattern_report.profile_id,
+        risk=risk,
+        mode=mode,
+        tightness=tightness,
+        pattern_report=pattern_report,
+        full_replay_report=full_report,
+    )
+
+
+def _print_hybrid_result(result: "HybridWargameResult") -> None:
+    """Print hybrid war game result for CLI."""
+    print("=== Silver 15m Hybrid War Game ===")
+    print(f"Symbol   : {result.symbol}")
+    print(f"Profile  : {result.profile_id}")
+    print(f"Risk     : {result.risk:.2f} (mode={result.mode}, tightness={result.tightness})")
+    print("------------------------------------------------------------")
+    pr = result.pattern_report
+    fr = result.full_replay_report
+    pr_pnl = (pr.capital_end / pr.capital_start - 1.0) * 100.0 if pr.capital_start > 0 else 0.0
+    fr_pnl = (fr.capital_end / fr.capital_start - 1.0) * 100.0 if fr.capital_start > 0 else 0.0
+    print(f"PATTERN    : Cap {pr.capital_start:.2f}→{pr.capital_end:.2f} ({pr_pnl:+.2f}%) | "
+          f"Trades={pr.trade_count} | MaxDD={pr.max_drawdown_pct * 100:.2f}%")
+    print(f"FULL_REPLAY: Cap {fr.capital_start:.2f}→{fr.capital_end:.2f} ({fr_pnl:+.2f}%) | "
+          f"Trades={fr.trade_count} | MaxDD={fr.max_drawdown_pct * 100:.2f}%")
+    print("------------------------------------------------------------")
+    print(f"Δ PnL%     : {result.delta_pnl_pct:+.4f}%")
+    print(f"Δ Trades   : {result.delta_trades:+d}")
+    print(f"Δ MaxDD%   : {result.delta_max_dd_pct * 100:+.4f}%")
+
+
+# Default profile IDs for Silver 15m (derived from symbol)
+DEFAULT_SILVER_15M_PROFILE_IDS = {
+    "BTCUSDT": "BTC_SILVER_15M_CORE_V1",
+    "ETHUSDT": "ETH_SILVER_15M_CORE_V1",
+    "SOLUSDT": "SOL_SILVER_15M_CORE_V1",
+}
+
+
+def _load_silver_profile_and_config(
+    symbol: str,
+    profile_id: str | None = None,
+) -> tuple["MatrixCellProfile", SilverStrategyConfig]:
+    """
+    Load Silver 15m profile and config from CoinPage V2.
+    
+    Args:
+        symbol: Trading symbol (e.g., "BTCUSDT")
+        profile_id: Optional profile ID override.
+        
+    Returns:
+        Tuple of (MatrixCellProfile, SilverStrategyConfig)
+        
+    Raises:
+        ValueError: If profile not found or no strategy config.
+    """
+    # Default coin_page_root
+    coin_page_root = Path("data/coin_profiles")
+    repo = MatrixProfileRepository(coin_page_root)
+    
+    # Determine profile_id
+    if profile_id is None:
+        profile_id = DEFAULT_SILVER_15M_PROFILE_IDS.get(symbol)
+        if not profile_id:
+            # Generate from symbol
+            base = symbol.replace("USDT", "")
+            profile_id = f"{base}_SILVER_15M_CORE_V1"
+    
+    # Load profiles for symbol first (populates cache)
+    repo.load_profiles_for_symbol(symbol)
+    
+    # Now get profile from cache
+    profile = repo.get_profile(profile_id)
+    if profile is None:
+        raise ValueError(f"Silver profile_id={profile_id} not found in MatrixProfileRepository")
+    
+    # Load config from profile
+    cfg = load_silver_strategy_config_from_profile(profile)
+    
+    return profile, cfg
+
+
 def _load_risk_contract_max_for_profile(profile_id: str) -> float | None:
     """
     Load max_risk_per_trade from risk_contract_v1 for a profile.
+    
+    Now reads from CoinPage V2 via MatrixProfileRepository.
     
     Args:
         profile_id: e.g., "BTC_SILVER_15M_CORE_V1"
@@ -519,21 +929,13 @@ def _load_risk_contract_max_for_profile(profile_id: str) -> float | None:
     Returns:
         max_risk_per_trade from contract, or None if not found.
     """
-    # Load from candidate profiles JSON
-    profiles_path = Path("data/coin_profiles/BTCUSDT/matrix_candidate_profiles_v1.json")
-    if not profiles_path.exists():
-        return None
-    
     try:
-        with profiles_path.open("r", encoding="utf-8") as f:
-            profiles = json.load(f)
+        coin_page_root = Path("data/coin_profiles")
+        repo = MatrixProfileRepository(coin_page_root)
+        profile = repo.get_profile(profile_id)
         
-        if isinstance(profiles, list):
-            for profile in profiles:
-                if profile.get("profile_id") == profile_id:
-                    rc = profile.get("risk_contract_v1")
-                    if isinstance(rc, dict):
-                        return rc.get("max_risk_per_trade")
+        if profile and profile.risk_contract:
+            return profile.risk_contract.max_risk_per_trade
     except Exception:
         pass
     
@@ -695,6 +1097,91 @@ if __name__ == "__main__":
                 f"PnL={coin['pnl_pct']:+.2f}%  "
                 f"Trades={coin['trades']}"
             )
+    
+    elif mode == "full_replay_silver_15m":
+        # python -m tezaver.matrix.wargame.runner full_replay_silver_15m BTCUSDT 1.0 experiment 50
+        symbol = sys.argv[2] if len(sys.argv) > 2 else "BTCUSDT"
+        risk = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0
+        replay_mode = sys.argv[4] if len(sys.argv) > 4 else "contract"
+        tightness = int(sys.argv[5]) if len(sys.argv) > 5 else 50
+        
+        print(f"=== Silver 15m Full Replay – {symbol} ===")
+        print(f"Risk: {risk:.2f}, Mode: {replay_mode}, Tightness: {tightness}")
+        print()
+        
+        try:
+            report = run_silver_15m_full_replay_for_symbol(
+                symbol=symbol,
+                risk=risk,
+                mode=replay_mode,
+                tightness=tightness,
+            )
+            print(f"Scenario : {report.scenario_id}")
+            print(f"Profile  : {report.profile_id}")
+            print(f"Capital  : {report.capital_start:.2f} → {report.capital_end:.2f}")
+            pnl_pct = (report.capital_end / report.capital_start - 1.0) * 100.0
+            print(f"PnL      : {pnl_pct:+.2f}%")
+            print(f"Trades   : {report.trade_count}")
+            print(f"Win Rate : {report.win_rate:.1%}")
+            print(f"Max DD   : {report.max_drawdown_pct * 100:.2f}%")
+        except FileNotFoundError as e:
+            print(f"Error: {e}")
+            print(f"Make sure full_replay_bars_v1.parquet exists in data/replay/{symbol}/15m/")
+    
+    elif mode == "hybrid_silver_15m":
+        # python -m tezaver.matrix.wargame.runner hybrid_silver_15m BTCUSDT 0.01 contract 50
+        symbol = sys.argv[2] if len(sys.argv) > 2 else "BTCUSDT"
+        risk = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0
+        hybrid_mode = sys.argv[4] if len(sys.argv) > 4 else "contract"
+        tightness = int(sys.argv[5]) if len(sys.argv) > 5 else 50
+        
+        try:
+            result = run_silver_15m_hybrid_for_symbol(
+                symbol=symbol,
+                risk=risk,
+                mode=hybrid_mode,
+                tightness=tightness,
+            )
+            _print_hybrid_result(result)
+        except FileNotFoundError as e:
+            print(f"Error: {e}")
+            print("Make sure both pattern and full_replay datasets exist.")
+    
+    elif mode == "parity_silver_15m":
+        from .parity_tools import run_silver_15m_live_vs_wargame_parity, print_parity_result
+        
+        symbol = sys.argv[2] if len(sys.argv) > 2 else "BTCUSDT"
+        risk = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0
+        parity_mode = sys.argv[4] if len(sys.argv) > 4 else "experiment"
+        
+        try:
+            result = run_silver_15m_live_vs_wargame_parity(
+                symbol=symbol,
+                risk=risk,
+                mode=parity_mode,
+            )
+            print_parity_result(result)
+        except FileNotFoundError as e:
+            print(f"Error: {e}")
+            print(f"Make sure rally_patterns_v1.parquet exists for {symbol}")
+    
+    elif mode == "diary_silver_15m":
+        from .diary import print_wargame_diary
+        
+        symbol = sys.argv[2] if len(sys.argv) > 2 else "BTCUSDT"
+        risk = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0
+        diary_mode = sys.argv[4] if len(sys.argv) > 4 else "experiment"
+        
+        try:
+            report = run_silver_15m_from_patterns_for_symbol(
+                symbol=symbol,
+                risk_per_trade_pct=risk,
+                mode=diary_mode,
+            )
+            print_wargame_diary(report)
+        except FileNotFoundError as e:
+            print(f"Error: {e}")
+            print(f"Make sure rally_patterns_v1.parquet exists for {symbol}")
     
     else:
         print("=== BTC Silver 15m – War Game (rally_patterns_v1) ===")

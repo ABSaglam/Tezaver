@@ -265,3 +265,154 @@ class ReplayDataFeed(IDataFeed):
     def remaining_bars(self) -> int:
         """Number of remaining bars to process."""
         return len(self._bars) - self._bar_index
+
+    # =========================================================================
+    # Full Replay Mode (bar-by-bar 15m data)
+    # =========================================================================
+    
+    @classmethod
+    def from_symbol_timeframe_full_replay(
+        cls,
+        symbol: str,
+        timeframe: str,
+        start: str | None = None,
+        end: str | None = None,
+        path: Path | None = None,
+    ) -> "ReplayDataFeed":
+        """
+        Full replay için 15m bar datasını yükler.
+        
+        Args:
+            symbol: Trading symbol (e.g., "BTCUSDT").
+            timeframe: Timeframe (e.g., "15m").
+            start: Optional start date (ISO format, e.g., "2022-01-01").
+            end: Optional end date (ISO format, e.g., "2024-01-01").
+            path: Optional custom path to parquet file.
+                  Defaults to data/replay/{symbol}/{timeframe}/full_replay_bars_v1.parquet
+                  
+        Returns:
+            ReplayDataFeed with bar-by-bar snapshot data.
+            
+        Raises:
+            FileNotFoundError: If parquet file doesn't exist.
+            
+        Expected parquet columns:
+            - ts (timestamp)
+            - open, high, low, close, volume
+            - rsi_15m, volume_rel_15m, atr_pct_15m
+            - rsi_gap_1d, rsi_1h (ML features)
+            - future_max_gain_pct, future_min_drawdown_pct (PnL labels)
+        
+        TODO: Full replay dataset builder - gerçek OHLCV + feature + label pipeline.
+        TODO: start/end parametrelerini dataset meta bilgisi ile akıllı varsayılan yap.
+        """
+        import pandas as pd
+        
+        if path is None:
+            path = Path(f"data/replay/{symbol}/{timeframe}/full_replay_bars_v1.parquet")
+        
+        if not path.exists():
+            raise FileNotFoundError(f"Full replay parquet not found: {path}")
+        
+        df = pd.read_parquet(path)
+        
+        # Slice by start/end if provided
+        ts_col = None
+        for col in ["ts", "timestamp", "event_time", "time"]:
+            if col in df.columns:
+                ts_col = col
+                break
+        
+        if ts_col and (start or end):
+            df[ts_col] = pd.to_datetime(df[ts_col])
+            if start:
+                df = df[df[ts_col] >= pd.to_datetime(start)]
+            if end:
+                df = df[df[ts_col] <= pd.to_datetime(end)]
+        
+        # Build snapshots
+        snapshots: list[dict[str, Any]] = []
+        
+        for _, row in df.iterrows():
+            # Timestamp
+            ts = row.get(ts_col) if ts_col else None
+            
+            # Get label fields for PnL calculation
+            future_gain = row.get("future_max_gain_pct") or row.get("label_future_max_gain_pct")
+            future_drawdown = row.get("future_min_drawdown_pct") or row.get("label_future_min_drawdown_pct")
+            bars_to_peak = row.get("bars_to_peak") or row.get("label_bars_to_peak")
+            
+            snapshot: dict[str, Any] = {
+                "symbol": symbol,
+                "timeframe": timeframe,
+                "timestamp": ts,
+                # OHLCV
+                "open": row.get("open"),
+                "high": row.get("high"),
+                "low": row.get("low"),
+                "close": row.get("close"),
+                "volume": row.get("volume"),
+                # SilverAnalyzer expected keys
+                "rsi_15m": row.get("rsi_15m") or row.get("feat_rsi_15m"),
+                "volume_rel": row.get("volume_rel_15m") or row.get("feat_volume_rel_15m"),
+                "atr_pct": row.get("atr_pct_15m") or row.get("feat_atr_pct_15m"),
+                "quality_score": row.get("quality_score") or row.get("feat_quality_score"),
+                # ML features
+                "rsi_gap_1d": row.get("rsi_gap_1d") or row.get("feat_rsi_gap_1d"),
+                "atr_pct_15m": row.get("atr_pct_15m") or row.get("feat_atr_pct_15m"),
+                "rsi_1h": row.get("rsi_1h") or row.get("feat_rsi_1h"),
+                # PnL calculation fields (labels)
+                "future_max_gain_pct": future_gain,
+                "future_min_drawdown_pct": future_drawdown,
+                "future_bars_to_peak": bars_to_peak,
+            }
+            
+            snapshots.append(snapshot)
+        
+        return cls(symbol, timeframe, snapshots)
+
+    @classmethod
+    def from_dataframe_full_replay(
+        cls,
+        symbol: str,
+        timeframe: str,
+        df: "pd.DataFrame",  # type: ignore
+    ) -> "ReplayDataFeed":
+        """
+        Create full replay feed from an existing DataFrame.
+        Used for testing with fake data.
+        
+        Args:
+            symbol: Trading symbol.
+            timeframe: Timeframe.
+            df: DataFrame with bar data.
+            
+        Returns:
+            ReplayDataFeed instance.
+        """
+        snapshots: list[dict[str, Any]] = []
+        
+        for _, row in df.iterrows():
+            snapshot = {
+                "symbol": symbol,
+                "timeframe": timeframe,
+                "timestamp": row.get("ts") or row.get("timestamp"),
+                "open": row.get("open"),
+                "high": row.get("high"),
+                "low": row.get("low"),
+                "close": row.get("close"),
+                "volume": row.get("volume"),
+                "rsi_15m": row.get("rsi_15m"),
+                "volume_rel": row.get("volume_rel"),
+                "atr_pct": row.get("atr_pct"),
+                "quality_score": row.get("quality_score", 70.0),
+                "rsi_gap_1d": row.get("rsi_gap_1d"),
+                "rsi_1h": row.get("rsi_1h"),
+                "future_max_gain_pct": row.get("future_max_gain_pct"),
+                "future_min_drawdown_pct": row.get("future_min_drawdown_pct"),
+                "future_bars_to_peak": row.get("future_bars_to_peak"),
+            }
+            snapshots.append(snapshot)
+        
+        return cls(symbol, timeframe, snapshots)
+

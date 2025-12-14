@@ -1,0 +1,28 @@
+/* Tezaver Unified Color Palette */
+/* Bu dosya referans için - SVG'ler bu değerleri kullanır */
+
+:root {
+  /* ===== GOLD / YELLOW ===== */
+  --gold-primary: #FFD600;     /* Parlak altın */
+  --gold-secondary: #FFAB00;   /* Amber altın */
+  --gold-glow: #FFC107;        /* Glow efekti */
+  
+  /* ===== GREEN ===== */
+  --green-primary: #00E676;    /* Neon yeşil */
+  --green-secondary: #69F0AE;  /* Açık neon yeşil */
+  --green-dark: #00C853;       /* Koyu neon yeşil */
+  
+  /* ===== BLUE ===== */
+  --blue-primary: #2196F3;     /* Parlak mavi */
+  --blue-secondary: #64B5F6;   /* Açık mavi */
+  --blue-dark: #1565C0;        /* Koyu mavi */
+  
+  /* ===== RED / FIRE ===== */
+  --fire-primary: #FF6600;     /* Ateş turuncu */
+  --fire-secondary: #FF1744;   /* Ateş kırmızı */
+  --fire-dark: #D50000;        /* Koyu kırmızı */
+  
+  /* ===== NEUTRAL ===== */
+  --white: #FFFFFF;
+  --white-glow: #F5F5F5;
+}

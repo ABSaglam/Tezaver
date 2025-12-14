@@ -16,6 +16,8 @@ import uuid
 from tezaver.matrix.core.engine import IAnalyzer, IStrategist
 from tezaver.matrix.core.types import MarketSignal, TradeDecision
 from tezaver.matrix.core.account import AccountState
+from tezaver.matrix.core.profile import MatrixCellProfile
+from tezaver.matrix.coin_page.schema import StrategyConfigV1, StrategyRiskContractV1
 
 
 @dataclass
@@ -47,6 +49,186 @@ class SilverStrategyConfig:
     
     metadata: dict[str, object] = field(default_factory=dict)
 
+
+# ============================================================================
+# Tightness V2: Dataset Stats and Interpolation
+# ============================================================================
+
+@dataclass
+class SilverDatasetStats:
+    """Statistics from pattern dataset for tightness interpolation."""
+    rsi_15m_min: float
+    rsi_15m_max: float
+    volume_rel_15m_min: float
+    volume_rel_15m_max: float
+    atr_pct_15m_min: float
+    atr_pct_15m_max: float
+    rsi_gap_1d_min: Optional[float] = None
+    rsi_gap_1d_max: Optional[float] = None
+    rsi_1h_min: Optional[float] = None
+    rsi_1h_max: Optional[float] = None
+
+
+@dataclass
+class SilverFilterWindow:
+    """Effective filter window after tightness interpolation."""
+    tightness: float
+    rsi_15m_range: tuple[float, float]
+    volume_rel_range: tuple[float, float]
+    atr_pct_range: tuple[float, float]
+    ml_enabled: bool
+    rsi_gap_1d_range: Optional[tuple[float, float]] = None
+    rsi_1h_range: Optional[tuple[float, float]] = None
+    quality_min: float = 60.0
+
+
+def _interpolate_interval(
+    global_min: float,
+    global_max: float,
+    card_min: float,
+    card_max: float,
+    tightness: float,
+) -> tuple[float, float]:
+    """
+    Interpolate between global and card range based on tightness.
+    
+    tightness=100 → card range
+    tightness=0   → global range
+    tightness=50  → midpoint
+    """
+    alpha = max(0.0, min(1.0, tightness / 100.0))
+    eff_min = global_min * (1 - alpha) + card_min * alpha
+    eff_max = global_max * (1 - alpha) + card_max * alpha
+    return (eff_min, eff_max)
+
+
+def build_silver_filter_window(
+    cfg: SilverStrategyConfig,
+    stats: SilverDatasetStats,
+    tightness: float,
+) -> SilverFilterWindow:
+    """
+    Build effective filter window from card + dataset stats + tightness.
+    
+    Entry filters: Linear interpolation between global and card.
+    ML filters:
+      - tight >= 70: card range
+      - 40 <= tight < 70: interpolation
+      - tight < 40: disabled
+    """
+    # Entry filters interpolation
+    rsi_range = _interpolate_interval(
+        stats.rsi_15m_min, stats.rsi_15m_max,
+        cfg.rsi_range[0] if cfg.rsi_range else stats.rsi_15m_min,
+        cfg.rsi_range[1] if cfg.rsi_range else stats.rsi_15m_max,
+        tightness,
+    )
+    
+    volume_range = _interpolate_interval(
+        stats.volume_rel_15m_min, stats.volume_rel_15m_max,
+        cfg.volume_rel_range[0] if cfg.volume_rel_range else stats.volume_rel_15m_min,
+        cfg.volume_rel_range[1] if cfg.volume_rel_range else stats.volume_rel_15m_max,
+        tightness,
+    )
+    
+    atr_range = _interpolate_interval(
+        stats.atr_pct_15m_min, stats.atr_pct_15m_max,
+        cfg.atr_pct_range[0] if cfg.atr_pct_range else stats.atr_pct_15m_min,
+        cfg.atr_pct_range[1] if cfg.atr_pct_range else stats.atr_pct_15m_max,
+        tightness,
+    )
+    
+    # ML filters: tiered policy
+    ml_enabled = tightness >= 40
+    rsi_gap_1d_range: Optional[tuple[float, float]] = None
+    rsi_1h_range: Optional[tuple[float, float]] = None
+    
+    if ml_enabled and stats.rsi_gap_1d_min is not None:
+        if tightness >= 70:
+            # Full card range
+            if cfg.rsi_gap_1d_range:
+                rsi_gap_1d_range = cfg.rsi_gap_1d_range
+        else:
+            # Interpolate (40-70 range)
+            ml_alpha = (tightness - 40) / 30.0  # 0 at 40, 1 at 70
+            if cfg.rsi_gap_1d_range:
+                rsi_gap_1d_range = _interpolate_interval(
+                    stats.rsi_gap_1d_min, stats.rsi_gap_1d_max,
+                    cfg.rsi_gap_1d_range[0], cfg.rsi_gap_1d_range[1],
+                    ml_alpha * 100,
+                )
+    
+    if ml_enabled and stats.rsi_1h_min is not None:
+        if tightness >= 70:
+            if cfg.rsi_1h_range:
+                rsi_1h_range = cfg.rsi_1h_range
+        else:
+            ml_alpha = (tightness - 40) / 30.0
+            if cfg.rsi_1h_range:
+                rsi_1h_range = _interpolate_interval(
+                    stats.rsi_1h_min, stats.rsi_1h_max,
+                    cfg.rsi_1h_range[0], cfg.rsi_1h_range[1],
+                    ml_alpha * 100,
+                )
+    
+    return SilverFilterWindow(
+        tightness=tightness,
+        rsi_15m_range=rsi_range,
+        volume_rel_range=volume_range,
+        atr_pct_range=atr_range,
+        ml_enabled=ml_enabled,
+        rsi_gap_1d_range=rsi_gap_1d_range,
+        rsi_1h_range=rsi_1h_range,
+        quality_min=60.0,  # Core rule always applies
+    )
+
+
+# Legacy helper (kept for backward compatibility)
+def _widen_range(
+    rng: tuple[float, float] | None,
+    widen_factor: float,
+) -> tuple[float, float] | None:
+    """Widen a min/max range by the given factor around its center."""
+    if rng is None:
+        return None
+    min_val, max_val = rng
+    center = (min_val + max_val) / 2.0
+    half_range = (max_val - min_val) / 2.0
+    new_half = half_range * widen_factor
+    return (center - new_half, center + new_half)
+
+
+def relax_silver_filters_for_experiment(
+    cfg: SilverStrategyConfig,
+    widen_factor: float,
+) -> SilverStrategyConfig:
+    """
+    Legacy: Relax entry/ML filters for experiment mode.
+    Use build_silver_filter_window for v2 tightness.
+    """
+    from dataclasses import replace
+    
+    new_rsi_range = _widen_range(cfg.rsi_range, widen_factor)
+    new_volume_range = _widen_range(cfg.volume_rel_range, widen_factor)
+    new_atr_range = _widen_range(cfg.atr_pct_range, widen_factor)
+    new_rsi_gap_1d = _widen_range(cfg.rsi_gap_1d_range, widen_factor)
+    new_atr_15m = _widen_range(cfg.atr_pct_15m_range, widen_factor)
+    new_rsi_1h = _widen_range(cfg.rsi_1h_range, widen_factor)
+    
+    new_quality = None
+    if cfg.min_quality_score is not None:
+        new_quality = cfg.min_quality_score / widen_factor
+    
+    return replace(
+        cfg,
+        rsi_range=new_rsi_range,
+        volume_rel_range=new_volume_range,
+        atr_pct_range=new_atr_range,
+        rsi_gap_1d_range=new_rsi_gap_1d,
+        atr_pct_15m_range=new_atr_15m,
+        rsi_1h_range=new_rsi_1h,
+        min_quality_score=new_quality,
+    )
 
 def load_silver_strategy_config_from_card(
     card_path: Path,
@@ -96,13 +278,22 @@ def load_silver_strategy_config_from_card(
         raw = json.load(f)
     
     entry = raw.get("entry_filters", {})
+    # Also try "filters" key (used in silver_strategy_card_v1.json)
+    if not entry:
+        entry = raw.get("filters", {})
     ml = raw.get("ml_filters", {})
     exit_cfg = raw.get("exit", {})
+    # Also try "risk" key (used in silver_strategy_card_v1.json)
+    if not exit_cfg:
+        exit_cfg = raw.get("risk", {})
     
     def _to_range(d: dict | None) -> tuple[float, float] | None:
         if not d:
             return None
         if "min" not in d or "max" not in d:
+            return None
+        # Handle null max
+        if d["max"] is None:
             return None
         return float(d["min"]), float(d["max"])
     
@@ -125,6 +316,88 @@ def load_silver_strategy_config_from_card(
         atr_pct_15m_range=_to_range(ml.get("atr_pct_15m")),
         rsi_1h_range=_to_range(ml.get("rsi_1h")),
         metadata={"card_version": raw.get("version")},
+    )
+
+
+# =============================================================================
+# Profile-Based Loader (CoinPage V2)
+# =============================================================================
+
+
+def load_silver_strategy_config_from_profile(
+    profile: MatrixCellProfile,
+) -> SilverStrategyConfig:
+    """
+    Load SilverStrategyConfig from a MatrixCellProfile (CoinPage V2).
+    
+    This is the preferred loader for Matrix runtime and War Game.
+    Config comes from profile.strategy_config (StrategyConfigV1).
+    Risk cap comes from profile.risk_contract (StrategyRiskContractV1).
+    
+    Args:
+        profile: MatrixCellProfile loaded from CoinPage V2.
+        
+    Returns:
+        SilverStrategyConfig instance.
+        
+    Raises:
+        ValueError: If profile has no strategy_config.
+    """
+    if profile.strategy_config is None:
+        raise ValueError(f"Silver profile {profile.profile_id} has no strategy config")
+    
+    s: StrategyConfigV1 = profile.strategy_config
+    rc: Optional[StrategyRiskContractV1] = profile.risk_contract
+    
+    # 1) Entry filters
+    entry = s.entry_filters or {}
+    ml = s.ml_filters or {}
+    
+    def _to_range(d: dict | None) -> tuple[float, float] | None:
+        if not d:
+            return None
+        if "min" not in d or "max" not in d:
+            return None
+        # Handle null max
+        if d.get("max") is None:
+            return None
+        return float(d["min"]), float(d["max"])
+    
+    def _get_min_only(d: dict | None) -> float | None:
+        if not d or "min" not in d:
+            return None
+        return float(d["min"])
+    
+    # 2) Exit parameters
+    exit_cfg = s.exit or {}
+    tp_pct = float(exit_cfg.get("tp_pct", 0.09)) if "tp_pct" in exit_cfg else 0.09
+    sl_pct = float(exit_cfg.get("sl_pct", 0.02)) if "sl_pct" in exit_cfg else 0.02
+    max_horizon_bars = int(exit_cfg.get("max_horizon_bars", 48)) if "max_horizon_bars" in exit_cfg else 48
+    
+    # 3) Risk contract (max_risk_per_trade)
+    max_risk_per_trade: float | None = None
+    if rc is not None:
+        max_risk_per_trade = rc.max_risk_per_trade
+    
+    return SilverStrategyConfig(
+        symbol=profile.symbol,
+        timeframe=profile.timeframe,
+        rsi_range=_to_range(entry.get("rsi_15m")),
+        volume_rel_range=_to_range(entry.get("volume_rel_15m")),
+        atr_pct_range=_to_range(entry.get("atr_pct_15m")),
+        min_quality_score=_get_min_only(entry.get("quality_score")),
+        tp_pct=tp_pct,
+        sl_pct=sl_pct,
+        max_horizon_bars=max_horizon_bars,
+        rsi_gap_1d_range=_to_range(ml.get("rsi_gap_1d")),
+        atr_pct_15m_range=_to_range(ml.get("atr_pct_15m")),
+        rsi_1h_range=_to_range(ml.get("rsi_1h")),
+        max_risk_per_trade=max_risk_per_trade,
+        metadata={
+            "profile_id": profile.profile_id,
+            "kind": profile.kind,
+            "strategy_version": s.version,
+        },
     )
 
 

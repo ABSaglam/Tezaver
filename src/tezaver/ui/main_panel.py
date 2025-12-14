@@ -26,7 +26,8 @@ from tezaver.ui.rally_radar_tab import render_rally_radar_tab
 from tezaver.ui.rally_quality_tab import render_rally_quality_tab
 from tezaver.ui.rally_families_tab import render_rally_families_tab
 from tezaver.ui.kartal_goz_tab import render_kartal_goz_tab
-from tezaver.ui.sim_lab_tab import render_sim_lab_tab
+# LEGACY_SIM_LAB_DISABLED: eski Coin/Sim Lab UI tamamen devre dışı
+# from tezaver.ui.sim_lab_tab import render_sim_lab_tab
 from tezaver.ui.risk_cards import render_risk_tab
 from tezaver.ui.pattern_story_view import render_pattern_story_panel, PatternStoryKey
 from tezaver.ui.explanation_cards import TRIGGER_LABELS_TR
@@ -364,11 +365,12 @@ def render_coin_detail_page(symbol: str):
     render_coin_header(symbol)
     
     # TABS
-    # Definition: Rally, Bilgelik, Sim Lab, Risk, Bulut, Paternler, Seviyeler, Ana Grafik
+    # Definition: Rally, Bilgelik, Sim Lab, Risk, Bulut, Paternler, Seviyeler, Ana Grafik, SNIPER LAB
     tab_names = [
         "🚀 Rally",
         "💡 Bilgelik",  
-        "🧪 Sim Lab",
+        # LEGACY_SIM_LAB_DISABLED: "🧪 Sim Lab" kaldırıldı
+        "🎯 Sniper Lab",
         "🛡️ Risk", 
         "☁️ Bulut Paketi",
         "🌀 Paternler",
@@ -379,7 +381,7 @@ def render_coin_detail_page(symbol: str):
     
     tabs = st.tabs(tab_names)
     
-    # 1. Rally (Fast15 + Time-Labs + Radar + Quality + Families) - MOVED TO FIRST
+    # 1. Rally (Fast15 + Time-Labs + Radar + Quality + Families)
     with tabs[0]:
         sub_tabs = st.tabs(["🦅 Kartal Göz", "⚡ 15 Dakika", "⏱ 1 Saat", "⏱ 4 Saat", "📡 Rally Radar", "🎯 Rally Quality", "🧬 Rally Aileleri"])
         
@@ -398,15 +400,18 @@ def render_coin_detail_page(symbol: str):
         with sub_tabs[6]:
             render_rally_families_tab(symbol)
 
-    # 2. Bilgelik (Wisdom) - MOVED TO SECOND
+    # 2. Bilgelik (Wisdom)
     with tabs[1]: 
         from tezaver.ui.explanation_cards import render_coin_explanation_cards
         render_coin_explanation_cards(symbol)
 
-            
-    # 3. Sim Lab (Backtest)
+    # LEGACY_SIM_LAB_DISABLED: tabs[2] Sim Lab kaldırıldı
+    # Sniper Lab artık tabs[2]
+    
+    # 3. SNIPER LAB
     with tabs[2]:
-        render_sim_lab_tab(symbol)
+        from tezaver.ui.sniper_lab_tab import render_sniper_lab_tab
+        render_sniper_lab_tab(symbol)
 
     # 4. Risk
     with tabs[3]:
@@ -439,8 +444,8 @@ def render_cloud_mode():
     st.info("Bulut modu geliştirme aşamasında.")
 
 def render_matrix_mode():
-    from tezaver.ui.subpages.cloud_page import render_cloud_page
-    render_cloud_page()
+    from tezaver.ui.matrix_operator_tab import render_matrix_operator_tab
+    render_matrix_operator_tab()
 
 # --- MODE SWITCHER & MAIN ---
 
@@ -490,7 +495,7 @@ def render_mode_switcher():
     icon_sim_static = get_processed_svg_base64(p_sim, remove_animations=True)
     
     style_active = "opacity: 1.0; filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.6)); transform: scale(1.1);"
-    style_inactive = "opacity: 0.4; filter: grayscale(100%); transform: scale(0.85); transition: all 0.3s ease;"
+    style_inactive = "opacity: 0.5; filter: grayscale(20%); transform: scale(0.85); transition: all 0.3s ease;"
     
     # helper selector
     def get_icon(mode_name, is_anim, is_static):
@@ -501,11 +506,11 @@ def render_mode_switcher():
         <a href="?mode=MAC" target="_self" style="text-decoration: none;">
             <img src="data:image/svg+xml;base64,{get_icon('MAC', icon_mac_anim, icon_mac_static)}" width="60" style="{style_active if current=='MAC' else style_inactive} transition: all 0.3s ease;">
         </a>
-        <a href="?mode=CLOUD" target="_self" style="text-decoration: none;">
-            <img src="data:image/svg+xml;base64,{get_icon('CLOUD', icon_cloud_anim, icon_cloud_static)}" width="60" style="{style_active if current=='CLOUD' else style_inactive} transition: all 0.3s ease;">
-        </a>
         <a href="?mode=SIM" target="_self" style="text-decoration: none;">
             <img src="data:image/svg+xml;base64,{get_icon('SIM', icon_sim_anim, icon_sim_static)}" width="60" style="{style_active if current=='SIM' else style_inactive} transition: all 0.3s ease;">
+        </a>
+        <a href="?mode=CLOUD" target="_self" style="text-decoration: none;">
+            <img src="data:image/svg+xml;base64,{get_icon('CLOUD', icon_cloud_anim, icon_cloud_static)}" width="60" style="{style_active if current=='CLOUD' else style_inactive} transition: all 0.3s ease;">
         </a>
     </div>
     """
@@ -546,14 +551,16 @@ def main():
     # --- 2. Determine Colors ---
     current_mode = st.session_state.get('system_mode', 'MAC')
     
+    # Border colors match the T letter gradient in each icon (with dark accents)
     if current_mode == 'MAC':
-        border_bg = "linear-gradient(180deg, #4facfe 0%, #00f2fe 100%)"
+        # MAC: Red frame gradient (matching icon/logo outer hexagon)
+        border_bg = "linear-gradient(180deg, #8B0000 0%, #FF1744 35%, #D50000 65%, #8B0000 100%)"
     elif current_mode == 'CLOUD':
-        # New Blue Theme
-        border_bg = "linear-gradient(180deg, #2980B9 0%, #6DD5FA 100%)"
+        # CLOUD: Fire red T gradient (dark red → fire → crimson → dark)
+        border_bg = "linear-gradient(180deg, #8B0000 0%, #FF6600 30%, #FF1744 60%, #8B0000 100%)"
     elif current_mode == 'SIM':
-        # New Red/Orange Theme (Swapped from Cloud)
-        border_bg = "linear-gradient(180deg, #FF416C 0%, #FF4B2B 100%)"
+        # SIM: Green T gradient (dark green → bright → emerald → dark)
+        border_bg = "linear-gradient(180deg, #1B5E20 0%, #00E676 35%, #69F0AE 65%, #1B5E20 100%)"
 
     # --- 3. Logo Injection (Global Header) ---
     if current_mode == 'MAC':
@@ -570,11 +577,26 @@ def main():
     # We place the logo in the CENTER of the Header for a premium look
     st.markdown(f"""
         <style>
+            /* Animated sidebar border - flowing light beam effect */
+            @keyframes sidebar-border-pulse {{
+                0% {{ background-position: 0% 0%; }}
+                50% {{ background-position: 0% 100%; }}
+                100% {{ background-position: 0% 0%; }}
+            }}
+            
+            @keyframes sidebar-brightness {{
+                0%, 100% {{ filter: brightness(1.0); opacity: 0.85; }}
+                50% {{ filter: brightness(1.5); opacity: 1.0; }}
+            }}
+            
             /* Sidebar tweaks */
             [data-testid="stSidebar"] .block-container {{ padding-top: 1rem; }}
             [data-testid="stSidebar"]::after {{
-                content: ""; position: absolute; top: 0; right: 0; width: 5px; height: 100%;
-                background: {border_bg}; z-index: 999;
+                content: ""; position: absolute; top: 0; right: 0; width: 1px; height: 100%;
+                background: {border_bg}; 
+                background-size: 100% 300%;
+                animation: sidebar-border-pulse 2.5s ease-in-out infinite, sidebar-brightness 2s ease-in-out infinite;
+                z-index: 999;
             }}
             .block-container {{ padding-top: 6rem; }}
             

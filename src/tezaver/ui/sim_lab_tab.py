@@ -1,4 +1,17 @@
 """
+# ═══════════════════════════════════════════════════════════════════════════
+# LEGACY_SIM_LAB
+# ═══════════════════════════════════════════════════════════════════════════
+# Bu dosya artık UI tarafından çağrılmıyor.
+# 
+# Yeni strateji geliştirme alanı:
+#   - Sniper Lab: Rally annotation & entry/exit işaretleme
+#   - Matrix War Game / Sniper Arena: 100 → X backtest
+#
+# Eski Coin Lab / Sim Lab fonksiyonları referans için bırakıldı.
+# ═══════════════════════════════════════════════════════════════════════════
+
+(Original Description)
 Tezaver Coin Lab UI Tab
 =======================
 
@@ -29,6 +42,7 @@ def render_sim_lab_tab(symbol: str):
     - Grade kartları (2x2 expander)
     - Silver Bilgeliği (expander)
     - Deneyler (expander)
+    - Sniper Lab (Beta)
     """
     # 1. En üstte: Timeframe seçimi
     tf = st.radio(
@@ -534,3 +548,103 @@ def render_silver_15m_matrix_preview(symbol: str, timeframe: str) -> None:
         )
 
 
+# =============================================================================
+# SNIPER LAB SECTION (BETA)
+# =============================================================================
+
+
+def render_send_to_sniper_section(symbol: str, timeframe: str) -> None:
+    """
+    Sniper'a Gönder bölümü.
+    Rally listesi + tek tıkla Sniper Lab'e gönderme.
+    """
+    from tezaver.sniper.sniper_annotations import SniperAnnotationRepository, SniperAnnotation
+    from tezaver.rally.rally_pattern_loader import load_silver_events
+    
+    st.subheader("🎯 Sniper'a Gönder")
+    st.caption(
+        "Aşağıdaki listeden bir rally seçip 'Sniper'a Gönder' butonuna tıklayarak "
+        "Sniper Lab'de detaylı inceleme için işaretleyebilirsiniz."
+    )
+    
+    repo = SniperAnnotationRepository()
+    
+    # Load events
+    events = load_silver_events(symbol, timeframe)
+    
+    if not events:
+        st.info(f"{symbol} {timeframe} için rally verisi bulunamadı.")
+        return
+    
+    # Build display rows with sniper status
+    rows = []
+    for ev in events[:50]:  # Limit to 50
+        ann = repo.get_one(symbol, timeframe, ev.event_id)
+        
+        if ann is None:
+            sniper_status = "—"
+            sniper_emoji = "➕"
+        else:
+            sniper_status = getattr(ann, 'status', 'PENDING')
+            sniper_emoji = {
+                "PENDING": "⏳",
+                "REVIEWED": "👁",
+                "APPROVED": "✅",
+                "REJECTED": "❌",
+            }.get(sniper_status, "⏺")
+        
+        grade_icons = {"Diamond": "💎", "Gold": "🥇", "Silver": "🥈", "Bronze": "🥉"}
+        
+        rows.append({
+            "event_id": ev.event_id,
+            "grade": f"{grade_icons.get(ev.grade, '❓')} {ev.grade}",
+            "gain": f"%{ev.gain_pct:.1f}",
+            "bars": ev.bars_to_peak,
+            "quality": f"{ev.quality_score:.0f}",
+            "sniper": f"{sniper_emoji} {sniper_status}",
+            "event_time": ev.event_time[:16] if len(ev.event_time) > 16 else ev.event_time,
+        })
+    
+    # Display as dataframe
+    import pandas as pd
+    df = pd.DataFrame(rows)
+    
+    with st.expander(f"📋 Rally Listesi ({len(rows)} event)", expanded=True):
+        st.dataframe(df, use_container_width=True, hide_index=True)
+    
+    # Select and send
+    col_select, col_btn = st.columns([3, 1])
+    
+    event_ids = [r["event_id"] for r in rows]
+    display_options = [f"{r['grade']} {r['gain']} | {r['event_time']}" for r in rows]
+    
+    with col_select:
+        selected_idx = st.selectbox(
+            "Rally seç (Sniper için)",
+            range(len(display_options)),
+            format_func=lambda i: display_options[i],
+            key="coin_lab_sniper_select"
+        )
+    
+    selected_event_id = event_ids[selected_idx]
+    
+    with col_btn:
+        st.write("")  # Spacer
+        if st.button("🎯 Sniper'a Gönder", key="btn_send_to_sniper", use_container_width=True):
+            existing = repo.get_one(symbol, timeframe, selected_event_id)
+            if existing is not None:
+                st.info("Bu rally için zaten bir Sniper kaydı var. Sniper Lab'de düzenleyebilirsin.")
+            else:
+                repo.upsert_annotation(
+                    SniperAnnotation(
+                        symbol=symbol,
+                        timeframe=timeframe,
+                        event_id=selected_event_id,
+                        entry_bar_offset=0,
+                        note="",
+                        status="PENDING",
+                        label="UNCERTAIN",
+                    )
+                )
+                st.success("✅ Sniper Lab'e eklendi. 'Sniper Lab' sekmesinden grafikte düzenleyebilirsin.")
+                st.rerun()

@@ -1669,3 +1669,277 @@ def render_universal_chart(
 
     except Exception as e:
         st.error(f"Grafik hatası: {e}")
+
+
+def render_sniper_studio_chart(
+    symbol: str,
+    timeframe: str,
+    event_time: pd.Timestamp,
+    bars_to_peak: int,
+    entry_offset: int,
+    window_before: int = 50,
+    window_after: int = 30,
+    exit_offset: Optional[int] = None
+) -> None:
+    """
+    Renders 4-panel chart for Sniper Studio with Entry & optional Exit markers.
+    """
+    try:
+        # Load History
+        df_history = load_history_data(symbol, timeframe)
+        
+        if df_history is None or df_history.empty:
+            st.warning(f"{symbol} {timeframe} veri yok.")
+            return
+
+        # Load Features
+        df_features = load_features_data(symbol, timeframe)
+
+        # Merge features logic
+        if df_features is not None and not df_features.empty:
+            try:
+                # Timezone normalization
+                df_history['open_time'] = pd.to_datetime(df_history['open_time'], errors='coerce')
+                if df_history['open_time'].dt.tz is not None:
+                    df_history['open_time'] = df_history['open_time'].dt.tz_localize(None)
+                
+                df_features['open_time'] = pd.to_datetime(df_features['open_time'], errors='coerce')
+                if df_features['open_time'].dt.tz is not None:
+                    df_features['open_time'] = df_features['open_time'].dt.tz_localize(None)
+                    
+                df = pd.merge(
+                    df_history,
+                    df_features[['open_time', 'rsi', 'rsi_ema']],
+                    on='open_time',
+                    how='left'
+                )
+            except:
+                df = df_history
+        else:
+            df = df_history
+            
+        # Turkey Time
+        from tezaver.core.config import to_turkey_time
+        if 'open_time' in df.columns:
+            df['open_time'] = df['open_time'].apply(lambda x: to_turkey_time(x) if pd.notna(x) else x)
+        event_time = to_turkey_time(pd.to_datetime(event_time))
+        
+        # --- LOAD SETTINGS ---
+        from tezaver.core.settings_manager import settings_manager
+        user_settings = settings_manager.load_settings()
+        ind_cfg = user_settings.get('indicators', {})
+        
+        # Merge with defaults or use get() with defaults
+        def get_cfg(key, subkey, default):
+            return ind_cfg.get(key, {}).get(subkey, DEFAULT_INDICATOR_SETTINGS.get(key, {}).get(subkey, default))
+
+        # --- CALCULATE INDICATORS (Dynamic) ---
+        
+        # RSI
+        rsi_enable = get_cfg('rsi', 'enabled', True)
+        if rsi_enable and ('rsi' not in df.columns or df['rsi'].isnull().all()):
+             period = get_cfg('rsi', 'period', 14)
+             delta = df['close'].diff()
+             gain = delta.where(delta > 0, 0).ewm(alpha=1/period, adjust=False).mean()
+             loss = -delta.where(delta < 0, 0).ewm(alpha=1/period, adjust=False).mean()
+             df['rsi'] = 100 - (100 / (1 + (gain / loss)))
+             
+        # RSI EMA
+        rsi_ema_enable = get_cfg('rsi_ema', 'enabled', True)
+        if rsi_ema_enable and ('rsi_ema' not in df.columns or df['rsi_ema'].isnull().all()):
+             period = get_cfg('rsi_ema', 'period', 14)
+             df['rsi_ema'] = df['rsi'].ewm(span=period, adjust=False).mean()
+
+        # MACD
+        macd_enable = get_cfg('macd', 'enabled', True)
+        if macd_enable and ('macd' not in df.columns or df['macd'].isnull().all()):
+             fast = get_cfg('macd', 'fast', 12)
+             slow = get_cfg('macd', 'slow', 26)
+             signal = get_cfg('macd', 'signal', 9)
+             
+             exp12 = df['close'].ewm(span=fast, adjust=False).mean()
+             exp26 = df['close'].ewm(span=slow, adjust=False).mean()
+             df['macd'] = exp12 - exp26
+             df['macd_signal'] = df['macd'].ewm(span=signal, adjust=False).mean()
+             df['macd_hist'] = df['macd'] - df['macd_signal']
+
+        # Locate Event
+        df = df.sort_values('open_time').reset_index(drop=True)
+        
+        # Naive comparison
+        df_times_naive = df['open_time'].dt.tz_localize(None) if hasattr(df['open_time'].dtype, 'tz') else df['open_time']
+        if event_time.tzinfo: event_time_naive = event_time.tz_localize(None)
+        else: event_time_naive = event_time
+        
+        time_diff = (df_times_naive - event_time_naive).abs()
+        event_idx = int(time_diff.to_numpy().argmin())
+        
+        # Window
+        max_lookahead = max(bars_to_peak, entry_offset)
+        if exit_offset: max_lookahead = max(max_lookahead, exit_offset)
+        
+        start_global = max(0, event_idx - window_before)
+        end_global = min(len(df), event_idx + max_lookahead + window_after)
+        df_window = df.iloc[start_global:end_global].copy()
+        
+        if df_window.empty:
+            st.warning("Pencere boş.")
+            return
+
+        # Figure
+        fig = make_subplots(
+            rows=4, cols=1,
+            shared_xaxes=True,
+            vertical_spacing=0.03,
+            row_heights=[0.5, 0.15, 0.15, 0.2],
+            specs=[[{}], [{}], [{}], [{}]],
+            subplot_titles=(f"{symbol} Sniper Studio", "Volume", "MACD", "RSI")
+        )
+        
+        # 1. Price
+        # Sync volume color config
+        c_sync = get_cfg('candles', 'sync_with_volume', True)
+        vol_up = get_cfg('volume', 'up_color', '#089981')
+        vol_down = get_cfg('volume', 'down_color', '#F23645')
+        
+        fig.add_trace(go.Candlestick(
+            x=df_window['open_time'],
+            open=df_window['open'], high=df_window['high'],
+            low=df_window['low'], close=df_window['close'],
+            name='OHLC',
+            increasing_line_color=vol_up if c_sync else '#089981', 
+            decreasing_line_color=vol_down if c_sync else '#F23645',
+            showlegend=False
+        ), row=1, col=1)
+        
+        # 2. Volume
+        vol_enable = get_cfg('volume', 'enabled', True)
+        if vol_enable:
+            colors = [vol_up if c >= o else vol_down for c, o in zip(df_window['close'], df_window['open'])]
+            fig.add_trace(go.Bar(
+                x=df_window['open_time'], y=df_window['volume'],
+                marker_color=colors, opacity=0.5
+            ), row=2, col=1)
+        
+        # 3. MACD
+        if macd_enable:
+             # Histogram Colors (4-state)
+            hist_colors = []
+            c_pos_inc = get_cfg('macd', 'hist_pos_inc_color', '#00E676')
+            c_pos_dec = get_cfg('macd', 'hist_pos_dec_color', '#D500F9')
+            c_neg_inc = get_cfg('macd', 'hist_neg_inc_color', '#FF1744')
+            c_neg_dec = get_cfg('macd', 'hist_neg_dec_color', '#FFEA00')
+            
+            macd_hist_prev = df_window['macd_hist'].shift(1)
+            for i, h in enumerate(df_window['macd_hist']):
+                if pd.isna(h):
+                    hist_colors.append(vol_up)
+                elif h >= 0:
+                    prev = macd_hist_prev.iloc[i]
+                    if i > 0 and pd.notna(prev) and h > prev: hist_colors.append(c_pos_inc)
+                    else: hist_colors.append(c_pos_dec)
+                else:
+                    prev = macd_hist_prev.iloc[i]
+                    if i > 0 and pd.notna(prev) and h < prev: hist_colors.append(c_neg_dec) # growing negative
+                    else: hist_colors.append(c_neg_inc) # shrinking negative
+
+            fig.add_trace(go.Bar(x=df_window['open_time'], y=df_window['macd_hist'], marker_color=hist_colors), row=3, col=1)
+            fig.add_trace(go.Scatter(x=df_window['open_time'], y=df_window['macd'], line=dict(color=get_cfg('macd', 'macd_color', '#2962FF'), width=1)), row=3, col=1)
+            fig.add_trace(go.Scatter(x=df_window['open_time'], y=df_window['macd_signal'], line=dict(color=get_cfg('macd', 'signal_color', '#FF9800'), width=1)), row=3, col=1)
+        
+        # 4. RSI
+        if rsi_enable:
+            fig.add_trace(go.Scatter(x=df_window['open_time'], y=df_window['rsi'], line=dict(color=get_cfg('rsi', 'color', '#7E57C2'), width=1.5)), row=4, col=1)
+            if rsi_ema_enable:
+                fig.add_trace(go.Scatter(x=df_window['open_time'], y=df_window['rsi_ema'], line=dict(color=get_cfg('rsi_ema', 'color', '#FFC107'), width=1.5)), row=4, col=1)
+            
+            fig.add_hline(y=70, line_dash="solid", line_color="red", line_width=1, row=4, col=1)
+            fig.add_hline(y=50, line_dash="solid", line_color="gray", line_width=1, opacity=0.5, row=4, col=1)
+            fig.add_hline(y=30, line_dash="solid", line_color="green", line_width=1, row=4, col=1)
+        
+        # --- HIGHLIGHTS ---
+        
+        # A) Rally Start (Event)
+        fig.add_vline(x=event_time, line_color="gold", line_dash="dash", row="all")
+        
+        # B) Rally Box (Start -> Peak)
+        if bars_to_peak > 0:
+            peak_idx = min(len(df)-1, event_idx + bars_to_peak)
+            peak_time = df.iloc[peak_idx]['open_time']
+            
+            fig.add_vrect(
+                x0=event_time, x1=peak_time,
+                fillcolor="yellow", opacity=0.1, line_width=0,
+                row=1
+            )
+            fig.add_vline(x=peak_time, line_color="gold", line_width=1, row=1, col=1)
+            
+        # C) Sniper Entry Bar (Start + Offset)
+        entry_idx = min(len(df)-1, event_idx + entry_offset)
+        entry_time = df.iloc[entry_idx]['open_time']
+        entry_close = df.iloc[entry_idx]['close']
+        
+        # Vertical Line for Entry
+        fig.add_vline(x=entry_time, line_color="#00E5FF", line_width=2, line_dash="dot", row="all")
+        
+        # "Target" Marker on Price
+        fig.add_trace(go.Scatter(
+            x=[entry_time], y=[entry_close],
+            mode='markers',
+            marker=dict(symbol='circle-open-dot', size=14, color='cyan', line_width=3),
+            name='Sniper Entry',
+            hoverinfo='skip'
+        ), row=1, col=1)
+        
+        fig.add_annotation(
+            x=entry_time, y=entry_close,
+            text="🎯 ENTRY",
+            font=dict(color="cyan", size=12, weight="bold"),
+            bgcolor="rgba(0,0,0,0.5)",
+            yshift=25,
+            showarrow=True, arrowhead=2, arrowcolor="cyan",
+            row=1, col=1
+        )
+        
+        # D) OPTIONAL: Exit Point
+        if exit_offset:
+            exit_idx = min(len(df)-1, event_idx + exit_offset)
+            exit_time = df.iloc[exit_idx]['open_time']
+            exit_close = df.iloc[exit_idx]['close']
+            
+            # Use red/orange for exit
+            fig.add_vline(x=exit_time, line_color="#FF3D00", line_width=2, line_dash="dot", row="all")
+             
+            fig.add_trace(go.Scatter(
+                x=[exit_time], y=[exit_close],
+                mode='markers',
+                marker=dict(symbol='circle-x', size=14, color='#FF3D00', line_width=2),
+                name='Sniper Exit',
+                hoverinfo='skip'
+            ), row=1, col=1)
+            
+            fig.add_annotation(
+                x=exit_time, y=exit_close,
+                text="❌ EXIT",
+                font=dict(color="#FF3D00", size=12, weight="bold"),
+                bgcolor="rgba(0,0,0,0.5)",
+                yshift=-25,
+                showarrow=True, arrowhead=2, arrowcolor="#FF3D00", ax=0, ay=25,
+                row=1, col=1
+            )
+        
+        # Layout
+        fig.update_layout(
+            height=700,
+            margin=dict(l=10, r=10, t=30, b=10),
+            hovermode='x unified',
+            dragmode='pan',
+            showlegend=False,
+            xaxis_rangeslider_visible=False,
+            template="plotly_dark"
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+
+    except Exception as e:
+        st.error(f"Sniper grafiği hatası: {e}")
