@@ -350,7 +350,7 @@ def main():
        => Outputs: PROOF_CLOSED + ROUTER_TICK + ROUTER_CLUSTER_OK
     """
     parser = argparse.ArgumentParser(description="Live loop runner v2")
-    parser.add_argument("command", choices=["run", "proof_router", "proof_router_cluster", "proof_open_close", "policy_cycle"], help="Command to run")
+    parser.add_argument("command", choices=["run", "proof_router", "proof_router_cluster", "proof_open_close", "policy_cycle", "report_cycles"], help="Command to run")
     parser.add_argument("--runtime", type=int, default=60, help="Max runtime in seconds")
     parser.add_argument("--poll", type=int, default=5, help="Poll interval in seconds")
     parser.add_argument("--symbols", type=str, default="BTCUSDT", help="Comma-separated symbols")
@@ -406,6 +406,66 @@ def main():
                        help="Dust threshold (abs qty considered dust)")
     parser.add_argument("--close-qty-mult", type=float, default=1.0,
                        help="Close qty multiplier (0.5 = partial close for BLOCK test)")
+    
+    # Strategy arguments
+    parser.add_argument("--strategy-enabled", action="store_true", default=False,
+                       help="Enable strategy signal adapter")
+    parser.add_argument("--open-rule-mode", type=str, default="ALWAYS_OFF",
+                       choices=["ALWAYS_OFF", "AUTO_OPEN_FLAT", "CARD_STRICT_WINDOW", "CARD_SOURCE_WINDOW"],
+                       help="Strategy open rule mode")
+    parser.add_argument("--cooldown-bars", type=int, default=1,
+                       help="Cooldown bars between actions")
+    parser.add_argument("--contract-enforce", type=str, default="WARN",
+                       choices=["WARN", "BLOCK"],
+                       help="Contract enforcement mode")
+    parser.add_argument("--profile-id", type=str, default="SILVER_15m",
+                       help="Strategy profile ID")
+    parser.add_argument("--close-rule-mode", type=str, default="ALWAYS_OFF",
+                       choices=["ALWAYS_OFF", "CLOSE_ON_NEXT_SIGNAL"],
+                       help="Strategy close rule mode: ALWAYS_OFF or CLOSE_ON_NEXT_SIGNAL")
+    parser.add_argument("--min-hold-bars", type=int, default=1,
+                       help="Minimum bars to hold before CLOSE on NEXT_SIGNAL policy")
+    parser.add_argument("--cycles", type=int, default=1,
+                       help="Number of OPEN→CLOSE cycles to run (default 1)")
+    parser.add_argument("--sleep-between-cycles", type=float, default=0,
+                       help="Seconds to sleep between cycles (default 0)")
+    parser.add_argument("--cycle-timeout-bars", type=int, default=8,
+                       help="Max bars per cycle before timeout (default 8)")
+    parser.add_argument("--open-timeout-bars", type=int, default=4,
+                       help="Max bars waiting for OPEN signal (default 4)")
+    parser.add_argument("--close-timeout-bars", type=int, default=4,
+                       help="Max bars waiting for CLOSE signal after EFFECTIVE_SET (default 4)")
+    parser.add_argument("--stall-timeout-sec", type=int, default=0,
+                       help="Seconds with no NEW_CLOSED_BAR before STALL timeout (0=auto: 2*tf_sec + 60)")
+    parser.add_argument("--audit", action="store_true",
+                       help="Enable Trade Audit V2 at end of each cycle (fetch order details, fees)")
+    parser.add_argument("--last", type=int, default=10,
+                       help="Number of last cycles to show in report_cycles command")
+    parser.add_argument("--only", type=str, default=None,
+                       choices=["WARN", "BLOCK"],
+                       help="Filter cycles by alert level (WARN includes BLOCK)")
+    parser.add_argument("--equity-start", type=float, default=100.0,
+                       help="Starting equity for equity curve calculation")
+    parser.add_argument("--print-metrics", action="store_true",
+                       help="Print risk metrics in report_cycles")
+    parser.add_argument("--cycle-idx", type=int, default=None,
+                       help="Specific cycle index to show timeline for")
+    parser.add_argument("--show-timeline", action="store_true",
+                       help="Show event timeline for --cycle-idx")
+    parser.add_argument("--export-json", type=str, default=None,
+                       help="Export cycles to JSON file path")
+    parser.add_argument("--only-types", type=str, default=None,
+                       help="Filter timeline by event types (comma-separated)")
+    parser.add_argument("--raw-json", action="store_true",
+                       help="Print full event JSON (redacted) for timeline")
+    parser.add_argument("--grep", type=str, default=None,
+                       help="Filter timeline events by substring match")
+    parser.add_argument("--export-bundle", action="store_true",
+                       help="Export incident bundle for --cycle-idx")
+    parser.add_argument("--out-dir", type=str, default="data/incidents",
+                       help="Output directory for incident bundles")
+    parser.add_argument("--only-relevant", action="store_true",
+                       help="Filter to relevant event types only")
     
     args = parser.parse_args()
     
@@ -808,6 +868,8 @@ def main():
             dust_policy = getattr(args, "dust_policy", "IGNORE")
             dust_threshold = getattr(args, "dust_threshold", 0.002)
             close_qty_mult = getattr(args, "close_qty_mult", 1.0)
+            close_policy_arg = getattr(args, "close_policy", "NEXT_CLOSED_BAR")
+            min_hold_bars_arg = getattr(args, "min_hold_bars", 1)
             
             policy = HoldNextClosedPolicy(
                 gateway=policy_gateway,
@@ -819,12 +881,49 @@ def main():
                 dust_policy=dust_policy,
                 dust_threshold=dust_threshold,
                 close_qty_mult=close_qty_mult,
+                close_policy=close_policy_arg,
+                min_hold_bars=min_hold_bars_arg,
             )
             
             print(f"[PROOF_ROUTER_CLUSTER] Policy profile_id={profile_id}")
-            print(f"[PROOF_ROUTER_CLUSTER] dust_policy={dust_policy} dust_threshold={dust_threshold} close_qty_mult={close_qty_mult}")
-            print(f"[PROOF_ROUTER_CLUSTER] max_runtime={max_runtime}s for tf={args.tf}")
+            print(f"[PROOF_ROUTER_CLUSTER] close_policy={close_policy_arg} min_hold_bars={min_hold_bars_arg} dust_policy={dust_policy}")
+            
+            # Compute dynamic max_runtime based on bar timeouts (never preempt bar logic)
+            tf_sec = {
+                "1m": 60, "3m": 180, "5m": 300, "15m": 900, "30m": 1800, "1h": 3600, "4h": 14400
+            }.get(args.tf, 900)
+            
+            # Bar-based deadline: cycles * cycle_bars * tf_sec + buffer
+            bar_based_deadline = args.cycles * args.cycle_timeout_bars * tf_sec + (2 * tf_sec + 60)
+            
+            # Use max of legacy and bar-based to ensure bar logic has priority
+            effective_max_runtime = max(max_runtime, bar_based_deadline)
+            
+            # Stall timeout (no NEW_CLOSED_BAR for too long)
+            stall_timeout = args.stall_timeout_sec if args.stall_timeout_sec > 0 else (2 * tf_sec + 60)
+            
+            print(f"[PROOF_ROUTER_CLUSTER] max_runtime={effective_max_runtime}s (bar_deadline={bar_based_deadline}s) for tf={args.tf}")
+            print(f"[PROOF_ROUTER_CLUSTER] stall_timeout={stall_timeout}s, cycle_timeout_bars={args.cycle_timeout_bars}")
             print("[PROOF_ROUTER_CLUSTER] Waiting for NEW_CLOSED_BAR ticks (policy mode)...")
+        
+        # Create StrategySignalAdapter if enabled
+        strategy_adapter = None
+        strategy_enabled = getattr(args, "strategy_enabled", False)
+        
+        if strategy_enabled:
+            from tezaver.matrix.live.strategy_signal import StrategySignalAdapter, PositionStateStore
+            
+            position_store = PositionStateStore()
+            strategy_adapter = StrategySignalAdapter(
+                position_store=position_store,
+                event_sink=ndjson_event_sink,
+                open_rule_mode=getattr(args, "open_rule_mode", "ALWAYS_OFF"),
+                min_bars_between_actions=getattr(args, "cooldown_bars", 1),
+                contract_enforce=getattr(args, "contract_enforce", "WARN"),
+                profile_id=getattr(args, "profile_id", "SILVER_15m"),
+                close_rule_mode=getattr(args, "close_rule_mode", "ALWAYS_OFF"),
+            )
+            print(f"[PROOF_ROUTER_CLUSTER] Strategy ENABLED: open_rule_mode={args.open_rule_mode} close_rule_mode={getattr(args, 'close_rule_mode', 'ALWAYS_OFF')} cooldown={args.cooldown_bars}")
         
         # Event callback to route closed bar ticks
         def on_event(event):
@@ -844,9 +943,22 @@ def main():
                     bar_close_ts = event.get("bar_close_ts")
                     profile_id = f"{symbol}_{tf}_policy"
                     
+                    # Strategy signal adapter - emit STRATEGY_SIGNAL on every tick
+                    strategy_signal_value = None
+                    if strategy_adapter:
+                        strategy_signal = strategy_adapter.compute_signal(
+                            symbol=symbol,
+                            tf=tf,
+                            profile_id=profile_id,
+                            bar_close_ts=bar_close_ts,
+                            snapshot=snapshot,
+                        )
+                        strategy_signal_value = strategy_signal.value  # Convert enum to string
+                    
                     # Get cell state to determine decision
                     cell_state = policy.get_cell_state(symbol, tf, profile_id)
-                    decision = "OPEN" if cell_state.state.value == "IDLE" else None
+                    # V5: OPEN decision only if strategy says OPEN_LONG
+                    decision = "OPEN" if (cell_state.state.value == "IDLE" and strategy_signal_value == "OPEN_LONG") else None
                     
                     result = policy.handle_tick(
                         symbol=symbol,
@@ -854,6 +966,7 @@ def main():
                         profile_id=profile_id,
                         bar_close_ts=bar_close_ts,
                         decision=decision,
+                        strategy_signal=strategy_signal_value,
                     )
                     
                     print(f"[POLICY_TICK] action={result.action} state={result.state.value}")
@@ -872,95 +985,342 @@ def main():
             symbol = symbols[0]
             profile_id = f"{symbol}_{args.tf}_policy"
             
-            # Manual loop for policy cycle
-            last_baseline = None
-            start_time = datetime.now(timezone.utc)
-            poll_count = 0
-            tick_count = 0
-            skip_count = 0
+            # Multi-cycle support
+            total_cycles = args.cycles
+            cycle_results = []
             
-            while not policy.is_cycle_complete(symbol, args.tf, profile_id):
-                elapsed = (datetime.now(timezone.utc) - start_time).total_seconds()
-                if elapsed > max_runtime:
-                    print(f"[PROOF_ROUTER_CLUSTER] TIMEOUT after {max_runtime}s")
-                    break
-                
-                # Fetch bars
-                bars_df = client.get_latest_bars(symbol, args.tf, limit=5)
-                poll_count += 1
-                
-                if bars_df is None or bars_df.empty:
-                    time.sleep(args.poll)
-                    continue
-                
-                # Get last closed bar
-                if "is_closed" in bars_df.columns:
-                    closed_bars = bars_df[bars_df["is_closed"] == True]
-                    if closed_bars.empty:
-                        time.sleep(args.poll)
-                        continue
-                    prev_bar = closed_bars.iloc[-1]
-                else:
-                    if len(bars_df) < 2:
-                        time.sleep(args.poll)
-                        continue
-                    prev_bar = bars_df.iloc[-2]
-                
-                # Get bar close timestamp
-                if "close_time_ms" in prev_bar:
-                    bar_close_ts = datetime.utcfromtimestamp(prev_bar["close_time_ms"] / 1000).isoformat()
-                else:
-                    bar_close_ts = str(prev_bar["ts"])
-                close_price = prev_bar["close"]
-                
-                # Dedup
-                if bar_close_ts == last_baseline:
-                    skip_count += 1
-                    time.sleep(args.poll)
-                    continue
-                
-                last_baseline = bar_close_ts
-                tick_count += 1
-                print(f"[PROOF_ROUTER_CLUSTER] NEW_CLOSED_BAR: {bar_close_ts} close={close_price}")
-                
-                # Emit CLOSED_PROOF event (triggers on_event)
-                on_event({
-                    "event_type": "CLOSED_PROOF",
+            print(f"[PROOF_ROUTER_CLUSTER] Running {total_cycles} cycle(s)")
+            
+            for cycle_idx in range(total_cycles):
+                # CYCLE_START
+                ndjson_event_sink({
+                    "ts": datetime.now(timezone.utc).isoformat(),
+                    "event_type": "CYCLE_START",
+                    "cycle_idx": cycle_idx + 1,
+                    "total_cycles": total_cycles,
                     "symbol": symbol,
                     "timeframe": args.tf,
-                    "bar_close_ts": bar_close_ts,
-                    "close": close_price,
                 })
+                print(f"\n{'='*60}")
+                print(f"CYCLE {cycle_idx + 1}/{total_cycles} STARTED")
+                print(f"{'='*60}")
                 
-                time.sleep(args.poll)
+                # Reset policy state for new cycle
+                if cycle_idx > 0:
+                    policy.reset_cell(symbol, args.tf, profile_id)
+                    if args.sleep_between_cycles > 0:
+                        print(f"[PROOF_ROUTER_CLUSTER] Sleeping {args.sleep_between_cycles}s between cycles...")
+                        time.sleep(args.sleep_between_cycles)
+                
+                # Manual loop for policy cycle
+                last_baseline = None
+                start_time = datetime.now(timezone.utc)
+                poll_count = 0
+                tick_count = 0
+                skip_count = 0
+                
+                # Bar-based timeout tracking
+                cycle_bars = 0
+                phase_bars = 0
+                current_phase = "WAIT_OPEN"
+                last_phase = None
+                cycle_timed_out = False
+                timeout_reason = None
+                last_new_bar_ts = datetime.now(timezone.utc)  # Track stall
+                
+                while not policy.is_cycle_complete(symbol, args.tf, profile_id):
+                    now = datetime.now(timezone.utc)
+                    elapsed = (now - start_time).total_seconds()
+                    
+                    # Stall timeout: no NEW_CLOSED_BAR for too long
+                    stall_sec = (now - last_new_bar_ts).total_seconds()
+                    if stall_sec > stall_timeout:
+                        print(f"[PROOF_ROUTER_CLUSTER] STALL_TIMEOUT: no NEW_CLOSED_BAR for {stall_sec:.0f}s")
+                        cycle_timed_out = True
+                        timeout_reason = f"STALL_NO_NEW_BAR({stall_sec:.0f}s)"
+                        break
+                    
+                    # Overall wall-clock deadline (as safety net, should not trigger if bars flowing)
+                    if elapsed > effective_max_runtime:
+                        print(f"[PROOF_ROUTER_CLUSTER] OVERALL_DEADLINE after {effective_max_runtime}s")
+                        cycle_timed_out = True
+                        timeout_reason = f"OVERALL_DEADLINE({effective_max_runtime}s)"
+                        break
+                    
+                    # Bar-based timeouts
+                    if cycle_bars >= args.cycle_timeout_bars:
+                        timeout_reason = f"CYCLE_BARS_EXCEEDED({cycle_bars}/{args.cycle_timeout_bars})"
+                        print(f"[PROOF_ROUTER_CLUSTER] BAR TIMEOUT: {timeout_reason}")
+                        cycle_timed_out = True
+                        break
+                    
+                    if current_phase == "WAIT_OPEN" and phase_bars >= args.open_timeout_bars:
+                        timeout_reason = f"OPEN_TIMEOUT_BARS({phase_bars}/{args.open_timeout_bars})"
+                        print(f"[PROOF_ROUTER_CLUSTER] BAR TIMEOUT: {timeout_reason}")
+                        cycle_timed_out = True
+                        break
+                    
+                    if current_phase == "WAIT_CLOSE" and phase_bars >= args.close_timeout_bars:
+                        timeout_reason = f"CLOSE_TIMEOUT_BARS({phase_bars}/{args.close_timeout_bars})"
+                        print(f"[PROOF_ROUTER_CLUSTER] BAR TIMEOUT: {timeout_reason}")
+                        cycle_timed_out = True
+                        break
+                    
+                    
+                    # Fetch bars
+                    bars_df = client.get_latest_bars(symbol, args.tf, limit=5)
+                    poll_count += 1
+                    
+                    if bars_df is None or bars_df.empty:
+                        time.sleep(args.poll)
+                        continue
+                    
+                    # Get last closed bar
+                    if "is_closed" in bars_df.columns:
+                        closed_bars = bars_df[bars_df["is_closed"] == True]
+                        if closed_bars.empty:
+                            time.sleep(args.poll)
+                            continue
+                        prev_bar = closed_bars.iloc[-1]
+                    else:
+                        if len(bars_df) < 2:
+                            time.sleep(args.poll)
+                            continue
+                        prev_bar = bars_df.iloc[-2]
+                    
+                    # Get bar close timestamp
+                    if "close_time_ms" in prev_bar:
+                        bar_close_ts = datetime.utcfromtimestamp(prev_bar["close_time_ms"] / 1000).isoformat()
+                    else:
+                        bar_close_ts = str(prev_bar["ts"])
+                    close_price = prev_bar["close"]
+                    
+                    # Dedup
+                    if bar_close_ts == last_baseline:
+                        skip_count += 1
+                        time.sleep(args.poll)
+                        continue
+                    
+                    last_baseline = bar_close_ts
+                    tick_count += 1
+                    cycle_bars += 1
+                    phase_bars += 1
+                    last_new_bar_ts = datetime.now(timezone.utc)  # Reset stall timer
+                    
+                    print(f"[PROOF_ROUTER_CLUSTER] NEW_CLOSED_BAR: {bar_close_ts} close={close_price} (cycle_bars={cycle_bars} phase={current_phase} phase_bars={phase_bars})")
+                    
+                    # Emit CLOSED_PROOF event (triggers on_event)
+                    on_event({
+                        "event_type": "CLOSED_PROOF",
+                        "symbol": symbol,
+                        "timeframe": args.tf,
+                        "bar_close_ts": bar_close_ts,
+                        "close": close_price,
+                    })
+                    
+                    # Update phase based on policy state
+                    cell_state = policy.get_cell_state(symbol, args.tf, profile_id)
+                    new_phase = current_phase
+                    if cell_state.state.value in ["OPEN_SUBMITTED", "EFFECTIVE_SET"]:
+                        new_phase = "WAIT_CLOSE"
+                    elif cell_state.state.value == "IDLE" and cell_state.open_order_id is not None:
+                        new_phase = "DONE"
+                    
+                    # Reset phase_bars on phase change
+                    if new_phase != current_phase:
+                        print(f"[PROOF_ROUTER_CLUSTER] PHASE_CHANGE: {current_phase} -> {new_phase}")
+                        current_phase = new_phase
+                        phase_bars = 0
+                    
+                    time.sleep(args.poll)
             
-            # Policy cycle summary
-            summary = policy.get_summary(symbol, args.tf, profile_id)
+                # Policy cycle summary (inside for loop)
+                summary = policy.get_summary(symbol, args.tf, profile_id)
+                
+                print()
+                print("=" * 60)
+                print(f"CYCLE {cycle_idx + 1}/{total_cycles} - PROOF_ROUTER_CLUSTER_POLICY SUMMARY")
+                print("=" * 60)
+                print(f"Polls: {poll_count}")
+                print(f"Ticks: {tick_count}")
+                print(f"Skips: {skip_count}")
+                print(f"Open order_id: {summary['open_order_id']}")
+                print(f"Close order_id: {summary['close_order_id']}")
+                print(f"Effective bar: {summary['open_effective_bar_close_ts']}")
+                print(f"Close bar: {summary['close_bar_close_ts']}")
+                print(f"bars_waited_effective: {summary['bars_waited_effective']}")
+                print(f"lag_sec_effective: {summary['lag_sec_effective']}")
+                print(f"residual_after: {summary['residual_after']}")
+                print(f"dust_policy: {summary['dust_policy']}")
+                print(f"dust_threshold: {summary['dust_threshold']}")
+                print(f"cleanup_attempted: {summary['cleanup_attempted']}")
+                print(f"cleanup_result: {summary['cleanup_result']}")
+                
+                success = summary['close_order_id'] is not None
+                reduce_only = True  # Policy always uses reduceOnly for CLOSE
+                cleanup_str = "YES" if summary['cleanup_attempted'] else "NO"
+                
+                print(f"\nPROOF_ROUTER_CLUSTER_POLICY_OK | {symbol}/{args.tf} open={summary['open_order_id']} close={summary['close_order_id']} reduceOnly={reduce_only} eff_wait={summary['bars_waited_effective']} eff_lag={summary['lag_sec_effective']} residual={summary['residual_after']} dust_policy={summary['dust_policy']} cleanup={cleanup_str} allow=true exec_mode={exchange_mode.lower()}")
             
-            print()
-            print("=" * 60)
-            print("PROOF_ROUTER_CLUSTER_POLICY SUMMARY")
-            print("=" * 60)
-            print(f"Polls: {poll_count}")
-            print(f"Ticks: {tick_count}")
-            print(f"Skips: {skip_count}")
-            print(f"Open order_id: {summary['open_order_id']}")
-            print(f"Close order_id: {summary['close_order_id']}")
-            print(f"Effective bar: {summary['open_effective_bar_close_ts']}")
-            print(f"Close bar: {summary['close_bar_close_ts']}")
-            print(f"bars_waited_effective: {summary['bars_waited_effective']}")
-            print(f"lag_sec_effective: {summary['lag_sec_effective']}")
-            print(f"residual_after: {summary['residual_after']}")
-            print(f"dust_policy: {summary['dust_policy']}")
-            print(f"dust_threshold: {summary['dust_threshold']}")
-            print(f"cleanup_attempted: {summary['cleanup_attempted']}")
-            print(f"cleanup_result: {summary['cleanup_result']}")
-            
-            success = summary['close_order_id'] is not None
-            reduce_only = True  # Policy always uses reduceOnly for CLOSE
-            cleanup_str = "YES" if summary['cleanup_attempted'] else "NO"
-            
-            print(f"\nPROOF_ROUTER_CLUSTER_POLICY_OK | {symbol}/{args.tf} open={summary['open_order_id']} close={summary['close_order_id']} reduceOnly={reduce_only} eff_wait={summary['bars_waited_effective']} eff_lag={summary['lag_sec_effective']} residual={summary['residual_after']} dust_policy={summary['dust_policy']} cleanup={cleanup_str} allow=true exec_mode={exchange_mode.lower()}")
+                # ========== TRADE AUDIT V2 (inside for loop) ==========
+                audit_enabled = getattr(args, "audit", False)
+                if exchange_mode == "REAL_TESTNET" and success and audit_enabled:
+                    try:
+                        print(f"\n[TRADE_AUDIT_V2] Cycle {cycle_idx + 1}: Fetching order details + fees + position...")
+                        
+                        open_order_id = summary['open_order_id']
+                        close_order_id = summary['close_order_id']
+                        
+                        # Position snapshot after CLOSE
+                        pos_after = policy_gateway.get_position_snapshot(symbol)
+                        pos_amt_after_close = abs(float(pos_after.get("position_qty", 0)))
+                        
+                        ndjson_event_sink({
+                            "ts": datetime.now(timezone.utc).isoformat(),
+                            "event_type": "POSITION_SNAPSHOT_CLOSE",
+                            "cycle_idx": cycle_idx + 1,
+                            "symbol": symbol,
+                            "pos_amt_now": pos_amt_after_close,
+                            "entry_price": pos_after.get("entry_price"),
+                        })
+                        
+                        # Fetch OPEN order
+                        open_order = policy_gateway.get_order(symbol, open_order_id, max_wait_sec=10)
+                        ndjson_event_sink({
+                            "ts": datetime.now(timezone.utc).isoformat(),
+                            "event_type": "ORDER_FETCH_OPEN",
+                            "cycle_idx": cycle_idx + 1,
+                            "symbol": symbol,
+                            "order_id": open_order_id,
+                            "status": open_order.get("status"),
+                            "executedQty": open_order.get("executedQty"),
+                            "avgPrice": open_order.get("avgPrice"),
+                            "success": open_order.get("success"),
+                        })
+                        
+                        # Fetch CLOSE order
+                        close_order = policy_gateway.get_order(symbol, close_order_id, max_wait_sec=10)
+                        ndjson_event_sink({
+                            "ts": datetime.now(timezone.utc).isoformat(),
+                            "event_type": "ORDER_FETCH_CLOSE",
+                            "cycle_idx": cycle_idx + 1,
+                            "symbol": symbol,
+                            "order_id": close_order_id,
+                            "status": close_order.get("status"),
+                            "executedQty": close_order.get("executedQty"),
+                            "avgPrice": close_order.get("avgPrice"),
+                            "success": close_order.get("success"),
+                        })
+                        
+                        # Fetch trades for fee extraction
+                        open_trades = policy_gateway.get_user_trades(symbol, open_order_id)
+                        close_trades = policy_gateway.get_user_trades(symbol, close_order_id)
+                        
+                        open_fee = open_trades.get("total_commission", 0)
+                        close_fee = close_trades.get("total_commission", 0)
+                        total_fee = open_fee + close_fee
+                        fee_asset = open_trades.get("commission_asset", "USDT")
+                        fee_available = open_trades.get("success", False) and close_trades.get("success", False)
+                        
+                        # Calculate PnL
+                        entry_price = open_order.get("avgPrice", 0)
+                        exit_price = close_order.get("avgPrice", 0)
+                        qty = min(open_order.get("executedQty", 0), close_order.get("executedQty", 0))
+                        
+                        gross_pnl = qty * (exit_price - entry_price) if entry_price > 0 and exit_price > 0 else None
+                        net_pnl = gross_pnl - total_fee if gross_pnl is not None and fee_available else None
+                        
+                        # Duration
+                        duration_sec = summary.get('lag_sec_effective', 0)
+                        
+                        # Emit TRADE_AUDIT_V2_DONE
+                        ndjson_event_sink({
+                            "ts": datetime.now(timezone.utc).isoformat(),
+                            "event_type": "TRADE_AUDIT_V2_DONE",
+                            "cycle_idx": cycle_idx + 1,
+                            "symbol": symbol,
+                            "timeframe": args.tf,
+                            "open_order_id": open_order_id,
+                            "close_order_id": close_order_id,
+                            "close_order_id": close_order_id,
+                            "entry_price": entry_price,
+                            "exit_price": exit_price,
+                            "qty": qty,
+                            "gross_pnl_usdt": round(gross_pnl, 6) if gross_pnl else None,
+                            "fee_usdt": round(total_fee, 6) if fee_available else "fee_unavailable",
+                            "fee_open": open_fee,
+                            "fee_close": close_fee,
+                            "fee_asset": fee_asset,
+                            "net_pnl_usdt": round(net_pnl, 6) if net_pnl is not None else None,
+                            "pos_amt_after_close": pos_amt_after_close,
+                            "duration_sec": duration_sec,
+                            "status_open": open_order.get("status"),
+                            "status_close": close_order.get("status"),
+                        })
+                        
+                        # Print TRADE_AUDIT_V2_OK
+                        open_status = open_order.get("status", "?")
+                        close_status = close_order.get("status", "?")
+                        gross_str = f"{gross_pnl:.6f}" if gross_pnl else "N/A"
+                        fee_str = f"{total_fee:.6f}" if fee_available else "fee_unavailable"
+                        net_str = f"{net_pnl:.6f}" if net_pnl is not None else "N/A"
+                        
+                        print(f"\nTRADE_AUDIT_V2_OK | entry={entry_price:.2f} exit={exit_price:.2f} qty={qty} gross={gross_str} fee={fee_str} net={net_str} pos_after={pos_amt_after_close} status_open={open_status} status_close={close_status}")
+                        
+                        if open_status != "FILLED" or close_status != "FILLED":
+                            print(f"[TRADE_AUDIT_V2] WARNING: Orders not FILLED - open={open_status} close={close_status}")
+                            ndjson_event_sink({
+                                "ts": datetime.now(timezone.utc).isoformat(),
+                                "event_type": "TRADE_AUDIT_V2_FAILED",
+                                "reason": f"NOT_FILLED: open={open_status} close={close_status}",
+                                "open_order_id": open_order_id,
+                                "close_order_id": close_order_id,
+                            })
+                            
+                    except Exception as e:
+                        print(f"[TRADE_AUDIT_V2] ERROR: {e}")
+                        ndjson_event_sink({
+                            "ts": datetime.now(timezone.utc).isoformat(),
+                            "event_type": "TRADE_AUDIT_V2_FAILED",
+                            "reason": str(e),
+                        })
+                
+                # ========== CYCLE_DONE or CYCLE_TIMEOUT (end of for loop iteration) ==========
+                if cycle_timed_out:
+                    ndjson_event_sink({
+                        "ts": datetime.now(timezone.utc).isoformat(),
+                        "event_type": "CYCLE_TIMEOUT",
+                        "cycle_idx": cycle_idx + 1,
+                        "total_cycles": total_cycles,
+                        "symbol": symbol,
+                        "timeframe": args.tf,
+                        "reason": timeout_reason,
+                        "phase": current_phase,
+                        "cycle_bars": cycle_bars,
+                        "phase_bars": phase_bars,
+                        "open_order_id": summary.get('open_order_id') if summary else None,
+                        "close_order_id": summary.get('close_order_id') if summary else None,
+                    })
+                    
+                    print(f"\nCYCLE_TIMEOUT | idx={cycle_idx + 1} reason={timeout_reason} phase={current_phase} bars={cycle_bars}/{args.cycle_timeout_bars}")
+                else:
+                    ndjson_event_sink({
+                        "ts": datetime.now(timezone.utc).isoformat(),
+                        "event_type": "CYCLE_DONE",
+                        "cycle_idx": cycle_idx + 1,
+                        "total_cycles": total_cycles,
+                        "symbol": symbol,
+                        "timeframe": args.tf,
+                        "open_order_id": summary['open_order_id'],
+                        "close_order_id": summary['close_order_id'],
+                        "eff_wait": summary['bars_waited_effective'],
+                        "eff_lag": summary['lag_sec_effective'],
+                        "residual_after": summary['residual_after'],
+                        "exec_mode": exchange_mode.lower(),
+                        "cycle_bars": cycle_bars,
+                    })
+                    
+                    print(f"\nCYCLE_DONE | idx={cycle_idx + 1} open={summary['open_order_id']} close={summary['close_order_id']} eff_wait={summary['bars_waited_effective']} residual={summary['residual_after']} bars={cycle_bars} exec={exchange_mode.lower()}")
         else:
             # Run standard loop
             stats = run_live_loop(symbols_timeframes, client, config, event_callback=on_event)
@@ -1396,6 +1756,187 @@ def main():
         print(f"lag_sec_effective: {summary['lag_sec_effective']}")
         print(f"residual_after: {summary['residual_after']}")
         print(f"Success: {summary['close_order_id'] is not None}")
+    
+    elif args.command == "report_cycles":
+        # ========== REPORT_CYCLES COMMAND ==========
+        import sys
+        from pathlib import Path
+        from tezaver.matrix.live.cycle_events import (
+            load_cycle_records,
+            compute_aggregates,
+            format_cycles_table,
+            format_aggregates,
+            CycleAlertLevel,
+        )
+        
+        ndjson_path = Path("data/logs/live_events.ndjson")
+        
+        if not ndjson_path.exists():
+            print(f"[REPORT_CYCLES] No NDJSON file found at {ndjson_path}")
+            print()
+            print("Runbook: Run a cycle first with:")
+            print("  PYTHONPATH=src python -m tezaver.matrix.live.live_loop proof_router_cluster \\")
+            print("    --real --tf 15m --exchange-mode DRY_RUN --exchange-enabled \\")
+            print("    --hold-policy HOLD_NEXT_CLOSED --until-done --cycles 1")
+        else:
+            # Parse symbols from args
+            symbols = [s.strip() for s in args.symbols.split(",")]
+            symbol = symbols[0] if symbols else None
+            timeframe = args.tf
+            last_n = args.last
+            only_filter = getattr(args, "only", None)
+            
+            print(f"[REPORT_CYCLES] Loading cycles from {ndjson_path}")
+            print(f"[REPORT_CYCLES] Filter: symbol={symbol} tf={timeframe} last={last_n}")
+            print()
+            
+            records = load_cycle_records(ndjson_path, symbol, timeframe, last_n)
+            
+            # Apply --only filter
+            if only_filter:
+                if only_filter == "WARN":
+                    records = [r for r in records if r.alert_level in [CycleAlertLevel.WARN, CycleAlertLevel.BLOCK]]
+                elif only_filter == "BLOCK":
+                    records = [r for r in records if r.alert_level == CycleAlertLevel.BLOCK]
+            
+            if not records:
+                print("No cycle records found matching filters.")
+            else:
+                # Print table
+                print(format_cycles_table(records))
+                
+                # Print aggregates
+                agg = compute_aggregates(records)
+                print(format_aggregates(agg))
+                
+                # Print BLOCK reasons if any
+                block_records = [r for r in records if r.alert_level == CycleAlertLevel.BLOCK]
+                if block_records:
+                    print()
+                    print("⛔ BLOCK DETAILS:")
+                    for r in block_records:
+                        print(f"  Cycle {r.cycle_idx}: {', '.join(r.block_reasons)}")
+                
+                # Print WARN reasons if any
+                warn_records = [r for r in records if r.alert_level == CycleAlertLevel.WARN]
+                if warn_records:
+                    print()
+                    print("⚠️  WARN DETAILS:")
+                    for r in warn_records:
+                        print(f"  Cycle {r.cycle_idx}: {', '.join(r.warn_reasons)}")
+                
+                # Print equity curve and risk metrics if --print-metrics
+                if getattr(args, "print_metrics", False):
+                    from tezaver.matrix.live.cycle_events import (
+                        compute_equity_curve,
+                        compute_risk_metrics,
+                        format_equity_table,
+                        format_risk_metrics,
+                    )
+                    
+                    equity_start = getattr(args, "equity_start", 100.0)
+                    equity_points = compute_equity_curve(records, equity_start)
+                    risk_metrics = compute_risk_metrics(records, equity_points, equity_start)
+                    
+                    print()
+                    print("=== EQUITY CURVE ===")
+                    print(format_equity_table(equity_points))
+                    print(format_risk_metrics(risk_metrics))
+                
+                # Handle --cycle-idx --show-timeline
+                cycle_idx_arg = getattr(args, "cycle_idx", None)
+                show_timeline = getattr(args, "show_timeline", False)
+                
+                if cycle_idx_arg is not None and show_timeline:
+                    from tezaver.matrix.live.cycle_events import (
+                        get_cycle_events,
+                        format_cycle_timeline,
+                    )
+                    import json as json_module
+                    
+                    timeline_events = get_cycle_events(ndjson_path, cycle_idx_arg, symbol)
+                    
+                    # Apply --only-types filter
+                    only_types = getattr(args, "only_types", None)
+                    if only_types:
+                        type_list = [t.strip() for t in only_types.split(",")]
+                        timeline_events = [e for e in timeline_events if e.get("event_type") in type_list]
+                    
+                    # Apply --grep filter
+                    grep_text = getattr(args, "grep", None)
+                    if grep_text:
+                        filtered = []
+                        for e in timeline_events:
+                            event_str = json_module.dumps(e, default=str)
+                            if grep_text.lower() in event_str.lower():
+                                filtered.append(e)
+                        timeline_events = filtered
+                    
+                    # Output
+                    raw_json_mode = getattr(args, "raw_json", False)
+                    if raw_json_mode:
+                        print(f"\n=== CYCLE {cycle_idx_arg} RAW EVENTS ({len(timeline_events)}) ===")
+                        for e in timeline_events:
+                            print(json_module.dumps(e, default=str))
+                    else:
+                        print(format_cycle_timeline(timeline_events, cycle_idx_arg))
+                
+                # Handle --export-json
+                export_json_path = getattr(args, "export_json", None)
+                if export_json_path:
+                    from tezaver.matrix.live.cycle_events import export_cycles_json
+                    
+                    export_path = Path(export_json_path)
+                    export_cycles_json(records, export_path)
+                    print(f"\n[EXPORT] Cycles exported to {export_path}")
+                
+                # Handle --export-bundle
+                export_bundle = getattr(args, "export_bundle", False)
+                cycle_idx_for_bundle = getattr(args, "cycle_idx", None)
+                
+                if export_bundle:
+                    if cycle_idx_for_bundle is None:
+                        print("[ERROR] --export-bundle requires --cycle-idx")
+                        sys.exit(1)
+                    
+                    from tezaver.matrix.live.cycle_events import (
+                        IncidentBundleSpec,
+                        build_incident_bundle,
+                    )
+                    
+                    # Build spec
+                    only_types_list = None
+                    only_types_str = getattr(args, "only_types", None)
+                    if only_types_str:
+                        only_types_list = [t.strip() for t in only_types_str.split(",")]
+                    
+                    spec = IncidentBundleSpec(
+                        symbol=symbol,
+                        timeframe=timeframe,
+                        cycle_idx=cycle_idx_for_bundle,
+                        ndjson_path=str(ndjson_path),
+                        equity_start=getattr(args, "equity_start", 100.0),
+                        out_dir=getattr(args, "out_dir", "data/incidents"),
+                        include_event_types=only_types_list,
+                        grep=getattr(args, "grep", None),
+                        only_relevant=getattr(args, "only_relevant", False),
+                    )
+                    
+                    result = build_incident_bundle(spec)
+                    
+                    if result["success"]:
+                        print(f"\nINCIDENT_BUNDLE_OK | path={result['bundle_path']} files={len(result['files'])} alert={result['alert']}")
+                        for f in result['files']:
+                            print(f"  - {f}")
+                    else:
+                        print(f"[ERROR] Bundle export failed: {result['error']}")
+                        sys.exit(1)
+                
+                # Exit code 2 if BLOCK exists
+                if agg.get("block_count", 0) > 0:
+                    print()
+                    print("❌ Exit code 2: BLOCK violations found")
+                    sys.exit(2)
 
 
 if __name__ == "__main__":

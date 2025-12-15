@@ -1341,6 +1341,432 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
             st.info("Loop başlatıldığında freshness verileri burada görünür.")
     
     # =========================================================================
+    # Cycles Report (NEW) - Multi-cycle summary from NDJSON
+    # =========================================================================
+    with st.expander("📊 Cycles Report", expanded=False):
+        st.caption("Çalıştırılmış trade cycle'larının özeti. NDJSON log'undan okunur.")
+        
+        from pathlib import Path
+        try:
+            from tezaver.matrix.live.cycle_events import (
+                load_cycle_records,
+                compute_aggregates,
+                CycleAlertLevel,
+            )
+            
+            ndjson_path = Path("data/logs/live_events.ndjson")
+            
+            # Controls
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                cr_symbol = st.selectbox("Symbol", ["BTCUSDT", "ETHUSDT", "SOLUSDT"], key="cr_symbol")
+            with col2:
+                cr_tf = st.selectbox("Timeframe", ["15m", "1m", "1h"], key="cr_tf")
+            with col3:
+                cr_last = st.slider("Last N", 1, 50, 10, key="cr_last")
+            
+            if st.button("🔄 Refresh", key="cr_refresh"):
+                st.rerun()
+            
+            if not ndjson_path.exists():
+                st.warning(f"NDJSON dosyası bulunamadı: {ndjson_path}")
+                st.info("Runbook: Önce bir cycle çalıştırın:")
+                st.code("PYTHONPATH=src python -m tezaver.matrix.live.live_loop proof_router_cluster --real --tf 15m --exchange-mode DRY_RUN --exchange-enabled --hold-policy HOLD_NEXT_CLOSED --until-done --cycles 1")
+            else:
+                records = load_cycle_records(ndjson_path, cr_symbol, cr_tf, cr_last)
+                
+                if not records:
+                    st.info("Filtrelere uyan cycle kaydı bulunamadı.")
+                else:
+                    import pandas as pd
+                    
+                    # Aggregates first for banner
+                    agg = compute_aggregates(records)
+                    
+                    # Alert Banner
+                    ok_count = agg.get("ok_count", 0)
+                    warn_count = agg.get("warn_count", 0)
+                    block_count = agg.get("block_count", 0)
+                    
+                    if block_count > 0:
+                        st.error(f"⛔ BLOCK: {block_count} | ⚠️ WARN: {warn_count} | ✅ OK: {ok_count}")
+                    elif warn_count > 0:
+                        st.warning(f"⚠️ WARN: {warn_count} | ✅ OK: {ok_count}")
+                    else:
+                        st.success(f"✅ All OK: {ok_count} cycles")
+                    
+                    # Build table data with Alert column
+                    table_data = []
+                    for r in records:
+                        # Alert emoji
+                        if r.alert_level == CycleAlertLevel.BLOCK:
+                            alert = "⛔ BLOCK"
+                        elif r.alert_level == CycleAlertLevel.WARN:
+                            alert = "⚠️ WARN"
+                        else:
+                            alert = "✅ OK"
+                        
+                        table_data.append({
+                            "Cycle": r.cycle_idx,
+                            "Alert": alert,
+                            "Status": r.status,
+                            "Open ID": r.open_order_id[:10] if r.open_order_id else "-",
+                            "Close ID": r.close_order_id[:10] if r.close_order_id else "-",
+                            "Entry": f"{r.entry_price:.2f}" if r.entry_price else "-",
+                            "Exit": f"{r.exit_price:.2f}" if r.exit_price else "-",
+                            "Net": f"{r.net_pnl:.4f}" if r.net_pnl is not None else "-",
+                            "Fee": f"{r.fee:.4f}" if r.fee is not None else "-",
+                            "Gross": f"{r.gross_pnl:.4f}" if r.gross_pnl is not None else "-",
+                            "Bars": r.cycle_bars,
+                            "Lag": f"{r.eff_lag:.0f}s" if r.eff_lag else "-",
+                            "Residual": f"{r.residual_after:.6f}" if r.residual_after else "0",
+                            "ReduceOnly": "✓" if r.reduce_only else "✗",
+                            "PosAfter": f"{r.pos_after:.6f}" if r.pos_after is not None else "-",
+                        })
+                    
+                    df = pd.DataFrame(table_data)
+                    st.dataframe(df, use_container_width=True, hide_index=True)
+                    
+                    # Timeline Drilldown
+                    st.divider()
+                    st.subheader("🔍 Cycle Timeline Drilldown")
+                    
+                    cycle_options = [r.cycle_idx for r in records]
+                    if cycle_options:
+                        # Row selection
+                        col_sel1, col_sel2 = st.columns([2, 3])
+                        with col_sel1:
+                            selected_cycle = st.selectbox(
+                                "Select cycle to view timeline",
+                                options=cycle_options,
+                                key="timeline_cycle_select"
+                            )
+                        
+                        # Get selected record for alert info
+                        selected_record = next((r for r in records if r.cycle_idx == selected_cycle), None)
+                        
+                        with col_sel2:
+                            if selected_record:
+                                alert_badge = "✅ OK" if selected_record.alert_level == CycleAlertLevel.OK else \
+                                             "⚠️ WARN" if selected_record.alert_level == CycleAlertLevel.WARN else "⛔ BLOCK"
+                                st.info(f"**Active Cycle: {selected_cycle}** | Status: {selected_record.status} | Alert: {alert_badge}")
+                        
+                        if selected_cycle is not None:
+                            try:
+                                from tezaver.matrix.live.cycle_events import (
+                                    get_cycle_events,
+                                    TIMELINE_EVENT_TYPES,
+                                )
+                                
+                                timeline_events = get_cycle_events(ndjson_path, selected_cycle, cr_symbol)
+                                
+                                # Filters
+                                st.caption("Timeline Filters")
+                                filter_col1, filter_col2, filter_col3 = st.columns(3)
+                                
+                                with filter_col1:
+                                    # Event type filter
+                                    all_event_types = list(set(e.get("event_type", "") for e in timeline_events))
+                                    selected_types = st.multiselect(
+                                        "Event Types",
+                                        options=all_event_types,
+                                        default=all_event_types,
+                                        key="timeline_event_types"
+                                    )
+                                
+                                with filter_col2:
+                                    # Search box
+                                    search_text = st.text_input("Search key fields", key="timeline_search")
+                                
+                                with filter_col3:
+                                    # Only relevant toggle
+                                    only_relevant = st.checkbox(
+                                        "Only relevant events",
+                                        value=False,
+                                        key="timeline_only_relevant"
+                                    )
+                                    relevant_types = [
+                                        "CYCLE_START", "CYCLE_DONE", "CYCLE_TIMEOUT",
+                                        "STRATEGY_SIGNAL", "ROUTER_POLICY_STATE",
+                                        "ORDER_SUBMIT", "ORDER_RESULT",
+                                        "ORDER_FETCH_OPEN", "ORDER_FETCH_CLOSE",
+                                        "TRADE_AUDIT_V2_DONE", "POSITION_SNAPSHOT_CLOSE"
+                                    ]
+                                
+                                # Apply filters
+                                filtered_events = timeline_events
+                                
+                                if selected_types:
+                                    filtered_events = [e for e in filtered_events if e.get("event_type") in selected_types]
+                                
+                                if search_text:
+                                    import json as json_module
+                                    filtered_events = [
+                                        e for e in filtered_events 
+                                        if search_text.lower() in json_module.dumps(e, default=str).lower()
+                                    ]
+                                
+                                if only_relevant:
+                                    filtered_events = [e for e in filtered_events if e.get("event_type") in relevant_types]
+                                
+                                if filtered_events:
+                                    # Show timeline table
+                                    timeline_data = []
+                                    for idx, evt in enumerate(filtered_events):
+                                        evt_type = evt.get("event_type", "")
+                                        ts = evt.get("ts", "")[:25]
+                                        
+                                        # Key field extraction
+                                        if evt_type == "ORDER_RESULT":
+                                            key = f"order={evt.get('order_id')}, action={evt.get('action')}, success={evt.get('success')}"
+                                        elif evt_type == "TRADE_AUDIT_V2_DONE":
+                                            key = f"entry={evt.get('entry_price')}, exit={evt.get('exit_price')}, net={evt.get('net_pnl_usdt')}"
+                                        elif evt_type == "CYCLE_DONE":
+                                            key = f"open={evt.get('open_order_id')}, close={evt.get('close_order_id')}, bars={evt.get('cycle_bars')}"
+                                        elif evt_type == "POSITION_SNAPSHOT_CLOSE":
+                                            key = f"pos={evt.get('pos_amt_now')}"
+                                        elif evt_type == "ORDER_FETCH_OPEN" or evt_type == "ORDER_FETCH_CLOSE":
+                                            key = f"order={evt.get('order_id')}, status={evt.get('status')}"
+                                        elif evt_type == "NEW_CLOSED_BAR":
+                                            key = f"close={evt.get('close')}"
+                                        else:
+                                            key = "-"
+                                        
+                                        timeline_data.append({
+                                            "#": idx + 1,
+                                            "Timestamp": ts,
+                                            "Event": evt_type,
+                                            "Key": key[:60],
+                                        })
+                                    
+                                    timeline_df = pd.DataFrame(timeline_data)
+                                    st.dataframe(timeline_df, use_container_width=True, hide_index=True)
+                                    
+                                    # Raw JSON viewer per event
+                                    st.subheader("📄 Raw Event JSON")
+                                    event_idx = st.number_input(
+                                        "Event # to view",
+                                        min_value=1,
+                                        max_value=len(filtered_events),
+                                        value=1,
+                                        key="raw_event_idx"
+                                    )
+                                    
+                                    if 1 <= event_idx <= len(filtered_events):
+                                        import json as json_module
+                                        raw_event = filtered_events[event_idx - 1]
+                                        raw_json_str = json_module.dumps(raw_event, indent=2, default=str)
+                                        st.code(raw_json_str, language="json")
+                                        
+                                        # Copy button (using st.download_button as workaround)
+                                        st.download_button(
+                                            label="📋 Copy JSON",
+                                            data=raw_json_str,
+                                            file_name=f"event_{selected_cycle}_{event_idx}.json",
+                                            mime="application/json"
+                                        )
+                                else:
+                                    st.info(f"No timeline events found for cycle {selected_cycle} with current filters.")
+                                
+                                # Alert Explanation Panel
+                                if selected_record and selected_record.alert_level != CycleAlertLevel.OK:
+                                    st.divider()
+                                    st.subheader("⚠️ Alert Explanation")
+                                    
+                                    if selected_record.alert_level == CycleAlertLevel.BLOCK:
+                                        st.error("**BLOCK Violations:**")
+                                        for reason in selected_record.block_reasons:
+                                            st.markdown(f"- ❌ {reason}")
+                                        
+                                        st.warning("**Suggested Actions:**")
+                                        if any("reduce_only" in r.lower() for r in selected_record.block_reasons):
+                                            st.markdown("- Enforce `reduceOnly=True` for all CLOSE orders")
+                                        if any("pos_after" in r.lower() for r in selected_record.block_reasons):
+                                            st.markdown("- Tighten dust policy or investigate gateway")
+                                        if any("status" in r.lower() for r in selected_record.block_reasons):
+                                            st.markdown("- Check order execution logs for failures")
+                                        if any("audit" in r.lower() for r in selected_record.block_reasons):
+                                            st.markdown("- Enable `--audit` flag for complete cycle data")
+                                    
+                                    elif selected_record.alert_level == CycleAlertLevel.WARN:
+                                        st.warning("**WARN Conditions:**")
+                                        for reason in selected_record.warn_reasons:
+                                            st.markdown(f"- ⚠️ {reason}")
+                                        
+                                        st.info("**Suggested Review:**")
+                                        if any("residual" in r.lower() for r in selected_record.warn_reasons):
+                                            st.markdown("- Consider adjusting dust threshold")
+                                        if any("timeout" in r.lower() for r in selected_record.warn_reasons):
+                                            st.markdown("- Review timeout configuration")
+                                        if any("bars" in r.lower() for r in selected_record.warn_reasons):
+                                            st.markdown("- Cycle bars approaching timeout threshold")
+                                
+                                # Export Incident Bundle
+                                st.divider()
+                                st.subheader("📦 Export Incident Bundle")
+                                
+                                bundle_col1, bundle_col2 = st.columns(2)
+                                with bundle_col1:
+                                    bundle_out_dir = st.text_input(
+                                        "Output Directory",
+                                        value="data/incidents",
+                                        key="bundle_out_dir"
+                                    )
+                                with bundle_col2:
+                                    bundle_only_relevant = st.checkbox(
+                                        "Only relevant events",
+                                        value=True,
+                                        key="bundle_only_relevant"
+                                    )
+                                
+                                if st.button("📦 Export Bundle", key="export_bundle_btn"):
+                                    try:
+                                        from tezaver.matrix.live.cycle_events import (
+                                            IncidentBundleSpec,
+                                            build_incident_bundle,
+                                        )
+                                        
+                                        spec = IncidentBundleSpec(
+                                            symbol=cr_symbol,
+                                            timeframe=cr_tf,
+                                            cycle_idx=selected_cycle,
+                                            ndjson_path=str(ndjson_path),
+                                            equity_start=100.0,
+                                            out_dir=bundle_out_dir,
+                                            only_relevant=bundle_only_relevant,
+                                        )
+                                        
+                                        result = build_incident_bundle(spec)
+                                        
+                                        if result["success"]:
+                                            st.success(f"✅ Bundle exported: {result['bundle_path']}")
+                                            st.markdown("**Files created:**")
+                                            for f in result['files']:
+                                                st.markdown(f"- `{f}`")
+                                            
+                                            # README preview
+                                            readme_path = Path(result['bundle_path']) / "README.txt"
+                                            if readme_path.exists():
+                                                with st.expander("📄 README Preview"):
+                                                    with open(readme_path, "r") as rf:
+                                                        readme_content = rf.read()
+                                                    st.code(readme_content[:2000])
+                                        else:
+                                            st.error(f"Bundle export failed: {result['error']}")
+                                    except Exception as bundle_err:
+                                        st.error(f"Bundle export error: {bundle_err}")
+                            except Exception as timeline_err:
+                                st.warning(f"Timeline yüklenemedi: {timeline_err}")
+                    
+                    # Aggregates metrics
+                    cols = st.columns(4)
+                    with cols[0]:
+                        st.metric("Total Cycles", agg["total_cycles"])
+                        st.metric("Done", agg["done_cycles"])
+                    with cols[1]:
+                        st.metric("Winrate", f"{agg['winrate']:.1f}%")
+                        st.metric("W/L", f"{agg['win_count']}/{agg['loss_count']}")
+                    with cols[2]:
+                        st.metric("Total Net", f"{agg['total_net']:.4f} USDT")
+                        st.metric("Total Fee", f"{agg['total_fee']:.4f} USDT")
+                    with cols[3]:
+                        st.metric("Avg Lag", f"{agg['avg_eff_lag']:.0f}s")
+                        st.metric("Max DD", f"{agg['max_drawdown']:.4f}")
+                    
+                    # Drilldown for BLOCK/WARN
+                    if block_count > 0 or warn_count > 0:
+                        with st.expander("🔍 Alert Details", expanded=True):
+                            for r in records:
+                                if r.alert_level == CycleAlertLevel.BLOCK:
+                                    st.error(f"**Cycle {r.cycle_idx}** BLOCK: {', '.join(r.block_reasons)}")
+                                elif r.alert_level == CycleAlertLevel.WARN:
+                                    st.warning(f"**Cycle {r.cycle_idx}** WARN: {', '.join(r.warn_reasons)}")
+                    
+                    # CSV Export
+                    csv = df.to_csv(index=False)
+                    st.download_button(
+                        label="📥 Download CSV",
+                        data=csv,
+                        file_name=f"cycles_{cr_symbol}_{cr_tf}.csv",
+                        mime="text/csv",
+                    )
+                    
+                    # =========================================================
+                    # Equity Curve Chart + Risk Metrics
+                    # =========================================================
+                    st.divider()
+                    
+                    try:
+                        from tezaver.matrix.live.cycle_events import (
+                            compute_equity_curve,
+                            compute_risk_metrics,
+                        )
+                        import matplotlib.pyplot as plt
+                        import io
+                        
+                        equity_start = 100.0
+                        equity_points = compute_equity_curve(records, equity_start)
+                        risk_metrics = compute_risk_metrics(records, equity_points, equity_start)
+                        
+                        if equity_points:
+                            # Risk Metrics Cards
+                            st.subheader("📌 Risk Metrics")
+                            m_cols = st.columns(5)
+                            with m_cols[0]:
+                                st.metric("MDD", f"{risk_metrics['mdd']:.4f}")
+                                st.caption(f"{risk_metrics['mdd_pct']:.2f}%")
+                            with m_cols[1]:
+                                pf = risk_metrics['profit_factor']
+                                pf_str = f"{pf:.2f}" if pf != float('inf') else "∞"
+                                st.metric("Profit Factor", pf_str)
+                            with m_cols[2]:
+                                st.metric("Avg Net", f"{risk_metrics['avg_net']:.4f}")
+                            with m_cols[3]:
+                                st.metric("Std Dev", f"{risk_metrics['std_net']:.4f}")
+                            with m_cols[4]:
+                                st.metric("Avg Bars", f"{risk_metrics['avg_bars']:.1f}")
+                            
+                            # Equity Curve Chart
+                            st.subheader("📉 Equity Curve")
+                            
+                            fig, ax = plt.subplots(figsize=(10, 4))
+                            idxs = [pt.cycle_idx for pt in equity_points]
+                            equities = [pt.equity for pt in equity_points]
+                            
+                            ax.plot(idxs, equities, marker='o', linewidth=2)
+                            ax.axhline(y=equity_start, color='gray', linestyle='--', alpha=0.5)
+                            ax.set_xlabel("Cycle Index")
+                            ax.set_ylabel("Equity (USDT)")
+                            ax.set_title(f"Equity Curve - {cr_symbol}/{cr_tf}")
+                            ax.grid(True, alpha=0.3)
+                            
+                            st.pyplot(fig)
+                            plt.close(fig)
+                            
+                            # Equity CSV Export
+                            equity_data = [{
+                                "Cycle": pt.cycle_idx,
+                                "Timestamp": pt.ts,
+                                "Net": pt.net_pnl,
+                                "Equity": pt.equity,
+                                "Cum%": pt.cum_return_pct,
+                            } for pt in equity_points]
+                            equity_df = pd.DataFrame(equity_data)
+                            equity_csv = equity_df.to_csv(index=False)
+                            st.download_button(
+                                label="📥 Download Equity CSV",
+                                data=equity_csv,
+                                file_name=f"equity_{cr_symbol}_{cr_tf}.csv",
+                                mime="text/csv",
+                            )
+                        else:
+                            st.info("Equity curve hesaplanamadı (DONE cycle yok).")
+                    except Exception as chart_err:
+                        st.warning(f"Equity chart yüklenemedi: {chart_err}")
+        except Exception as e:
+            st.error(f"Cycles Report yüklenirken hata: {e}")
+    
+    # =========================================================================
     # Closed Bar Proof (NEW)
     # =========================================================================
     with st.expander("✅ Closed Bar Proof", expanded=False):
@@ -1705,9 +2131,32 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
         router_symbols = st.multiselect("Symbols", ["BTCUSDT", "ETHUSDT", "SOLUSDT"], default=["BTCUSDT"], key="router_symbols")
         router_tf = st.selectbox("Timeframe", ["1m", "15m"], key="router_tf")
         
+        # Hold Policy control
+        st.divider()
+        st.markdown("### 🎯 Hold Policy")
+        
+        hold_policy_col1, hold_policy_col2 = st.columns(2)
+        with hold_policy_col1:
+            router_hold_policy = st.selectbox(
+                "Hold Policy",
+                options=["OFF", "HOLD_NEXT_CLOSED"],
+                index=0,
+                help="OFF: no hold, HOLD_NEXT_CLOSED: OPEN→wait→CLOSE",
+                key="router_hold_policy"
+            )
+        with hold_policy_col2:
+            router_exchange_mode = st.selectbox(
+                "Exchange Mode",
+                options=["DRY_RUN", "DUMMY_ORDER", "REAL_TESTNET"],
+                index=0,
+                help="Policy order execution mode",
+                key="router_exchange_mode"
+            )
+        
         # Status line
         if router_state.get("attached"):
-            st.success(f"✅ Router ATTACHED | ticks={router_state.get('ticks', 0)}")
+            policy_status = router_state.get("hold_policy", "OFF")
+            st.success(f"✅ Router ATTACHED | ticks={router_state.get('ticks', 0)} | policy={policy_status}")
         else:
             st.info("⛔ Router NOT attached")
         
@@ -1715,14 +2164,29 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
         col_attach, col_detach = st.columns(2)
         with col_attach:
             if st.button("▶️ Attach Router", type="primary", disabled=router_state.get("attached", False), key="btn_attach_router"):
-                # Create router with config
+                # Create router with config including policy
                 config = LiveRouterConfig(
                     enabled=router_enabled,
                     force_dry_run=router_dry_run,
                     only_symbols=router_symbols if router_symbols else None,
                     only_timeframes=[router_tf] if router_tf else None,
+                    # Policy config
+                    hold_policy=router_hold_policy,
+                    exchange_mode=router_exchange_mode,
+                    armed=not router_dry_run,
+                    exchange_enabled=not router_dry_run,
                 )
-                router = MatrixLiveRouter(cluster=None, config=config)
+                
+                # Get gateway for policy if needed
+                gateway = None
+                if router_hold_policy == "HOLD_NEXT_CLOSED" and router_exchange_mode == "REAL_TESTNET":
+                    try:
+                        from tezaver.matrix.live.live_gateway import BinanceTestnetGateway
+                        gateway = BinanceTestnetGateway()
+                    except Exception as gw_err:
+                        st.error(f"Gateway oluşturulamadı: {gw_err}")
+                
+                router = MatrixLiveRouter(cluster=None, config=config, gateway=gateway)
                 service.set_on_closed_bar_callback(router.handle_snapshot)
                 st.success("Router attached!")
                 st.rerun()
@@ -2017,6 +2481,223 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
                 })
             
             st.dataframe(pd.DataFrame(history_rows), use_container_width=True, hide_index=True)
+    
+    # =========================================================================
+    # 🧭 Live Ops Console
+    # =========================================================================
+    with st.expander("🧭 Live Ops Console", expanded=False):
+        st.caption("Cells, positions, signals, policy, gates - tüm Live durumunu izle.")
+        
+        import pandas as pd
+        
+        router_state = service.get_router_state()
+        
+        # ========== Controls Row ==========
+        ctrl_cols = st.columns(5)
+        with ctrl_cols[0]:
+            ops_force_dry = st.toggle("🚨 Force DRY RUN", value=True, key="ops_force_dry_run", help="Panic switch - forces DRY RUN")
+        with ctrl_cols[1]:
+            ops_pause_all = st.toggle("⏸️ Pause All", value=False, key="ops_pause_all", help="Global pause")
+        with ctrl_cols[2]:
+            st.metric("Router", "🟢 ON" if router_state.get("attached") else "⛔ OFF")
+        with ctrl_cols[3]:
+            st.metric("Ticks", router_state.get("ticks", 0))
+        with ctrl_cols[4]:
+            gates_ok = router_state.get("gates_passed", True)
+            st.metric("Gates", "✅ PASS" if gates_ok else "⛔ FAIL")
+        
+        # ========== 🎛️ Strategy Controls ==========
+        st.divider()
+        st.markdown("### 🎛️ Strategy Controls")
+        
+        strat_cols = st.columns(4)
+        with strat_cols[0]:
+            strat_open_rule = st.selectbox(
+                "Open Rule Mode",
+                options=["ALWAYS_OFF", "AUTO_OPEN_FLAT", "CARD_STRICT_WINDOW", "CARD_SOURCE_WINDOW"],
+                index=0,
+                key="strat_open_rule_mode",
+                help="ALWAYS_OFF: no opens, AUTO_OPEN_FLAT: V1 testing"
+            )
+        with strat_cols[1]:
+            strat_cooldown = st.slider(
+                "Cooldown (bars)",
+                min_value=1,
+                max_value=10,
+                value=1,
+                key="strat_cooldown_bars",
+                help="Min bars between actions"
+            )
+        with strat_cols[2]:
+            strat_contract = st.radio(
+                "Contract Enforce",
+                options=["WARN", "BLOCK"],
+                index=0,
+                key="strat_contract_enforce",
+                help="BLOCK: suppress OPEN if contract violated"
+            )
+        with strat_cols[3]:
+            strat_profile = st.selectbox(
+                "Profile",
+                options=["SILVER_15m", "SNIPER_V4"],
+                index=0,
+                key="strat_profile_id",
+                help="Strategy profile for filter windows"
+            )
+        
+        # Strategy Status
+        strat_status_cols = st.columns(4)
+        with strat_status_cols[0]:
+            st.caption(f"**Mode**: {strat_open_rule}")
+        with strat_status_cols[1]:
+            st.caption(f"**Cooldown**: {strat_cooldown} bars")
+        with strat_status_cols[2]:
+            st.caption(f"**Contract**: {strat_contract}")
+        with strat_status_cols[3]:
+            st.caption(f"**Profile**: {strat_profile}")
+        
+        # ========== One-click E2E Button ==========
+        st.divider()
+        e2e_cols = st.columns([3, 1])
+        with e2e_cols[0]:
+            st.markdown("#### ▶️ One-click E2E Test")
+            st.caption("1m OPEN→CLOSE cycle with current settings")
+        with e2e_cols[1]:
+            if st.button("▶️ Run 1m E2E", type="primary", key="btn_run_1m_e2e"):
+                import subprocess
+                cmd = [
+                    "./venv/bin/python", "-m", "tezaver.matrix.live.live_loop",
+                    "proof_router_cluster",
+                    "--real", "--tf", "1m", "--poll", "5",
+                    "--exchange-mode", "REAL_TESTNET",
+                    "--armed", "--no-force-dry-run", "--exchange-enabled",
+                    "--hold-policy", "HOLD_NEXT_CLOSED",
+                    "--until-done",
+                    "--dust-policy", "FLATTEN_AFTER",
+                    "--dust-threshold", "0.001",
+                ]
+                env = os.environ.copy()
+                env["PYTHONPATH"] = "src"
+                
+                with st.spinner("Running 1m E2E cycle..."):
+                    try:
+                        result = subprocess.run(cmd, cwd="/Users/alisaglam/TezaverMac", env=env, capture_output=True, text=True, timeout=300)
+                        if result.returncode == 0:
+                            # Extract summary line
+                            summary_line = [l for l in result.stdout.split("\\n") if "POLICY_DONE" in l or "PROOF_ROUTER_CLUSTER_POLICY_OK" in l]
+                            if summary_line:
+                                st.success(summary_line[-1])
+                            else:
+                                st.success("E2E OK!")
+                            st.code(result.stdout[-2000:] if len(result.stdout) > 2000 else result.stdout)
+                        else:
+                            st.error(f"Exit code: {result.returncode}")
+                            st.code(result.stderr[:1000] if result.stderr else result.stdout[:1000])
+                    except subprocess.TimeoutExpired:
+                        st.error("Timeout (5min)")
+                    except Exception as e:
+                        st.error(f"Error: {e}")
+        
+        # ========== Cells Status Table ==========
+        st.divider()
+        st.markdown("### 📊 Cells Status")
+        
+        # Build cells data from router state
+        cells_data = []
+        last_tick = router_state.get("last_tick")
+        if last_tick:
+            cells_data.append({
+                "Cell": f"{last_tick.get('symbol')}/{last_tick.get('timeframe')}",
+                "bar_close_ts": str(last_tick.get("bar_close_ts", "-"))[:19],
+                "close": last_tick.get("close"),
+                "signal": router_state.get("hold_policy", "OFF"),
+                "policy": router_state.get("hold_policy", "OFF"),
+                "gates": "✅" if router_state.get("gates_passed", True) else "⛔",
+                "mode": router_state.get("exchange_mode", "DRY_RUN"),
+            })
+        
+        if cells_data:
+            st.dataframe(pd.DataFrame(cells_data), use_container_width=True, hide_index=True)
+        else:
+            st.info("No active cells yet. Start Router to see data.")
+        
+        # ========== Position State Table ==========
+        st.divider()
+        st.markdown("### 📈 Position State")
+        
+        # Get positions from strategy if available
+        # Placeholder - PositionStateStore would be accessed here
+        positions_data = []
+        if last_tick:
+            positions_data.append({
+                "Cell": f"{last_tick.get('symbol')}/{last_tick.get('timeframe')}",
+                "State": "FLAT",  # Would come from PositionStateStore
+                "Open TS": "-",
+                "Close TS": "-",
+                "Cooldown": "0 bars",
+            })
+        
+        if positions_data:
+            st.dataframe(pd.DataFrame(positions_data), use_container_width=True, hide_index=True)
+        else:
+            st.info("No position data. Run a proof cycle to see data.")
+        
+        # ========== NDJSON Tail Viewer ==========
+        st.divider()
+        st.markdown("### 📋 Live Events (NDJSON)")
+        
+        # Preset filter buttons
+        filter_cols = st.columns(6)
+        with filter_cols[0]:
+            if st.button("ALL", key="ndjson_all"):
+                st.session_state["ndjson_filter"] = None
+        with filter_cols[1]:
+            if st.button("STRATEGY", key="ndjson_strategy"):
+                st.session_state["ndjson_filter"] = "STRATEGY_SIGNAL"
+        with filter_cols[2]:
+            if st.button("ORDER", key="ndjson_order"):
+                st.session_state["ndjson_filter"] = "ORDER_"
+        with filter_cols[3]:
+            if st.button("GUARDRAIL", key="ndjson_guardrail"):
+                st.session_state["ndjson_filter"] = "GUARDRAIL"
+        with filter_cols[4]:
+            if st.button("POLICY", key="ndjson_policy"):
+                st.session_state["ndjson_filter"] = "POLICY"
+        with filter_cols[5]:
+            ndjson_limit = st.selectbox("Limit", [20, 50, 100, 200], key="ndjson_limit")
+        
+        # Load and display NDJSON events
+        ndjson_path = "data/logs/live_events.ndjson"
+        import json
+        from pathlib import Path
+        
+        events = []
+        if Path(ndjson_path).exists():
+            try:
+                with open(ndjson_path, "r") as f:
+                    lines = f.readlines()
+                    for line in lines[-ndjson_limit:]:
+                        try:
+                            evt = json.loads(line.strip())
+                            # Apply filter
+                            filter_val = st.session_state.get("ndjson_filter")
+                            if filter_val is None or filter_val in evt.get("event_type", ""):
+                                events.append({
+                                    "ts": str(evt.get("ts", "-"))[:19],
+                                    "type": evt.get("event_type", "-"),
+                                    "symbol": evt.get("symbol", "-"),
+                                    "action": evt.get("action") or evt.get("signal") or "-",
+                                    "success": evt.get("success", "-"),
+                                })
+                        except:
+                            pass
+            except:
+                pass
+        
+        if events:
+            st.dataframe(pd.DataFrame(events[::-1]), use_container_width=True, hide_index=True, height=300)
+        else:
+            st.info("No events yet. Run a proof cycle to generate events.")
     
     # =========================================================================
     # Exchange & Arm Controls (Phase-1)

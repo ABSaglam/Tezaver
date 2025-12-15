@@ -58,6 +58,9 @@ class CellPolicyState:
     cleanup_attempted: bool = False
     cleanup_result: Optional[str] = None
     cleanup_order_id: Optional[str] = None
+    # V5: min_hold_bars / pending_close
+    pending_close: bool = False
+    close_reason: Optional[str] = None  # SIGNAL_OK / SIGNAL_TOO_EARLY / PENDING_SIGNAL_RELEASED
 
 
 @dataclass
@@ -96,6 +99,8 @@ class HoldNextClosedPolicy:
         dust_policy: str = "IGNORE",
         dust_threshold: float = 0.002,
         close_qty_mult: float = 1.0,  # For BLOCK test - 0.5 = partial close
+        close_policy: str = "NEXT_CLOSED_BAR",  # NEXT_CLOSED_BAR / NEXT_SIGNAL
+        min_hold_bars: int = 1,  # Minimum bars to hold before CLOSE on NEXT_SIGNAL
     ):
         self.gateway = gateway
         self._event_sink = event_sink
@@ -107,6 +112,8 @@ class HoldNextClosedPolicy:
         self.dust_policy = dust_policy
         self.dust_threshold = dust_threshold
         self.close_qty_mult = close_qty_mult
+        self.close_policy = close_policy
+        self.min_hold_bars = min_hold_bars
         
         # Per-cell state
         self._cells: Dict[str, CellPolicyState] = {}
@@ -125,6 +132,11 @@ class HoldNextClosedPolicy:
         if key not in self._cells:
             self._cells[key] = CellPolicyState()
         return self._cells[key]
+    
+    def reset_cell(self, symbol: str, tf: str, profile_id: str) -> None:
+        """Reset cell state for a new cycle."""
+        key = self._cell_key(symbol, tf, profile_id)
+        self._cells[key] = CellPolicyState()
     
     def _emit_event(self, event: Dict[str, Any]) -> None:
         if self._event_sink:
@@ -150,11 +162,13 @@ class HoldNextClosedPolicy:
         profile_id: str,
         bar_close_ts: str,
         decision: Optional[str] = None,  # "OPEN" or None
+        strategy_signal: Optional[str] = None,  # "OPEN_LONG" / "CLOSE_LONG" / "NONE"
     ) -> PolicyResult:
         """
         Handle a closed bar tick for a cell.
         
         decision = "OPEN" means cluster says open a position.
+        strategy_signal = "CLOSE_LONG" triggers CLOSE when close_policy=NEXT_SIGNAL.
         """
         from tezaver.matrix.live.live_gateway import ExchangeOrderRequest, OrderSide
         
@@ -186,16 +200,56 @@ class HoldNextClosedPolicy:
             
             print(f"[POLICY] EFFECTIVE_SET {symbol}/{tf} effective={bar_close_ts}")
             
+            # V5: NEXT_SIGNAL + min_hold_bars - check if CLOSE_LONG arrived
+            if self.close_policy == "NEXT_SIGNAL" and strategy_signal == "CLOSE_LONG":
+                # Signal arrived on same bar as effective - too early
+                if cell.bars_waited_effective < self.min_hold_bars:
+                    cell.pending_close = True
+                    cell.close_reason = "SIGNAL_TOO_EARLY"
+                    print(f"[POLICY] SIGNAL_TOO_EARLY {symbol}/{tf} bars_waited={cell.bars_waited_effective} min_hold={self.min_hold_bars}")
+                    return PolicyResult(action="SIGNAL_TOO_EARLY", success=True, state=cell.state, bar_close_ts=bar_close_ts)
+                else:
+                    # Signal OK - close now
+                    cell.close_reason = "SIGNAL_OK"
+                    cell.seen_closed_count += 1
+                    return self._handle_close(symbol, tf, profile_id, bar_close_ts, cell)
+            
             return PolicyResult(action="WAIT_EFFECTIVE", success=True, state=cell.state, bar_close_ts=bar_close_ts)
         
         elif cell.state == PolicyState.EFFECTIVE_SET:
-            # Next bar after effective - trigger CLOSE
-            if bar_close_ts <= cell.open_effective_bar_close_ts:
-                # Same or older bar, skip
-                return PolicyResult(action="SKIP_OLD", success=True, state=cell.state, bar_close_ts=bar_close_ts)
+            # Increment bars waited
+            cell.bars_waited_effective += 1
             
-            cell.seen_closed_count += 1
-            return self._handle_close(symbol, tf, profile_id, bar_close_ts, cell)
+            # NEXT_SIGNAL close policy
+            if self.close_policy == "NEXT_SIGNAL":
+                # Check if pending close should be released
+                if cell.pending_close and cell.bars_waited_effective >= self.min_hold_bars:
+                    cell.close_reason = "PENDING_SIGNAL_RELEASED"
+                    print(f"[POLICY] PENDING_SIGNAL_RELEASED {symbol}/{tf} bars_waited={cell.bars_waited_effective}")
+                    cell.seen_closed_count += 1
+                    return self._handle_close(symbol, tf, profile_id, bar_close_ts, cell)
+                
+                # Check for new CLOSE_LONG signal
+                if strategy_signal == "CLOSE_LONG":
+                    if cell.bars_waited_effective >= self.min_hold_bars:
+                        cell.close_reason = "SIGNAL_OK"
+                        cell.seen_closed_count += 1
+                        return self._handle_close(symbol, tf, profile_id, bar_close_ts, cell)
+                    else:
+                        cell.pending_close = True
+                        cell.close_reason = "SIGNAL_TOO_EARLY"
+                        print(f"[POLICY] SIGNAL_TOO_EARLY {symbol}/{tf} bars_waited={cell.bars_waited_effective}")
+                        return PolicyResult(action="SIGNAL_TOO_EARLY", success=True, state=cell.state, bar_close_ts=bar_close_ts)
+                
+                # No signal - keep waiting
+                return PolicyResult(action="WAIT_CLOSE_SIGNAL", success=True, state=cell.state, bar_close_ts=bar_close_ts)
+            else:
+                # Default: NEXT_CLOSED_BAR - trigger CLOSE on next bar
+                if bar_close_ts <= cell.open_effective_bar_close_ts:
+                    return PolicyResult(action="SKIP_OLD", success=True, state=cell.state, bar_close_ts=bar_close_ts)
+                
+                cell.seen_closed_count += 1
+                return self._handle_close(symbol, tf, profile_id, bar_close_ts, cell)
         
         elif cell.state == PolicyState.CLOSE_SUBMITTED:
             # Already closed, reset to IDLE
@@ -277,6 +331,7 @@ class HoldNextClosedPolicy:
         profile_id: str,
         bar_close_ts: str,
         cell: CellPolicyState,
+        skip_monotonic_check: bool = False,  # For same-tick CLOSE in NEXT_SIGNAL mode
     ) -> PolicyResult:
         """Handle CLOSE submission with reduceOnly."""
         from tezaver.matrix.live.live_gateway import ExchangeOrderRequest, OrderSide
@@ -288,9 +343,10 @@ class HoldNextClosedPolicy:
             return PolicyResult(action="DUPLICATE", success=False, state=cell.state, bar_close_ts=bar_close_ts)
         
         try:
-            # Tripwire: close_ts > effective_ts
-            if bar_close_ts <= cell.open_effective_bar_close_ts:
+            # Tripwire: close_ts > effective_ts (skip if same-tick CLOSE allowed)
+            if not skip_monotonic_check and bar_close_ts <= cell.open_effective_bar_close_ts:
                 raise RuntimeError(f"Bar monotonicity: close_bar ({bar_close_ts}) <= effective_bar ({cell.open_effective_bar_close_ts})")
+            
             
             self._emit_event({
                 "event_type": "ROUTER_POLICY_STATE",

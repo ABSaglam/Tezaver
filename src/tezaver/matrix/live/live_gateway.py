@@ -91,11 +91,28 @@ class DummyExchangeGateway:
     - Does NOT make real HTTP calls.
     - Accepts all orders as "successful".
     - Uses fixed price=1.0 if no price is provided.
+    - Tracks virtual positions for DRY_RUN testing.
     """
+    
+    def __init__(self):
+        self._virtual_positions: Dict[str, Dict[str, Any]] = {}
 
     def place_order(self, req: ExchangeOrderRequest) -> ExchangeOrderResult:
         """Simulate placing an order (always succeeds)."""
         filled_price = req.price if req.price is not None else 1.0
+        
+        # Update virtual position
+        if req.side == "BUY":
+            self._virtual_positions[req.symbol] = {
+                "position_qty": req.quantity,
+                "entry_price": filled_price,
+            }
+        elif req.side == "SELL":
+            self._virtual_positions[req.symbol] = {
+                "position_qty": 0.0,
+                "entry_price": None,
+            }
+        
         return ExchangeOrderResult(
             success=True,
             symbol=req.symbol,
@@ -108,13 +125,14 @@ class DummyExchangeGateway:
         )
 
     def get_position_snapshot(self, symbol: str) -> Dict[str, Any]:
-        """Return empty position snapshot."""
+        """Return virtual position snapshot."""
+        pos = self._virtual_positions.get(symbol, {})
         return {
             "symbol": symbol,
-            "position_qty": 0.0,
-            "entry_price": None,
+            "position_qty": pos.get("position_qty", 0.0),
+            "entry_price": pos.get("entry_price"),
             "unrealized_pnl": 0.0,
-            "note": "DummyExchangeGateway has no real positions",
+            "note": "DummyExchangeGateway virtual position",
         }
 
 
@@ -260,8 +278,175 @@ class BinanceTestnetGateway:
                 "unrealized_pnl": 0.0,
                 "error": str(e),
             }
-
-
+    
+    def get_order(
+        self,
+        symbol: str,
+        order_id: str,
+        max_wait_sec: float = 30.0,
+        poll_interval_sec: float = 2.0,
+    ) -> Dict[str, Any]:
+        """
+        Fetch order details from Binance Futures Testnet.
+        
+        Optionally polls until FILLED or max_wait_sec.
+        
+        Returns:
+            {
+                "orderId": str,
+                "symbol": str,
+                "status": str,  # NEW, PARTIALLY_FILLED, FILLED, CANCELED, etc.
+                "executedQty": float,
+                "avgPrice": float,
+                "updateTime": int,
+                "side": str,
+                "type": str,
+                "success": bool,
+                "error": str or None,
+            }
+        """
+        import requests
+        import time
+        
+        start_time = time.time()
+        last_result = None
+        
+        while True:
+            try:
+                params = {
+                    "symbol": symbol,
+                    "orderId": order_id,
+                }
+                signed_params = self._sign_request(params)
+                headers = {"X-MBX-APIKEY": self._api_key}
+                url = f"{self.TESTNET_BASE_URL}/fapi/v1/order"
+                
+                response = requests.get(url, params=signed_params, headers=headers, timeout=10)
+                data = response.json()
+                
+                if response.status_code == 200:
+                    status = data.get("status", "UNKNOWN")
+                    executed_qty = float(data.get("executedQty", 0))
+                    avg_price = float(data.get("avgPrice", 0))
+                    
+                    last_result = {
+                        "orderId": str(data.get("orderId")),
+                        "symbol": symbol,
+                        "status": status,
+                        "executedQty": executed_qty,
+                        "avgPrice": avg_price,
+                        "updateTime": data.get("updateTime"),
+                        "side": data.get("side"),
+                        "type": data.get("type"),
+                        "success": True,
+                        "error": None,
+                    }
+                    
+                    # If FILLED or max_wait exceeded, return
+                    if status == "FILLED":
+                        return last_result
+                    
+                    elapsed = time.time() - start_time
+                    if elapsed >= max_wait_sec:
+                        return last_result
+                    
+                    # Poll again
+                    time.sleep(poll_interval_sec)
+                    continue
+                else:
+                    return {
+                        "orderId": order_id,
+                        "symbol": symbol,
+                        "status": "ERROR",
+                        "executedQty": 0,
+                        "avgPrice": 0,
+                        "updateTime": None,
+                        "side": None,
+                        "type": None,
+                        "success": False,
+                        "error": data.get("msg", f"HTTP {response.status_code}"),
+                    }
+                    
+            except Exception as e:
+                return {
+                    "orderId": order_id,
+                    "symbol": symbol,
+                    "status": "ERROR",
+                    "executedQty": 0,
+                    "avgPrice": 0,
+                    "updateTime": None,
+                    "side": None,
+                    "type": None,
+                    "success": False,
+                    "error": str(e),
+                }
+    
+    def get_user_trades(
+        self,
+        symbol: str,
+        order_id: str,
+    ) -> Dict[str, Any]:
+        """
+        Fetch trades for a specific order to get commission/fee.
+        
+        Uses /fapi/v1/userTrades with orderId filter.
+        
+        Returns:
+            {
+                "trades": List[dict],
+                "total_qty": float,
+                "total_commission": float,
+                "commission_asset": str,
+                "success": bool,
+                "error": str or None,
+            }
+        """
+        import requests
+        
+        try:
+            params = {
+                "symbol": symbol,
+                "orderId": order_id,
+            }
+            signed_params = self._sign_request(params)
+            headers = {"X-MBX-APIKEY": self._api_key}
+            url = f"{self.TESTNET_BASE_URL}/fapi/v1/userTrades"
+            
+            response = requests.get(url, params=signed_params, headers=headers, timeout=10)
+            data = response.json()
+            
+            if response.status_code == 200 and isinstance(data, list):
+                total_qty = sum(float(t.get("qty", 0)) for t in data)
+                total_commission = sum(float(t.get("commission", 0)) for t in data)
+                commission_asset = data[0].get("commissionAsset", "USDT") if data else "USDT"
+                
+                return {
+                    "trades": data,
+                    "total_qty": total_qty,
+                    "total_commission": total_commission,
+                    "commission_asset": commission_asset,
+                    "success": True,
+                    "error": None,
+                }
+            else:
+                return {
+                    "trades": [],
+                    "total_qty": 0,
+                    "total_commission": 0,
+                    "commission_asset": "USDT",
+                    "success": False,
+                    "error": data.get("msg", f"HTTP {response.status_code}") if isinstance(data, dict) else f"HTTP {response.status_code}",
+                }
+                
+        except Exception as e:
+            return {
+                "trades": [],
+                "total_qty": 0,
+                "total_commission": 0,
+                "commission_asset": "USDT",
+                "success": False,
+                "error": str(e),
+            }
 
 # =============================================================================
 # Armed Executor (with dry-run and idempotency)
