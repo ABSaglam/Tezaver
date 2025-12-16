@@ -39,6 +39,7 @@ class LiveRouterConfig:
     max_cell_notional_usdt: float = 300.0
     max_open_positions: int = 3
     risk_enforce: str = "BLOCK"  # WARN / BLOCK
+    auto_export_on_block: bool = False  # Export incident bundles on BLOCK
 
 
 class MatrixLiveRouter:
@@ -105,6 +106,7 @@ class MatrixLiveRouter:
                 cancel_on_timeout=self.config.cancel_on_timeout,
                 inject_fault=self.config.inject_fault,
                 risk_limiter=self._risk_limiter,  # Pass risk limiter for pre-trade checks
+                auto_export_on_block=self.config.auto_export_on_block,
             )
         
         # Strategy Signal Adapter (if strategy_enabled)

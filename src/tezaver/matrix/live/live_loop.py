@@ -1100,6 +1100,7 @@ def main():
                 inject_fault_nth=getattr(args, "inject_order_fault_nth", 0),
                 inject_fault_action=getattr(args, "inject_order_fault_action", "ANY"),
                 risk_limiter=policy_risk_limiter,  # Pass risk limiter for pre-trade checks
+                auto_export_on_block=args.auto_export_on_block,
             )
             
             print(f"[PROOF_ROUTER_CLUSTER] Policy profile_id={profile_id}")
@@ -1912,6 +1913,7 @@ def main():
             order_timeout_sec=args.order_timeout_sec,
             cancel_on_timeout=args.cancel_on_timeout,
             inject_fault=args.inject_order_fault,
+            auto_export_on_block=args.auto_export_on_block,
         )
         
         print(f"[POLICY_CYCLE] profile_id={profile_id}")
