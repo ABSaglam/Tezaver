@@ -2767,6 +2767,28 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
                     for w in last_recon.get("warnings", [])[:3]:
                         st.caption(f"  ⚠️ {w}")
         
+        # ========== 🪪 Card Governance ==========
+        st.divider()
+        st.markdown("### 🪪 Card Governance")
+        
+        card_gov_cols = st.columns(4)
+        with card_gov_cols[0]:
+            card_gate_enabled = st.toggle("Card Gate", value=True, key="card_gate_enabled_toggle")
+        with card_gov_cols[1]:
+            card_max_age = st.slider("Max Age (hrs)", min_value=12, max_value=168, value=72, key="card_max_age_slider")
+        with card_gov_cols[2]:
+            card_min_pass = st.slider("Min Pass Rate", min_value=0.0, max_value=0.5, value=0.2, step=0.05, key="card_min_pass_slider")
+        with card_gov_cols[3]:
+            card_enforce = st.radio("Enforce", ["BLOCK", "WARN"], index=0, horizontal=True, key="card_enforce_radio")
+        
+        # Show last CARD_GATE_EVAL events
+        card_events = load_ndjson_events(limit=5, event_types=["CARD_GATE_EVAL"])
+        if card_events:
+            last_card = card_events[0]
+            gate = last_card.get("gate", "NA")
+            gate_icon = "✅" if gate == "PASS" else ("⚠️" if gate == "WARN" else ("🚫" if gate == "BLOCK" else "❔"))
+            st.caption(f"**Last Card Gate**: {gate_icon} {gate} | allow={last_card.get('allow', True)} | violations={last_card.get('violations', [])[:2]}")
+        
         # ========== One-click E2E Button ==========
         st.divider()
         e2e_cols = st.columns([3, 1])

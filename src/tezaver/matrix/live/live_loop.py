@@ -545,6 +545,20 @@ def main():
     parser.add_argument("--risk-enforce", type=str, default="BLOCK",
                        choices=["WARN", "BLOCK"],
                        help="Risk limit enforcement mode")
+    # Card Gate CLI args
+    parser.add_argument("--card-gate-enabled", action="store_true", default=True,
+                       help="Enable card governance gate")
+    parser.add_argument("--no-card-gate-enabled", action="store_false", dest="card_gate_enabled",
+                       help="Disable card governance gate")
+    parser.add_argument("--card-max-age-hours", type=float, default=72.0,
+                       help="Max card age in hours before stale")
+    parser.add_argument("--card-enforce-mode", type=str, default="BLOCK",
+                       choices=["WARN", "BLOCK"],
+                       help="Card gate enforcement mode")
+    parser.add_argument("--card-force-stale", action="store_true",
+                       help="Force card stale for testing")
+    parser.add_argument("--card-force-drift", action="store_true",
+                       help="Force card drift for testing")
     
     args = parser.parse_args()
     
@@ -1057,7 +1071,20 @@ def main():
                 profile_id=getattr(args, "profile_id", "SILVER_15m"),
                 close_rule_mode=getattr(args, "close_rule_mode", "ALWAYS_OFF"),
             )
-            print(f"[PROOF_ROUTER_CLUSTER] Strategy ENABLED: open_rule_mode={args.open_rule_mode} close_rule_mode={getattr(args, 'close_rule_mode', 'ALWAYS_OFF')} cooldown={args.cooldown_bars}")
+            print(f"[PROOF_ROUTER_CLUSTER] StrategySignalAdapter open_rule_mode={getattr(args, 'open_rule_mode', 'ALWAYS_OFF')}")
+        
+        # Create CardGate for card governance
+        card_gate = None
+        from tezaver.matrix.live.card_gate import CardGate, CardGateConfig
+        card_gate_config = CardGateConfig(
+            enabled=getattr(args, "card_gate_enabled", True),
+            max_age_hours=getattr(args, "card_max_age_hours", 72.0),
+            enforce_mode=getattr(args, "card_enforce_mode", "BLOCK"),
+            force_stale=getattr(args, "card_force_stale", False),
+            force_drift=getattr(args, "card_force_drift", False),
+        )
+        card_gate = CardGate(config=card_gate_config, event_sink=ndjson_event_sink)
+        print(f"[PROOF_ROUTER_CLUSTER] CardGate enabled={card_gate_config.enabled} enforce={card_gate_config.enforce_mode} force_stale={card_gate_config.force_stale} force_drift={card_gate_config.force_drift}")
         
         # Current cycle idx for propagation to policy (set by main loop)
         current_cycle_idx = 1
@@ -1092,10 +1119,28 @@ def main():
                         )
                         strategy_signal_value = strategy_signal.value  # Convert enum to string
                     
+                    # CardGate evaluation
+                    card_gate_result = None
+                    card_gate_allow = True
+                    if card_gate:
+                        open_rule_mode = getattr(args, "open_rule_mode", "ALWAYS_OFF")
+                        cell_id = f"{symbol}|{tf}|{profile_id}"
+                        card_gate_result = card_gate.evaluate(
+                            symbol=symbol,
+                            timeframe=tf,
+                            profile_id=profile_id,
+                            cell_id=cell_id,
+                            open_rule_mode=open_rule_mode,
+                            cycle_idx=current_cycle_idx,
+                        )
+                        card_gate_allow = card_gate_result.allow
+                        if not card_gate_allow:
+                            print(f"[GUARDRAIL] CARD_GATE_{card_gate_result.gate} {cell_id}: {card_gate_result.violations}")
+                    
                     # Get cell state to determine decision
                     cell_state = policy.get_cell_state(symbol, tf, profile_id)
-                    # V5: OPEN decision only if strategy says OPEN_LONG
-                    decision = "OPEN" if (cell_state.state.value == "IDLE" and strategy_signal_value == "OPEN_LONG") else None
+                    # V5: OPEN decision only if strategy says OPEN_LONG AND card_gate allows
+                    decision = "OPEN" if (cell_state.state.value == "IDLE" and strategy_signal_value == "OPEN_LONG" and card_gate_allow) else None
                     
                     result = policy.handle_tick(
                         symbol=symbol,
