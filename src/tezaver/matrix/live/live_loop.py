@@ -713,6 +713,8 @@ def main():
             "mainnet_max_notional": args.mainnet_max_notional,
             "mainnet_allowlist": args.mainnet_allowlist,
             "symbols": requested_symbols,
+            "mode": args.exchange_mode,
+            "scope": "GLOBAL",
         })
         print(f"[MAINNET_ARMED] ts={dt_now.now(tz.utc).isoformat()} max_notional={args.mainnet_max_notional} allowlist={args.mainnet_allowlist}")
         print("[MAINNET_ARMED] All safety checks passed. Live trading enabled.")
@@ -1236,6 +1238,7 @@ def main():
                 inject_fault_action=getattr(args, "inject_order_fault_action", "ANY"),
                 risk_limiter=policy_risk_limiter,  # Pass risk limiter for pre-trade checks
                 auto_export_on_block=args.auto_export_on_block,
+                mainnet_allowlist=getattr(args, "mainnet_allowlist", None),
             )
             
             print(f"[PROOF_ROUTER_CLUSTER] Policy profile_id={profile_id}")
@@ -2049,6 +2052,7 @@ def main():
             cancel_on_timeout=args.cancel_on_timeout,
             inject_fault=args.inject_order_fault,
             auto_export_on_block=args.auto_export_on_block,
+            mainnet_allowlist=getattr(args, "mainnet_allowlist", None),
         )
         
         print(f"[POLICY_CYCLE] profile_id={profile_id}")

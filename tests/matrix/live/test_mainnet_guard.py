@@ -126,5 +126,57 @@ class TestEnforceAllowlistHelper(unittest.TestCase):
         self.assertEqual(set(blocked), {"BTCUSDT", "SOLUSDT"})
 
 
+class TestOrderTimeAllowlistEnforcement(unittest.TestCase):
+    """Tests for order-time allowlist enforcement in HoldNextClosedPolicy."""
+    
+    def test_policy_blocks_disallowed_symbol(self):
+        """Policy should block order for symbol not in allowlist and emit event."""
+        import json
+        import tempfile
+        from pathlib import Path
+        
+        # Create temp event log
+        tmp_dir = tempfile.mkdtemp()
+        events_log = []
+        
+        def mock_sink(event):
+            events_log.append(event)
+        
+        # Create policy with allowlist containing only ETHUSDT
+        from unittest.mock import MagicMock
+        mock_gateway = MagicMock()
+        
+        from tezaver.matrix.live.live_policy import HoldNextClosedPolicy
+        policy = HoldNextClosedPolicy(
+            gateway=mock_gateway,
+            event_sink=mock_sink,
+            exchange_mode="REAL_MAINNET",
+            mainnet_allowlist="ETHUSDT",
+            auto_export_on_block=False,  # Don't actually export
+        )
+        
+        # Prime a cell to be in FLAT state ready for OPEN
+        cell = policy.get_cell_state("BTCUSDT", "15m", "test_profile")
+        
+        # Attempt to open (should be blocked)
+        result = policy.handle_tick(
+            symbol="BTCUSDT",  # Not in allowlist
+            tf="15m",
+            profile_id="test_profile",
+            bar_close_ts="2025-01-01T00:00:00Z",
+            decision="OPEN",
+        )
+        
+        # Check that order was blocked
+        self.assertEqual(result.action, "ALLOWLIST_BLOCKED")
+        self.assertFalse(result.success)
+        
+        # Check that MAINNET_GUARD_EVAL event was emitted
+        block_events = [e for e in events_log if e.get("event_type") == "MAINNET_GUARD_EVAL"]
+        self.assertEqual(len(block_events), 1)
+        self.assertEqual(block_events[0]["decision"], "BLOCK")
+        self.assertIn("ALLOWLIST_VIOLATION_ORDER", block_events[0]["reasons"][0])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -110,6 +110,7 @@ class HoldNextClosedPolicy:
         inject_fault_action: str = "ANY",  # ANY/OPEN/CLOSE
         risk_limiter = None,  # Optional GlobalRiskLimiter for pre-trade checks
         auto_export_on_block: bool = False,  # Whether to export incident bundles on BLOCK
+        mainnet_allowlist: str = None,  # Comma-separated allowlist for REAL_MAINNET
     ):
         # Wrap gateway with FaultInjectionGateway if needed
         if inject_fault and inject_fault != "NONE":
@@ -120,6 +121,9 @@ class HoldNextClosedPolicy:
         
         self._risk_limiter = risk_limiter
         self._auto_export_on_block = auto_export_on_block
+        self._mainnet_allowlist_set = None
+        if mainnet_allowlist:
+            self._mainnet_allowlist_set = {s.strip().upper() for s in mainnet_allowlist.split(",") if s.strip()}
             
         self._event_sink = event_sink
         self.qty = qty
@@ -337,6 +341,37 @@ class HoldNextClosedPolicy:
             
             # Use OrderLifecycleTracker
             from tezaver.matrix.live.order_lifecycle import OrderLifecycleTracker, OrderLifecycleResult
+            
+            # Order-time Allowlist Check (REAL_MAINNET safety net)
+            if self._mainnet_allowlist_set and self.exchange_mode == "REAL_MAINNET":
+                if symbol.upper() not in self._mainnet_allowlist_set:
+                    reason = f"ALLOWLIST_VIOLATION_ORDER:{symbol}"
+                    print(f"[POLICY] {reason}")
+                    
+                    # Emit telemetry and export incident
+                    from tezaver.matrix.live.incident_bundle import maybe_export_on_block
+                    maybe_export_on_block(
+                        reason=reason,
+                        enabled=self._auto_export_on_block,
+                    )
+                    
+                    if self._event_sink:
+                        from datetime import datetime, timezone
+                        self._event_sink({
+                            "event_type": "MAINNET_GUARD_EVAL",
+                            "ts": datetime.now(timezone.utc).isoformat(),
+                            "decision": "BLOCK",
+                            "reasons": [reason],
+                            "symbol": symbol,
+                            "allowlist": list(self._mainnet_allowlist_set),
+                        })
+                    
+                    return PolicyResult(
+                        action="ALLOWLIST_BLOCKED",
+                        success=False,
+                        state=cell.state,
+                        bar_close_ts=bar_close_ts,
+                    )
             
             # Risk Limiter Pre-Check (if configured)
             if self._risk_limiter:
