@@ -94,7 +94,10 @@ def create_mini_backup() -> Path:
     Includes: data/coin_state.json, data/coin_profiles/
     """
     root = get_project_root()
-    ts = get_turkey_now().strftime("%Y%m%d_%H%M%S")
+    # Format: 16_Aralik_2025
+    months_tr = ['Ocak', 'Subat', 'Mart', 'Nisan', 'Mayis', 'Haziran', 'Temmuz', 'Agustos', 'Eylul', 'Ekim', 'Kasim', 'Aralik']
+    now = get_turkey_now()
+    ts = f"{now.day}_{months_tr[now.month - 1]}_{now.year}"
     out_dir = get_daily_backup_dir()
     archive_path = out_dir / f"tezaver_mini_{ts}.zip"
     
@@ -127,7 +130,10 @@ def create_full_backup() -> Path:
     Includes: data/, coin_cells/, library/, config/
     """
     root = get_project_root()
-    ts = get_turkey_now().strftime("%Y%m%d_%H%M%S")
+    # Format: 16_Aralik_2025
+    months_tr = ['Ocak', 'Subat', 'Mart', 'Nisan', 'Mayis', 'Haziran', 'Temmuz', 'Agustos', 'Eylul', 'Ekim', 'Kasim', 'Aralik']
+    now = get_turkey_now()
+    ts = f"{now.day}_{months_tr[now.month - 1]}_{now.year}"
     out_dir = get_full_backup_dir()
     archive_path = out_dir / f"tezaver_full_{ts}.zip"
     
