@@ -163,6 +163,77 @@ def parse_trades_from_events(events: List[Dict[str, Any]]) -> List[Trade]:
                 )
                 trades.append(trade)
         
+        # PROOF_OPEN_RESULT / PROOF_CLOSE_RESULT pairing
+        elif et == "PROOF_OPEN_RESULT":
+            symbol = e.get("symbol", "")
+            tf = e.get("timeframe", "")
+            cell_key = (symbol, tf)
+            open_orders[cell_key] = e
+            
+        elif et == "PROOF_CLOSE_RESULT":
+            symbol = e.get("symbol", "")
+            tf = e.get("timeframe", "")
+            cell_key = (symbol, tf)
+            
+            if cell_key in open_orders:
+                open_evt = open_orders.pop(cell_key)
+                
+                # PROOF fields: open_qty / close_qty, fill_price might be missing or simulated
+                open_px = open_evt.get("fill_price")
+                close_px = e.get("fill_price")
+                qty = open_evt.get("open_qty")
+                
+                pnl = None
+                if open_px and close_px and qty:
+                    # PROOF is typically LONG only for now
+                    pnl = (close_px - open_px) * qty
+                
+                trade = Trade(
+                    trade_id=f"PROOF_{symbol}_{tf}_{open_evt.get('ts', '')[:19]}",
+                    symbol=symbol,
+                    timeframe=tf,
+                    open_ts=open_evt.get("ts", ""),
+                    open_px=open_px,
+                    close_ts=e.get("ts", ""),
+                    close_px=close_px,
+                    side="BUY",  # Default to BUY for PROOF
+                    qty=qty,
+                    net_pnl=pnl,
+                    close_reason=e.get("reason", ""),
+                )
+                trades.append(trade)
+
+        # POSITION_OPEN / POSITION_CLOSE pairing
+        elif et == "POSITION_OPEN":
+            symbol = e.get("symbol", "")
+            tf = e.get("timeframe", "")
+            cell_key = (symbol, tf)
+            open_orders[cell_key] = e
+            
+        elif et == "POSITION_CLOSE":
+            symbol = e.get("symbol", "")
+            tf = e.get("timeframe", "")
+            cell_key = (symbol, tf)
+            
+            if cell_key in open_orders:
+                open_evt = open_orders.pop(cell_key)
+                
+                # POSITION events usually don't have price/qty details in V1, mostly timestamps
+                trade = Trade(
+                    trade_id=f"POS_{symbol}_{tf}_{open_evt.get('ts', '')[:19]}",
+                    symbol=symbol,
+                    timeframe=tf,
+                    open_ts=open_evt.get("ts", ""),
+                    open_px=None,
+                    close_ts=e.get("ts", ""),
+                    close_px=None,
+                    side="BUY", 
+                    qty=open_evt.get("qty"),
+                    net_pnl=None,
+                    close_reason=None,
+                )
+                trades.append(trade)
+        
         # POLICY_CYCLE_RESULT as backup
         elif et == "POLICY_CYCLE_RESULT":
             symbol = e.get("symbol", "")

@@ -46,6 +46,39 @@ class TestTradeReplayData(unittest.TestCase):
         self.assertEqual(trades[0].side, "BUY")
         self.assertAlmostEqual(trades[0].net_pnl, 5.0, places=2)  # (42500-42000)*0.01
     
+    def test_parse_trades_proof_events(self):
+        """Should pair PROOF_OPEN_RESULT/PROOF_CLOSE_RESULT events into trades."""
+        from tezaver.ui.trade_replay_data import parse_trades_from_events
+        
+        events = [
+            {
+                "event_type": "PROOF_OPEN_RESULT",
+                "symbol": "BTCUSDT",
+                "timeframe": "15m",
+                "ts": "2025-01-01T10:00:00Z",
+                "fill_price": 42000.0,
+                "open_qty": 0.01,
+            },
+            {
+                "event_type": "PROOF_CLOSE_RESULT",
+                "symbol": "BTCUSDT",
+                "timeframe": "15m",
+                "ts": "2025-01-01T10:30:00Z",
+                "fill_price": 42500.0,
+                "reason": "TAKE_PROFIT",
+            },
+        ]
+        
+        trades = parse_trades_from_events(events)
+        
+        self.assertEqual(len(trades), 1)
+        self.assertEqual(trades[0].symbol, "BTCUSDT")
+        self.assertEqual(trades[0].trade_id[:5], "PROOF")
+        self.assertEqual(trades[0].open_px, 42000.0)
+        self.assertEqual(trades[0].close_px, 42500.0)
+        self.assertEqual(trades[0].close_reason, "TAKE_PROFIT")
+        self.assertAlmostEqual(trades[0].net_pnl, 5.0, places=2)
+    
     def test_timeline_filters_window(self):
         """Timeline should filter events within trade window."""
         from tezaver.ui.trade_replay_data import build_trade_timeline, Trade
