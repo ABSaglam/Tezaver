@@ -3207,15 +3207,21 @@ export BINANCE_API_SECRET=your_api_secret_here""", language="bash")
         from tezaver.matrix.live.live_cluster import live_can_trade
         
         gate_rows = []
-        live_eligible = [r for r in rows if r.live_eligible]
+        live_eligible = [r for r in rows if (r.get("live_eligible") if isinstance(r, dict) else getattr(r, "live_eligible", False))]
         selection_mode = st.session_state.get("live_selection_mode", "ARENA_FILTERS")
+        
+        def _get(obj, key, default=None):
+            """Get attribute from dict or dataclass."""
+            if isinstance(obj, dict):
+                return obj.get(key, default)
+            return getattr(obj, key, default)
         
         for row in live_eligible[:5]:  # Limit to 5 for display
             allow, details = live_can_trade(
-                symbol=row.symbol,
-                timeframe=row.timeframe,
-                profile_id=row.profile_id,
-                profile_status=row.status,
+                symbol=_get(row, "symbol"),
+                timeframe=_get(row, "timeframe"),
+                profile_id=_get(row, "profile_id"),
+                profile_status=_get(row, "status"),
                 selection_mode=selection_mode,
             )
             
@@ -3232,8 +3238,8 @@ export BINANCE_API_SECRET=your_api_secret_here""", language="bash")
                     viol_codes.append(str(v))
             
             gate_rows.append({
-                "Cell": f"{row.symbol}/{row.timeframe}",
-                "Profile": row.profile_id[:20],
+                "Cell": f"{_get(row, 'symbol')}/{_get(row, 'timeframe')}",
+                "Profile": str(_get(row, 'profile_id', ''))[:20],
                 "Allowed?": "✅ YES" if allow else "❌ NO",
                 "ProfileGate": "✅" if gates.get("profile_status", {}).get("passed") else "❌",
                 "RiskGate": "✅" if gates.get("risk_contract", {}).get("passed") else "❌",
