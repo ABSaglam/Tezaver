@@ -29,9 +29,12 @@ def get_project_root() -> Path:
 
 
 def get_backup_root() -> Path:
-    """Returns the root backup directory, creating it if needed."""
-    root = get_project_root()
-    backups_dir = root / BACKUP_DIR_NAME
+    """Returns the root backup directory, creating it if needed.
+    
+    Uses external backup folder to keep project clean.
+    """
+    # External backup folder (outside project)
+    backups_dir = Path.home() / "TezaverMac_Backup"
     backups_dir.mkdir(exist_ok=True)
     return backups_dir
 
