@@ -169,3 +169,66 @@ class TestIncidentBundleProdLock(unittest.TestCase):
             if not args.auto_export_on_block:
                 args.auto_export_on_block = True
         self.assertFalse(args.auto_export_on_block)
+
+class TestRuntimeBlockCoverage(unittest.TestCase):
+    """Tests for Step D: Runtime BLOCK export coverage."""
+    
+    def setUp(self):
+        self.tmp_dir = tempfile.mkdtemp()
+        self.output_dir = Path(self.tmp_dir) / "incidents"
+        self.ndjson_path = Path(self.tmp_dir) / "live_events.ndjson"
+        
+        with open(self.ndjson_path, "w") as f:
+            f.write(json.dumps({"event_type": "TEST", "ts": "2025-01-01T00:00:00Z"}) + "\n")
+        
+        # Reset global guard before each test
+        from tezaver.matrix.live.incident_bundle import _global_export_guard
+        _global_export_guard[0] = False
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp_dir)
+        # Reset guard after test
+        from tezaver.matrix.live.incident_bundle import _global_export_guard
+        _global_export_guard[0] = False
+    
+    def test_risk_limiter_block_triggers_export(self):
+        """Simulate RiskLimiter BLOCK path calling maybe_export_on_block."""
+        from tezaver.matrix.live.incident_bundle import maybe_export_on_block
+        
+        path = maybe_export_on_block(
+            reason="RISK_LIMIT_BLOCK:total_notional(600) > max(500)",
+            enabled=True,
+            ndjson_path=self.ndjson_path,
+            output_dir=self.output_dir,
+        )
+        
+        self.assertIsNotNone(path)
+        self.assertTrue(Path(path).exists())
+        
+        # Verify manifest contains reason
+        with zipfile.ZipFile(path, "r") as zf:
+            manifest = json.loads(zf.read("manifest.json"))
+            self.assertIn("RISK_LIMIT_BLOCK", manifest["metadata"]["reason"])
+    
+    def test_guard_prevents_duplicate_export(self):
+        """Export guard should prevent multiple exports."""
+        from tezaver.matrix.live.incident_bundle import maybe_export_on_block
+        
+        # First export
+        path1 = maybe_export_on_block(
+            reason="FIRST_BLOCK",
+            enabled=True,
+            ndjson_path=self.ndjson_path,
+            output_dir=self.output_dir,
+        )
+        
+        # Second should return None (guard active)
+        path2 = maybe_export_on_block(
+            reason="SECOND_BLOCK",
+            enabled=True,
+            ndjson_path=self.ndjson_path,
+            output_dir=self.output_dir,
+        )
+        
+        self.assertIsNotNone(path1)
+        self.assertIsNone(path2)

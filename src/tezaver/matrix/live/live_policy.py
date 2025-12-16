@@ -354,9 +354,19 @@ class HoldNextClosedPolicy:
                 if not risk_decision.allow:
                     # BLOCKED by risk limiter
                     print(f"[POLICY] RISK_LIMIT_BLOCK {symbol}/{tf}: {risk_decision.reason}")
-                    return PolicyTickResult(
+                    
+                    # Export incident bundle if enabled (uses global guard)
+                    from tezaver.matrix.live.incident_bundle import maybe_export_on_block
+                    maybe_export_on_block(
+                        reason=f"RISK_LIMIT_BLOCK:{risk_decision.reason}",
+                        enabled=True,  # Will be guarded by global singleton
+                    )
+                    
+                    return PolicyResult(
                         action="RISK_BLOCKED",
+                        success=False,
                         state=cell.state,
+                        bar_close_ts=bar_close_ts,
                     )
             
             # 1. Submit

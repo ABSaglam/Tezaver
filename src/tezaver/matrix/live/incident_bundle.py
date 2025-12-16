@@ -178,3 +178,40 @@ def emit_export_telemetry(ndjson_path: Path, bundle_path: str, reason: str, file
             f.write(json.dumps(event) + "\n")
     except:
         pass
+
+# Singleton guard for single-export-per-process
+_global_export_guard = [False]
+
+def maybe_export_on_block(
+    reason: str,
+    enabled: bool = True,
+    ndjson_path: Path = Path("data/logs/live_events.ndjson"),
+    output_dir: Path = Path("data/incidents"),
+    config: dict = None,
+    last_n_events: int = 500,
+) -> Optional[str]:
+    """
+    Export incident bundle if enabled and not already exported.
+    Returns bundle path if exported, None otherwise.
+    """
+    if not enabled:
+        return None
+    
+    if _global_export_guard[0]:
+        # Already exported once this process
+        return None
+    
+    _global_export_guard[0] = True
+    
+    ctx = BundleContext(
+        reason=reason,
+        ndjson_path=ndjson_path,
+        config=config,
+        output_dir=output_dir,
+        last_n_events=last_n_events,
+    )
+    
+    bundle_path = export_incident_bundle(ctx)
+    emit_export_telemetry(ndjson_path, bundle_path, reason, 4)
+    print(f"incident_bundle={bundle_path}")
+    return bundle_path

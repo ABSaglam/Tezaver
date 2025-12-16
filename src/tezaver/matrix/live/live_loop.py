@@ -2325,6 +2325,14 @@ def main():
         print(f"Status: {'✅ OK' if result.ok else '⚠️ WARNINGS'}")
         print(f"Cells: {len(result.per_cell)}")
         
+        # Export incident bundle on reconcile failure if enabled
+        if not result.ok:
+            from tezaver.matrix.live.incident_bundle import maybe_export_on_block
+            maybe_export_on_block(
+                reason=f"RECON_FATAL:warnings={len(result.warnings)},paused={len(result.paused_cells)}",
+                enabled=getattr(args, "auto_export_on_block", False),
+            )
+        
         if result.warnings:
             print(f"Warnings: {len(result.warnings)}")
             for w in result.warnings[:10]:
