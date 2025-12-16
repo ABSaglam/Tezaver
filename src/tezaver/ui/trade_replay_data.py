@@ -26,6 +26,8 @@ class Trade:
     qty: Optional[float]
     net_pnl: Optional[float]
     close_reason: Optional[str]
+    sl_px: Optional[float] = None  # Stop loss price
+    tp_px: Optional[float] = None  # Take profit price
 
 
 @dataclass
@@ -36,6 +38,52 @@ class TimelineRow:
     decision: Optional[str]
     reason: Optional[str]
     details: str
+
+
+# SL/TP field name mappings
+SL_FIELDS = ["stop_price", "stop_px", "sl", "stopLoss", "stop_loss"]
+TP_FIELDS = ["take_profit", "tp", "takeProfit", "take_profit_price"]
+
+
+def _extract_sl_tp(event: Dict[str, Any], kind: str) -> Optional[float]:
+    """Extract SL or TP price from event if present."""
+    fields = SL_FIELDS if kind == "sl" else TP_FIELDS
+    for f in fields:
+        val = event.get(f)
+        if val is not None:
+            try:
+                return float(val)
+            except:
+                pass
+    return None
+
+
+def filter_trades(
+    trades: List[Trade], 
+    symbol: Optional[str] = None, 
+    timeframe: Optional[str] = None,
+    limit: int = 50,
+) -> List[Trade]:
+    """
+    Filter trades by symbol and/or timeframe.
+    
+    Args:
+        trades: List of Trade objects
+        symbol: Filter by symbol (None or "ALL" = no filter)
+        timeframe: Filter by timeframe (None or "ALL" = no filter)
+        limit: Max trades to return
+    
+    Returns filtered list (newest first).
+    """
+    result = trades
+    
+    if symbol and symbol != "ALL":
+        result = [t for t in result if t.symbol == symbol]
+    
+    if timeframe and timeframe != "ALL":
+        result = [t for t in result if t.timeframe == timeframe]
+    
+    return result[:limit]
 
 
 def parse_trades_from_events(events: List[Dict[str, Any]]) -> List[Trade]:
@@ -79,6 +127,10 @@ def parse_trades_from_events(events: List[Dict[str, Any]]) -> List[Trade]:
                     else:
                         pnl = (open_px - close_px) * qty
                 
+                # Extract SL/TP if present
+                sl_px = _extract_sl_tp(open_evt, "sl")
+                tp_px = _extract_sl_tp(open_evt, "tp")
+                
                 trade = Trade(
                     trade_id=f"{symbol}_{tf}_{open_evt.get('ts', '')[:19]}",
                     symbol=symbol,
@@ -91,6 +143,8 @@ def parse_trades_from_events(events: List[Dict[str, Any]]) -> List[Trade]:
                     qty=qty,
                     net_pnl=pnl,
                     close_reason=e.get("reason", e.get("close_reason", "")),
+                    sl_px=sl_px,
+                    tp_px=tp_px,
                 )
                 trades.append(trade)
         
@@ -202,6 +256,35 @@ def build_trade_timeline(
     return timeline
 
 
+def get_ohlcv_paths(symbol: str, timeframe: str) -> List[Path]:
+    """
+    Get list of possible OHLCV parquet paths to try.
+    
+    Returns paths in priority order:
+    1. coin_cells/{SYMBOL}/data/history_{TF}.parquet (primary)
+    2. data/enriched/{SYMBOL}/klines_{TF}.parquet (fallback)
+    3. TEZAVER_OHLCV_ROOT env override
+    """
+    import os
+    from tezaver.core.coin_cell_paths import get_history_file, get_project_root
+    
+    paths = []
+    
+    # Primary: coin_cells path
+    paths.append(get_history_file(symbol, timeframe))
+    
+    # Fallback: data/enriched
+    root = get_project_root()
+    paths.append(root / "data" / "enriched" / symbol / f"klines_{timeframe}.parquet")
+    
+    # Env override
+    env_root = os.environ.get("TEZAVER_OHLCV_ROOT")
+    if env_root:
+        paths.append(Path(env_root) / symbol / f"history_{timeframe}.parquet")
+    
+    return paths
+
+
 def load_ohlcv(
     symbol: str, 
     timeframe: str, 
@@ -209,21 +292,29 @@ def load_ohlcv(
     end_ts: str,
     lookback_bars: int = 20,
     lookforward_bars: int = 10,
-) -> Optional[List[Dict[str, Any]]]:
+) -> tuple:
     """
     Load OHLCV candles from local parquet storage.
     
-    Returns list of candle dicts: {ts, open, high, low, close, volume}
-    Returns None if data not found.
+    Returns tuple: (candles_list, paths_tried)
+    - candles_list: List of candle dicts or None
+    - paths_tried: List of paths attempted (for error messages)
     """
+    import pandas as pd
+    
+    paths_tried = get_ohlcv_paths(symbol, timeframe)
+    
+    # Find first existing path
+    parquet_path = None
+    for p in paths_tried:
+        if p.exists():
+            parquet_path = p
+            break
+    
+    if not parquet_path:
+        return (None, paths_tried)
+    
     try:
-        import pandas as pd
-        from tezaver.core.coin_cell_paths import get_history_path
-        
-        parquet_path = get_history_path(symbol, timeframe)
-        if not parquet_path.exists():
-            return None
-        
         df = pd.read_parquet(parquet_path)
         
         # Parse timestamps
@@ -236,12 +327,12 @@ def load_ohlcv(
         elif "timestamp" in df.columns:
             df["_dt"] = pd.to_datetime(df["timestamp"], unit="ms", utc=True)
         else:
-            return None
+            return (None, paths_tried)
         
         # Find indices
         mask = (df["_dt"] >= start_dt) & (df["_dt"] <= end_dt)
         if not mask.any():
-            return None
+            return (None, paths_tried)
         
         first_idx = mask.idxmax()
         last_idx = mask[::-1].idxmax()
@@ -263,10 +354,10 @@ def load_ohlcv(
                 "volume": float(row.get("volume", 0)),
             })
         
-        return candles if candles else None
+        return (candles if candles else None, paths_tried)
         
-    except Exception as ex:
-        return None
+    except Exception:
+        return (None, paths_tried)
 
 
 def get_trade_context(events: List[Dict[str, Any]], trade: Trade) -> Dict[str, Any]:

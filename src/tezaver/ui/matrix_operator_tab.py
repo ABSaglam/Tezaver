@@ -1420,12 +1420,12 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
             st.caption(f"Showing {len(rows)}/{len(events)} events")
 
     # =========================================================================
-    # G1-G3) Trade Replay v1
+    # G1-G3) Trade Replay v1.1
     # =========================================================================
     with st.expander("🎬 Trade Replay", expanded=False):
         from tezaver.ui.trade_replay_data import (
             parse_trades_from_events, build_trade_timeline, 
-            load_ohlcv, get_trade_context, Trade
+            load_ohlcv, get_trade_context, Trade, filter_trades
         )
         
         # Load events
@@ -1435,19 +1435,33 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
             st.info("📭 No events found. Run live loop to generate trade data.")
         else:
             # Parse trades
-            trades = parse_trades_from_events(events)
+            all_trades = parse_trades_from_events(events)
             
-            if not trades:
+            if not all_trades:
                 st.info("📭 No completed trades found in events.")
             else:
+                # --- G1: Filters ---
+                filter_cols = st.columns(3)
+                with filter_cols[0]:
+                    symbols = ["ALL"] + sorted(set(t.symbol for t in all_trades if t.symbol))
+                    selected_symbol = st.selectbox("Symbol", symbols, index=0, key="tr_sym")
+                with filter_cols[1]:
+                    timeframes = ["ALL"] + sorted(set(t.timeframe for t in all_trades if t.timeframe))
+                    selected_tf = st.selectbox("Timeframe", timeframes, index=0, key="tr_tf")
+                with filter_cols[2]:
+                    st.caption(f"Total: {len(all_trades)} trades")
+                
+                # Apply filters
+                trades = filter_trades(all_trades, selected_symbol, selected_tf, limit=50)
+                
                 col_list, col_detail = st.columns([1, 2])
                 
                 with col_list:
-                    st.markdown("**📋 Trade List**")
+                    st.markdown(f"**📋 Trade List** ({len(trades)} shown)")
                     
                     # Trade table
                     trade_rows = []
-                    for i, t in enumerate(trades[:50]):
+                    for i, t in enumerate(trades):
                         trade_rows.append({
                             "idx": i,
                             "Symbol": t.symbol,
@@ -1465,8 +1479,9 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
                         # Select trade
                         selected_idx = st.selectbox(
                             "Select Trade", 
-                            options=range(len(trades[:50])),
-                            format_func=lambda i: f"{trades[i].symbol}/{trades[i].timeframe} @ {trades[i].open_ts[:16]}"
+                            options=range(len(trades)),
+                            format_func=lambda i: f"{trades[i].symbol}/{trades[i].timeframe} @ {trades[i].open_ts[:16]}",
+                            key="tr_select"
                         )
                         selected_trade = trades[selected_idx]
                 
@@ -1487,7 +1502,7 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
                         
                         # Load OHLCV and render chart
                         if selected_trade.open_ts and selected_trade.close_ts:
-                            candles = load_ohlcv(
+                            candles, paths_tried = load_ohlcv(
                                 selected_trade.symbol, 
                                 selected_trade.timeframe,
                                 selected_trade.open_ts,
@@ -1526,6 +1541,25 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
                                         name="Exit"
                                     ))
                                 
+                                # G2: SL/TP lines (optional)
+                                x_range = [candles[0]["ts"], candles[-1]["ts"]]
+                                if selected_trade.sl_px:
+                                    fig.add_trace(go.Scatter(
+                                        x=x_range,
+                                        y=[selected_trade.sl_px, selected_trade.sl_px],
+                                        mode="lines",
+                                        line=dict(color="red", dash="dash", width=1),
+                                        name=f"SL @ {selected_trade.sl_px:.2f}"
+                                    ))
+                                if selected_trade.tp_px:
+                                    fig.add_trace(go.Scatter(
+                                        x=x_range,
+                                        y=[selected_trade.tp_px, selected_trade.tp_px],
+                                        mode="lines",
+                                        line=dict(color="green", dash="dash", width=1),
+                                        name=f"TP @ {selected_trade.tp_px:.2f}"
+                                    ))
+                                
                                 fig.update_layout(
                                     title=f"{selected_trade.symbol} - Trade Replay",
                                     xaxis_title="Time",
@@ -1535,7 +1569,9 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
                                 )
                                 st.plotly_chart(fig, use_container_width=True)
                             else:
-                                st.warning("⚠️ No OHLCV data found for this window.")
+                                # G3: Show paths tried
+                                paths_str = ", ".join([str(p)[-50:] for p in paths_tried[:3]])
+                                st.warning(f"⚠️ No OHLCV data found. Tried: {paths_str}")
                         
                         # Why box
                         st.markdown("**🔍 Why (Decision Context)**")

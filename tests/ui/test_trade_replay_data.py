@@ -109,7 +109,78 @@ class TestTradeReplayData(unittest.TestCase):
         
         timeline = build_trade_timeline(events, trade)
         self.assertIsInstance(timeline, list)
-
+    
+    def test_filtering_by_symbol_tf(self):
+        """filter_trades should filter by symbol and timeframe."""
+        from tezaver.ui.trade_replay_data import filter_trades, Trade
+        
+        trades = [
+            Trade("1", "BTCUSDT", "15m", "2025-01-01T10:00:00Z", 42000, "2025-01-01T10:30:00Z", 42500, "BUY", 0.01, 5.0, "SIG", None, None),
+            Trade("2", "ETHUSDT", "15m", "2025-01-01T11:00:00Z", 3000, "2025-01-01T11:30:00Z", 3050, "BUY", 0.1, 5.0, "SIG", None, None),
+            Trade("3", "BTCUSDT", "1h", "2025-01-01T12:00:00Z", 42100, "2025-01-01T13:00:00Z", 42200, "BUY", 0.01, 1.0, "SIG", None, None),
+        ]
+        
+        # Filter by symbol
+        btc_only = filter_trades(trades, symbol="BTCUSDT")
+        self.assertEqual(len(btc_only), 2)
+        
+        # Filter by timeframe
+        tf_15m = filter_trades(trades, timeframe="15m")
+        self.assertEqual(len(tf_15m), 2)
+        
+        # Filter by both
+        btc_15m = filter_trades(trades, symbol="BTCUSDT", timeframe="15m")
+        self.assertEqual(len(btc_15m), 1)
+        
+        # ALL filter
+        all_trades = filter_trades(trades, symbol="ALL", timeframe="ALL")
+        self.assertEqual(len(all_trades), 3)
+    
+    def test_sl_tp_extraction_optional(self):
+        """SL/TP fields should be extracted when present."""
+        from tezaver.ui.trade_replay_data import parse_trades_from_events
+        
+        events = [
+            {
+                "event_type": "ORDER_LIFECYCLE_DONE",
+                "action": "OPEN",
+                "symbol": "BTCUSDT",
+                "timeframe": "15m",
+                "ts": "2025-01-01T10:00:00Z",
+                "fill_price": 42000.0,
+                "fill_qty": 0.01,
+                "side": "BUY",
+                "stop_price": 41500.0,  # SL field
+                "take_profit": 43000.0,  # TP field
+            },
+            {
+                "event_type": "ORDER_LIFECYCLE_DONE",
+                "action": "CLOSE",
+                "symbol": "BTCUSDT",
+                "timeframe": "15m",
+                "ts": "2025-01-01T10:30:00Z",
+                "fill_price": 42500.0,
+            },
+        ]
+        
+        trades = parse_trades_from_events(events)
+        
+        self.assertEqual(len(trades), 1)
+        self.assertEqual(trades[0].sl_px, 41500.0)
+        self.assertEqual(trades[0].tp_px, 43000.0)
+    
+    def test_ohlcv_path_fallback_list(self):
+        """get_ohlcv_paths should return list of paths to try."""
+        from tezaver.ui.trade_replay_data import get_ohlcv_paths
+        
+        paths = get_ohlcv_paths("BTCUSDT", "15m")
+        
+        # Should return at least 2 paths
+        self.assertGreaterEqual(len(paths), 2)
+        
+        # First path should be primary coin_cells path
+        self.assertIn("coin_cells", str(paths[0]))
+        self.assertIn("history_15m", str(paths[0]))
 
 if __name__ == "__main__":
     unittest.main()
