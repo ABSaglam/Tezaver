@@ -432,6 +432,18 @@ def main():
     parser.add_argument("--no-force-dry-run", action="store_false", dest="force_dry_run",
                        help="Disable force dry run")
     
+    # =========================================================================
+    # MAINNET SAFETY FLAGS (F1+F2)
+    # =========================================================================
+    parser.add_argument("--mainnet-arm", action="store_true", default=False,
+                       help="REQUIRED for REAL_MAINNET: explicitly arm mainnet trading")
+    parser.add_argument("--mainnet-ack", type=str, default=None,
+                       help="REQUIRED for REAL_MAINNET: acknowledgment string (must be 'I_UNDERSTAND_REAL_MAINNET')")
+    parser.add_argument("--mainnet-max-notional", type=float, default=None,
+                       help="REQUIRED for REAL_MAINNET: max total notional in USD (e.g., 1000)")
+    parser.add_argument("--mainnet-allowlist", type=str, default=None,
+                       help="REQUIRED for REAL_MAINNET: comma-separated allowed symbols (e.g., 'BTCUSDT,ETHUSDT')")
+    
     # Proof open/close specific args
     parser.add_argument("--preflight-mode", type=str, default="BLOCK",
                        choices=["BLOCK", "FLATTEN_FIRST", "IGNORE"],
@@ -581,6 +593,70 @@ def main():
         print("[DEPRECATED] --auto-incident-on is deprecated. Use --auto-export-on-block instead.")
         if not args.auto_export_on_block:  # Don't override if new flag explicitly set
             args.auto_export_on_block = True
+    
+    # =========================================================================
+    # F1+F2: MAINNET GUARD CHECK
+    # =========================================================================
+    def check_mainnet_guard(args, ndjson_sink=None):
+        """Check REAL_MAINNET safety requirements. Returns (pass, reasons)."""
+        if args.exchange_mode != "REAL_MAINNET":
+            return True, []
+        
+        reasons = []
+        
+        # F1: Require explicit arm + ack
+        if not args.mainnet_arm:
+            reasons.append("MISSING_MAINNET_ARM")
+        if args.mainnet_ack != "I_UNDERSTAND_REAL_MAINNET":
+            reasons.append("MISSING_OR_WRONG_MAINNET_ACK")
+        
+        # F2: Require safety prerequisites
+        if not args.preflight:
+            reasons.append("PREFLIGHT_NOT_ENABLED")
+        if not args.auto_export_on_block:
+            reasons.append("AUTO_EXPORT_NOT_ENABLED")
+        if args.mainnet_max_notional is None:
+            reasons.append("MISSING_MAINNET_MAX_NOTIONAL")
+        if not args.mainnet_allowlist:
+            reasons.append("MISSING_MAINNET_ALLOWLIST")
+        
+        decision = "PASS" if not reasons else "BLOCK"
+        
+        # Emit telemetry
+        if ndjson_sink:
+            ndjson_sink({
+                "event_type": "MAINNET_GUARD_EVAL",
+                "ts": datetime.now(timezone.utc).isoformat(),
+                "decision": decision,
+                "reasons": reasons,
+                "mainnet_arm": args.mainnet_arm,
+                "mainnet_ack_provided": args.mainnet_ack is not None,
+                "mainnet_max_notional": args.mainnet_max_notional,
+                "mainnet_allowlist": args.mainnet_allowlist,
+                "preflight": args.preflight,
+                "auto_export": args.auto_export_on_block,
+            })
+        
+        return decision == "PASS", reasons
+    
+    # Run mainnet guard (before preflight) - no event sink yet, telemetry emitted to stdout only
+    if args.exchange_mode == "REAL_MAINNET":
+        mainnet_ok, mainnet_reasons = check_mainnet_guard(args, None)
+        
+        if not mainnet_ok:
+            print(f"⛔ MAINNET_GUARD_BLOCK: {mainnet_reasons}")
+            print("Required for REAL_MAINNET:")
+            print("  --mainnet-arm")
+            print("  --mainnet-ack 'I_UNDERSTAND_REAL_MAINNET'")
+            print("  --preflight --auto-export-on-block")
+            print("  --mainnet-max-notional <value>")
+            print("  --mainnet-allowlist 'SYM1,SYM2'")
+            sys.exit(2)
+        else:
+            # Print MAINNET_ARMED (event sink not available yet, will emit later in command handlers)
+            from datetime import datetime as dt_now, timezone as tz
+            print(f"[MAINNET_ARMED] ts={dt_now.now(tz.utc).isoformat()} max_notional={args.mainnet_max_notional} allowlist={args.mainnet_allowlist}")
+            print("[MAINNET_ARMED] All safety checks passed. Live trading enabled.")
     
     # Single-export guard
     _block_exported = [False]  # Use list for mutable closure
