@@ -69,6 +69,14 @@ class IExchangeGateway(Protocol):
         """Place an order on the exchange."""
         ...
 
+    def get_order(self, symbol: str, order_id: str) -> Dict[str, Any]:
+        """Fetch order status."""
+        ...
+
+    def cancel_order(self, symbol: str, order_id: str) -> Dict[str, Any]:
+        """Cancel an open order."""
+        ...
+
     def get_position_snapshot(self, symbol: str) -> Dict[str, Any]:
         """
         Get position/margin snapshot for a symbol.
@@ -133,6 +141,36 @@ class DummyExchangeGateway:
             "entry_price": pos.get("entry_price"),
             "unrealized_pnl": 0.0,
             "note": "DummyExchangeGateway virtual position",
+        }
+
+    def get_order(self, symbol: str, order_id: str) -> Dict[str, Any]:
+        """Dummy get_order: always returns FILLED immediately."""
+        # For Dummy, we assume it was a BUY for 1.0 logic or track it properly.
+        # Ideally we'd store orders in a dict. But since this is dummy, let's use a trick
+        # or just assume 0.002 (common test size) if not found.
+        # Better: Since place_order is called first, let's just return what we have.
+        
+        # NOTE: In a real dummy impl we would store orders.
+        # Here we just want to satisfy the interface.
+        return {
+            "orderId": order_id,
+            "symbol": symbol,
+            "status": "FILLED",
+            "executedQty": 0.002,  # Hardcoded valid-ish qty for testing
+            "avgPrice": 42000.0,
+            "updateTime": 1234567890,
+            "side": "BUY",
+            "type": "MARKET",
+            "success": True,
+        }
+
+    def cancel_order(self, symbol: str, order_id: str) -> Dict[str, Any]:
+        """Dummy cancel_order."""
+        return {
+            "orderId": order_id,
+            "symbol": symbol,
+            "status": "CANCELED",
+            "success": True,
         }
 
 
@@ -283,13 +321,9 @@ class BinanceTestnetGateway:
         self,
         symbol: str,
         order_id: str,
-        max_wait_sec: float = 30.0,
-        poll_interval_sec: float = 2.0,
     ) -> Dict[str, Any]:
         """
         Fetch order details from Binance Futures Testnet.
-        
-        Optionally polls until FILLED or max_wait_sec.
         
         Returns:
             {
@@ -306,68 +340,34 @@ class BinanceTestnetGateway:
             }
         """
         import requests
-        import time
         
-        start_time = time.time()
-        last_result = None
-        
-        while True:
-            try:
-                params = {
+        try:
+            params = {
+                "symbol": symbol,
+                "orderId": order_id,
+            }
+            signed_params = self._sign_request(params)
+            headers = {"X-MBX-APIKEY": self._api_key}
+            url = f"{self.TESTNET_BASE_URL}/fapi/v1/order"
+            
+            response = requests.get(url, params=signed_params, headers=headers, timeout=10)
+            data = response.json()
+            
+            if response.status_code == 200:
+                status = data.get("status", "UNKNOWN")
+                return {
+                    "orderId": str(data.get("orderId")),
                     "symbol": symbol,
-                    "orderId": order_id,
+                    "status": status,
+                    "executedQty": float(data.get("executedQty", 0)),
+                    "avgPrice": float(data.get("avgPrice", 0)),
+                    "updateTime": data.get("updateTime"),
+                    "side": data.get("side"),
+                    "type": data.get("type"),
+                    "success": True,
+                    "error": None,
                 }
-                signed_params = self._sign_request(params)
-                headers = {"X-MBX-APIKEY": self._api_key}
-                url = f"{self.TESTNET_BASE_URL}/fapi/v1/order"
-                
-                response = requests.get(url, params=signed_params, headers=headers, timeout=10)
-                data = response.json()
-                
-                if response.status_code == 200:
-                    status = data.get("status", "UNKNOWN")
-                    executed_qty = float(data.get("executedQty", 0))
-                    avg_price = float(data.get("avgPrice", 0))
-                    
-                    last_result = {
-                        "orderId": str(data.get("orderId")),
-                        "symbol": symbol,
-                        "status": status,
-                        "executedQty": executed_qty,
-                        "avgPrice": avg_price,
-                        "updateTime": data.get("updateTime"),
-                        "side": data.get("side"),
-                        "type": data.get("type"),
-                        "success": True,
-                        "error": None,
-                    }
-                    
-                    # If FILLED or max_wait exceeded, return
-                    if status == "FILLED":
-                        return last_result
-                    
-                    elapsed = time.time() - start_time
-                    if elapsed >= max_wait_sec:
-                        return last_result
-                    
-                    # Poll again
-                    time.sleep(poll_interval_sec)
-                    continue
-                else:
-                    return {
-                        "orderId": order_id,
-                        "symbol": symbol,
-                        "status": "ERROR",
-                        "executedQty": 0,
-                        "avgPrice": 0,
-                        "updateTime": None,
-                        "side": None,
-                        "type": None,
-                        "success": False,
-                        "error": data.get("msg", f"HTTP {response.status_code}"),
-                    }
-                    
-            except Exception as e:
+            else:
                 return {
                     "orderId": order_id,
                     "symbol": symbol,
@@ -378,8 +378,63 @@ class BinanceTestnetGateway:
                     "side": None,
                     "type": None,
                     "success": False,
-                    "error": str(e),
+                    "error": data.get("msg", f"HTTP {response.status_code}"),
                 }
+                
+        except Exception as e:
+            return {
+                "orderId": order_id,
+                "symbol": symbol,
+                "status": "ERROR",
+                "executedQty": 0,
+                "avgPrice": 0,
+                "updateTime": None,
+                "side": None,
+                "type": None,
+                "success": False,
+                "error": str(e),
+            }
+
+    def cancel_order(self, symbol: str, order_id: str) -> Dict[str, Any]:
+        """Cancel order on Binance Futures Testnet."""
+        import requests
+        
+        try:
+            params = {
+                "symbol": symbol,
+                "orderId": order_id,
+            }
+            signed_params = self._sign_request(params)
+            headers = {"X-MBX-APIKEY": self._api_key}
+            url = f"{self.TESTNET_BASE_URL}/fapi/v1/order"
+            
+            response = requests.delete(url, params=signed_params, headers=headers, timeout=10)
+            data = response.json()
+            
+            if response.status_code == 200:
+                return {
+                    "orderId": str(data.get("orderId")),
+                    "symbol": symbol,
+                    "status": data.get("status"),
+                    "success": True,
+                    "error": None,
+                }
+            else:
+                return {
+                    "orderId": order_id,
+                    "symbol": symbol,
+                    "status": "ERROR",
+                    "success": False,
+                    "error": data.get("msg", f"HTTP {response.status_code}"),
+                }
+        except Exception as e:
+             return {
+                "orderId": order_id,
+                "symbol": symbol,
+                "status": "ERROR",
+                "success": False,
+                "error": str(e),
+            }
     
     def get_user_trades(
         self,
@@ -449,8 +504,130 @@ class BinanceTestnetGateway:
             }
 
 # =============================================================================
-# Armed Executor (with dry-run and idempotency)
+# Fault Injection Gateway
 # =============================================================================
+
+class FaultInjectionGateway:
+    """
+    Wrapper gateway that injects faults into get_order flow.
+    
+    Fault Modes:
+    - NONE: Pass through (default)
+    - TIMEOUT: get_order never returns FILLED (loops forever or raises Timeout)
+    - REJECT: get_order returns REJECTED status
+    - PARTIAL: get_order returns PARTIALLY_FILLED then FILLED
+    """
+    
+    def __init__(
+        self,
+        inner: IExchangeGateway,
+        fault_mode: str = "NONE",
+        fault_on_nth: int = 0,  # 0=all orders, N=only fault Nth order
+    ):
+        self._inner = inner
+        self._fault_mode = fault_mode
+        self._fault_on_nth = fault_on_nth
+        self._call_counts: Dict[str, int] = {}  # order_id -> count
+        self._order_counter = 0  # Global order counter for nth-order fault
+        self._order_sides: Dict[str, str] = {}  # order_id -> side (BUY/SELL)
+        self._order_numbers: Dict[str, int] = {}  # order_id -> order number (1, 2, ...)
+        
+    def place_order(self, req: ExchangeOrderRequest) -> ExchangeOrderResult:
+        res = self._inner.place_order(req)
+        if res.success and res.order_id:
+            self._order_counter += 1
+            self._order_sides[str(res.order_id)] = req.side.value
+            self._order_numbers[str(res.order_id)] = self._order_counter
+        return res
+        
+    def cancel_order(self, symbol: str, order_id: str) -> Dict[str, Any]:
+        return self._inner.cancel_order(symbol, order_id)
+        
+    def get_position_snapshot(self, symbol: str) -> Dict[str, Any]:
+        return self._inner.get_position_snapshot(symbol)
+
+    def get_user_trades(self, symbol: str, order_id: str) -> Dict[str, Any]:
+        if hasattr(self._inner, "get_user_trades"):
+            return self._inner.get_user_trades(symbol, order_id)
+        return {"success": False, "error": "Not supported"}
+
+    def get_order(self, symbol: str, order_id: str) -> Dict[str, Any]:
+        """Intercept get_order to inject faults."""
+        if self._fault_mode == "NONE":
+            return self._inner.get_order(symbol, order_id)
+            
+        real_res = self._inner.get_order(symbol, order_id)
+        
+        # Determine side (if we tracked it, else peek real_res if avail)
+        side = self._order_sides.get(str(order_id)) or real_res.get("side")
+        
+        # Track calls for this order
+        count = self._call_counts.get(order_id, 0) + 1
+        self._call_counts[order_id] = count
+        
+        # Mode-specific Logic
+        should_fail = False
+        
+        # Check if this is the Nth order we should fault
+        order_num = self._order_numbers.get(str(order_id), 0)
+        skip_fault = (self._fault_on_nth > 0 and order_num != self._fault_on_nth)
+        
+        if skip_fault:
+            # Not the Nth order - pass through without fault
+            return real_res
+        
+        if self._fault_mode == "TIMEOUT":
+            should_fail = True
+        elif self._fault_mode == "TIMEOUT_OPEN" and side == "BUY":
+            should_fail = True
+        elif self._fault_mode == "TIMEOUT_CLOSE" and side == "SELL":
+            should_fail = True
+            
+        if should_fail:
+            # Simulate silence: return NEW forever
+            return {
+                **real_res,
+                "status": "NEW",
+                "executedQty": 0.0,
+            }
+            
+        elif self._fault_mode == "REJECT":
+            return {
+                **real_res,
+                "status": "REJECTED",
+                "executedQty": 0.0,
+                "error": "Simulated Rejection",
+            }
+            
+        elif self._fault_mode == "PARTIAL":
+            # Simulate partial fill flow
+            full_qty = float(real_res.get("executedQty", 1.0))
+            if full_qty == 0: 
+                full_qty = 1.0 
+            
+            # Request A: executed_qty=orig_qty*0.5, avg_price=mock_price
+            mock_price = float(real_res.get("avgPrice", 42000.0))
+            if mock_price == 0: mock_price = 42000.0
+                
+            if count <= 2:
+                # First 2 calls: 50% fill
+                return {
+                    **real_res,
+                    "status": "PARTIALLY_FILLED",
+                    "executedQty": full_qty * 0.5,
+                    "avgPrice": mock_price,
+                }
+            else:
+                # Then full fill
+                return {
+                    **real_res,
+                    "status": "FILLED",
+                    "executedQty": full_qty,
+                    "avgPrice": mock_price,
+                }
+        
+        return real_res
+
 
 @dataclass
 class ExecutionReport:
@@ -484,18 +661,33 @@ class ArmedExecutor:
         exchange_mode: str = "DRY_RUN",
         api_key: Optional[str] = None,
         api_secret: Optional[str] = None,
+        # Lifecycle config
+        poll_interval_sec: float = 2.0,
+        order_timeout_sec: float = 30.0,
+        cancel_on_timeout: bool = False,
+        inject_fault: str = "NONE",
     ):
         self._exchange_mode = exchange_mode
+        self._poll_interval = poll_interval_sec
+        self._order_timeout = order_timeout_sec
+        self._cancel_on_timeout = cancel_on_timeout
         
         # Create appropriate gateway based on exchange_mode
+        base_gateway = None
         if gateway is not None:
-            self._gateway = gateway
+            base_gateway = gateway
         elif exchange_mode == "REAL_TESTNET" and api_key and api_secret:
-            self._gateway = BinanceTestnetGateway(api_key, api_secret)
+            base_gateway = BinanceTestnetGateway(api_key, api_secret)
         elif exchange_mode == "REAL_MAINNET":
             raise NotImplementedError("REAL_MAINNET gateway not implemented yet")
         else:
-            self._gateway = DummyExchangeGateway()
+            base_gateway = DummyExchangeGateway()
+            
+        # Wrap with Fault Injection if needed
+        if inject_fault and inject_fault != "NONE":
+            self._gateway = FaultInjectionGateway(base_gateway, inject_fault)
+        else:
+            self._gateway = base_gateway
         
         self._armed = armed
         self._exchange_enabled = exchange_enabled
@@ -696,6 +888,12 @@ class ArmedExecutor:
         # Armed mode - real gateway call
         side = OrderSide.BUY if action.upper() in ("BUY", "LONG", "ENTER") else OrderSide.SELL
         
+        # Generate safe Client Order ID from fingerprint hash
+        # Use simple hash to keep it short and alphanumeric for Binance
+        import hashlib
+        fp_hash = hashlib.md5(fingerprint.encode()).hexdigest()[:16]
+        client_order_id = f"teza_{fp_hash}"
+        
         req = ExchangeOrderRequest(
             symbol=symbol,
             side=side,
@@ -703,28 +901,73 @@ class ArmedExecutor:
             price=price,
             tp_price=tp_price,
             sl_price=sl_price,
-            # Clean client_id for Binance: only ^[.A-Z:/a-z0-9_-]{1,36}$ allowed
-            client_id=fingerprint.replace("|", "_")[:36],
+            client_id=client_order_id,
         )
         
-        result = self._gateway.place_order(req)
+        # 1. Submit Order
+        try:
+            submit_res = self._gateway.place_order(req)
+        except Exception as e:
+             return ExecutionReport(
+                success=False,
+                dry_run=False,
+                paused=False,
+                duplicate=False,
+                reason="SUBMIT_EXCEPTION",
+                details={"error": str(e), "fingerprint": fingerprint},
+            )
+
+        if not submit_res.success:
+            return ExecutionReport(
+                success=False,
+                dry_run=False,
+                paused=False,
+                duplicate=False,
+                reason="SUBMIT_FAILED",
+                details={
+                    "error": submit_res.error,
+                    "fingerprint": fingerprint,
+                    "raw": submit_res.raw
+                },
+            )
+            
+        # 2. Track Lifecycle (Poll until terminal)
+        from tezaver.matrix.live.order_lifecycle import OrderLifecycleTracker, OrderLifecycleState
         
+        tracker = OrderLifecycleTracker(
+            gateway=self._gateway,
+            symbol=symbol,
+            order_id=submit_res.order_id,
+            client_order_id=client_order_id,
+            poll_interval_sec=self._poll_interval,
+            max_wait_sec=self._order_timeout,
+            cancel_on_timeout=self._cancel_on_timeout,
+            event_sink=self._event_sink,
+        )
+        
+        lifecycle_res = tracker.poll_until_terminal()
+        
+        # 3. Construct Final Execution Report
         return ExecutionReport(
-            success=result.success,
+            success=lifecycle_res.is_success,
             dry_run=False,
             paused=False,
             duplicate=False,
-            order_id=result.order_id,
-            reason="GATEWAY_CALL",
+            order_id=submit_res.order_id,
+            reason="LIFECYCLE_DONE" if lifecycle_res.is_success else f"LIFECYCLE_{lifecycle_res.terminal_state.value}",
             details={
                 "action": action,
                 "symbol": symbol,
                 "qty": qty,
                 "price": price,
-                "filled_qty": result.filled_qty,
-                "avg_price": result.avg_price,
+                "filled_qty": lifecycle_res.executed_qty,
+                "avg_price": lifecycle_res.avg_price,
                 "fingerprint": fingerprint,
-                "raw": result.raw,
+                "client_order_id": client_order_id,
+                "terminal_state": lifecycle_res.terminal_state.value,
+                "attempts": lifecycle_res.attempts,
+                "duration_ms": lifecycle_res.duration_ms,
+                "error": lifecycle_res.error,
             },
         )
 

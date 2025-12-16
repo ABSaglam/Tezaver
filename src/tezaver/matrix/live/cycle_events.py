@@ -63,6 +63,10 @@ class CycleRecord:
     # Position after close
     pos_after: Optional[float] = None
     
+    # Lifecycle Failures
+    open_fail_reason: Optional[str] = None
+    close_fail_reason: Optional[str] = None
+    
     # Policy config (for reference)
     dust_policy: str = "IGNORE"
     dust_threshold: float = 0.002
@@ -194,6 +198,18 @@ def build_cycle_record(cycle_idx: int, events: List[Dict[str, Any]]) -> CycleRec
         elif event_type == "ORDER_FETCH_CLOSE":
             if not record.close_status:
                 record.close_status = event.get("status")
+
+        elif event_type == "OPEN_FAIL_LIFECYCLE":
+            record.open_fail_reason = event.get("error", "Unknown OPEN Lifecycle Failure")
+            record.open_status = event.get("terminal_state", "FAIL")
+            if not record.open_order_id:
+                record.open_order_id = event.get("order_id")
+
+        elif event_type == "CLOSE_FAIL_LIFECYCLE":
+            record.close_fail_reason = event.get("error", "Unknown CLOSE Lifecycle Failure")
+            record.close_status = event.get("terminal_state", "FAIL")
+            if not record.close_order_id:
+                record.close_order_id = event.get("order_id")
     
     # Check for warnings (legacy)
     record.warnings = []
@@ -248,6 +264,12 @@ def compute_alert_level(record: CycleRecord, cycle_timeout_bars: int = 10) -> No
     if record.close_status and record.close_status != "FILLED":
         record.block_reasons.append(f"close_status={record.close_status} (not FILLED)")
     
+    if record.open_fail_reason:
+        record.block_reasons.append(f"OPEN_FAIL_LIFECYCLE: {record.open_fail_reason}")
+        
+    if record.close_fail_reason:
+        record.block_reasons.append(f"CLOSE_FAIL_LIFECYCLE: {record.close_fail_reason}")
+    
     if record.pos_after is not None and abs(record.pos_after) > 1e-9:
         # Check if dust policy cleaned it (would need cleanup info)
         # For now, any non-zero pos_after is BLOCK
@@ -298,6 +320,8 @@ def load_cycle_records(
         "POSITION_SNAPSHOT_CLOSE",
         "ORDER_FETCH_OPEN",
         "ORDER_FETCH_CLOSE",
+        "OPEN_FAIL_LIFECYCLE",
+        "CLOSE_FAIL_LIFECYCLE",
     ]
     
     filtered = filter_events(events, symbol, timeframe, cycle_event_types)
@@ -427,7 +451,9 @@ def format_cycles_table(records: List[CycleRecord]) -> str:
         else:
             alert = "✅ OK"
         
-        line = f"{r.cycle_idx:>3} | {alert:>5} | {r.status:>7} | {r.open_order_id[:12]:>12} | {r.close_order_id[:12] if r.close_order_id else 'N/A':>12} | {entry:>10} | {exit_p:>10} | {net:>10} | {r.cycle_bars:>4} | {r.eff_lag:>6.0f}"
+        open_id_str = r.open_order_id[:12] if r.open_order_id else "N/A"
+        close_id_str = r.close_order_id[:12] if r.close_order_id else "N/A"
+        line = f"{r.cycle_idx:>3} | {alert:>5} | {r.status:>7} | {open_id_str:>12} | {close_id_str:>12} | {entry:>10} | {exit_p:>10} | {net:>10} | {r.cycle_bars:>4} | {r.eff_lag:>6.0f}"
         lines.append(line)
     
     return "\n".join(lines)

@@ -36,6 +36,11 @@ class LiveLoopConfig:
     until_next_closed: bool = False  # Exit after first closed bar tick
     align_to_next_close: bool = False  # Calculate runtime to next bar close
     proof_closed: bool = False  # Print PROOF_CLOSED line on first closed tick
+    # Order Lifecycle Config
+    poll_order_sec: float = 2.0
+    order_timeout_sec: float = 30.0
+    cancel_on_timeout: bool = False
+    inject_fault: str = "NONE"
 
 
 @dataclass
@@ -334,6 +339,41 @@ def run_live_loop(
     return stats
 
 
+def emit_incident_bundle_telemetry(
+    symbol: str,
+    timeframe: str,
+    cycle_idx: int,
+    alert_level: str,
+    out_path: str,
+    files_count: int,
+) -> None:
+    """Emit INCIDENT_BUNDLE_CREATED telemetry event to NDJSON."""
+    import json
+    from datetime import datetime, timezone
+    from pathlib import Path
+    from tezaver.matrix.live.cycle_events import redact_event_secrets
+    
+    event = {
+        "ts": datetime.now(timezone.utc).isoformat(),
+        "event_type": "INCIDENT_BUNDLE_CREATED",
+        "symbol": symbol,
+        "timeframe": timeframe,
+        "cycle_idx": cycle_idx,
+        "alert_level": alert_level,
+        "out_path": out_path,
+        "files_count": files_count,
+    }
+    
+    # Redact before writing (defensive, though no secrets expected)
+    safe_event = redact_event_secrets(event)
+    
+    ndjson_path = Path("data/logs/live_events.ndjson")
+    ndjson_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    with open(ndjson_path, "a") as f:
+        f.write(json.dumps(safe_event, default=str) + "\n")
+
+
 def main():
     """
     RUNBOOK — Live Loop CLI
@@ -466,6 +506,32 @@ def main():
                        help="Output directory for incident bundles")
     parser.add_argument("--only-relevant", action="store_true",
                        help="Filter to relevant event types only")
+    parser.add_argument("--auto-incident-on", type=str, default="BLOCK",
+                       choices=["BLOCK", "WARN", "OFF"],
+                       help="Auto-export incident bundles for cycles matching alert level")
+    parser.add_argument("--auto-incident-out-dir", type=str, default="data/incidents",
+                       help="Output directory for auto-incident bundles")
+    parser.add_argument("--auto-incident-only-relevant", action="store_true", default=True,
+                       help="Filter to relevant event types only in auto bundles")
+    parser.add_argument("--auto-incident-max", type=int, default=1,
+                       help="Max number of incident bundles to auto-export (last N matching)")
+    
+    # Order Lifecycle Arguments (New in v1)
+    parser.add_argument(
+        "--inject-order-fault",
+        type=str,
+        default="NONE",
+        choices=["NONE", "PARTIAL", "REJECT", "TIMEOUT", "TIMEOUT_OPEN", "TIMEOUT_CLOSE"],
+        help="Simulate order failure (TIMEOUT/REJECT/PARTIAL)"
+    )
+    parser.add_argument("--order-timeout-sec", type=float, default=30.0,
+                       help="Max seconds to wait for order fill before timeout")
+    parser.add_argument("--poll-order-sec", type=float, default=2.0,
+                       help="Interval for polling order status")
+    parser.add_argument("--cancel-on-timeout", action="store_true",
+                       help="Cancel order if timeout reached (default: leave open/unknown)")
+    parser.add_argument("--inject-order-fault-nth", type=int, default=0,
+                       help="Only inject fault on Nth order (0=all orders, 1=first, 2=second/CLOSE)")
     
     args = parser.parse_args()
     
@@ -640,6 +706,11 @@ def main():
                                 exchange_mode="REAL_TESTNET",
                                 api_key=api_key,
                                 api_secret=api_secret,
+                                # Lifecycle Config
+                                poll_interval_sec=args.poll_order_sec,
+                                order_timeout_sec=args.order_timeout_sec,
+                                cancel_on_timeout=args.cancel_on_timeout,
+                                inject_fault=args.inject_order_fault,
                             )
                             
                             # Execute via real gateway
@@ -780,13 +851,62 @@ def main():
         stub_cluster = StubCluster(event_sink=ndjson_event_sink)
         
         # Create router with cluster and event sink
+        # Prepare Gateway for Policy (if needed)
+        policy_gateway = None
+        
+        # Assume hold_policy is defined from args or elsewhere, e.g., hold_policy = getattr(args, "hold_policy", "NONE")
+        hold_policy = getattr(args, "hold_policy", "NONE") # Added for context, assuming it comes from args
+        
+        if hold_policy == "HOLD_NEXT_CLOSED":
+            from tezaver.matrix.live.live_gateway import BinanceTestnetGateway, DummyExchangeGateway
+            from tezaver.matrix.live.secrets import EnvSecretsVault, FileSecretsVault, CompositeVault
+            from pathlib import Path
+            
+            # Setup gateway based on exchange_mode
+            if exchange_mode == "REAL_TESTNET":
+                vaults = [EnvSecretsVault()]
+                secrets_file = Path("data/secrets/live_keys.txt")
+                if secrets_file.exists():
+                    vaults.append(FileSecretsVault(secrets_file))
+                vault = CompositeVault(vaults)
+                api_key = vault.get("API_KEY") or vault.get("BINANCE_API_KEY")
+                api_secret = vault.get("API_SECRET") or vault.get("BINANCE_API_SECRET")
+                
+                if api_key and api_secret:
+                    policy_gateway = BinanceTestnetGateway(api_key, api_secret)
+                    print("[PROOF_ROUTER_CLUSTER] Using REAL BinanceTestnetGateway for Policy")
+                else:
+                    print("[PROOF_ROUTER_CLUSTER] WARN: Secrets missing, falling back to DUMMY for Policy")
+                    policy_gateway = DummyExchangeGateway()
+            
+            elif exchange_mode == "DUMMY_ORDER" or exchange_mode == "DRY_RUN":
+                 policy_gateway = DummyExchangeGateway()
+                 print("[PROOF_ROUTER_CLUSTER] Using DummyExchangeGateway for Policy")
+        
+        # Router Config
         router_config = LiveRouterConfig(
             enabled=True,
+            exchange_mode=exchange_mode,
+            armed=armed,
+            exchange_enabled=exchange_enabled,
+            hold_policy=hold_policy,
             force_dry_run=force_dry_run,
             only_symbols=symbols,
             only_timeframes=[args.tf],
+            strategy_enabled=True,  # Enable strategy to drive Policy OPEN triggers
+            # Lifecycle Config
+            poll_order_sec=args.poll_order_sec,
+            order_timeout_sec=args.order_timeout_sec,
+            cancel_on_timeout=args.cancel_on_timeout,
+            inject_fault=args.inject_order_fault,
         )
-        router = MatrixLiveRouter(cluster=stub_cluster, config=router_config, event_sink=ndjson_event_sink)
+        
+        router = MatrixLiveRouter(
+            cluster=stub_cluster, 
+            config=router_config, 
+            event_sink=ndjson_event_sink,
+            gateway=policy_gateway  # Inject the gateway
+        )
         
         # Track router result
         router_result = {"ticks": 0, "skips": 0, "last_tick": None, "cluster_ticks": 0}
@@ -832,35 +952,11 @@ def main():
         
         # If use_policy_cycle, create HoldNextClosedPolicy
         policy = None
-        policy_gateway = None
         policy_result_summary = {}
         
+        # Policy setup moved above
         if use_policy_cycle:
-            from tezaver.matrix.live.live_policy import HoldNextClosedPolicy, PolicyState
-            from tezaver.matrix.live.live_gateway import BinanceTestnetGateway, DummyExchangeGateway
-            from tezaver.matrix.live.secrets import EnvSecretsVault, FileSecretsVault, CompositeVault
-            from pathlib import Path
-            
-            # Setup gateway based on exchange_mode
-            if exchange_mode == "REAL_TESTNET":
-                vaults = [EnvSecretsVault()]
-                secrets_file = Path("data/secrets/live_keys.txt")
-                if secrets_file.exists():
-                    vaults.append(FileSecretsVault(secrets_file))
-                vault = CompositeVault(vaults)
-                api_key = vault.get("API_KEY") or vault.get("BINANCE_API_KEY")
-                api_secret = vault.get("API_SECRET") or vault.get("BINANCE_API_SECRET")
-                
-                if api_key and api_secret:
-                    policy_gateway = BinanceTestnetGateway(api_key, api_secret)
-                    print("[PROOF_ROUTER_CLUSTER] Policy using REAL BinanceTestnetGateway")
-                else:
-                    print("[PROOF_ROUTER_CLUSTER] ERROR: SECRETS_MISSING for policy")
-                    sys.exit(1)
-            else:
-                policy_gateway = DummyExchangeGateway()
-                print("[PROOF_ROUTER_CLUSTER] Policy using DummyExchangeGateway")
-            
+            from tezaver.matrix.live.live_policy import HoldNextClosedPolicy, PolicyState            
             symbol = symbols[0]
             profile_id = f"{symbol}_{args.tf}_policy"
             
@@ -883,6 +979,12 @@ def main():
                 close_qty_mult=close_qty_mult,
                 close_policy=close_policy_arg,
                 min_hold_bars=min_hold_bars_arg,
+                # Lifecycle Config
+                poll_order_sec=getattr(args, "poll_order_sec", 2.0),
+                order_timeout_sec=getattr(args, "order_timeout_sec", 60),
+                cancel_on_timeout=getattr(args, "cancel_on_timeout", False),
+                inject_fault=getattr(args, "inject_order_fault", None),
+                inject_fault_nth=getattr(args, "inject_order_fault_nth", 0),
             )
             
             print(f"[PROOF_ROUTER_CLUSTER] Policy profile_id={profile_id}")
@@ -925,9 +1027,12 @@ def main():
             )
             print(f"[PROOF_ROUTER_CLUSTER] Strategy ENABLED: open_rule_mode={args.open_rule_mode} close_rule_mode={getattr(args, 'close_rule_mode', 'ALWAYS_OFF')} cooldown={args.cooldown_bars}")
         
+        # Current cycle idx for propagation to policy (set by main loop)
+        current_cycle_idx = 1
+        
         # Event callback to route closed bar ticks
         def on_event(event):
-            nonlocal policy, policy_result_summary
+            nonlocal policy, policy_result_summary, current_cycle_idx
             if event.get("event_type") == "CLOSED_PROOF":
                 snapshot = {
                     "symbol": event.get("symbol"),
@@ -967,6 +1072,7 @@ def main():
                         bar_close_ts=bar_close_ts,
                         decision=decision,
                         strategy_signal=strategy_signal_value,
+                        cycle_idx=current_cycle_idx,
                     )
                     
                     print(f"[POLICY_TICK] action={result.action} state={result.state.value}")
@@ -1004,6 +1110,9 @@ def main():
                 print(f"\n{'='*60}")
                 print(f"CYCLE {cycle_idx + 1}/{total_cycles} STARTED")
                 print(f"{'='*60}")
+                
+                # Update current_cycle_idx for propagation to policy events
+                current_cycle_idx = cycle_idx + 1
                 
                 # Reset policy state for new cycle
                 if cycle_idx > 0:
@@ -1650,6 +1759,11 @@ def main():
             exchange_mode=exchange_mode,
             armed=armed,
             exchange_enabled=exchange_enabled,
+            # Lifecycle
+            poll_order_sec=args.poll_order_sec,
+            order_timeout_sec=args.order_timeout_sec,
+            cancel_on_timeout=args.cancel_on_timeout,
+            inject_fault=args.inject_order_fault,
         )
         
         print(f"[POLICY_CYCLE] profile_id={profile_id}")
@@ -1732,6 +1846,7 @@ def main():
                 profile_id=profile_id,
                 bar_close_ts=bar_close_ts,
                 decision=decision,
+                cycle_idx=1,
             )
             
             print(f"[POLICY_CYCLE] action={result.action} success={result.success} state={result.state.value}")
@@ -1931,6 +2046,63 @@ def main():
                     else:
                         print(f"[ERROR] Bundle export failed: {result['error']}")
                         sys.exit(1)
+                
+                # ========== AUTO-INCIDENT EXPORT ==========
+                auto_incident_on = getattr(args, "auto_incident_on", "BLOCK")
+                
+                if auto_incident_on != "OFF":
+                    # Filter records by auto-incident alert level
+                    auto_records = []
+                    if auto_incident_on == "BLOCK":
+                        auto_records = [r for r in records if r.alert_level == CycleAlertLevel.BLOCK]
+                    elif auto_incident_on == "WARN":
+                        auto_records = [r for r in records if r.alert_level in [CycleAlertLevel.WARN, CycleAlertLevel.BLOCK]]
+                    
+                    # Limit to max N
+                    auto_incident_max = getattr(args, "auto_incident_max", 1)
+                    auto_records = auto_records[:auto_incident_max]
+                    
+                    if auto_records:
+                        print(f"\n[AUTO_INCIDENT] Found {len(auto_records)} cycles matching {auto_incident_on}, exporting bundles...")
+                        
+                        from tezaver.matrix.live.cycle_events import (
+                            IncidentBundleSpec,
+                            build_incident_bundle,
+                        )
+                        
+                        auto_out_dir = getattr(args, "auto_incident_out_dir", "data/incidents")
+                        auto_only_relevant = getattr(args, "auto_incident_only_relevant", True)
+                        
+                        for r in auto_records:
+                            try:
+                                spec = IncidentBundleSpec(
+                                    symbol=symbol,
+                                    timeframe=timeframe,
+                                    cycle_idx=r.cycle_idx,
+                                    ndjson_path=str(ndjson_path),
+                                    equity_start=getattr(args, "equity_start", 100.0),
+                                    out_dir=auto_out_dir,
+                                    only_relevant=auto_only_relevant,
+                                )
+                                
+                                result = build_incident_bundle(spec)
+                                
+                                if result["success"]:
+                                    print(f"AUTO_INCIDENT_OK | cycle_idx={r.cycle_idx} path={result['bundle_path']} alert={result['alert']} files={len(result['files'])}")
+                                    
+                                    # Emit telemetry
+                                    emit_incident_bundle_telemetry(
+                                        symbol=symbol,
+                                        timeframe=timeframe,
+                                        cycle_idx=r.cycle_idx,
+                                        alert_level=result['alert'],
+                                        out_path=result['bundle_path'],
+                                        files_count=len(result['files']),
+                                    )
+                                else:
+                                    print(f"AUTO_INCIDENT_ERR | cycle_idx={r.cycle_idx} error={result['error']}")
+                            except Exception as e:
+                                print(f"AUTO_INCIDENT_ERR | cycle_idx={r.cycle_idx} error={str(e)}")
                 
                 # Exit code 2 if BLOCK exists
                 if agg.get("block_count", 0) > 0:

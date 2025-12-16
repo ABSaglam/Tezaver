@@ -29,6 +29,11 @@ class LiveRouterConfig:
     exchange_enabled: bool = False
     # Strategy
     strategy_enabled: bool = False  # Enable strategy signal adapter
+    # Order Lifecycle Config (v1)
+    poll_order_sec: float = 2.0
+    order_timeout_sec: float = 30.0
+    cancel_on_timeout: bool = False
+    inject_fault: str = "NONE"
 
 
 class MatrixLiveRouter:
@@ -77,6 +82,11 @@ class MatrixLiveRouter:
                 dust_policy=self.config.dust_policy,
                 dust_threshold=self.config.dust_threshold,
                 close_qty_mult=self.config.close_qty_mult,
+                # Lifecycle
+                poll_order_sec=self.config.poll_order_sec,
+                order_timeout_sec=self.config.order_timeout_sec,
+                cancel_on_timeout=self.config.cancel_on_timeout,
+                inject_fault=self.config.inject_fault,
             )
         
         # Strategy Signal Adapter (if strategy_enabled)

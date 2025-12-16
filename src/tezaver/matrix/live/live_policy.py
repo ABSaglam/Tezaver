@@ -101,10 +101,37 @@ class HoldNextClosedPolicy:
         close_qty_mult: float = 1.0,  # For BLOCK test - 0.5 = partial close
         close_policy: str = "NEXT_CLOSED_BAR",  # NEXT_CLOSED_BAR / NEXT_SIGNAL
         min_hold_bars: int = 1,  # Minimum bars to hold before CLOSE on NEXT_SIGNAL
+        # Lifecycle config
+        poll_order_sec: float = 2.0,
+        order_timeout_sec: float = 30.0,
+        cancel_on_timeout: bool = False,
+        inject_fault: str = "NONE",
+        inject_fault_nth: int = 0,  # 0=all orders, N=only fault Nth order
     ):
-        self.gateway = gateway
+        # Wrap gateway with FaultInjectionGateway if needed
+        if inject_fault and inject_fault != "NONE":
+            from tezaver.matrix.live.live_gateway import FaultInjectionGateway
+            self.gateway = FaultInjectionGateway(gateway, inject_fault, inject_fault_nth)
+        else:
+            self.gateway = gateway
+            
         self._event_sink = event_sink
         self.qty = qty
+        self.min_pos_abs = min_pos_abs
+        self.exchange_mode = exchange_mode
+        self.armed = armed
+        self.exchange_enabled = exchange_enabled
+        self.dust_policy = dust_policy
+        self.dust_threshold = dust_threshold
+        self.close_qty_mult = close_qty_mult
+        self.close_policy = close_policy
+        self.min_hold_bars = min_hold_bars
+        # Lifecycle params
+        self.poll_order_sec = poll_order_sec
+        self.order_timeout_sec = order_timeout_sec
+        self.cancel_on_timeout = cancel_on_timeout
+        
+        # Per-cell state
         self.min_pos_abs = min_pos_abs
         self.exchange_mode = exchange_mode
         self.armed = armed
@@ -163,6 +190,7 @@ class HoldNextClosedPolicy:
         bar_close_ts: str,
         decision: Optional[str] = None,  # "OPEN" or None
         strategy_signal: Optional[str] = None,  # "OPEN_LONG" / "CLOSE_LONG" / "NONE"
+        cycle_idx: Optional[int] = None,
     ) -> PolicyResult:
         """
         Handle a closed bar tick for a cell.
@@ -177,7 +205,7 @@ class HoldNextClosedPolicy:
         # State machine
         if cell.state == PolicyState.IDLE:
             if decision == "OPEN":
-                return self._handle_open(symbol, tf, profile_id, bar_close_ts, cell)
+                return self._handle_open(symbol, tf, profile_id, bar_close_ts, cell, cycle_idx=cycle_idx)
             else:
                 return PolicyResult(action="SKIP", success=True, state=cell.state, bar_close_ts=bar_close_ts)
         
@@ -212,7 +240,7 @@ class HoldNextClosedPolicy:
                     # Signal OK - close now
                     cell.close_reason = "SIGNAL_OK"
                     cell.seen_closed_count += 1
-                    return self._handle_close(symbol, tf, profile_id, bar_close_ts, cell)
+                    return self._handle_close(symbol, tf, profile_id, bar_close_ts, cell, cycle_idx=cycle_idx)
             
             return PolicyResult(action="WAIT_EFFECTIVE", success=True, state=cell.state, bar_close_ts=bar_close_ts)
         
@@ -227,14 +255,14 @@ class HoldNextClosedPolicy:
                     cell.close_reason = "PENDING_SIGNAL_RELEASED"
                     print(f"[POLICY] PENDING_SIGNAL_RELEASED {symbol}/{tf} bars_waited={cell.bars_waited_effective}")
                     cell.seen_closed_count += 1
-                    return self._handle_close(symbol, tf, profile_id, bar_close_ts, cell)
+                    return self._handle_close(symbol, tf, profile_id, bar_close_ts, cell, cycle_idx=cycle_idx)
                 
                 # Check for new CLOSE_LONG signal
                 if strategy_signal == "CLOSE_LONG":
                     if cell.bars_waited_effective >= self.min_hold_bars:
                         cell.close_reason = "SIGNAL_OK"
                         cell.seen_closed_count += 1
-                        return self._handle_close(symbol, tf, profile_id, bar_close_ts, cell)
+                        return self._handle_close(symbol, tf, profile_id, bar_close_ts, cell, cycle_idx=cycle_idx)
                     else:
                         cell.pending_close = True
                         cell.close_reason = "SIGNAL_TOO_EARLY"
@@ -249,7 +277,7 @@ class HoldNextClosedPolicy:
                     return PolicyResult(action="SKIP_OLD", success=True, state=cell.state, bar_close_ts=bar_close_ts)
                 
                 cell.seen_closed_count += 1
-                return self._handle_close(symbol, tf, profile_id, bar_close_ts, cell)
+                return self._handle_close(symbol, tf, profile_id, bar_close_ts, cell, cycle_idx=cycle_idx)
         
         elif cell.state == PolicyState.CLOSE_SUBMITTED:
             # Already closed, reset to IDLE
@@ -265,6 +293,7 @@ class HoldNextClosedPolicy:
         profile_id: str,
         bar_close_ts: str,
         cell: CellPolicyState,
+        cycle_idx: Optional[int] = None,
     ) -> PolicyResult:
         """Handle OPEN submission."""
         from tezaver.matrix.live.live_gateway import ExchangeOrderRequest, OrderSide
@@ -285,6 +314,7 @@ class HoldNextClosedPolicy:
                 "profile_id": profile_id,
                 "bar_close_ts": bar_close_ts,
                 "fingerprint": fingerprint,
+                "cycle_idx": cycle_idx,
             })
             
             fp_short = fingerprint.replace("|", "_").replace(":", "-")[:36]
@@ -297,28 +327,96 @@ class HoldNextClosedPolicy:
                 client_id=fp_short,
             )
             
-            result = self.gateway.place_order(req)
+
             
-            if result.success:
-                self._seen_fingerprints.add(fingerprint)
-                cell.state = PolicyState.OPEN_SUBMITTED
-                cell.open_trigger_bar_close_ts = bar_close_ts
-                cell.open_order_id = result.order_id
-                cell.open_qty = self.qty
-                cell.seen_closed_count = 0
+            # Use OrderLifecycleTracker
+            from tezaver.matrix.live.order_lifecycle import OrderLifecycleTracker, OrderLifecycleResult
+            
+            # 1. Submit
+            submit_res = self.gateway.place_order(req)
+            
+            if submit_res.success:
+                print(f"[POLICY] OPEN_SUBMIT_OK {symbol}/{tf} order_id={submit_res.order_id}")
                 
-                print(f"[POLICY] OPEN_OK {symbol}/{tf} order_id={result.order_id}")
-                
-                return PolicyResult(
-                    action="OPEN",
-                    success=True,
-                    state=cell.state,
-                    order_id=result.order_id,
-                    bar_close_ts=bar_close_ts,
+                # 2. Track Lifecycle
+                tracker = OrderLifecycleTracker(
+                    gateway=self.gateway,
+                    symbol=symbol,
+                    order_id=submit_res.order_id,
+                    client_order_id=fp_short,
+                    poll_interval_sec=self.poll_order_sec,
+                    max_wait_sec=self.order_timeout_sec,
+                    cancel_on_timeout=self.cancel_on_timeout,
+
+                    event_sink=self._event_sink,
+                    context={
+                        "action": "OPEN",
+                        "symbol": symbol,
+                        "timeframe": tf,
+                        "profile_id": profile_id,
+                        "fingerprint": fingerprint,
+                        "cycle_idx": cycle_idx,
+                    },
+                    orig_qty=self.qty
                 )
+                
+                lc_res = tracker.poll_until_terminal()
+                
+                if lc_res.is_success:
+                    self._seen_fingerprints.add(fingerprint)
+                    cell.state = PolicyState.OPEN_SUBMITTED
+                    cell.open_trigger_bar_close_ts = bar_close_ts
+                    cell.open_order_id = submit_res.order_id
+                    cell.open_qty = lc_res.executed_qty  # Use actually executed qty
+                    cell.seen_closed_count = 0
+                    
+                    print(f"[POLICY] OPEN_FILLED {symbol}/{tf} order_id={submit_res.order_id} executed_qty={lc_res.executed_qty}")
+                    
+                    self._emit_event({
+                        "event_type": "ROUTER_POLICY_STATE",
+                        "policy": "HOLD_NEXT_CLOSED",
+                        "state": "OPEN_FILLED",
+                        "symbol": symbol,
+                        "timeframe": tf,
+                        "profile_id": profile_id,
+                        "bar_close_ts": bar_close_ts,
+                        "order_id": submit_res.order_id,
+                        "executed_qty": lc_res.executed_qty,
+                        "avg_price": lc_res.avg_price,
+                        "attempts": lc_res.attempts,
+                        "fingerprint": fingerprint,
+                    })
+                    
+                    return PolicyResult(
+                        action="OPEN",
+                        success=True,
+                        state=cell.state,
+                        order_id=submit_res.order_id,
+                        bar_close_ts=bar_close_ts,
+                    )
+                else:
+                    # Failed during lifecycle (e.g. TIMEOUT or REJECTED)
+                    error_msg = f"OPEN failed: {lc_res.terminal_state} - {lc_res.error}"
+                    cell.last_error = error_msg
+                    
+                    self._emit_event({
+                        "event_type": "OPEN_FAIL_LIFECYCLE",
+                        "symbol": symbol,
+                        "timeframe": tf,
+                        "profile_id": profile_id,
+                        "order_id": submit_res.order_id,
+                        "error": error_msg,
+                        "terminal_state": lc_res.terminal_state.value,
+                        "executed_qty": lc_res.executed_qty,
+                        "cycle_idx": cycle_idx,
+                    })
+
+                    print(f"[POLICY] OPEN_FAIL_LIFECYCLE {symbol}/{tf}: {error_msg}")
+                    return PolicyResult(action="OPEN", success=False, error=error_msg, state=cell.state, bar_close_ts=bar_close_ts)
             else:
-                cell.last_error = result.error
-                return PolicyResult(action="OPEN", success=False, error=result.error, state=cell.state, bar_close_ts=bar_close_ts)
+                cell.last_error = submit_res.error
+                return PolicyResult(action="OPEN", success=False, error=submit_res.error, state=cell.state, bar_close_ts=bar_close_ts)
+
         
         except Exception as e:
             cell.last_error = str(e)
@@ -332,6 +430,7 @@ class HoldNextClosedPolicy:
         bar_close_ts: str,
         cell: CellPolicyState,
         skip_monotonic_check: bool = False,  # For same-tick CLOSE in NEXT_SIGNAL mode
+        cycle_idx: Optional[int] = None,
     ) -> PolicyResult:
         """Handle CLOSE submission with reduceOnly."""
         from tezaver.matrix.live.live_gateway import ExchangeOrderRequest, OrderSide
@@ -388,13 +487,71 @@ class HoldNextClosedPolicy:
             if not req.reduce_only:
                 raise RuntimeError("CLOSE must have reduceOnly=true")
             
-            result = self.gateway.place_order(req)
+            if not req.reduce_only:
+                raise RuntimeError("CLOSE must have reduceOnly=true")
+                
+            from tezaver.matrix.live.order_lifecycle import OrderLifecycleTracker, OrderLifecycleResult
             
-            if result.success:
+            # 1. Submit
+            submit_res = self.gateway.place_order(req)
+            
+            if submit_res.success:
+                print(f"[POLICY] CLOSE_SUBMIT_OK {symbol}/{tf} order_id={submit_res.order_id}")
+                
+                # 2. Track Lifecycle
+                tracker = OrderLifecycleTracker(
+                    gateway=self.gateway,
+                    symbol=symbol,
+                    order_id=submit_res.order_id,
+                    client_order_id=fp_short,
+                    poll_interval_sec=self.poll_order_sec,
+                    max_wait_sec=self.order_timeout_sec,
+                    cancel_on_timeout=self.cancel_on_timeout,
+                    event_sink=self._event_sink,
+                    context={
+                        "action": "CLOSE",
+                        "symbol": symbol,
+                        "timeframe": tf,
+                        "profile_id": profile_id,
+                        "fingerprint": fingerprint,
+                        "cycle_idx": cycle_idx,
+                    },
+                    orig_qty=close_qty,
+                )
+                
+                lc_res = tracker.poll_until_terminal()
+                
+                # Update cell state regardless of success (partial fills matter)
                 self._seen_fingerprints.add(fingerprint)
                 cell.state = PolicyState.CLOSE_SUBMITTED
                 cell.close_bar_close_ts = bar_close_ts
-                cell.close_order_id = result.order_id
+                cell.close_order_id = submit_res.order_id
+                
+                if not lc_res.is_success:
+                    # Failed during lifecycle - WARN or BLOCK
+                    error_msg = f"CLOSE failed: {lc_res.terminal_state} - {lc_res.error}"
+                    print(f"[POLICY] CLOSE_FAIL_LIFECYCLE {symbol}/{tf}: {error_msg}")
+                    cell.last_error = error_msg
+                    
+                    # Emit failure event
+                    self._emit_event({
+                        "event_type": "CLOSE_FAIL_LIFECYCLE",
+                        "symbol": symbol,
+                        "timeframe": tf,
+                        "profile_id": profile_id,
+                        "order_id": submit_res.order_id,
+                        "error": error_msg,
+                        "terminal_state": lc_res.terminal_state.value,
+                        "executed_qty": lc_res.executed_qty,
+                        "cycle_idx": cycle_idx,
+                    })
+                    
+                    # BLOCK if not filled at all? Or just return error.
+                    # Per req: Handle CLOSE_FAIL_LIFECYCLE
+                    return PolicyResult(action="CLOSE", success=False, error=error_msg, state=cell.state, bar_close_ts=bar_close_ts)
+                
+                # Success path
+                print(f"[POLICY] CLOSE_FILLED {symbol}/{tf} order_id={submit_res.order_id} executed_qty={lc_res.executed_qty}")
                 
                 # Get residual
                 pos_after = self.gateway.get_position_snapshot(symbol)
@@ -507,8 +664,8 @@ class HoldNextClosedPolicy:
                 })
                 
                 cleanup_str = "YES" if cell.cleanup_attempted else "NO"
-                print(f"[POLICY] CLOSE_OK {symbol}/{tf} order_id={result.order_id} reduceOnly=true dust_policy={self.dust_policy}")
-                print(f"POLICY_DONE | {symbol}/{tf} open={cell.open_order_id} close={result.order_id} eff_wait={cell.bars_waited_effective} eff_lag={cell.lag_sec_effective} residual={cell.residual_after} cleanup={cleanup_str}")
+                print(f"[POLICY] CLOSE_OK {symbol}/{tf} order_id={submit_res.order_id} reduceOnly=true state={lc_res.terminal_state}")
+                print(f"POLICY_DONE | {symbol}/{tf} open={cell.open_order_id} close={submit_res.order_id} eff_wait={cell.bars_waited_effective} eff_lag={cell.lag_sec_effective} residual={cell.residual_after} cleanup={cleanup_str}")
                 
                 # Reset to IDLE
                 cell.state = PolicyState.IDLE
@@ -517,12 +674,12 @@ class HoldNextClosedPolicy:
                     action="CLOSE",
                     success=True,
                     state=cell.state,
-                    order_id=result.order_id,
+                    order_id=submit_res.order_id,
                     bar_close_ts=bar_close_ts,
                 )
             else:
-                cell.last_error = result.error
-                return PolicyResult(action="CLOSE", success=False, error=result.error, state=cell.state, bar_close_ts=bar_close_ts)
+                cell.last_error = submit_res.error
+                return PolicyResult(action="CLOSE", success=False, error=submit_res.error, state=cell.state, bar_close_ts=bar_close_ts)
         
         except RuntimeError as re:
             # Re-raise DUST_BLOCK to ensure exit_code != 0

@@ -1368,10 +1368,143 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
             if st.button("🔄 Refresh", key="cr_refresh"):
                 st.rerun()
             
+            # =========================================================================
+            # Auto-Incident Controls
+            # =========================================================================
+            with st.expander("🧯 Auto-Incident on BLOCK", expanded=False):
+                st.caption("Automatically export incident bundles for BLOCK/WARN cycles. Matches CLI behavior.")
+                
+                ai_col1, ai_col2, ai_col3 = st.columns(3)
+                with ai_col1:
+                    auto_incident_on = st.selectbox(
+                        "Auto-export on",
+                        options=["BLOCK", "WARN", "OFF"],
+                        index=0,  # Default: BLOCK
+                        key="auto_incident_on"
+                    )
+                with ai_col2:
+                    auto_incident_max = st.slider(
+                        "Max bundles",
+                        min_value=1,
+                        max_value=5,
+                        value=1,
+                        key="auto_incident_max"
+                    )
+                with ai_col3:
+                    auto_incident_only_relevant = st.checkbox(
+                        "Only relevant events",
+                        value=True,
+                        key="auto_incident_only_relevant"
+                    )
+                
+                auto_incident_out_dir = st.text_input(
+                    "Output directory",
+                    value="data/incidents",
+                    key="auto_incident_out_dir"
+                )
+                
+                # Run auto-incident button
+                if st.button("🔄 Run Auto-Incident Export", key="btn_auto_incident", type="primary"):
+                    if ndjson_path.exists():
+                        try:
+                            from tezaver.matrix.live.cycle_events import (
+                                IncidentBundleSpec,
+                                build_incident_bundle,
+                            )
+                            from tezaver.matrix.live.live_loop import emit_incident_bundle_telemetry
+                            
+                            # Load records
+                            temp_records = load_cycle_records(ndjson_path, cr_symbol, cr_tf, 50)
+                            
+                            # Filter by alert level
+                            auto_records = []
+                            if auto_incident_on == "BLOCK":
+                                auto_records = [r for r in temp_records if r.alert_level == CycleAlertLevel.BLOCK]
+                            elif auto_incident_on == "WARN":
+                                auto_records = [r for r in temp_records if r.alert_level in [CycleAlertLevel.WARN, CycleAlertLevel.BLOCK]]
+                            
+                            # Limit to max
+                            auto_records = auto_records[:auto_incident_max]
+                            
+                            if auto_records:
+                                exported_count = 0
+                                for r in auto_records:
+                                    try:
+                                        spec = IncidentBundleSpec(
+                                            symbol=cr_symbol,
+                                            timeframe=cr_tf,
+                                            cycle_idx=r.cycle_idx,
+                                            ndjson_path=str(ndjson_path),
+                                            equity_start=100.0,
+                                            out_dir=auto_incident_out_dir,
+                                            only_relevant=auto_incident_only_relevant,
+                                        )
+                                        
+                                        result = build_incident_bundle(spec)
+                                        
+                                        if result["success"]:
+                                            exported_count += 1
+                                            
+                                            # Store last incident in session state
+                                            st.session_state["last_auto_incident"] = {
+                                                "cycle_idx": r.cycle_idx,
+                                                "alert_level": result["alert"],
+                                                "out_path": result["bundle_path"],
+                                                "files_count": len(result["files"]),
+                                                "ts": r.done_ts or r.start_ts,
+                                            }
+                                            
+                                            # Emit telemetry
+                                            emit_incident_bundle_telemetry(
+                                                symbol=cr_symbol,
+                                                timeframe=cr_tf,
+                                                cycle_idx=r.cycle_idx,
+                                                alert_level=result["alert"],
+                                                out_path=result["bundle_path"],
+                                                files_count=len(result["files"]),
+                                            )
+                                    except Exception as e:
+                                        st.error(f"Export failed for cycle {r.cycle_idx}: {e}")
+                                
+                                st.success(f"✅ Exported {exported_count} incident bundle(s)!")
+                                st.rerun()
+                            else:
+                                st.warning(f"No cycles found matching {auto_incident_on} alert level.")
+                        except Exception as e:
+                            st.error(f"Auto-incident export error: {e}")
+                    else:
+                        st.warning("NDJSON file not found. Run a cycle first.")
+            
+            # Last Incident Card
+            if "last_auto_incident" in st.session_state:
+                st.divider()
+                st.subheader("🆘 Last Auto-Incident Export")
+                
+                last_incident = st.session_state["last_auto_incident"]
+                
+                inc_cols = st.columns(4)
+                with inc_cols[0]:
+                    st.metric("Cycle", last_incident.get("cycle_idx"))
+                with inc_cols[1]:
+                    st.metric("Alert", last_incident.get("alert_level"))
+                with inc_cols[2]:
+                    st.metric("Files", last_incident.get("files_count"))
+                with inc_cols[3]:
+                    timestamp = last_incident.get("ts", "")[:19] if last_incident.get("ts") else "-"
+                    st.metric("Exported", timestamp)
+                
+                st.code(last_incident.get("out_path"))
+                
+                # README preview button
+                readme_path = Path(last_incident.get("out_path")) / "README.txt"
+                if readme_path.exists():
+                    with st.expander("📄 README Preview"):
+                        with open(readme_path, "r") as rf:
+                            st.code(rf.read()[:2000])
+            
             if not ndjson_path.exists():
                 st.warning(f"NDJSON dosyası bulunamadı: {ndjson_path}")
                 st.info("Runbook: Önce bir cycle çalıştırın:")
-                st.code("PYTHONPATH=src python -m tezaver.matrix.live.live_loop proof_router_cluster --real --tf 15m --exchange-mode DRY_RUN --exchange-enabled --hold-policy HOLD_NEXT_CLOSED --until-done --cycles 1")
             else:
                 records = load_cycle_records(ndjson_path, cr_symbol, cr_tf, cr_last)
                 
