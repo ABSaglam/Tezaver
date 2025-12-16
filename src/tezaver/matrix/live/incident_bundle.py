@@ -12,6 +12,25 @@ from typing import Dict, Any, Optional, List
 from pathlib import Path
 from datetime import datetime, timezone
 from dataclasses import dataclass, asdict
+import subprocess
+
+def get_git_info() -> Dict[str, str]:
+    """Get git branch and commit hash."""
+    info = {"branch": "unknown", "commit": "unknown"}
+    try:
+        # Branch
+        p = subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True, text=True, timeout=2)
+        if p.returncode == 0:
+            info["branch"] = p.stdout.strip()
+        
+        # Commit
+        p = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, timeout=2)
+        if p.returncode == 0:
+            info["commit"] = p.stdout.strip()
+    except Exception as e:
+        info["branch"] = f"unavailable:{e}"
+        info["commit"] = f"unavailable:{e}"
+    return info
 
 from tezaver.matrix.live.logs_tail import read_ndjson_tail, filter_events
 
@@ -54,6 +73,12 @@ def export_incident_bundle(ctx: BundleContext) -> str:
     ts_str = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     ctx.output_dir.mkdir(parents=True, exist_ok=True)
     
+    # Auto-populate git info if unknown
+    if ctx.repo_branch == "unknown" or ctx.repo_commit == "unknown":
+        git_info = get_git_info()
+        ctx.repo_branch = git_info["branch"]
+        ctx.repo_commit = git_info["commit"]
+
     bundle_name = f"incident_bundle_{ts_str}.zip"
     bundle_path = ctx.output_dir / bundle_name
     

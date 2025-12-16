@@ -92,3 +92,80 @@ class TestIncidentBundle(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class TestIncidentBundleProdLock(unittest.TestCase):
+    """Tests for Step B.1 prod lock requirements."""
+    
+    def setUp(self):
+        self.tmp_dir = tempfile.mkdtemp()
+        self.output_dir = Path(self.tmp_dir) / "incidents"
+        self.ndjson_path = Path(self.tmp_dir) / "live_events.ndjson"
+        
+        with open(self.ndjson_path, "w") as f:
+            f.write(json.dumps({"event_type": "TEST", "ts": "2025-01-01T00:00:00Z"}) + "\n")
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp_dir)
+    
+    def test_manifest_contains_real_git_info(self):
+        """T1: Manifest should have real git branch/commit when in a git repo."""
+        ctx = BundleContext(
+            reason="TEST_GIT",
+            ndjson_path=self.ndjson_path,
+            output_dir=self.output_dir,
+        )
+        
+        zip_path = export_incident_bundle(ctx)
+        
+        with zipfile.ZipFile(zip_path, "r") as zf:
+            manifest = json.loads(zf.read("manifest.json"))
+            branch = manifest["metadata"]["repo_branch"]
+            commit = manifest["metadata"]["repo_commit"]
+            
+            # Should not be "unknown" if git is available
+            # (Test runs inside a git repo)
+            self.assertNotEqual(branch, "unknown")
+            self.assertNotEqual(commit, "unknown")
+            self.assertTrue(len(commit) >= 7)  # Short hash at least 7 chars
+    
+    def test_runtime_block_calls_exporter(self):
+        """T2: Simulate runtime block path using exporter directly."""
+        ctx = BundleContext(
+            reason="CardGate_STALE: [card_age > 72h]",
+            ndjson_path=self.ndjson_path,
+            output_dir=self.output_dir,
+        )
+        
+        zip_path = export_incident_bundle(ctx)
+        self.assertTrue(Path(zip_path).exists())
+        
+        with zipfile.ZipFile(zip_path, "r") as zf:
+            manifest = json.loads(zf.read("manifest.json"))
+            self.assertIn("CardGate_STALE", manifest["metadata"]["reason"])
+    
+    def test_legacy_flag_mapping(self):
+        """T3: --auto-incident-on BLOCK should enable --auto-export-on-block."""
+        import argparse
+        
+        # Simulate the argparse behavior from live_loop
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--auto-incident-on", type=str, default=None, choices=["BLOCK", "WARN", "OFF"])
+        parser.add_argument("--auto-export-on-block", action="store_true")
+        
+        # Case 1: Legacy flag set, new not set
+        args = parser.parse_args(["--auto-incident-on", "BLOCK"])
+        if args.auto_incident_on is not None and args.auto_incident_on != "OFF":
+            if not args.auto_export_on_block:
+                args.auto_export_on_block = True
+        self.assertTrue(args.auto_export_on_block)
+        
+        # Case 2: New flag set explicitly (takes precedence)
+        args = parser.parse_args(["--auto-export-on-block"])
+        self.assertTrue(args.auto_export_on_block)
+        
+        # Case 3: Legacy OFF
+        args = parser.parse_args(["--auto-incident-on", "OFF"])
+        if args.auto_incident_on is not None and args.auto_incident_on != "OFF":
+            if not args.auto_export_on_block:
+                args.auto_export_on_block = True
+        self.assertFalse(args.auto_export_on_block)

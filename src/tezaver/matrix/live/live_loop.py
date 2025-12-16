@@ -510,9 +510,9 @@ def main():
                        help="Output directory for incident bundles")
     parser.add_argument("--only-relevant", action="store_true",
                        help="Filter to relevant event types only")
-    parser.add_argument("--auto-incident-on", type=str, default="BLOCK",
-                       choices=["BLOCK", "WARN", "OFF"],
-                       help="Auto-export incident bundles for cycles matching alert level")
+    parser.add_argument("--auto-incident-on", type=str, default=None,
+                        choices=["BLOCK", "WARN", "OFF"],
+                        help="(DEPRECATED: use --auto-export-on-block) Legacy auto-incident trigger level")
     parser.add_argument("--auto-incident-out-dir", type=str, default="data/incidents",
                        help="Output directory for auto-incident bundles")
     parser.add_argument("--auto-incident-only-relevant", action="store_true", default=True,
@@ -576,9 +576,20 @@ def main():
 
     args = parser.parse_args()
     
+    # Legacy flag mapping: --auto-incident-on -> --auto-export-on-block
+    if args.auto_incident_on is not None and args.auto_incident_on != "OFF":
+        print("[DEPRECATED] --auto-incident-on is deprecated. Use --auto-export-on-block instead.")
+        if not args.auto_export_on_block:  # Don't override if new flag explicitly set
+            args.auto_export_on_block = True
+    
+    # Single-export guard
+    _block_exported = [False]  # Use list for mutable closure
+    
     # Helper: Handle BLOCK exit with auto-export
     def handle_block_exit(reason: str, exit_code: int = 2, config_map: dict = None):
-        if args.auto_export_on_block:
+        # Guard: export at most once per process
+        if args.auto_export_on_block and not _block_exported[0]:
+            _block_exported[0] = True
             from pathlib import Path
             ctx = BundleContext(
                 reason=reason,
@@ -594,7 +605,8 @@ def main():
             print(f"incident_bundle={bundle_path}")
             
         print(f"⛔ BLOCK EXIT: {reason}")
-        sys.exit(exit_code)
+        if exit_code is not None:
+            sys.exit(exit_code)
 
     # Exec Preflight if requested (Global)
     if args.preflight:
@@ -1193,6 +1205,8 @@ def main():
                         card_gate_allow = card_gate_result.allow
                         if not card_gate_allow:
                             print(f"[GUARDRAIL] CARD_GATE_{card_gate_result.gate} {cell_id}: {card_gate_result.violations}")
+                            # Export incident bundle on CardGate BLOCK (once per process)
+                            handle_block_exit(f"CardGate_{card_gate_result.gate}: {card_gate_result.violations}", exit_code=None)
                     
                     # Get cell state to determine decision
                     cell_state = policy.get_cell_state(symbol, tf, profile_id)
@@ -1699,7 +1713,7 @@ def main():
                 print("[PROOF_OPEN_CLOSE] Using REAL BinanceTestnetGateway")
             else:
                 print("[PROOF_OPEN_CLOSE] ERROR: SECRETS_MISSING")
-                sys.exit(1)
+                handle_block_exit("SECRETS_MISSING", exit_code=1)
         else:
             gateway = DummyExchangeGateway()
             print("[PROOF_OPEN_CLOSE] Using DummyExchangeGateway")
