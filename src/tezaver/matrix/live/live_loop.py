@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import sys
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -19,6 +20,7 @@ from typing import Dict, Any, Optional, List
 from tezaver.matrix.live.marketdata.client import IMarketDataClient, DummyMarketDataClient
 from tezaver.matrix.live.marketdata.cache import BarCache
 from tezaver.matrix.live.marketdata.snapshot_builder import build_snapshot_from_bars
+from tezaver.matrix.live.preflight import run_preflight, PreflightContext, BLOCK as PREFLIGHT_BLOCK
 
 
 # Tick policies
@@ -560,7 +562,35 @@ def main():
     parser.add_argument("--card-force-drift", action="store_true",
                        help="Force card drift for testing")
     
+    # Preflight Arguments (v1)
+    parser.add_argument("--preflight", action="store_true", help="Run preflight checks before starting")
+    parser.add_argument("--preflight-enforce", type=str, default="WARN", choices=["WARN", "BLOCK"], help="Enforcement mode for preflight (default: WARN)")
+
     args = parser.parse_args()
+    
+    # Exec Preflight if requested (Global)
+    if args.preflight:
+        # Construct config for preflight context
+        pf_config = LiveLoopConfig(
+            poll_interval_sec=args.poll,
+            tick_policy=args.policy,
+            max_runtime_sec=args.runtime,
+            dry_run=not args.real
+        )
+        symbols = [s.strip() for s in args.symbols.split(",")]
+        
+        ctx = PreflightContext(
+            args=args,
+            config=pf_config,
+            symbols=symbols,
+            timeframe=args.tf
+        )
+        
+        result = run_preflight(ctx, enforce_mode=args.preflight_enforce)
+        
+        if result.decision == PREFLIGHT_BLOCK:
+            print(f"⛔ PREFLIGHT BLOCKED: {result.summary}")
+            sys.exit(2)
     
     if args.command == "proof_router":
         # Proof + Router E2E mode
@@ -1951,7 +1981,7 @@ def main():
     
     elif args.command == "report_cycles":
         # ========== REPORT_CYCLES COMMAND ==========
-        import sys
+        # import sys (removed, global)
         from pathlib import Path
         from tezaver.matrix.live.cycle_events import (
             load_cycle_records,

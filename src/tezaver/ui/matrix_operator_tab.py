@@ -2689,6 +2689,21 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
         with strat_status_cols[3]:
             st.caption(f"**Profile**: {strat_profile}")
         
+        # ========== Helper: load_ndjson_events ==========
+        def load_ndjson_events(limit: int = 20, event_types: list = None) -> list:
+            """Load recent events from NDJSON log file, optionally filtered by event type."""
+            from tezaver.matrix.live.logs_tail import read_ndjson_tail, filter_events
+            
+            ndjson_path = "data/logs/live_events.ndjson"
+            result = read_ndjson_tail(ndjson_path, n=limit * 5)  # Read more to account for filtering
+            events = result.get("events", [])
+            
+            if event_types:
+                events = filter_events(events, include_types=set(event_types))
+            
+            # Return most recent first, limited to requested count
+            return list(reversed(events[-limit:]))
+        
         # ========== 🌐 Global Risk ==========
         st.divider()
         st.markdown("### 🌐 Global Risk Limiter")
