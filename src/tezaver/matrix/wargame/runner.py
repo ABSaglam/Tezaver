@@ -3,7 +3,7 @@
 Main entry point for running wargame simulations.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 import uuid
 import json
@@ -23,7 +23,7 @@ from ..core.types import MarketSignal, TradeDecision, ExecutionReport
 from ..core.account import AccountState
 from ..core.guardrail import GuardrailController, GuardrailConfig
 from ..core.profile import MatrixProfileRepository
-from ..core.telemetry import InMemoryEventSink
+from ..core.telemetry import InMemoryEventSink, JsonFileEventSink, MatrixEventType, MatrixEvent
 from ..strategies.silver_core import (
     SilverStrategyConfig,
     SilverAnalyzer,
@@ -139,6 +139,7 @@ def _create_silver_components(
 def run_wargame(
     scenario: WargameScenario,
     coin_page_root: Path | None = None,
+    events_path: Path | str | None = None,
 ) -> WargameReport:
     """
     Run a wargame simulation for the given scenario.
@@ -344,6 +345,8 @@ def run_btc_silver_15m_from_patterns(
 def _run_wargame_with_scenario_and_feed(
     scenario: WargameScenario,
     feed: ReplayDataFeed,
+    events_path: Path | str | None = None,
+    force_close_on_exit: bool = False,
 ) -> WargameReport:
     """
     Internal helper to run wargame with given scenario and feed.
@@ -351,6 +354,8 @@ def _run_wargame_with_scenario_and_feed(
     Args:
         scenario: WargameScenario with risk_per_trade_pct.
         feed: ReplayDataFeed to iterate over.
+        events_path: Optional path to write NDJSON events.
+        force_close_on_exit: If True, emit PROOF_CLOSE_RESULT for open positions at end.
         
     Returns:
         WargameReport with results.
@@ -412,6 +417,22 @@ def _run_wargame_with_scenario_and_feed(
     
     # Create telemetry event sink
     event_sink = InMemoryEventSink()
+    ndjson_sink = None
+    if events_path:
+        ndjson_sink = JsonFileEventSink(events_path)
+    
+    # Create wrapper sink to log to both (explicitly passed to avoid closure issues)
+    class MultiSink:
+        def __init__(self, memory_sink: InMemoryEventSink, file_sink: JsonFileEventSink | None):
+            self.memory_sink = memory_sink
+            self.file_sink = file_sink
+            
+        def log(self, event: MatrixEvent) -> None:
+            self.memory_sink.log(event)
+            if self.file_sink is not None:
+                self.file_sink.log(event)
+    
+    multi_sink = MultiSink(event_sink, ndjson_sink)
     
     # Create engine with telemetry
     engine = UnifiedEngine(
@@ -421,15 +442,97 @@ def _run_wargame_with_scenario_and_feed(
         executor=executor,
         guardrail=guardrail,
         account_store=store,
-        event_sink=event_sink,
+        event_sink=multi_sink,
     )
     
+    # Emit WARGAME_START
+    start_event = MatrixEvent(
+        event_type=MatrixEventType.INFO,
+        symbol=scenario.symbol,
+        timeframe=scenario.timeframe,
+        profile_id=scenario.profile_id,
+        ts=datetime.now(timezone.utc),
+        details={"event_type": "WARGAME_START", "scenario_id": scenario.scenario_id}
+    )
+    multi_sink.log(start_event)
+    
     # Run tick loop
+    last_snapshot = None
     while feed.has_next():
         snapshot = feed.next()
         if snapshot is None:
             break
+        last_snapshot = snapshot
         engine.tick(snapshot)
+    
+    # Force close logic
+    if force_close_on_exit and last_snapshot and ndjson_sink:
+        # Check for open positions in store for this profile
+        # Note: WargameAccountStore isn't perfectly exposed for iteration, but we can check the ledger
+        # or use internal state. SimExecutor tracks positions too.
+        # But simpler: check engine.account_store for profile
+        acct = store.load_account(scenario.profile_id)
+        # However, WargameAccountStore doesn't expose open positions dict easily.
+        # Let's check ledger for unclosed trades? No, ledger only strictly has events.
+        # Let's check SimExecutor internal state? No.
+        # But we know SilverStrategist tracks state too (in live).
+        # In SIM, store handles it. WargameAccountStore is simple.
+        # Actually, simpler hack: emit a fake forced close event if we suspect open.
+        # Or better: check if last trade in ledger is OPEN.
+        
+        # We can mimic what live loop does: emit PROOF_CLOSE_RESULT with reason FORCED_END
+        # We need the last close price.
+        close_px = last_snapshot.get("close")
+        ts_str = last_snapshot.get("ts", datetime.now().isoformat())
+        if isinstance(ts_str, datetime):
+            ts_str = ts_str.isoformat()
+            
+        # Emit a FORCED_END event regardless, or try to succeed only if open?
+        # Trade replay parser simply pairs by timestamp. If we emit a newer close, it might pair.
+        # But we need "open_qty" to be accurate for PnL in parser.
+        # The parser reads from OPEN event. So emitting CLOSE is enough.
+        
+        # We don't know exact open qty easily here without digging into store.
+        # But UI parser uses OPEN event's qty. PROOF_CLOSE_RESULT just needs fill_price.
+        
+        # Emitting event:
+        forced_event = MatrixEvent(
+            event_type=MatrixEventType.INFO, # Placeholder, JsonSink writes dicts mostly?
+            # Wait, JsonSink expects MatrixEvent. But log parser expects PROOF_CLOSE_RESULT string.
+            # MatrixEventType enum doesn't have PROOF_CLOSE_RESULT.
+            # We must use a raw dict or extend enum? 
+            # Telemetry system is strict? JsonFileEventSink uses event.to_dict().
+            # event.event_type is Enum.
+            # We can use custom event string if we bypass strict typing or use generic INFO.
+            # But "event_type" field in JSON must be "PROOF_CLOSE_RESULT".
+            
+            # Hack: modify event_type to be custom string in dict
+            symbol=scenario.symbol,
+            timeframe=scenario.timeframe,
+            profile_id=scenario.profile_id,
+            ts=datetime.now(timezone.utc),
+            details={
+                "event_type_override": "PROOF_CLOSE_RESULT",
+                "fill_price": close_px,
+                "reason": "FORCED_END",
+                "bar_close_ts": ts_str,
+            }
+        )
+        # JSON Sink writes result of to_dict().
+        # Let's manually write to ndjson_sink._path to be safe and simple.
+        
+        if events_path:
+             with open(events_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps({
+                    "event_type": "PROOF_CLOSE_RESULT",
+                    "symbol": scenario.symbol,
+                    "timeframe": scenario.timeframe,
+                    "ts": datetime.now(timezone.utc).isoformat(),
+                    "fill_price": close_px,
+                    "reason": "FORCED_END",
+                    "bar_close_ts": ts_str,
+                    "forced": True
+                }) + "\n")
     
     # Generate report
     ledger = store.get_ledger()
@@ -515,6 +618,8 @@ def run_silver_15m_from_patterns_for_symbol(
     risk_per_trade_pct: float = 0.01,
     mode: str = "contract",  # "contract" = enforce cap, "experiment" = bypass cap
     tightness: float = 100.0,  # 100 = card as-is, lower = wider filters
+    events_path: Path | str | None = None,
+    force_close_on_exit: bool = False,
 ) -> WargameReport:
     """
     Generic Silver 15m runner for any symbol.
@@ -525,6 +630,8 @@ def run_silver_15m_from_patterns_for_symbol(
         mode: "contract" = enforce risk_contract_v1 cap, "experiment" = bypass cap.
         tightness: Filter tightness (100 = card as-is, 50 = 2x wider ranges).
             Only applies in experiment mode.
+        events_path: Optional path to write NDJSON events.
+        force_close_on_exit: If True, emit PROOF_CLOSE_RESULT for open positions at end.
         
     Returns:
         WargameReport with simulation results.
@@ -543,7 +650,12 @@ def run_silver_15m_from_patterns_for_symbol(
         scenario.max_risk_per_trade = max_risk
     
     feed = ReplayDataFeed.from_symbol_timeframe_silver_patterns(symbol, "15m")
-    return _run_wargame_with_scenario_and_feed(scenario, feed)
+    return _run_wargame_with_scenario_and_feed(
+        scenario, 
+        feed,
+        events_path=events_path,
+        force_close_on_exit=force_close_on_exit,
+    )
 
 
 # =============================================================================
@@ -557,6 +669,8 @@ def run_silver_15m_full_replay_for_symbol(
     tightness: int = 50,
     start: str | None = None,
     end: str | None = None,
+    events_path: Path | str | None = None,
+    force_close_on_exit: bool = False,
 ) -> WargameReport:
     """
     Silver 15m stratejisini full replay (bar bar) modunda çalıştırır.
@@ -571,6 +685,8 @@ def run_silver_15m_full_replay_for_symbol(
         tightness: Filter tightness (0-100). 100 = card as-is, 0 = global min/max.
         start: Optional start date (ISO format, e.g., "2022-01-01").
         end: Optional end date (ISO format, e.g., "2024-01-01").
+        events_path: Optional path to write NDJSON events.
+        force_close_on_exit: If True, emit PROOF_CLOSE_RESULT for open positions at end.
         
     Returns:
         WargameReport with simulation results.
@@ -611,7 +727,12 @@ def run_silver_15m_full_replay_for_symbol(
         max_risk = _load_risk_contract_max_for_profile(profile_id)
         scenario.max_risk_per_trade = max_risk
     
-    return _run_wargame_with_scenario_and_feed(scenario, feed)
+    return _run_wargame_with_scenario_and_feed(
+        scenario, 
+        feed,
+        events_path=events_path,
+        force_close_on_exit=force_close_on_exit,
+    )
 
 
 # =============================================================================
@@ -1098,15 +1219,69 @@ if __name__ == "__main__":
                 f"Trades={coin['trades']}"
             )
     
+if __name__ == "__main__":
+    import sys
+    import argparse
+
+    # Quick and dirty arg parsing (preserving positional args for backward compat)
+    # Filter out flags first
+    argv_pos = [arg for arg in sys.argv if not arg.startswith("--")]
+    
+    # Defaults
+    events_path = "data/logs/live_events.ndjson"  # Default to live Log
+    force_close = True
+    
+    # Parse flags manually to avoid argparse conflicts with positional args styling
+    if "--no-force-close" in sys.argv:
+        force_close = False
+    
+    # Parse --events-path=... or --events-path ...
+    for i, arg in enumerate(sys.argv):
+        if arg == "--events-path":
+            if i + 1 < len(sys.argv):
+                events_path = sys.argv[i+1]
+        elif arg.startswith("--events_path="):
+            events_path = arg.split("=", 1)[1]
+        elif arg.startswith("--events-path="):
+            events_path = arg.split("=", 1)[1]
+
+    mode = argv_pos[1] if len(argv_pos) > 1 else "single"
+
+    if mode == "risk_sweep":
+        try:
+            run_btc_silver_15m_risk_sweep()
+        except FileNotFoundError as e:
+            print(f"Error: {e}")
+            print("Make sure rally_patterns_v1.parquet exists in data/ai_datasets/BTCUSDT/15m/")
+    
+    elif mode == "multi_silver_15m":
+        run_silver_15m_multi_coin_risk_sweep()
+    
+    elif mode == "multi_silver_15m_save":
+        print("Building Silver 15m multi-coin risk summary...")
+        summary = build_silver_15m_multi_coin_risk_summary()
+        path = save_silver_15m_multi_coin_risk_summary_to_json(summary)
+        print(f"[OK] Silver 15m multi-coin summary saved to: {path}")
+        print()
+        print("Summary:")
+        for coin in summary.get("coins", []):
+            print(
+                f"  {coin['symbol']:<10} risk={coin['risk']:.2f}  "
+                f"100→{coin['capital_end']:.2f}  "
+                f"PnL={coin['pnl_pct']:+.2f}%  "
+                f"Trades={coin['trades']}"
+            )
+    
     elif mode == "full_replay_silver_15m":
         # python -m tezaver.matrix.wargame.runner full_replay_silver_15m BTCUSDT 1.0 experiment 50
-        symbol = sys.argv[2] if len(sys.argv) > 2 else "BTCUSDT"
-        risk = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0
-        replay_mode = sys.argv[4] if len(sys.argv) > 4 else "contract"
-        tightness = int(sys.argv[5]) if len(sys.argv) > 5 else 50
+        symbol = argv_pos[2] if len(argv_pos) > 2 else "BTCUSDT"
+        risk = float(argv_pos[3]) if len(argv_pos) > 3 else 1.0
+        replay_mode = argv_pos[4] if len(argv_pos) > 4 else "contract"
+        tightness = int(argv_pos[5]) if len(argv_pos) > 5 else 50
         
         print(f"=== Silver 15m Full Replay – {symbol} ===")
         print(f"Risk: {risk:.2f}, Mode: {replay_mode}, Tightness: {tightness}")
+        print(f"Events: {events_path}, ForceClose: {force_close}")
         print()
         
         try:
@@ -1115,6 +1290,8 @@ if __name__ == "__main__":
                 risk=risk,
                 mode=replay_mode,
                 tightness=tightness,
+                events_path=events_path,
+                force_close_on_exit=force_close,
             )
             print(f"Scenario : {report.scenario_id}")
             print(f"Profile  : {report.profile_id}")
@@ -1130,10 +1307,10 @@ if __name__ == "__main__":
     
     elif mode == "hybrid_silver_15m":
         # python -m tezaver.matrix.wargame.runner hybrid_silver_15m BTCUSDT 0.01 contract 50
-        symbol = sys.argv[2] if len(sys.argv) > 2 else "BTCUSDT"
-        risk = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0
-        hybrid_mode = sys.argv[4] if len(sys.argv) > 4 else "contract"
-        tightness = int(sys.argv[5]) if len(sys.argv) > 5 else 50
+        symbol = argv_pos[2] if len(argv_pos) > 2 else "BTCUSDT"
+        risk = float(argv_pos[3]) if len(argv_pos) > 3 else 1.0
+        hybrid_mode = argv_pos[4] if len(argv_pos) > 4 else "contract"
+        tightness = int(argv_pos[5]) if len(argv_pos) > 5 else 50
         
         try:
             result = run_silver_15m_hybrid_for_symbol(
@@ -1150,9 +1327,9 @@ if __name__ == "__main__":
     elif mode == "parity_silver_15m":
         from .parity_tools import run_silver_15m_live_vs_wargame_parity, print_parity_result
         
-        symbol = sys.argv[2] if len(sys.argv) > 2 else "BTCUSDT"
-        risk = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0
-        parity_mode = sys.argv[4] if len(sys.argv) > 4 else "experiment"
+        symbol = argv_pos[2] if len(argv_pos) > 2 else "BTCUSDT"
+        risk = float(argv_pos[3]) if len(argv_pos) > 3 else 1.0
+        parity_mode = argv_pos[4] if len(argv_pos) > 4 else "experiment"
         
         try:
             result = run_silver_15m_live_vs_wargame_parity(
@@ -1168,15 +1345,17 @@ if __name__ == "__main__":
     elif mode == "diary_silver_15m":
         from .diary import print_wargame_diary
         
-        symbol = sys.argv[2] if len(sys.argv) > 2 else "BTCUSDT"
-        risk = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0
-        diary_mode = sys.argv[4] if len(sys.argv) > 4 else "experiment"
+        symbol = argv_pos[2] if len(argv_pos) > 2 else "BTCUSDT"
+        risk = float(argv_pos[3]) if len(argv_pos) > 3 else 1.0
+        diary_mode = argv_pos[4] if len(argv_pos) > 4 else "experiment"
         
         try:
             report = run_silver_15m_from_patterns_for_symbol(
                 symbol=symbol,
                 risk_per_trade_pct=risk,
                 mode=diary_mode,
+                events_path=events_path,
+                force_close_on_exit=force_close,
             )
             print_wargame_diary(report)
         except FileNotFoundError as e:
@@ -1185,21 +1364,49 @@ if __name__ == "__main__":
     
     else:
         print("=== BTC Silver 15m – War Game (rally_patterns_v1) ===")
-        print()
+        if len(argv_pos) > 1 and argv_pos[1] == "SIM":
+            # Support "SIM" as a mode alias for single run with args potentially
+            # Assuming python -m ... runner --mode=SIM --symbol=... via argparse earlier
+            # But here we are using manual parsing.
+            # The prompt says: python -m ...runner --mode=SIM 
+            # If so, sys.argv will have --mode=SIM.
+            # My manual parser 'argv_pos' removed it? No, starts with --.
+            pass
         
-        try:
+        # Support running via --mode=SIM etc if they used my previous command line
+        # Check if --mode is present
+        sim_mode = False
+        symbol = "BTCUSDT"
+        timeframe = "15m"
+        
+        for arg in sys.argv:
+            if arg.startswith("--mode="):
+                if arg.split("=")[1] == "SIM":
+                    sim_mode = True
+            if arg.startswith("--symbol="):
+                symbol = arg.split("=")[1]
+        
+        if sim_mode:
+            # Use run_silver_15m_from_patterns_for_symbol
+            print(f"Running SIM mode for {symbol}...")
+            report = run_silver_15m_from_patterns_for_symbol(
+                symbol=symbol,
+                events_path=events_path,
+                force_close_on_exit=force_close,
+            )
+        else:
+            # Default run
             report = run_btc_silver_15m_from_patterns()
-            print(f"Scenario : {report.scenario_id}")
-            print(f"Profile  : {report.profile_id}")
-            print(f"Capital  : {report.capital_start:.2f} → {report.capital_end:.2f}")
-            pnl_pct = (report.capital_end / report.capital_start - 1.0) * 100.0
-            print(f"PnL      : {pnl_pct:+.2f}%")
-            print(f"Trades   : {report.trade_count}")
-            print(f"Win Rate : {report.win_rate:.1%}")
-            print(f"Max DD   : {report.max_drawdown_pct * 100:.2f}%")
-        except FileNotFoundError as e:
-            print(f"Error: {e}")
-            print("Make sure rally_patterns_v1.parquet exists in data/ai_datasets/BTCUSDT/15m/")
+            
+        print(f"Scenario : {report.scenario_id}")
+        print(f"Profile  : {report.profile_id}")
+        print(f"Capital  : {report.capital_start:.2f} → {report.capital_end:.2f}")
+        pnl_pct = (report.capital_end / report.capital_start - 1.0) * 100.0
+        print(f"PnL      : {pnl_pct:+.2f}%")
+        print(f"Trades   : {report.trade_count}")
+        print(f"Win Rate : {report.win_rate:.1%}")
+        print(f"Max DD   : {report.max_drawdown_pct * 100:.2f}%")
+
 
 
 

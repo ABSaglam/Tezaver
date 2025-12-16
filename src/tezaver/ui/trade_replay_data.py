@@ -258,6 +258,78 @@ def parse_trades_from_events(events: List[Dict[str, Any]]) -> List[Trade]:
     return list(reversed(trades))
 
 
+def parse_open_trades_from_events(events: List[Dict[str, Any]]) -> List[Trade]:
+    """Parse currently open (incomplete) trades from events."""
+    open_trades = []
+    open_orders = {}  # key: (symbol, tf) -> open event
+    
+    # Re-using similar logic to parse_trades but specifically hunting stragglers
+    # Simplification: Just scan for OPENs that are not matched by a CLOSE in the same stream?
+    # Better: Scan sequentially.
+    
+    # We can actually refactor parse_trades_from_events to return (completed, open)
+    # But to avoid breaking valid API, let's create a new function or helper.
+    
+    # Let's do a quick pass for PROOF_OPEN and POSITION_OPEN without matching close
+    # This is "good enough" for the diagnostic view
+    
+    # Efficient approach: Track state
+    state = {} # (symbol, tf) -> event
+    
+    for e in events:
+        et = e.get("event_type", "")
+        sym = e.get("symbol", "")
+        tf = e.get("timeframe", e.get("tf", ""))
+        key = (sym, tf)
+        
+        if et in ("PROOF_OPEN_RESULT", "POSITION_OPEN") or (et == "ORDER_LIFECYCLE_DONE" and e.get("action") == "OPEN"):
+            state[key] = e
+        elif et in ("PROOF_CLOSE_RESULT", "POSITION_CLOSE") or (et == "ORDER_LIFECYCLE_DONE" and e.get("action") == "CLOSE"):
+            if key in state:
+                del state[key]
+                
+    # Remaining in state are open
+    for key, evt in state.items():
+        sym, tf = key
+        open_px = evt.get("fill_price") or evt.get("price") or evt.get("open_px")
+        qty = evt.get("qty") or evt.get("fill_qty") or evt.get("open_qty")
+        
+        open_trades.append(Trade(
+            trade_id=f"OPEN_{sym}_{tf}_{evt.get('ts', '')[:19]}",
+            symbol=sym,
+            timeframe=tf,
+            open_ts=evt.get("ts", ""),
+            open_px=float(open_px) if open_px else None,
+            close_ts=None,
+            close_px=None,
+            side=evt.get("side", "BUY"),
+            qty=float(qty) if qty else None,
+            net_pnl=None,
+            close_reason=None,
+            sl_px=_extract_sl_tp(evt, "sl"),
+            tp_px=_extract_sl_tp(evt, "tp"),
+        ))
+        
+    return list(reversed(open_trades))
+
+
+def get_trade_replay_diagnostics(events: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Generate diagnostic summary for Trade Replay."""
+    counts = {}
+    for e in events:
+        et = e.get("event_type", "UNKNOWN")
+        counts[et] = counts.get(et, 0) + 1
+        
+    completed = parse_trades_from_events(events)
+    opens = parse_open_trades_from_events(events)
+    
+    return {
+        "event_count": len(events),
+        "counts_by_event_type": counts,
+        "completed_trades": len(completed),
+        "open_trades": len(opens),
+    }
+
 def build_trade_timeline(
     events: List[Dict[str, Any]], 
     trade: Trade,
@@ -638,3 +710,76 @@ def resolve_price_for_signal(
             pass
     
     return 0.0
+
+
+def build_fallback_candles_from_events(
+    events: List[Dict[str, Any]], 
+    start_ts: str, 
+    end_ts: str
+) -> List[Dict[str, Any]]:
+    """
+    Build pseudo-candles from event prices when OHLCV is missing.
+    
+    Extracts prices from STRATEGY_SIGNAL, ORDER lines, PROOF_OPEN/CLOSE, etc.
+    Returns format compatible with load_ohlcv (ts, open=close, volume=0).
+    """
+    pseudo = []
+    try:
+        start_dt = datetime.fromisoformat(start_ts.replace("Z", "+00:00"))
+        end_dt = datetime.fromisoformat(end_ts.replace("Z", "+00:00"))
+    except:
+        return []
+
+    processed_timestamps = set()
+
+    for e in events:
+        # Timestamp mapping: prefer bar_close_ts
+        ts = e.get("bar_close_ts") or e.get("ts", "")
+        if not ts:
+            continue
+            
+        try:
+            dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+            if not (start_dt <= dt <= end_dt):
+                continue
+        except:
+            continue
+            
+        # Avoid duplicate timestamps for cleaner chart
+        if ts in processed_timestamps:
+            continue
+            
+        # Price Priority: close > close_px > fill_price > price > executed_price > snapshot.close > open_px
+        price = None
+        for key in ["close", "close_px", "fill_price", "price", "executed_price"]:
+            if e.get(key) is not None:
+                price = e[key]
+                break
+        
+        if price is None and isinstance(e.get("snapshot"), dict):
+            price = e["snapshot"].get("close")
+            
+        if price is None:
+             # Fallback to open_px (e.g. for PROOF_OPEN)
+             price = e.get("open_px")
+
+        if price is not None:
+            try:
+                price_val = float(price)
+            except:
+                continue
+            
+            if price_val > 0:
+                pseudo.append({
+                    "ts": ts,
+                    "open": price_val,
+                    "high": price_val,
+                    "low": price_val,
+                    "close": price_val,
+                    "volume": 0
+                })
+                processed_timestamps.add(ts)
+            
+    # Sort by timestamp
+    pseudo.sort(key=lambda x: x["ts"])
+    return pseudo

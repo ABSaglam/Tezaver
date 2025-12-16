@@ -1426,7 +1426,8 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
         from tezaver.ui.trade_replay_data import (
             parse_trades_from_events, build_trade_timeline, 
             load_ohlcv, get_trade_context, Trade, filter_trades,
-            extract_strategy_signals, resolve_price_for_signal, OverlayPoint
+            extract_strategy_signals, resolve_price_for_signal, OverlayPoint,
+            parse_open_trades_from_events, get_trade_replay_diagnostics
         )
         
         # Load events
@@ -1439,7 +1440,13 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
             all_trades = parse_trades_from_events(events)
             
             if not all_trades:
-                st.info("📭 No completed trades found in events.")
+                # Fallback to open trades
+                open_trades = parse_open_trades_from_events(events)
+                if open_trades:
+                     st.info(f"ℹ️ No completed trades found, but found {len(open_trades)} open positions. Displaying them.")
+                     all_trades = open_trades
+                else:
+                     st.info("📭 No completed trades or open positions found in events.")
             else:
                 # --- G1: Filters ---
                 filter_cols = st.columns(3)
@@ -1511,45 +1518,90 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
                             st.caption("🔺=Entry 🔻=Exit")
                         
                         # Load OHLCV and render chart
-                        if selected_trade.open_ts and selected_trade.close_ts:
+                        if selected_trade.open_ts:
+                            # Verify close_ts or use end of events
+                            chart_end_ts = selected_trade.close_ts
+                            if not chart_end_ts:
+                                # Use last event time as proxy for "now" in simulation
+                                # Try to find a suitably late timestamp
+                                last_evt = events[-1] if events else {}
+                                chart_end_ts = last_evt.get("ts") or last_evt.get("bar_close_ts") or selected_trade.open_ts
+                            
                             candles, paths_tried = load_ohlcv(
                                 selected_trade.symbol, 
                                 selected_trade.timeframe,
                                 selected_trade.open_ts,
-                                selected_trade.close_ts,
+                                chart_end_ts,
                             )
+                            
+                            fallback_mode = False
+                            if not candles:
+                                # Try fallback from events
+                                from tezaver.ui.trade_replay_data import build_fallback_candles_from_events
+                                candles = build_fallback_candles_from_events(
+                                    events, 
+                                    selected_trade.open_ts, 
+                                    chart_end_ts
+                                )
+                                if candles:
+                                    fallback_mode = True
                             
                             if candles:
                                 import plotly.graph_objects as go
                                 
-                                fig = go.Figure(data=[go.Candlestick(
-                                    x=[c["ts"] for c in candles],
-                                    open=[c["open"] for c in candles],
-                                    high=[c["high"] for c in candles],
-                                    low=[c["low"] for c in candles],
-                                    close=[c["close"] for c in candles],
-                                    name="Price"
-                                )])
+                                if fallback_mode:
+                                    # Fallback Chart Validation
+                                    if len(candles) < 2:
+                                        st.error("Need at least 1 OPEN and 1 CLOSE proof event to draw fallback chart.")
+                                        candles = None # Don't draw
+                                    else:
+                                        # Show detailed warning about missing paths
+                                        import os
+                                        abs_paths = [os.path.abspath(str(p)) for p in paths_tried]
+                                        paths_msg = "\n".join([f"- {p}" for p in abs_paths])
+                                        st.warning(f"OHLCV not found — showing fallback from PROOF events.\nTried paths:\n{paths_msg}")
+                                        
+                                        # Render line chart
+                                        fig = go.Figure(data=[go.Scatter(
+                                            x=[c["ts"] for c in candles],
+                                            y=[c["close"] for c in candles],
+                                            mode="lines+markers",
+                                            line=dict(color="blue", width=1),
+                                            marker=dict(size=4),
+                                            name="Signal Price"
+                                        )])
+                                else:
+                                    # Render normal candlestick
+                                    fig = go.Figure(data=[go.Candlestick(
+                                        x=[c["ts"] for c in candles],
+                                        open=[c["open"] for c in candles],
+                                        high=[c["high"] for c in candles],
+                                        low=[c["low"] for c in candles],
+                                        close=[c["close"] for c in candles],
+                                        name="Price"
+                                    )])
                                 
-                                # Entry marker
-                                if selected_trade.open_px:
-                                    fig.add_trace(go.Scatter(
-                                        x=[selected_trade.open_ts],
-                                        y=[selected_trade.open_px],
-                                        mode="markers",
-                                        marker=dict(size=12, color="green", symbol="triangle-up"),
-                                        name="Entry"
-                                    ))
-                                
-                                # Exit marker
-                                if selected_trade.close_px and selected_trade.close_ts:
-                                    fig.add_trace(go.Scatter(
-                                        x=[selected_trade.close_ts],
-                                        y=[selected_trade.close_px],
-                                        mode="markers",
-                                        marker=dict(size=12, color="red", symbol="triangle-down"),
-                                        name="Exit"
-                                    ))
+                                # Markers and Overlays (Only if candles valid)
+                                if candles:
+                                    # Entry marker
+                                    if selected_trade.open_px:
+                                        fig.add_trace(go.Scatter(
+                                            x=[selected_trade.open_ts],
+                                            y=[selected_trade.open_px],
+                                            mode="markers",
+                                            marker=dict(size=12, color="green", symbol="triangle-up"),
+                                            name="Entry"
+                                        ))
+                                    
+                                    # Exit marker
+                                    if selected_trade.close_px and selected_trade.close_ts:
+                                        fig.add_trace(go.Scatter(
+                                            x=[selected_trade.close_ts],
+                                            y=[selected_trade.close_px],
+                                            mode="markers",
+                                            marker=dict(size=12, color="red", symbol="triangle-down"),
+                                            name="Exit"
+                                        ))
                                 
                                 # G2: SL/TP lines (optional)
                                 x_range = [candles[0]["ts"], candles[-1]["ts"]]
