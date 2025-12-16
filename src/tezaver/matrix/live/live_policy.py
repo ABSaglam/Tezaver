@@ -109,6 +109,7 @@ class HoldNextClosedPolicy:
         inject_fault_nth: int = 0,  # 0=all orders, N=only fault Nth order
         inject_fault_action: str = "ANY",  # ANY/OPEN/CLOSE
         risk_limiter = None,  # Optional GlobalRiskLimiter for pre-trade checks
+        auto_export_on_block: bool = False,  # Whether to export incident bundles on BLOCK
     ):
         # Wrap gateway with FaultInjectionGateway if needed
         if inject_fault and inject_fault != "NONE":
@@ -118,6 +119,7 @@ class HoldNextClosedPolicy:
             self.gateway = gateway
         
         self._risk_limiter = risk_limiter
+        self._auto_export_on_block = auto_export_on_block
             
         self._event_sink = event_sink
         self.qty = qty
@@ -359,7 +361,7 @@ class HoldNextClosedPolicy:
                     from tezaver.matrix.live.incident_bundle import maybe_export_on_block
                     maybe_export_on_block(
                         reason=f"RISK_LIMIT_BLOCK:{risk_decision.reason}",
-                        enabled=True,  # Will be guarded by global singleton
+                        enabled=self._auto_export_on_block,
                     )
                     
                     return PolicyResult(

@@ -232,3 +232,18 @@ class TestRuntimeBlockCoverage(unittest.TestCase):
         
         self.assertIsNotNone(path1)
         self.assertIsNone(path2)
+    
+    def test_disabled_gating_no_export(self):
+        """When enabled=False, no export should happen."""
+        from tezaver.matrix.live.incident_bundle import maybe_export_on_block
+        
+        path = maybe_export_on_block(
+            reason="RISK_LIMIT_BLOCK:should_not_export",
+            enabled=False,  # Disabled
+            ndjson_path=self.ndjson_path,
+            output_dir=self.output_dir,
+        )
+        
+        # Should return None and NOT create a zip
+        self.assertIsNone(path)
+        self.assertFalse(self.output_dir.exists())
