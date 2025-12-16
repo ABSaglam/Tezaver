@@ -1435,7 +1435,8 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
         events = load_ndjson_tail(ndjson_path, max_lines=2000)
         
         if not events:
-            st.info("📭 No events found. Run live loop to generate trade data.")
+            st.info("📭 No events found. Run live loop or usage tool:")
+            st.code("python -m tezaver.tools.bringup", language="bash")
         else:
             # Parse trades
             all_trades = parse_trades_from_events(events)
