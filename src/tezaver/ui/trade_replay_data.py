@@ -63,6 +63,8 @@ class RallyOverlay:
     bars_to_peak: int
     label: str
     raw_details: Dict[str, Any]
+    end_ts: Optional[str] = None
+
 
 
 
@@ -739,12 +741,31 @@ def extract_rally_events(
         
         label = f"RALLY +{gain:.1%} / {bars} bars"
         
+        # Calculate end_ts for zone
+        end_ts_val = None
+        if timeframe and bars > 0:
+            try:
+                # Parse timeframe duration (simplified for standard TFs)
+                duration_mins = 0
+                if timeframe == "15m": duration_mins = 15
+                elif timeframe == "1h": duration_mins = 60
+                elif timeframe == "4h": duration_mins = 240
+                elif timeframe.endswith("m"): duration_mins = int(timeframe[:-1])
+                
+                if duration_mins > 0:
+                    delta = timedelta(minutes=duration_mins * bars)
+                    end_ts_dt = dt + delta
+                    end_ts_val = end_ts_dt.isoformat()
+            except:
+                pass
+        
         rallies.append(RallyOverlay(
             ts=ts_str,
             gain_pct=gain,
             bars_to_peak=bars,
             label=label,
-            raw_details=details
+            raw_details=details,
+            end_ts=end_ts_val
         ))
         
     return rallies

@@ -1517,6 +1517,7 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
                             show_positions = st.checkbox("📍 Position Lines", value=True, key="tr_positions")
                         with toggle_cols[2]:
                             show_rallies = st.checkbox("⚡ Rally Overlay", value=True, key="tr_rallies")
+                            show_zones = st.checkbox("🟨 Rally Zones", value=True, key="tr_rally_zones")
                         
                         st.caption("🔺=Entry 🔻=Exit")
                         
@@ -1700,6 +1701,19 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
                                                 hoverinfo="text",
                                                 hovertext=f"RALLY DETECTED<br>Time: {r.ts}<br>Gain: {r.gain_pct:.2%}<br>Bars to Peak: {r.bars_to_peak}"
                                             ))
+                                            
+                                            # Zone Highlight
+                                            if show_zones and r.end_ts:
+                                                fig.add_shape(
+                                                    type="rect",
+                                                    x0=r.ts, x1=r.end_ts,
+                                                    y0=0, y1=1,
+                                                    xref="x", yref="paper",
+                                                    fillcolor="orange",
+                                                    opacity=0.1,
+                                                    layer="below",
+                                                    line_width=0,
+                                                )
                                 
                                 fig.update_layout(
                                     title=f"{selected_trade.symbol} - Trade Replay",

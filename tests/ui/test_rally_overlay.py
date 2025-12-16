@@ -90,5 +90,45 @@ class TestRallyOverlay(unittest.TestCase):
         # Second one should use details.event_time (12:00)
         self.assertEqual(rallies[1].ts, "2024-01-01T12:00:00+00:00")
 
+    def test_rally_end_ts_calculation(self):
+        """Verify end_ts is calculated from bars_to_peak."""
+        events = [{
+            "event_type": "RALLY_DETECTED",
+            "bar_close_ts": "2024-01-01T12:00:00+00:00",
+            "details": {"bars_to_peak": 4},
+            "timeframe": "15m"
+        }]
+        
+        rallies = extract_rally_events(
+            events, 
+            "2024-01-01T00:00:00+00:00", 
+            "2024-01-02T00:00:00+00:00",
+            timeframe="15m"
+        )
+        
+        self.assertEqual(len(rallies), 1)
+        # 12:00 + 4*15m = 13:00
+        self.assertEqual(rallies[0].end_ts, "2024-01-01T13:00:00+00:00")
+        
+    def test_resolve_price_with_fallback_candles(self):
+        """Verify price resolution works with dict-based candles."""
+        from tezaver.ui.trade_replay_data import resolve_price_for_signal, OverlayPoint
+        
+        # Mock fallback candles (list of dicts)
+        candles = [
+            {"ts": "2024-01-01T10:00:00+00:00", "close": 100.0},
+            {"ts": "2024-01-01T11:00:00+00:00", "close": 105.0},
+        ]
+        
+        # Point exact match
+        pt1 = OverlayPoint(ts="2024-01-01T10:00:00+00:00", price=None, marker_type="test", signal="TEST", reason=None, passed_filters=None)
+        price1 = resolve_price_for_signal(pt1, candles)
+        self.assertEqual(price1, 100.0)
+        
+        # Point close enough match
+        pt2 = OverlayPoint(ts="2024-01-01T11:00:05+00:00", price=None, marker_type="test", signal="TEST", reason=None, passed_filters=None)
+        price2 = resolve_price_for_signal(pt2, candles)
+        self.assertEqual(price2, 105.0)
+
 if __name__ == "__main__":
     unittest.main()
