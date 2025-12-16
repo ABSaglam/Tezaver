@@ -1311,6 +1311,115 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
                     st.rerun()
     
     # =========================================================================
+    # E1) Health Summary (from NDJSON events)
+    # =========================================================================
+    with st.expander("🩺 System Health Summary", expanded=False):
+        from pathlib import Path
+        from tezaver.ui.matrix_operator_data import load_ndjson_tail, summarize_health
+        
+        ndjson_path = Path("data/logs/live_events.ndjson")
+        
+        if st.button("🔄 Refresh Health", key="refresh_health"):
+            st.rerun()
+        
+        events = load_ndjson_tail(ndjson_path, max_lines=500)
+        
+        if not events:
+            st.info("📭 No events found. Run live loop to generate events.")
+        else:
+            health = summarize_health(events)
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                if health["preflight"]:
+                    pf = health["preflight"]
+                    icon = "✅" if pf["decision"] == "PASS" else "⚠️" if pf["decision"] == "WARN" else "⛔"
+                    st.metric("Preflight", f"{icon} {pf['decision']}", pf["ts"][:19] if pf["ts"] else "")
+                else:
+                    st.metric("Preflight", "—", "No data")
+                
+                if health["risk_limit"]:
+                    rl = health["risk_limit"]
+                    icon = "✅" if rl.get("allow") else "⛔"
+                    notional = f"${rl.get('total_notional', 0):.0f}" if rl.get("total_notional") else ""
+                    st.metric("RiskLimiter", f"{icon} {rl.get('decision', 'N/A')}", notional)
+                else:
+                    st.metric("RiskLimiter", "—", "No data")
+            
+            with col2:
+                if health["card_gate"]:
+                    cg = health["card_gate"]
+                    icon = "✅" if cg.get("allow") else "⛔"
+                    st.metric("CardGate", f"{icon} {cg.get('decision', 'N/A')}", cg["ts"][:19] if cg.get("ts") else "")
+                else:
+                    st.metric("CardGate", "—", "No data")
+                
+                if health["incident_bundle"]:
+                    ib = health["incident_bundle"]
+                    st.metric("Last Incident", ib.get("reason", "")[:30], ib["ts"][:19] if ib.get("ts") else "")
+                else:
+                    st.metric("Last Incident", "—", "No exports")
+    
+    # =========================================================================
+    # E2) Incident Bundles Panel
+    # =========================================================================
+    with st.expander("📦 Incident Bundles", expanded=False):
+        from tezaver.ui.matrix_operator_data import list_incident_bundles
+        
+        incident_dir = Path("data/incidents")
+        bundles = list_incident_bundles(incident_dir)
+        
+        if not bundles:
+            st.info("📭 No incident bundles found.")
+        else:
+            for b in bundles[:10]:
+                if b.error:
+                    st.warning(f"⚠️ {Path(b.path).name}: {b.error}")
+                else:
+                    with st.container():
+                        st.markdown(f"**{Path(b.path).name}**")
+                        st.caption(f"📅 {b.created_ts[:19]} | 💬 {b.reason[:50]} | 📁 {b.files_count} files | 🔗 `{b.repo_commit[:7]}`")
+                        st.code(b.path, language=None)
+    
+    # =========================================================================
+    # E3) Events Explorer
+    # =========================================================================
+    with st.expander("📊 Events Explorer", expanded=False):
+        from tezaver.ui.matrix_operator_data import filter_events
+        
+        col_type, col_sym, col_limit = st.columns([2, 1, 1])
+        with col_type:
+            event_type_filter = st.text_input("Event Type (comma-sep)", placeholder="ROUTER_TICK,PREFLIGHT_EVAL", key="evt_type_filter")
+        with col_sym:
+            sym_filter = st.text_input("Symbol", placeholder="BTCUSDT", key="evt_sym_filter")
+        with col_limit:
+            limit = st.number_input("Max Lines", min_value=10, max_value=2000, value=100, key="evt_limit")
+        
+        events = load_ndjson_tail(ndjson_path, max_lines=int(limit))
+        
+        if event_type_filter:
+            types_list = [t.strip() for t in event_type_filter.split(",") if t.strip()]
+            events = filter_events(events, event_types=types_list)
+        if sym_filter:
+            events = filter_events(events, symbol=sym_filter.strip())
+        
+        if not events:
+            st.info("📭 No matching events.")
+        else:
+            import pandas as pd
+            rows = []
+            for e in events[-100:]:  # Show last 100
+                rows.append({
+                    "ts": str(e.get("ts", ""))[:19],
+                    "type": e.get("event_type", ""),
+                    "symbol": e.get("symbol", ""),
+                    "tf": e.get("timeframe", ""),
+                    "detail": str(e)[:80],
+                })
+            st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+            st.caption(f"Showing {len(rows)}/{len(events)} events")
+
+    # =========================================================================
     # Live Freshness Table
     # =========================================================================
     with st.expander("🟢 Live Freshness / Lag", expanded=status.running):
