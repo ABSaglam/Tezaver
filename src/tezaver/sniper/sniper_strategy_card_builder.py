@@ -923,6 +923,9 @@ def build_sniper_strategy_card_for_symbol_timeframe(
 
     card: Dict[str, Any] = {
         "version": "sniper_strategy_card_v1",
+        "card_version": "v1.1",  # Card governance version
+        "card_build_ts": datetime.now().isoformat(timespec="seconds"),
+        "profile_id": f"{symbol}_{timeframe}_sniper",
         "symbol": symbol,
         "timeframe": timeframe,
         "source": {

@@ -105,7 +105,12 @@ class CardGate:
         if ts_str:
             try:
                 build_dt = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
-                now = datetime.now(timezone.utc)
+                # Handle naive datetimes by treating them as local time
+                if build_dt.tzinfo is None:
+                    # Compare with local now for naive datetimes
+                    now = datetime.now()
+                else:
+                    now = datetime.now(timezone.utc)
                 delta = now - build_dt
                 return delta.total_seconds() / 3600.0
             except Exception:
@@ -220,6 +225,21 @@ class CardGate:
             "force_drift": self._config.force_drift,
         }
         
+        # Build suggested_actions based on violations
+        suggested_actions = []
+        for v in result.violations:
+            if "CARD_NOT_FOUND" in v:
+                suggested_actions.append("BUILD_CARD")
+            elif "STALE_UNKNOWN" in v:
+                suggested_actions.append("REBUILD_CARD")
+            elif "STALE_AGE" in v or "STALE_FORCED" in v:
+                suggested_actions.append("REBUILD_CARD")
+            elif "DRIFT" in v:
+                suggested_actions.append("LOWER_MIN_PASS_RATE")
+                suggested_actions.append("SWITCH_MODE_TO_AUTO_OPEN")
+        # Deduplicate
+        suggested_actions = list(dict.fromkeys(suggested_actions))
+        
         # Emit telemetry
         self._emit({
             "event_type": "CARD_GATE_EVAL",
@@ -231,6 +251,7 @@ class CardGate:
             "gate": result.gate,
             "allow": result.allow,
             "violations": result.violations,
+            "suggested_actions": suggested_actions,
             "metrics": result.metrics,
         })
         
