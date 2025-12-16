@@ -1420,6 +1420,154 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
             st.caption(f"Showing {len(rows)}/{len(events)} events")
 
     # =========================================================================
+    # G1-G3) Trade Replay v1
+    # =========================================================================
+    with st.expander("🎬 Trade Replay", expanded=False):
+        from tezaver.ui.trade_replay_data import (
+            parse_trades_from_events, build_trade_timeline, 
+            load_ohlcv, get_trade_context, Trade
+        )
+        
+        # Load events
+        events = load_ndjson_tail(ndjson_path, max_lines=2000)
+        
+        if not events:
+            st.info("📭 No events found. Run live loop to generate trade data.")
+        else:
+            # Parse trades
+            trades = parse_trades_from_events(events)
+            
+            if not trades:
+                st.info("📭 No completed trades found in events.")
+            else:
+                col_list, col_detail = st.columns([1, 2])
+                
+                with col_list:
+                    st.markdown("**📋 Trade List**")
+                    
+                    # Trade table
+                    trade_rows = []
+                    for i, t in enumerate(trades[:50]):
+                        trade_rows.append({
+                            "idx": i,
+                            "Symbol": t.symbol,
+                            "TF": t.timeframe,
+                            "Open": t.open_ts[:16] if t.open_ts else "",
+                            "Close": t.close_ts[:16] if t.close_ts else "",
+                            "PnL": f"{t.net_pnl:.2f}" if t.net_pnl else "-",
+                        })
+                    
+                    if trade_rows:
+                        import pandas as pd
+                        df_trades = pd.DataFrame(trade_rows)
+                        st.dataframe(df_trades, use_container_width=True, hide_index=True)
+                        
+                        # Select trade
+                        selected_idx = st.selectbox(
+                            "Select Trade", 
+                            options=range(len(trades[:50])),
+                            format_func=lambda i: f"{trades[i].symbol}/{trades[i].timeframe} @ {trades[i].open_ts[:16]}"
+                        )
+                        selected_trade = trades[selected_idx]
+                
+                with col_detail:
+                    if trades:
+                        selected_trade = trades[selected_idx] if 'selected_idx' in dir() else trades[0]
+                        
+                        st.markdown(f"**📊 Trade: {selected_trade.symbol}/{selected_trade.timeframe}**")
+                        
+                        # Trade summary
+                        st.markdown(f"""
+                        - **Open:** {selected_trade.open_ts[:19]} @ {selected_trade.open_px or 'N/A'}
+                        - **Close:** {(selected_trade.close_ts or '')[:19]} @ {selected_trade.close_px or 'N/A'}
+                        - **Side:** {selected_trade.side} | **Qty:** {selected_trade.qty or 'N/A'}
+                        - **Net PnL:** {f'${selected_trade.net_pnl:.2f}' if selected_trade.net_pnl else 'N/A'}
+                        - **Close Reason:** {selected_trade.close_reason or 'N/A'}
+                        """)
+                        
+                        # Load OHLCV and render chart
+                        if selected_trade.open_ts and selected_trade.close_ts:
+                            candles = load_ohlcv(
+                                selected_trade.symbol, 
+                                selected_trade.timeframe,
+                                selected_trade.open_ts,
+                                selected_trade.close_ts,
+                            )
+                            
+                            if candles:
+                                import plotly.graph_objects as go
+                                
+                                fig = go.Figure(data=[go.Candlestick(
+                                    x=[c["ts"] for c in candles],
+                                    open=[c["open"] for c in candles],
+                                    high=[c["high"] for c in candles],
+                                    low=[c["low"] for c in candles],
+                                    close=[c["close"] for c in candles],
+                                    name="Price"
+                                )])
+                                
+                                # Entry marker
+                                if selected_trade.open_px:
+                                    fig.add_trace(go.Scatter(
+                                        x=[selected_trade.open_ts],
+                                        y=[selected_trade.open_px],
+                                        mode="markers",
+                                        marker=dict(size=12, color="green", symbol="triangle-up"),
+                                        name="Entry"
+                                    ))
+                                
+                                # Exit marker
+                                if selected_trade.close_px and selected_trade.close_ts:
+                                    fig.add_trace(go.Scatter(
+                                        x=[selected_trade.close_ts],
+                                        y=[selected_trade.close_px],
+                                        mode="markers",
+                                        marker=dict(size=12, color="red", symbol="triangle-down"),
+                                        name="Exit"
+                                    ))
+                                
+                                fig.update_layout(
+                                    title=f"{selected_trade.symbol} - Trade Replay",
+                                    xaxis_title="Time",
+                                    yaxis_title="Price",
+                                    height=400,
+                                    showlegend=True,
+                                )
+                                st.plotly_chart(fig, use_container_width=True)
+                            else:
+                                st.warning("⚠️ No OHLCV data found for this window.")
+                        
+                        # Why box
+                        st.markdown("**🔍 Why (Decision Context)**")
+                        ctx = get_trade_context(events, selected_trade)
+                        ctx_items = []
+                        if ctx.get("preflight"):
+                            ctx_items.append(f"• Preflight: {ctx['preflight']}")
+                        if ctx.get("card_gate"):
+                            ctx_items.append(f"• CardGate: {ctx['card_gate']}")
+                        if ctx.get("risk_limit"):
+                            ctx_items.append(f"• RiskLimit: {ctx['risk_limit']}")
+                        if ctx.get("mainnet_guard"):
+                            ctx_items.append(f"• MainnetGuard: {ctx['mainnet_guard']}")
+                        if ctx.get("close_reason"):
+                            ctx_items.append(f"• CloseReason: {ctx['close_reason']}")
+                        
+                        if ctx_items:
+                            st.markdown("\n".join(ctx_items[:6]))
+                        else:
+                            st.caption("No decision context found.")
+                        
+                        # Timeline
+                        st.markdown("**📜 Event Timeline**")
+                        timeline = build_trade_timeline(events, selected_trade)
+                        
+                        if timeline:
+                            tl_rows = [{"ts": r.ts, "type": r.event_type, "decision": r.decision or "", "reason": r.reason or ""} for r in timeline[:20]]
+                            st.dataframe(pd.DataFrame(tl_rows), use_container_width=True, hide_index=True)
+                        else:
+                            st.caption("No timeline events found.")
+
+    # =========================================================================
     # Live Freshness Table
     # =========================================================================
     with st.expander("🟢 Live Freshness / Lag", expanded=status.running):
