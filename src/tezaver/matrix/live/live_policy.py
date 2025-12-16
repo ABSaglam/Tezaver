@@ -108,6 +108,7 @@ class HoldNextClosedPolicy:
         inject_fault: str = "NONE",
         inject_fault_nth: int = 0,  # 0=all orders, N=only fault Nth order
         inject_fault_action: str = "ANY",  # ANY/OPEN/CLOSE
+        risk_limiter = None,  # Optional GlobalRiskLimiter for pre-trade checks
     ):
         # Wrap gateway with FaultInjectionGateway if needed
         if inject_fault and inject_fault != "NONE":
@@ -115,6 +116,8 @@ class HoldNextClosedPolicy:
             self.gateway = FaultInjectionGateway(gateway, inject_fault, inject_fault_nth, inject_fault_action)
         else:
             self.gateway = gateway
+        
+        self._risk_limiter = risk_limiter
             
         self._event_sink = event_sink
         self.qty = qty
@@ -332,6 +335,29 @@ class HoldNextClosedPolicy:
             
             # Use OrderLifecycleTracker
             from tezaver.matrix.live.order_lifecycle import OrderLifecycleTracker, OrderLifecycleResult
+            
+            # Risk Limiter Pre-Check (if configured)
+            if self._risk_limiter:
+                close_price = 42000.0  # Default price for DUMMY_ORDER mode
+                risk_decision = self._risk_limiter.evaluate_new_order(
+                    cell_id=fingerprint,
+                    req_qty=self.qty,
+                    price=close_price,
+                    context={
+                        "symbol": symbol,
+                        "timeframe": tf,
+                        "profile_id": profile_id,
+                        "cycle_idx": cycle_idx,
+                    }
+                )
+                
+                if not risk_decision.allow:
+                    # BLOCKED by risk limiter
+                    print(f"[POLICY] RISK_LIMIT_BLOCK {symbol}/{tf}: {risk_decision.reason}")
+                    return PolicyTickResult(
+                        action="RISK_BLOCKED",
+                        state=cell.state,
+                    )
             
             # 1. Submit
             submit_res = self.gateway.place_order(req)

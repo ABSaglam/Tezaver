@@ -2689,6 +2689,53 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
         with strat_status_cols[3]:
             st.caption(f"**Profile**: {strat_profile}")
         
+        # ========== 🌐 Global Risk ==========
+        st.divider()
+        st.markdown("### 🌐 Global Risk Limiter")
+        
+        risk_cols = st.columns(4)
+        with risk_cols[0]:
+            risk_max_total = st.number_input(
+                "Max Total Notional ($)",
+                min_value=0.0,
+                value=500.0,
+                step=50.0,
+                key="risk_max_total_notional",
+                help="Max total notional USDT across all cells"
+            )
+        with risk_cols[1]:
+            risk_max_cell = st.number_input(
+                "Max Cell Notional ($)",
+                min_value=0.0,
+                value=300.0,
+                step=50.0,
+                key="risk_max_cell_notional",
+                help="Max notional USDT per cell"
+            )
+        with risk_cols[2]:
+            risk_max_pos = st.slider(
+                "Max Positions",
+                min_value=1,
+                max_value=10,
+                value=3,
+                key="risk_max_positions",
+                help="Max concurrent open positions"
+            )
+        with risk_cols[3]:
+            risk_enforce = st.radio(
+                "Enforce Mode",
+                options=["BLOCK", "WARN"],
+                index=0,
+                key="risk_enforce_mode",
+                help="BLOCK: reject order, WARN: log only"
+            )
+        
+        # Risk Status (from last NDJSON events)
+        risk_events = load_ndjson_events(limit=20, event_types=["RISK_LIMIT_CHECK", "RISK_LIMIT_BLOCK"])
+        if risk_events:
+            last_risk = risk_events[0]
+            st.caption(f"**Last Check**: {last_risk.get('decision', 'N/A')} | Cell: {last_risk.get('cell_notional', 0):.0f}$ | Total: {last_risk.get('total_notional', 0):.0f}$")
+        
         # ========== One-click E2E Button ==========
         st.divider()
         e2e_cols = st.columns([3, 1])

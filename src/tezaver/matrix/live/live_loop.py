@@ -535,6 +535,16 @@ def main():
     parser.add_argument("--inject-order-fault-action", type=str, default="ANY",
                        choices=["ANY", "OPEN", "CLOSE"],
                        help="Only inject fault on specific action (ANY/OPEN/CLOSE)")
+    # Risk Limiter CLI args
+    parser.add_argument("--max-total-notional-usdt", type=float, default=500.0,
+                       help="Max total notional USDT across all cells")
+    parser.add_argument("--max-cell-notional-usdt", type=float, default=300.0,
+                       help="Max notional USDT per cell")
+    parser.add_argument("--max-open-positions", type=int, default=3,
+                       help="Max number of open positions")
+    parser.add_argument("--risk-enforce", type=str, default="BLOCK",
+                       choices=["WARN", "BLOCK"],
+                       help="Risk limit enforcement mode")
     
     args = parser.parse_args()
     
@@ -902,6 +912,11 @@ def main():
             order_timeout_sec=args.order_timeout_sec,
             cancel_on_timeout=args.cancel_on_timeout,
             inject_fault=args.inject_order_fault,
+            # Risk Limiter Config
+            max_total_notional_usdt=getattr(args, "max_total_notional_usdt", 500.0),
+            max_cell_notional_usdt=getattr(args, "max_cell_notional_usdt", 300.0),
+            max_open_positions=getattr(args, "max_open_positions", 3),
+            risk_enforce=getattr(args, "risk_enforce", "BLOCK"),
         )
         
         router = MatrixLiveRouter(
@@ -970,6 +985,18 @@ def main():
             close_policy_arg = getattr(args, "close_policy", "NEXT_CLOSED_BAR")
             min_hold_bars_arg = getattr(args, "min_hold_bars", 1)
             
+            # Create GlobalRiskLimiter for pre-trade checks
+            from tezaver.matrix.live.risk_limiter import GlobalRiskLimiter, RiskLimits
+            policy_risk_limiter = GlobalRiskLimiter(
+                limits=RiskLimits(
+                    max_total_notional_usdt=getattr(args, "max_total_notional_usdt", 500.0),
+                    max_cell_notional_usdt=getattr(args, "max_cell_notional_usdt", 300.0),
+                    max_open_positions=getattr(args, "max_open_positions", 3),
+                    enforce=getattr(args, "risk_enforce", "BLOCK"),
+                ),
+                event_sink=ndjson_event_sink,
+            )
+            
             policy = HoldNextClosedPolicy(
                 gateway=policy_gateway,
                 event_sink=ndjson_event_sink,
@@ -989,6 +1016,7 @@ def main():
                 inject_fault=getattr(args, "inject_order_fault", None),
                 inject_fault_nth=getattr(args, "inject_order_fault_nth", 0),
                 inject_fault_action=getattr(args, "inject_order_fault_action", "ANY"),
+                risk_limiter=policy_risk_limiter,  # Pass risk limiter for pre-trade checks
             )
             
             print(f"[PROOF_ROUTER_CLUSTER] Policy profile_id={profile_id}")

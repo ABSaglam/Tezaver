@@ -34,6 +34,11 @@ class LiveRouterConfig:
     order_timeout_sec: float = 30.0
     cancel_on_timeout: bool = False
     inject_fault: str = "NONE"
+    # Risk Limiter Config (v1)
+    max_total_notional_usdt: float = 500.0
+    max_cell_notional_usdt: float = 300.0
+    max_open_positions: int = 3
+    risk_enforce: str = "BLOCK"  # WARN / BLOCK
 
 
 class MatrixLiveRouter:
@@ -69,6 +74,18 @@ class MatrixLiveRouter:
         self._last_missing_gates: List[str] = []
         
         # Hold Policy instance (created if hold_policy != OFF)
+        # First create Global Risk Limiter (needed by policy)
+        from tezaver.matrix.live.risk_limiter import GlobalRiskLimiter, RiskLimits
+        self._risk_limiter = GlobalRiskLimiter(
+            limits=RiskLimits(
+                max_total_notional_usdt=self.config.max_total_notional_usdt,
+                max_cell_notional_usdt=self.config.max_cell_notional_usdt,
+                max_open_positions=self.config.max_open_positions,
+                enforce=self.config.risk_enforce,
+            ),
+            event_sink=self.event_sink,
+        )
+        
         self._policy = None
         if self.config.hold_policy == "HOLD_NEXT_CLOSED" and self.gateway:
             from tezaver.matrix.live.live_policy import HoldNextClosedPolicy
@@ -87,6 +104,7 @@ class MatrixLiveRouter:
                 order_timeout_sec=self.config.order_timeout_sec,
                 cancel_on_timeout=self.config.cancel_on_timeout,
                 inject_fault=self.config.inject_fault,
+                risk_limiter=self._risk_limiter,  # Pass risk limiter for pre-trade checks
             )
         
         # Strategy Signal Adapter (if strategy_enabled)
@@ -100,6 +118,7 @@ class MatrixLiveRouter:
                 event_sink=self.event_sink,
                 auto_open_on_flat=True,  # V1: auto-open for testing
             )
+
     
     def handle_snapshot(self, snapshot: Dict[str, Any]) -> None:
         """
