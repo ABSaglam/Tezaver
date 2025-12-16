@@ -143,7 +143,7 @@ class TestPreflightIntegration(unittest.TestCase):
         
         # Expect exit code 2
         self.assertEqual(result.returncode, 2, f"Params: {cmd}\nOutput: {result.stdout}\nStderr: {result.stderr}")
-        self.assertIn("PREFLIGHT BLOCKED", result.stdout)
+        self.assertIn("BLOCK EXIT", result.stdout)
         self.assertIn("card_availability", result.stdout)
 
     def test_preflight_pass_continues(self):

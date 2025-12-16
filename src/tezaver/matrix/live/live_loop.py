@@ -13,14 +13,16 @@ import argparse
 import os
 import sys
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional, List
 
 from tezaver.matrix.live.marketdata.client import IMarketDataClient, DummyMarketDataClient
 from tezaver.matrix.live.marketdata.cache import BarCache
 from tezaver.matrix.live.marketdata.snapshot_builder import build_snapshot_from_bars
+from tezaver.matrix.live.marketdata.snapshot_builder import build_snapshot_from_bars
 from tezaver.matrix.live.preflight import run_preflight, PreflightContext, BLOCK as PREFLIGHT_BLOCK
+from tezaver.matrix.live.incident_bundle import export_incident_bundle, BundleContext, emit_export_telemetry
 
 
 # Tick policies
@@ -566,8 +568,34 @@ def main():
     parser.add_argument("--preflight", action="store_true", help="Run preflight checks before starting")
     parser.add_argument("--preflight-enforce", type=str, default="WARN", choices=["WARN", "BLOCK"], help="Enforcement mode for preflight (default: WARN)")
 
+    # Incident Bundle Arguments (v1)
+    parser.add_argument("--auto-export-on-block", action="store_true", help="Auto-export incident bundle on BLOCK")
+    parser.add_argument("--incident-last-n-events", type=int, default=500, help="Events to include in bundle")
+    parser.add_argument("--incident-last-n-log-lines", type=int, default=300, help="Log lines to include in bundle")
+    parser.add_argument("--incident-dir", type=str, default="data/incidents", help="Incident output directory")
+
     args = parser.parse_args()
     
+    # Helper: Handle BLOCK exit with auto-export
+    def handle_block_exit(reason: str, exit_code: int = 2, config_map: dict = None):
+        if args.auto_export_on_block:
+            from pathlib import Path
+            ctx = BundleContext(
+                reason=reason,
+                ndjson_path=Path("data/logs/live_events.ndjson"),
+                config=config_map,
+                output_dir=Path(args.incident_dir),
+                last_n_events=args.incident_last_n_events,
+                last_n_log_lines=args.incident_last_n_log_lines,
+                cmdline=" ".join(sys.argv)
+            )
+            bundle_path = export_incident_bundle(ctx)
+            emit_export_telemetry(ctx.ndjson_path, bundle_path, reason, 4)
+            print(f"incident_bundle={bundle_path}")
+            
+        print(f"⛔ BLOCK EXIT: {reason}")
+        sys.exit(exit_code)
+
     # Exec Preflight if requested (Global)
     if args.preflight:
         # Construct config for preflight context
@@ -589,8 +617,7 @@ def main():
         result = run_preflight(ctx, enforce_mode=args.preflight_enforce)
         
         if result.decision == PREFLIGHT_BLOCK:
-            print(f"⛔ PREFLIGHT BLOCKED: {result.summary}")
-            sys.exit(2)
+            handle_block_exit(f"PREFLIGHT_BLOCK: {result.summary}", config_map=asdict(pf_config))
     
     if args.command == "proof_router":
         # Proof + Router E2E mode
