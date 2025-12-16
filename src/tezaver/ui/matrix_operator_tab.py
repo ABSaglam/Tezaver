@@ -2736,6 +2736,37 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
             last_risk = risk_events[0]
             st.caption(f"**Last Check**: {last_risk.get('decision', 'N/A')} | Cell: {last_risk.get('cell_notional', 0):.0f}$ | Total: {last_risk.get('total_notional', 0):.0f}$")
         
+        # ========== 🧩 Restart Reconciliation ==========
+        st.divider()
+        st.markdown("### 🧩 Restart Reconciliation")
+        
+        recon_cols = st.columns([3, 1])
+        with recon_cols[0]:
+            st.caption("Load persisted state, check exchange positions, detect residuals")
+        with recon_cols[1]:
+            if st.button("▶️ Run Reconcile", key="btn_run_reconcile"):
+                import subprocess
+                cmd = [
+                    "./venv/bin/python", "-m", "tezaver.matrix.live.live_loop",
+                    "reconcile",
+                    "--symbols", "BTCUSDT",
+                    "--tf", "1m",
+                    "--exchange-mode", "DUMMY_ORDER",
+                ]
+                st.code(" ".join(cmd), language="bash")
+                st.info("Run this command in terminal to test reconciliation.")
+        
+        # Show last RECON events
+        recon_events = load_ndjson_events(limit=10, event_types=["RECON_START", "RECON_DONE", "RECON_WARN"])
+        if recon_events:
+            last_recon = recon_events[0]
+            if last_recon.get("event_type") == "RECON_DONE":
+                status = "✅ OK" if last_recon.get("ok", True) else "⚠️ WARNINGS"
+                st.caption(f"**Last Reconcile**: {status} | Cells: {last_recon.get('cell_count', 0)} | Paused: {len(last_recon.get('paused_cells', []))}")
+                if last_recon.get("warnings"):
+                    for w in last_recon.get("warnings", [])[:3]:
+                        st.caption(f"  ⚠️ {w}")
+        
         # ========== One-click E2E Button ==========
         st.divider()
         e2e_cols = st.columns([3, 1])

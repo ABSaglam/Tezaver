@@ -38,6 +38,7 @@ class CellRecon:
     # Status
     ok: bool = True
     warnings: List[str] = field(default_factory=list)
+    paused: bool = False
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -53,6 +54,7 @@ class CellRecon:
             "actions_taken": self.actions_taken,
             "ok": self.ok,
             "warnings": self.warnings,
+            "paused": self.paused,
         }
 
 
@@ -63,6 +65,7 @@ class ReconcileResult:
     ok: bool = True
     warnings: List[str] = field(default_factory=list)
     exchange_mode: str = "UNKNOWN"
+    paused_cells: List[str] = field(default_factory=list)
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -71,6 +74,7 @@ class ReconcileResult:
             "warnings": self.warnings,
             "exchange_mode": self.exchange_mode,
             "cell_count": len(self.per_cell),
+            "paused_cells": self.paused_cells,
         }
 
 
@@ -93,6 +97,7 @@ class ReconcileService:
         exchange_mode: str = "DRY_RUN",
         armed: bool = False,
         exchange_enabled: bool = False,
+        residual_action: str = "PAUSE_CELL",  # PAUSE_CELL / WARN_ONLY
     ):
         self._gateway = gateway
         self._position_store = position_store
@@ -100,16 +105,27 @@ class ReconcileService:
         self._exchange_mode = exchange_mode
         self._armed = armed
         self._exchange_enabled = exchange_enabled
+        self._residual_action = residual_action
         
         # Last result for UI
         self._last_result: Optional[ReconcileResult] = None
+        
+        # Paused cells set
+        self._paused_cells: set = set()
     
     @property
     def last_result(self) -> Optional[ReconcileResult]:
         return self._last_result
     
+    @property
+    def paused_cells(self) -> set:
+        return self._paused_cells.copy()
+    
+    def is_cell_paused(self, cell_id: str) -> bool:
+        return cell_id in self._paused_cells
+    
     def _emit(self, event: Dict[str, Any]) -> None:
-        """Emit telemetry event."""
+        """Emit telemetry event with mandatory fields."""
         if self._event_sink:
             event.setdefault("ts", datetime.now(timezone.utc).isoformat())
             event.setdefault("exchange_mode", self._exchange_mode)
@@ -117,12 +133,20 @@ class ReconcileService:
             event.setdefault("exchange_enabled", self._exchange_enabled)
             self._event_sink(event)
     
+    def _emit_cell(self, event_type: str, cell_id: str, symbol: str, tf: str, 
+                   profile_id: str, details: Dict[str, Any]) -> None:
+        """Emit cell-scoped event with all mandatory fields."""
+        self._emit({
+            "event_type": event_type,
+            "symbol": symbol,
+            "timeframe": tf,
+            "cell_id": cell_id,
+            "profile_id": profile_id,
+            "details": details,
+        })
+    
     def load_persisted_state(self) -> Dict[str, Any]:
-        """
-        Load persisted state from disk.
-        
-        Returns dict with loaded data summary.
-        """
+        """Load persisted state from disk."""
         state_dir = Path(self.STATE_DIR)
         loaded = {
             "fingerprints_loaded": 0,
@@ -147,7 +171,6 @@ class ReconcileService:
             try:
                 with open(pos_path, "r") as f:
                     positions_data = json.load(f)
-                # Restore positions (simple approach - override _positions dict)
                 if hasattr(self._position_store, '_positions'):
                     from tezaver.matrix.live.strategy_signal import CellPosition, PositionState
                     for key, data in positions_data.items():
@@ -166,9 +189,7 @@ class ReconcileService:
         return loaded
     
     def save_persisted_state(self) -> Dict[str, Any]:
-        """
-        Save state to disk for restart durability.
-        """
+        """Save state to disk for restart durability."""
         state_dir = Path(self.STATE_DIR)
         state_dir.mkdir(parents=True, exist_ok=True)
         saved = {
@@ -209,18 +230,19 @@ class ReconcileService:
         return saved
     
     def reconcile_cells(self, cells: List[Dict[str, str]]) -> ReconcileResult:
-        """
-        Reconcile list of cells.
-        
-        cells: list of {"symbol": ..., "timeframe": ..., "profile_id": ...}
-        """
+        """Reconcile list of cells."""
         result = ReconcileResult(exchange_mode=self._exchange_mode)
         
-        # Emit start
+        # Emit start with mandatory fields
         self._emit({
             "event_type": "RECON_START",
             "cell_count": len(cells),
             "cells": [c.get("symbol", "") for c in cells],
+            "details": {
+                "residual_action": self._residual_action,
+                "symbols": [c.get("symbol", "") for c in cells],
+                "timeframes": [c.get("timeframe", "") for c in cells],
+            },
         })
         
         for cell in cells:
@@ -231,6 +253,8 @@ class ReconcileService:
                 result.ok = False
             if cell_recon.warnings:
                 result.warnings.extend(cell_recon.warnings)
+            if cell_recon.paused:
+                result.paused_cells.append(cell_recon.cell_id)
         
         # Emit done
         self._emit({
@@ -239,6 +263,11 @@ class ReconcileService:
             "warnings": result.warnings,
             "cell_count": len(result.per_cell),
             "cells_with_warnings": sum(1 for c in result.per_cell if c.warnings),
+            "paused_cells": result.paused_cells,
+            "details": {
+                "paused_count": len(result.paused_cells),
+                "ok_count": sum(1 for c in result.per_cell if c.ok),
+            },
         })
         
         self._last_result = result
@@ -265,88 +294,158 @@ class ReconcileService:
         
         # Exchange reconcile (REAL modes only)
         if self._exchange_mode.startswith("REAL") and self._gateway:
-            try:
-                # Get position from exchange
-                if hasattr(self._gateway, 'get_position_snapshot'):
-                    pos_snap = self._gateway.get_position_snapshot(symbol)
-                    if pos_snap and isinstance(pos_snap, dict):
-                        recon.pos_amt_exchange = float(pos_snap.get("positionAmt", 0.0))
-                        
-                        # Emit position event
-                        self._emit({
-                            "event_type": "RECON_POSITION",
-                            "cell_id": cell_id,
-                            "symbol": symbol,
-                            "timeframe": tf,
-                            "profile_id": profile_id,
-                            "pos_amt_exchange": recon.pos_amt_exchange,
-                            "local_before": recon.pos_state_local_before,
-                        })
-                        
-                        # Reconcile: if exchange has position, set local to LONG
-                        if recon.pos_amt_exchange > 0 and self._position_store:
-                            pos = self._position_store.get(symbol, tf, profile_id)
-                            if pos.state.value != "LONG":
-                                pos.state = pos.state.__class__("LONG")
-                                pos.qty = recon.pos_amt_exchange
-                                recon.actions_taken.append("SET_LONG")
-                                recon.warnings.append(f"Exchange has {recon.pos_amt_exchange} but local was FLAT")
-                        elif recon.pos_amt_exchange == 0 and self._position_store:
-                            pos = self._position_store.get(symbol, tf, profile_id)
-                            if pos.state.value == "LONG":
-                                pos.state = pos.state.__class__("FLAT")
-                                pos.qty = 0.0
-                                recon.actions_taken.append("RESET_FLAT")
-                                recon.warnings.append("Local was LONG but exchange has no position")
-                
-                # Check open orders (if supported)
-                if hasattr(self._gateway, 'get_open_orders'):
-                    recon.open_orders_supported = True
-                    try:
-                        open_orders = self._gateway.get_open_orders(symbol)
-                        recon.open_orders_count_exchange = len(open_orders) if open_orders else 0
-                        
-                        self._emit({
-                            "event_type": "RECON_OPEN_ORDERS",
-                            "cell_id": cell_id,
-                            "symbol": symbol,
-                            "open_orders_count": recon.open_orders_count_exchange,
-                        })
-                        
-                        if recon.open_orders_count_exchange > 0:
-                            recon.warnings.append(f"Exchange has {recon.open_orders_count_exchange} open orders")
-                    except Exception as e:
-                        recon.open_orders_supported = False
-                        self._emit({
-                            "event_type": "RECON_OPEN_ORDERS",
-                            "cell_id": cell_id,
-                            "symbol": symbol,
-                            "error": str(e),
-                            "reason": "NOT_SUPPORTED",
-                        })
-                else:
-                    recon.open_orders_supported = False
-                    
-            except Exception as e:
-                recon.ok = False
-                recon.warnings.append(f"Exchange error: {e}")
+            self._reconcile_exchange(recon, symbol, tf, profile_id, cell_id)
         else:
-            # DRY_RUN / DUMMY_ORDER - no exchange reconcile
+            # DRY_RUN / DUMMY_ORDER - no exchange reconcile, emit minimal events
             recon.actions_taken.append("LOCAL_ONLY")
+            
+            # Emit RECON_POSITION with LOCAL_ONLY action
+            self._emit_cell("RECON_POSITION", cell_id, symbol, tf, profile_id, {
+                "pos_amt_exchange": 0.0,
+                "pos_state_local_before": recon.pos_state_local_before,
+                "pos_state_local_after": recon.pos_state_local_before,  # unchanged
+                "action_taken": "LOCAL_ONLY",
+                "warning": None,
+            })
+            
+            # Emit RECON_OPEN_ORDERS with NOT_SUPPORTED
+            self._emit_cell("RECON_OPEN_ORDERS", cell_id, symbol, tf, profile_id, {
+                "supported": False,
+                "open_orders_count_exchange": 0,
+                "reason": "NOT_SUPPORTED_DRY_MODE",
+            })
         
         # Get local state after reconcile
         if self._position_store:
             pos = self._position_store.get(symbol, tf, profile_id)
             recon.pos_state_local_after = pos.state.value if hasattr(pos.state, 'value') else str(pos.state)
         
-        # Check for warnings
+        # Check for warnings and emit RECON_WARN
         if recon.warnings:
             recon.ok = False
-            self._emit({
-                "event_type": "RECON_WARN",
-                "cell_id": cell_id,
-                "symbol": symbol,
+            severity = "WARN"
+            suggested_actions = []
+            
+            # Determine severity and actions
+            if recon.paused:
+                severity = "BLOCK"
+                suggested_actions.append("UNPAUSE_CELL_AFTER_MANUAL_CHECK")
+            elif "EXCHANGE_POS_NONZERO" in str(recon.warnings):
+                suggested_actions.append("CHECK_EXCHANGE_POSITION")
+            
+            self._emit_cell("RECON_WARN", cell_id, symbol, tf, profile_id, {
                 "warnings": recon.warnings,
+                "severity": severity,
+                "suggested_actions": suggested_actions,
+                "paused": recon.paused,
             })
         
         return recon
+    
+    def _reconcile_exchange(self, recon: CellRecon, symbol: str, tf: str, 
+                            profile_id: str, cell_id: str) -> None:
+        """Reconcile with exchange for REAL modes."""
+        try:
+            # Get position from exchange
+            if hasattr(self._gateway, 'get_position_snapshot'):
+                pos_snap = self._gateway.get_position_snapshot(symbol)
+                if pos_snap and isinstance(pos_snap, dict):
+                    recon.pos_amt_exchange = float(pos_snap.get("positionAmt", 0.0))
+                    
+                    action_taken = "NONE"
+                    warning = None
+                    
+                    # Reconcile: if exchange has position, set local to LONG
+                    if recon.pos_amt_exchange > 0 and self._position_store:
+                        pos = self._position_store.get(symbol, tf, profile_id)
+                        if pos.state.value != "LONG":
+                            pos.state = pos.state.__class__("LONG")
+                            pos.qty = recon.pos_amt_exchange
+                            action_taken = "SET_LONG"
+                            warning = "EXCHANGE_POS_NONZERO_LOCAL_FLAT"
+                            recon.actions_taken.append("SET_LONG")
+                            recon.warnings.append(f"Exchange has {recon.pos_amt_exchange} but local was FLAT")
+                            
+                            # Apply safety action
+                            if self._residual_action == "PAUSE_CELL":
+                                self._paused_cells.add(cell_id)
+                                recon.paused = True
+                                recon.actions_taken.append("PAUSE_CELL")
+                        else:
+                            action_taken = "CONFIRM_LONG"
+                            
+                    elif recon.pos_amt_exchange == 0 and self._position_store:
+                        pos = self._position_store.get(symbol, tf, profile_id)
+                        if pos.state.value == "LONG":
+                            pos.state = pos.state.__class__("FLAT")
+                            pos.qty = 0.0
+                            action_taken = "RESET_FLAT"
+                            warning = "LOCAL_LONG_BUT_EXCHANGE_FLAT"
+                            recon.actions_taken.append("RESET_FLAT")
+                            recon.warnings.append("Local was LONG but exchange has no position")
+                        else:
+                            action_taken = "CONFIRM_FLAT"
+                    
+                    # Emit RECON_POSITION
+                    self._emit_cell("RECON_POSITION", cell_id, symbol, tf, profile_id, {
+                        "pos_amt_exchange": recon.pos_amt_exchange,
+                        "pos_state_local_before": recon.pos_state_local_before,
+                        "pos_state_local_after": "LONG" if recon.pos_amt_exchange > 0 else "FLAT",
+                        "action_taken": action_taken,
+                        "warning": warning,
+                    })
+            
+            # Check open orders
+            self._reconcile_open_orders(recon, symbol, tf, profile_id, cell_id)
+                    
+        except Exception as e:
+            recon.ok = False
+            recon.warnings.append(f"Exchange error: {e}")
+            
+            # Emit error position event
+            self._emit_cell("RECON_POSITION", cell_id, symbol, tf, profile_id, {
+                "pos_amt_exchange": 0.0,
+                "pos_state_local_before": recon.pos_state_local_before,
+                "pos_state_local_after": recon.pos_state_local_before,
+                "action_taken": "ERROR",
+                "warning": f"EXCHANGE_ERROR: {e}",
+            })
+    
+    def _reconcile_open_orders(self, recon: CellRecon, symbol: str, tf: str,
+                               profile_id: str, cell_id: str) -> None:
+        """Check open orders on exchange."""
+        if hasattr(self._gateway, 'get_open_orders'):
+            recon.open_orders_supported = True
+            try:
+                open_orders = self._gateway.get_open_orders(symbol)
+                recon.open_orders_count_exchange = len(open_orders) if open_orders else 0
+                
+                self._emit_cell("RECON_OPEN_ORDERS", cell_id, symbol, tf, profile_id, {
+                    "supported": True,
+                    "open_orders_count_exchange": recon.open_orders_count_exchange,
+                    "reason": None,
+                })
+                
+                if recon.open_orders_count_exchange > 0:
+                    recon.warnings.append(f"Exchange has {recon.open_orders_count_exchange} open orders")
+                    
+                    # Apply safety action for open orders
+                    if self._residual_action == "PAUSE_CELL":
+                        self._paused_cells.add(cell_id)
+                        recon.paused = True
+                        recon.actions_taken.append("PAUSE_CELL_OPEN_ORDERS")
+                        
+            except Exception as e:
+                recon.open_orders_supported = False
+                self._emit_cell("RECON_OPEN_ORDERS", cell_id, symbol, tf, profile_id, {
+                    "supported": False,
+                    "open_orders_count_exchange": 0,
+                    "reason": f"ERROR: {e}",
+                })
+        else:
+            recon.open_orders_supported = False
+            self._emit_cell("RECON_OPEN_ORDERS", cell_id, symbol, tf, profile_id, {
+                "supported": False,
+                "open_orders_count_exchange": 0,
+                "reason": "NOT_SUPPORTED",
+            })
