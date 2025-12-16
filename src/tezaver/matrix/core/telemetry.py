@@ -29,7 +29,11 @@ class MatrixEventType(str, Enum):
     DECISION = "DECISION"
     GUARDRAIL_V1 = "GUARDRAIL_V1"  # Classic position/loss limits
     GUARDRAIL_V2 = "GUARDRAIL_V2"  # Profile/risk_contract
-    EXECUTION = "EXECUTION"
+    # Rally
+    RALLY_DETECTED = "RALLY_DETECTED"
+    
+    # System
+    ERROR = "ERROR"
     INFO = "INFO"
 
 

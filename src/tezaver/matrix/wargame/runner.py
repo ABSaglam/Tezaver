@@ -7,7 +7,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 import uuid
 import json
-from typing import Any, Dict
+from typing import Any, Dict, List
+import pandas as pd
 
 from .scenarios import (
     WargameScenario,
@@ -31,6 +32,8 @@ from ..strategies.silver_core import (
     load_silver_strategy_config_from_card,
     load_silver_strategy_config_from_profile,
 )
+from tezaver.rally.rally_detector_v2 import detect_rallies_v2_micro_booster
+from tezaver.snapshots.snapshot_engine import load_features
 
 
 # Dummy components for non-Silver profiles
@@ -84,6 +87,45 @@ class DummyExecutor:
             metadata={"source": "DummyExecutor"},
         )
 
+
+
+class RallyTelemetryAnalyzer(IAnalyzer):
+    """Wraps an analyzer to emit RALLY_DETECTED events."""
+    
+    def __init__(self, inner: IAnalyzer, rallies_by_ts: Dict[datetime, List[Dict]], event_sink: Any, symbol: str):
+        self.inner = inner
+        self.rallies_by_ts = rallies_by_ts
+        self.event_sink = event_sink
+        self.symbol = symbol
+        self.processed_ts = set()
+
+    def analyze(self, market_snapshot: dict) -> list[MarketSignal]:
+        # Check for rally at this timestamp
+        # market_snapshot['timestamp'] is typically a python datetime
+        ts = market_snapshot.get("timestamp")
+        
+        # Determine if we should emit
+        # Using exact match for now. Datafeed aligns with 15m bars usually.
+        if ts and ts in self.rallies_by_ts and ts not in self.processed_ts:
+            for rally_data in self.rallies_by_ts[ts]:
+                 # Construct robust payload
+                 rally_data["bar_close_ts"] = ts.isoformat()
+                 rally_data["rally_bucket"] = rally_data.get("rally_bucket", "unknown")
+                 
+                 evt = MatrixEvent(
+                     event_type=MatrixEventType.RALLY_DETECTED,
+                     ts=ts,
+                     symbol=self.symbol,
+                     timeframe="15m",
+                     details=rally_data
+                 )
+                 
+                 if hasattr(self.event_sink, "log"):
+                     self.event_sink.log(evt)
+            
+            self.processed_ts.add(ts)
+
+        return self.inner.analyze(market_snapshot)
 
 def _create_silver_components(
     profile_id: str,
@@ -455,6 +497,51 @@ def _run_wargame_with_scenario_and_feed(
         details={"event_type": "WARGAME_START", "scenario_id": scenario.scenario_id}
     )
     multi_sink.log(start_event)
+
+    # [RALLY TELEMETRY INJECTION]
+    # Try to load rally data and wrap analyzer if possible
+    # Only for 15m standard setup for now
+    if feed and hasattr(feed, 'symbol') and hasattr(feed, 'timeframe') and feed.timeframe == "15m":
+        try:
+            target_symbol = feed.symbol
+            # Use snapshot engine to load features
+            df_feat = load_features(target_symbol, "15m")
+            
+            if not df_feat.empty:
+                # Run V2 Booster (Rev 06)
+                df_rallies = detect_rallies_v2_micro_booster(df_feat, deduplicate=True)
+                
+                if not df_rallies.empty:
+                    # Index by event_time dictionary
+                    rallies_by_ts = {}
+                    for _, row in df_rallies.iterrows():
+                        evt_ts = pd.to_datetime(row['event_time'])
+                        if evt_ts.tzinfo is None:
+                             evt_ts = evt_ts.replace(tzinfo=timezone.utc)
+                             
+                        if evt_ts not in rallies_by_ts:
+                            rallies_by_ts[evt_ts] = []
+                        
+                        r_data = row.to_dict()
+                        for k, v in r_data.items():
+                            if isinstance(v, (pd.Timestamp, datetime)):
+                                r_data[k] = v.isoformat()
+                        
+                        rallies_by_ts[evt_ts].append(r_data)
+                        
+                    rally_analyzer = RallyTelemetryAnalyzer(
+                        inner=engine.analyzer,
+                        rallies_by_ts=rallies_by_ts,
+                        event_sink=multi_sink,
+                        symbol=target_symbol
+                    )
+                    engine.analyzer = rally_analyzer
+                    multi_sink.log({"event_type": "INFO", "ts": datetime.now(timezone.utc).isoformat(), "msg": f"Rally Telemetry Active: {len(df_rallies)} rallies loaded"})
+
+        except Exception as e:
+            import traceback
+            multi_sink.log({"event_type": "ERROR", "ts": datetime.now(timezone.utc).isoformat(), "error": f"Rally telemetry init failed: {str(e)}"})
+            print(f"Rally telemetry init failed: {e}")
     
     # Run tick loop
     last_snapshot = None
