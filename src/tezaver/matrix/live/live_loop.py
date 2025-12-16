@@ -525,13 +525,16 @@ def main():
         help="Simulate order failure (TIMEOUT/REJECT/PARTIAL)"
     )
     parser.add_argument("--order-timeout-sec", type=float, default=30.0,
-                       help="Max seconds to wait for order fill before timeout")
+        help="Max seconds to wait for order fill before timeout")
     parser.add_argument("--poll-order-sec", type=float, default=2.0,
                        help="Interval for polling order status")
     parser.add_argument("--cancel-on-timeout", action="store_true",
                        help="Cancel order if timeout reached (default: leave open/unknown)")
     parser.add_argument("--inject-order-fault-nth", type=int, default=0,
                        help="Only inject fault on Nth order (0=all orders, 1=first, 2=second/CLOSE)")
+    parser.add_argument("--inject-order-fault-action", type=str, default="ANY",
+                       choices=["ANY", "OPEN", "CLOSE"],
+                       help="Only inject fault on specific action (ANY/OPEN/CLOSE)")
     
     args = parser.parse_args()
     
@@ -985,6 +988,7 @@ def main():
                 cancel_on_timeout=getattr(args, "cancel_on_timeout", False),
                 inject_fault=getattr(args, "inject_order_fault", None),
                 inject_fault_nth=getattr(args, "inject_order_fault_nth", 0),
+                inject_fault_action=getattr(args, "inject_order_fault_action", "ANY"),
             )
             
             print(f"[PROOF_ROUTER_CLUSTER] Policy profile_id={profile_id}")

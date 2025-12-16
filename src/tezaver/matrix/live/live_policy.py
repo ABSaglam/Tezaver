@@ -107,11 +107,12 @@ class HoldNextClosedPolicy:
         cancel_on_timeout: bool = False,
         inject_fault: str = "NONE",
         inject_fault_nth: int = 0,  # 0=all orders, N=only fault Nth order
+        inject_fault_action: str = "ANY",  # ANY/OPEN/CLOSE
     ):
         # Wrap gateway with FaultInjectionGateway if needed
         if inject_fault and inject_fault != "NONE":
             from tezaver.matrix.live.live_gateway import FaultInjectionGateway
-            self.gateway = FaultInjectionGateway(gateway, inject_fault, inject_fault_nth)
+            self.gateway = FaultInjectionGateway(gateway, inject_fault, inject_fault_nth, inject_fault_action)
         else:
             self.gateway = gateway
             

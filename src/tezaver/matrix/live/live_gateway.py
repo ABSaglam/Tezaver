@@ -523,14 +523,17 @@ class FaultInjectionGateway:
         inner: IExchangeGateway,
         fault_mode: str = "NONE",
         fault_on_nth: int = 0,  # 0=all orders, N=only fault Nth order
+        fault_action: str = "ANY",  # ANY/OPEN/CLOSE
     ):
         self._inner = inner
         self._fault_mode = fault_mode
         self._fault_on_nth = fault_on_nth
+        self._fault_action = fault_action
         self._call_counts: Dict[str, int] = {}  # order_id -> count
         self._order_counter = 0  # Global order counter for nth-order fault
         self._order_sides: Dict[str, str] = {}  # order_id -> side (BUY/SELL)
         self._order_numbers: Dict[str, int] = {}  # order_id -> order number (1, 2, ...)
+        self._order_actions: Dict[str, str] = {}  # order_id -> action (OPEN/CLOSE) based on side
         
     def place_order(self, req: ExchangeOrderRequest) -> ExchangeOrderResult:
         res = self._inner.place_order(req)
@@ -538,6 +541,9 @@ class FaultInjectionGateway:
             self._order_counter += 1
             self._order_sides[str(res.order_id)] = req.side.value
             self._order_numbers[str(res.order_id)] = self._order_counter
+            # Infer action: BUY = OPEN, SELL = CLOSE (for long-only strategy)
+            action = "OPEN" if req.side.value == "BUY" else "CLOSE"
+            self._order_actions[str(res.order_id)] = action
         return res
         
     def cancel_order(self, symbol: str, order_id: str) -> Dict[str, Any]:
@@ -572,8 +578,13 @@ class FaultInjectionGateway:
         order_num = self._order_numbers.get(str(order_id), 0)
         skip_fault = (self._fault_on_nth > 0 and order_num != self._fault_on_nth)
         
+        # Check if action matches fault_action filter
+        order_action = self._order_actions.get(str(order_id), "UNKNOWN")
+        if self._fault_action != "ANY" and order_action != self._fault_action:
+            skip_fault = True
+        
         if skip_fault:
-            # Not the Nth order - pass through without fault
+            # Not the target order - pass through without fault
             return real_res
         
         if self._fault_mode == "TIMEOUT":
