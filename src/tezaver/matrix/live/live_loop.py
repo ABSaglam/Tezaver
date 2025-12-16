@@ -390,7 +390,7 @@ def main():
        => Outputs: PROOF_CLOSED + ROUTER_TICK + ROUTER_CLUSTER_OK
     """
     parser = argparse.ArgumentParser(description="Live loop runner v2")
-    parser.add_argument("command", choices=["run", "proof_router", "proof_router_cluster", "proof_open_close", "policy_cycle", "report_cycles"], help="Command to run")
+    parser.add_argument("command", choices=["run", "proof_router", "proof_router_cluster", "proof_open_close", "policy_cycle", "report_cycles", "reconcile"], help="Command to run")
     parser.add_argument("--runtime", type=int, default=60, help="Max runtime in seconds")
     parser.add_argument("--poll", type=int, default=5, help="Poll interval in seconds")
     parser.add_argument("--symbols", type=str, default="BTCUSDT", help="Comma-separated symbols")
@@ -2141,6 +2141,99 @@ def main():
                     print()
                     print("❌ Exit code 2: BLOCK violations found")
                     sys.exit(2)
+    
+    elif args.command == "reconcile":
+        # Restart Reconciliation Command
+        import json
+        from pathlib import Path
+        from tezaver.matrix.live.live_reconcile import ReconcileService
+        from tezaver.matrix.live.strategy_signal import PositionStateStore
+        
+        print("[RECONCILE] Starting restart reconciliation...")
+        
+        # Parse symbols
+        symbols = [s.strip() for s in args.symbols.split(",")]
+        
+        # Setup NDJSON sink
+        ndjson_path = Path("data/logs/live_events.ndjson")
+        ndjson_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        def ndjson_sink(event: Dict[str, Any]):
+            with open(ndjson_path, "a") as f:
+                f.write(json.dumps(event, default=str) + "\n")
+        
+        # Create gateway if REAL mode
+        gateway = None
+        exchange_mode = getattr(args, "exchange_mode", "DRY_RUN")
+        if exchange_mode.startswith("REAL"):
+            from tezaver.matrix.live.live_gateway import BinanceTestnetGateway
+            gateway = BinanceTestnetGateway()
+            print(f"[RECONCILE] Using {exchange_mode} gateway")
+        else:
+            print(f"[RECONCILE] {exchange_mode} mode - local state only")
+        
+        # Create position store
+        position_store = PositionStateStore(event_sink=ndjson_sink)
+        
+        # Create reconcile service
+        service = ReconcileService(
+            gateway=gateway,
+            position_store=position_store,
+            event_sink=ndjson_sink,
+            exchange_mode=exchange_mode,
+            armed=getattr(args, "armed", False),
+            exchange_enabled=getattr(args, "exchange_enabled", False),
+        )
+        
+        # Load persisted state
+        print("[RECONCILE] Loading persisted state...")
+        load_result = service.load_persisted_state()
+        print(f"[RECONCILE] Loaded: {load_result['fingerprints_loaded']} fingerprints, {load_result['positions_loaded']} positions")
+        if load_result["errors"]:
+            print(f"[RECONCILE] Load errors: {load_result['errors']}")
+        
+        # Reconcile cells
+        cells = [
+            {"symbol": s, "timeframe": args.tf, "profile_id": f"{s}_{args.tf}_policy"}
+            for s in symbols
+        ]
+        
+        print(f"[RECONCILE] Reconciling {len(cells)} cells...")
+        result = service.reconcile_cells(cells)
+        
+        # Print results
+        print()
+        print("=" * 60)
+        print("RECONCILE RESULT")
+        print("=" * 60)
+        print(f"Status: {'✅ OK' if result.ok else '⚠️ WARNINGS'}")
+        print(f"Cells: {len(result.per_cell)}")
+        
+        if result.warnings:
+            print(f"Warnings: {len(result.warnings)}")
+            for w in result.warnings[:10]:
+                print(f"  - {w}")
+        
+        print()
+        print("Per-Cell Summary:")
+        for cell in result.per_cell:
+            status = "✅" if cell.ok else "⚠️"
+            print(f"  {status} {cell.cell_id}")
+            print(f"      Exchange Pos: {cell.pos_amt_exchange}")
+            print(f"      Local Before: {cell.pos_state_local_before} → After: {cell.pos_state_local_after}")
+            print(f"      Actions: {cell.actions_taken}")
+            if cell.warnings:
+                for w in cell.warnings:
+                    print(f"      ⚠️ {w}")
+        
+        # Save updated state
+        print()
+        print("[RECONCILE] Saving state...")
+        save_result = service.save_persisted_state()
+        print(f"[RECONCILE] Saved: {save_result['fingerprints_saved']} fingerprints, {save_result['positions_saved']} positions")
+        
+        print()
+        print("[RECONCILE] Done.")
 
 
 if __name__ == "__main__":
