@@ -1427,6 +1427,7 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
             parse_trades_from_events, build_trade_timeline, 
             load_ohlcv, get_trade_context, Trade, filter_trades,
             extract_strategy_signals, resolve_price_for_signal, OverlayPoint,
+            extract_rally_events,
             parse_open_trades_from_events, get_trade_replay_diagnostics
         )
         
@@ -1515,7 +1516,9 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
                         with toggle_cols[1]:
                             show_positions = st.checkbox("📍 Position Lines", value=True, key="tr_positions")
                         with toggle_cols[2]:
-                            st.caption("🔺=Entry 🔻=Exit")
+                            show_rallies = st.checkbox("⚡ Rally Overlay", value=True, key="tr_rallies")
+                        
+                        st.caption("🔺=Entry 🔻=Exit")
                         
                         # Load OHLCV and render chart
                         if selected_trade.open_ts:
@@ -1666,6 +1669,37 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
                                                 y0=y_min, y1=y_max,
                                                 line=dict(color=pt.color, dash="dot", width=1),
                                             )
+                                
+                                # H3: Rally Overlay
+                                if show_rallies:
+                                    rallies = extract_rally_events(
+                                        events,
+                                        selected_trade.open_ts,
+                                        selected_trade.close_ts,
+                                        symbol=selected_trade.symbol,
+                                        timeframe=selected_trade.timeframe,
+                                    )
+                                    
+                                    for r in rallies:
+                                        # Create dummy point for price resolution
+                                        dummy_pt = OverlayPoint(
+                                            ts=r.ts, price=None, marker_type="rally", 
+                                            signal="RALLY", reason=None, passed_filters=None
+                                        )
+                                        y_val = resolve_price_for_signal(dummy_pt, candles)
+                                        if y_val > 0:
+                                            # Marker
+                                            fig.add_trace(go.Scatter(
+                                                x=[r.ts],
+                                                y=[y_val],
+                                                mode="markers+text",
+                                                text=[f"⚡ {r.gain_pct:.1%}"],
+                                                textposition="top center",
+                                                marker=dict(size=14, color="orange", symbol="star"),
+                                                name="Rally",
+                                                hoverinfo="text",
+                                                hovertext=f"RALLY DETECTED<br>Time: {r.ts}<br>Gain: {r.gain_pct:.2%}<br>Bars to Peak: {r.bars_to_peak}"
+                                            ))
                                 
                                 fig.update_layout(
                                     title=f"{selected_trade.symbol} - Trade Replay",

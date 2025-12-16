@@ -55,6 +55,17 @@ class OverlayPoint:
     symbol_shape: str = "triangle-up"
 
 
+@dataclass
+class RallyOverlay:
+    """Rally event overlay data."""
+    ts: str
+    gain_pct: float
+    bars_to_peak: int
+    label: str
+    raw_details: Dict[str, Any]
+
+
+
 # SL/TP field name mappings
 SL_FIELDS = ["stop_price", "stop_px", "sl", "stopLoss", "stop_loss"]
 TP_FIELDS = ["take_profit", "tp", "takeProfit", "take_profit_price"]
@@ -669,6 +680,74 @@ def extract_strategy_signals(
             ))
     
     return points
+
+
+def extract_rally_events(
+    events: List[Dict[str, Any]],
+    start_ts: str,
+    end_ts: str,
+    symbol: Optional[str] = None,
+    timeframe: Optional[str] = None,
+) -> List[RallyOverlay]:
+    """
+    Extract RALLY_DETECTED events for overlay.
+    """
+    rallies = []
+    try:
+        start_dt = datetime.fromisoformat(start_ts.replace("Z", "+00:00"))
+        end_dt = datetime.fromisoformat(end_ts.replace("Z", "+00:00"))
+    except:
+        return []
+        
+    for e in events:
+        if len(rallies) >= 200:
+            break
+            
+        if e.get("event_type") != "RALLY_DETECTED":
+            continue
+            
+        if symbol and e.get("symbol") != symbol:
+            continue
+        if timeframe and e.get("timeframe") != timeframe:
+            continue
+            
+        # Priority: bar_close_ts -> details.event_time -> ts
+        details = e.get("details", {})
+        ts_val = e.get("bar_close_ts") or details.get("event_time") or e.get("ts")
+        
+        if not ts_val:
+            continue
+            
+        try:
+            # Handle potential non-string in details (pandas Timestamp)
+            if hasattr(ts_val, "isoformat"):
+                ts_str = ts_val.isoformat()
+                dt = ts_val
+                if dt.tzinfo is None:
+                     dt = dt.replace(tzinfo=timezone.utc)
+            else:
+                ts_str = str(ts_val)
+                dt = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+                
+            if not (start_dt <= dt <= end_dt):
+                continue
+        except:
+            continue
+            
+        gain = float(details.get("future_max_gain_pct", 0.0))
+        bars = int(details.get("bars_to_peak", 0))
+        
+        label = f"RALLY +{gain:.1%} / {bars} bars"
+        
+        rallies.append(RallyOverlay(
+            ts=ts_str,
+            gain_pct=gain,
+            bars_to_peak=bars,
+            label=label,
+            raw_details=details
+        ))
+        
+    return rallies
 
 
 def resolve_price_for_signal(
