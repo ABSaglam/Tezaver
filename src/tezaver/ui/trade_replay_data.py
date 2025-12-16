@@ -40,6 +40,21 @@ class TimelineRow:
     details: str
 
 
+@dataclass
+class OverlayPoint:
+    """A marker point for chart overlay."""
+    ts: str  # x coordinate (bar_close_ts or ts)
+    price: Optional[float]  # y coordinate
+    marker_type: str  # "entry", "exit", "signal", "position_open", "position_close"
+    signal: str  # OPEN_LONG, CLOSE_LONG, etc.
+    reason: Optional[str]
+    passed_filters: Optional[bool]
+    rsi: Optional[float] = None
+    atr_pct: Optional[float] = None
+    color: str = "blue"
+    symbol_shape: str = "triangle-up"
+
+
 # SL/TP field name mappings
 SL_FIELDS = ["stop_price", "stop_px", "sl", "stopLoss", "stop_loss"]
 TP_FIELDS = ["take_profit", "tp", "takeProfit", "take_profit_price"]
@@ -399,3 +414,156 @@ def get_trade_context(events: List[Dict[str, Any]], trade: Trade) -> Dict[str, A
             context["mainnet_guard"] = e.get("decision")
     
     return context
+
+
+# Signal to marker mapping
+SIGNAL_MARKER_MAP = {
+    "OPEN_LONG": ("entry", "green", "triangle-up"),
+    "OPEN_SHORT": ("entry", "red", "triangle-down"),
+    "CLOSE_LONG": ("exit", "red", "triangle-down"),
+    "CLOSE_SHORT": ("exit", "green", "triangle-up"),
+    "NONE": ("signal", "gray", "circle"),
+}
+
+
+def extract_strategy_signals(
+    events: List[Dict[str, Any]],
+    start_ts: str,
+    end_ts: str,
+    symbol: Optional[str] = None,
+    timeframe: Optional[str] = None,
+    max_signals: int = 200,
+) -> List[OverlayPoint]:
+    """
+    Extract strategy signals from events within a time window.
+    
+    Returns list of OverlayPoint for chart overlay.
+    """
+    points = []
+    
+    try:
+        start_dt = datetime.fromisoformat(start_ts.replace("Z", "+00:00"))
+        end_dt = datetime.fromisoformat(end_ts.replace("Z", "+00:00"))
+    except:
+        return points
+    
+    for e in events:
+        if len(points) >= max_signals:
+            break
+        
+        et = e.get("event_type", "")
+        
+        # STRATEGY_SIGNAL events
+        if et == "STRATEGY_SIGNAL":
+            # Filter by symbol/timeframe if specified
+            if symbol and e.get("symbol") != symbol:
+                continue
+            if timeframe and e.get("timeframe") != timeframe:
+                continue
+            
+            # Check timestamp in window
+            ts_str = e.get("bar_close_ts") or e.get("ts", "")
+            try:
+                evt_dt = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+                if not (start_dt <= evt_dt <= end_dt):
+                    continue
+            except:
+                continue
+            
+            # Get signal and map to marker
+            signal = e.get("signal", "NONE")
+            marker_type, color, shape = SIGNAL_MARKER_MAP.get(signal, ("signal", "gray", "circle"))
+            
+            # Skip NONE signals by default
+            if signal == "NONE":
+                continue
+            
+            # Get price
+            price = e.get("close")
+            if price is None and isinstance(e.get("snapshot"), dict):
+                price = e["snapshot"].get("close")
+            
+            points.append(OverlayPoint(
+                ts=ts_str,
+                price=price,
+                marker_type=marker_type,
+                signal=signal,
+                reason=e.get("reason"),
+                passed_filters=e.get("passed_filters"),
+                rsi=e.get("rsi"),
+                atr_pct=e.get("atr_pct"),
+                color=color,
+                symbol_shape=shape,
+            ))
+        
+        # POSITION_OPEN / POSITION_CLOSE events
+        elif et in ("POSITION_OPEN", "POSITION_CLOSE"):
+            if symbol and e.get("symbol") != symbol:
+                continue
+            if timeframe and e.get("timeframe") != timeframe:
+                continue
+            
+            ts_str = e.get("ts", "")
+            try:
+                evt_dt = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+                if not (start_dt <= evt_dt <= end_dt):
+                    continue
+            except:
+                continue
+            
+            marker_type = "position_open" if et == "POSITION_OPEN" else "position_close"
+            color = "green" if et == "POSITION_OPEN" else "red"
+            
+            points.append(OverlayPoint(
+                ts=ts_str,
+                price=None,  # Will be resolved from OHLCV
+                marker_type=marker_type,
+                signal=et,
+                reason=None,
+                passed_filters=None,
+                color=color,
+                symbol_shape="line-ns" if "POSITION" in et else "circle",
+            ))
+    
+    return points
+
+
+def resolve_price_for_signal(
+    point: OverlayPoint,
+    candles: Optional[List[Dict[str, Any]]],
+) -> float:
+    """
+    Resolve price for an overlay point.
+    
+    Priority:
+    1. Use point.price if present
+    2. Interpolate from OHLCV candles at point.ts
+    3. Default to 0
+    """
+    if point.price is not None:
+        return point.price
+    
+    if candles and point.ts:
+        # Find closest candle
+        try:
+            point_dt = datetime.fromisoformat(point.ts.replace("Z", "+00:00"))
+            best_candle = None
+            best_diff = None
+            
+            for c in candles:
+                c_ts = c.get("ts", "")
+                try:
+                    c_dt = datetime.fromisoformat(c_ts.replace("Z", "+00:00"))
+                    diff = abs((c_dt - point_dt).total_seconds())
+                    if best_diff is None or diff < best_diff:
+                        best_diff = diff
+                        best_candle = c
+                except:
+                    continue
+            
+            if best_candle:
+                return float(best_candle.get("close", 0))
+        except:
+            pass
+    
+    return 0.0

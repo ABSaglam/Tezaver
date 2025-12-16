@@ -181,6 +181,79 @@ class TestTradeReplayData(unittest.TestCase):
         # First path should be primary coin_cells path
         self.assertIn("coin_cells", str(paths[0]))
         self.assertIn("history_15m", str(paths[0]))
+    
+    def test_extract_strategy_signals_filters_window(self):
+        """extract_strategy_signals should filter by window and symbol/tf."""
+        from tezaver.ui.trade_replay_data import extract_strategy_signals
+        
+        events = [
+            {"event_type": "STRATEGY_SIGNAL", "ts": "2025-01-01T10:00:00+00:00", "bar_close_ts": "2025-01-01T10:00:00+00:00", 
+             "symbol": "BTCUSDT", "timeframe": "15m", "signal": "OPEN_LONG", "close": 42000.0, "reason": "CARD_WINDOW_PASSED"},
+            {"event_type": "STRATEGY_SIGNAL", "ts": "2025-01-01T10:15:00+00:00", "bar_close_ts": "2025-01-01T10:15:00+00:00",
+             "symbol": "BTCUSDT", "timeframe": "15m", "signal": "CLOSE_LONG", "close": 42500.0, "reason": "SIGNAL_OK"},
+            {"event_type": "STRATEGY_SIGNAL", "ts": "2025-01-01T12:00:00+00:00",  # Outside window
+             "symbol": "BTCUSDT", "timeframe": "15m", "signal": "OPEN_LONG", "close": 43000.0},
+            {"event_type": "STRATEGY_SIGNAL", "ts": "2025-01-01T10:05:00+00:00",  # Different symbol
+             "symbol": "ETHUSDT", "timeframe": "15m", "signal": "OPEN_LONG", "close": 3000.0},
+        ]
+        
+        # Filter for BTCUSDT in window
+        points = extract_strategy_signals(
+            events,
+            start_ts="2025-01-01T09:30:00+00:00",
+            end_ts="2025-01-01T10:30:00+00:00",
+            symbol="BTCUSDT",
+            timeframe="15m",
+        )
+        
+        # Should get 2 points (OPEN_LONG and CLOSE_LONG within window for BTCUSDT)
+        self.assertEqual(len(points), 2)
+        self.assertEqual(points[0].signal, "OPEN_LONG")
+        self.assertEqual(points[0].color, "green")
+        self.assertEqual(points[1].signal, "CLOSE_LONG")
+        self.assertEqual(points[1].color, "red")
+    
+    def test_price_resolution_prefers_event_close(self):
+        """resolve_price_for_signal should prefer event close price."""
+        from tezaver.ui.trade_replay_data import resolve_price_for_signal, OverlayPoint
+        
+        point = OverlayPoint(
+            ts="2025-01-01T10:00:00+00:00",
+            price=42000.0,  # Has price from event
+            marker_type="entry",
+            signal="OPEN_LONG",
+            reason="TEST",
+            passed_filters=True,
+        )
+        
+        candles = [{"ts": "2025-01-01T10:00:00+00:00", "close": 41000.0}]
+        
+        # Should use event price, not candle price
+        resolved = resolve_price_for_signal(point, candles)
+        self.assertEqual(resolved, 42000.0)
+    
+    def test_price_resolution_falls_back_to_ohlcv(self):
+        """resolve_price_for_signal should fall back to OHLCV when event price missing."""
+        from tezaver.ui.trade_replay_data import resolve_price_for_signal, OverlayPoint
+        
+        point = OverlayPoint(
+            ts="2025-01-01T10:00:00+00:00",
+            price=None,  # No price from event
+            marker_type="entry",
+            signal="OPEN_LONG",
+            reason="TEST",
+            passed_filters=True,
+        )
+        
+        candles = [
+            {"ts": "2025-01-01T09:45:00+00:00", "close": 41800.0},
+            {"ts": "2025-01-01T10:00:00+00:00", "close": 42000.0},
+            {"ts": "2025-01-01T10:15:00+00:00", "close": 42200.0},
+        ]
+        
+        # Should find closest candle and use its close
+        resolved = resolve_price_for_signal(point, candles)
+        self.assertEqual(resolved, 42000.0)
 
 if __name__ == "__main__":
     unittest.main()

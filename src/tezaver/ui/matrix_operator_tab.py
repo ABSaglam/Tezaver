@@ -1425,7 +1425,8 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
     with st.expander("🎬 Trade Replay", expanded=False):
         from tezaver.ui.trade_replay_data import (
             parse_trades_from_events, build_trade_timeline, 
-            load_ohlcv, get_trade_context, Trade, filter_trades
+            load_ohlcv, get_trade_context, Trade, filter_trades,
+            extract_strategy_signals, resolve_price_for_signal, OverlayPoint
         )
         
         # Load events
@@ -1500,6 +1501,15 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
                         - **Close Reason:** {selected_trade.close_reason or 'N/A'}
                         """)
                         
+                        # H1/H2: Overlay toggles
+                        toggle_cols = st.columns(3)
+                        with toggle_cols[0]:
+                            show_signals = st.checkbox("📡 Strategy Signals", value=True, key="tr_signals")
+                        with toggle_cols[1]:
+                            show_positions = st.checkbox("📍 Position Lines", value=True, key="tr_positions")
+                        with toggle_cols[2]:
+                            st.caption("🔺=Entry 🔻=Exit")
+                        
                         # Load OHLCV and render chart
                         if selected_trade.open_ts and selected_trade.close_ts:
                             candles, paths_tried = load_ohlcv(
@@ -1559,6 +1569,51 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
                                         line=dict(color="green", dash="dash", width=1),
                                         name=f"TP @ {selected_trade.tp_px:.2f}"
                                     ))
+                                
+                                # H1: Strategy signal overlay
+                                if show_signals:
+                                    overlay_points = extract_strategy_signals(
+                                        events,
+                                        selected_trade.open_ts,
+                                        selected_trade.close_ts,
+                                        symbol=selected_trade.symbol,
+                                        timeframe=selected_trade.timeframe,
+                                    )
+                                    
+                                    for pt in overlay_points:
+                                        # Resolve price if missing
+                                        y_val = resolve_price_for_signal(pt, candles)
+                                        if y_val > 0:
+                                            # Hover text
+                                            hover_text = f"{pt.signal}<br>Reason: {pt.reason or 'N/A'}"
+                                            if pt.rsi is not None:
+                                                hover_text += f"<br>RSI: {pt.rsi:.1f}"
+                                            if pt.atr_pct is not None:
+                                                hover_text += f"<br>ATR%: {pt.atr_pct:.3f}"
+                                            
+                                            fig.add_trace(go.Scatter(
+                                                x=[pt.ts],
+                                                y=[y_val],
+                                                mode="markers",
+                                                marker=dict(size=10, color=pt.color, symbol=pt.symbol_shape),
+                                                name=pt.signal,
+                                                hovertext=hover_text,
+                                                hoverinfo="text",
+                                                showlegend=False,
+                                            ))
+                                
+                                # H2: Position lines overlay
+                                if show_positions:
+                                    for pt in overlay_points if 'overlay_points' in dir() else []:
+                                        if pt.marker_type in ("position_open", "position_close"):
+                                            y_min = min(c["low"] for c in candles)
+                                            y_max = max(c["high"] for c in candles)
+                                            fig.add_shape(
+                                                type="line",
+                                                x0=pt.ts, x1=pt.ts,
+                                                y0=y_min, y1=y_max,
+                                                line=dict(color=pt.color, dash="dot", width=1),
+                                            )
                                 
                                 fig.update_layout(
                                     title=f"{selected_trade.symbol} - Trade Replay",
