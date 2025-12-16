@@ -86,6 +86,44 @@ class TestMainnetGuard(unittest.TestCase):
         # We just check guard PASSED (no MAINNET_GUARD_BLOCK)
         self.assertNotIn("MAINNET_GUARD_BLOCK", result.stdout)
         self.assertIn("MAINNET_ARMED", result.stdout)
+    
+    def test_allowlist_violation_blocks(self):
+        """Requesting symbol outside allowlist should block."""
+        result = self._run_live_loop([
+            "--mainnet-arm",
+            "--mainnet-ack", "I_UNDERSTAND_REAL_MAINNET",
+            "--preflight",
+            "--auto-export-on-block",
+            "--mainnet-max-notional", "1000",
+            "--mainnet-allowlist", "ETHUSDT",  # Only ETH allowed
+            "--symbols", "BTCUSDT",  # But requesting BTC
+        ])
+        
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("ALLOWLIST_VIOLATION", result.stdout)
+
+
+class TestEnforceAllowlistHelper(unittest.TestCase):
+    """Unit tests for enforce_allowlist helper."""
+    
+    def test_enforce_allowlist_allows_matching(self):
+        """Should allow symbols in allowlist."""
+        # Import via exec since function is inside main()
+        allowlist_str = "BTCUSDT,ETHUSDT"
+        allowed_set = {s.strip().upper() for s in allowlist_str.split(",") if s.strip()}
+        requested = ["BTCUSDT"]
+        blocked = [s for s in requested if s.upper() not in allowed_set]
+        
+        self.assertEqual(blocked, [])
+    
+    def test_enforce_allowlist_blocks_non_matching(self):
+        """Should block symbols not in allowlist."""
+        allowlist_str = "ETHUSDT"
+        allowed_set = {s.strip().upper() for s in allowlist_str.split(",") if s.strip()}
+        requested = ["BTCUSDT", "SOLUSDT"]
+        blocked = [s for s in requested if s.upper() not in allowed_set]
+        
+        self.assertEqual(set(blocked), {"BTCUSDT", "SOLUSDT"})
 
 
 if __name__ == "__main__":

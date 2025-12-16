@@ -624,9 +624,10 @@ def main():
         
         # Emit telemetry
         if ndjson_sink:
+            from datetime import datetime as _dt, timezone as _tz
             ndjson_sink({
                 "event_type": "MAINNET_GUARD_EVAL",
-                "ts": datetime.now(timezone.utc).isoformat(),
+                "ts": _dt.now(_tz.utc).isoformat(),
                 "decision": decision,
                 "reasons": reasons,
                 "mainnet_arm": args.mainnet_arm,
@@ -639,9 +640,41 @@ def main():
         
         return decision == "PASS", reasons
     
-    # Run mainnet guard (before preflight) - no event sink yet, telemetry emitted to stdout only
+    # =========================================================================
+    # Early NDJSON sink for mainnet guard telemetry (before command-specific sinks)
+    # =========================================================================
+    def _early_ndjson_sink(event):
+        """Write event to NDJSON file (early, before full sinks defined)."""
+        from pathlib import Path
+        import json
+        ndjson_path = Path("data/logs/live_events.ndjson")
+        ndjson_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            with open(ndjson_path, "a") as f:
+                f.write(json.dumps(event) + "\n")
+        except:
+            pass
+    
+    # =========================================================================
+    # Allowlist enforcement helper
+    # =========================================================================
+    def enforce_allowlist(requested_symbols: list, allowlist_str: str) -> tuple:
+        """
+        Check if requested symbols are in the allowlist.
+        Returns (allowed, blocked_symbols).
+        """
+        if not allowlist_str:
+            return False, requested_symbols
+        
+        allowed_set = {s.strip().upper() for s in allowlist_str.split(",") if s.strip()}
+        requested_upper = [s.upper() for s in requested_symbols]
+        blocked = [s for s in requested_upper if s not in allowed_set]
+        
+        return len(blocked) == 0, blocked
+    
+    # Run mainnet guard (with NDJSON telemetry)
     if args.exchange_mode == "REAL_MAINNET":
-        mainnet_ok, mainnet_reasons = check_mainnet_guard(args, None)
+        mainnet_ok, mainnet_reasons = check_mainnet_guard(args, _early_ndjson_sink)
         
         if not mainnet_ok:
             print(f"⛔ MAINNET_GUARD_BLOCK: {mainnet_reasons}")
@@ -652,11 +685,37 @@ def main():
             print("  --mainnet-max-notional <value>")
             print("  --mainnet-allowlist 'SYM1,SYM2'")
             sys.exit(2)
-        else:
-            # Print MAINNET_ARMED (event sink not available yet, will emit later in command handlers)
-            from datetime import datetime as dt_now, timezone as tz
-            print(f"[MAINNET_ARMED] ts={dt_now.now(tz.utc).isoformat()} max_notional={args.mainnet_max_notional} allowlist={args.mainnet_allowlist}")
-            print("[MAINNET_ARMED] All safety checks passed. Live trading enabled.")
+        
+        # Allowlist enforcement (after guard passes)
+        requested_symbols = [s.strip() for s in args.symbols.split(",")]
+        allowlist_ok, blocked_syms = enforce_allowlist(requested_symbols, args.mainnet_allowlist)
+        
+        if not allowlist_ok:
+            reason = f"ALLOWLIST_VIOLATION:{blocked_syms}"
+            from datetime import datetime as _dt2, timezone as _tz2
+            _early_ndjson_sink({
+                "event_type": "MAINNET_GUARD_EVAL",
+                "ts": _dt2.now(_tz2.utc).isoformat(),
+                "decision": "BLOCK",
+                "reasons": [reason],
+                "mainnet_allowlist": args.mainnet_allowlist,
+                "requested_symbols": requested_symbols,
+            })
+            print(f"⛔ MAINNET_GUARD_BLOCK: {[reason]}")
+            print(f"Requested symbols {requested_symbols} not in allowlist: {args.mainnet_allowlist}")
+            sys.exit(2)
+        
+        # Emit MAINNET_ARMED to NDJSON
+        from datetime import datetime as dt_now, timezone as tz
+        _early_ndjson_sink({
+            "event_type": "MAINNET_ARMED",
+            "ts": dt_now.now(tz.utc).isoformat(),
+            "mainnet_max_notional": args.mainnet_max_notional,
+            "mainnet_allowlist": args.mainnet_allowlist,
+            "symbols": requested_symbols,
+        })
+        print(f"[MAINNET_ARMED] ts={dt_now.now(tz.utc).isoformat()} max_notional={args.mainnet_max_notional} allowlist={args.mainnet_allowlist}")
+        print("[MAINNET_ARMED] All safety checks passed. Live trading enabled.")
     
     # Single-export guard
     _block_exported = [False]  # Use list for mutable closure
@@ -1071,8 +1130,8 @@ def main():
             order_timeout_sec=args.order_timeout_sec,
             cancel_on_timeout=args.cancel_on_timeout,
             inject_fault=args.inject_order_fault,
-            # Risk Limiter Config
-            max_total_notional_usdt=getattr(args, "max_total_notional_usdt", 500.0),
+            # Risk Limiter Config (override with mainnet cap if armed)
+            max_total_notional_usdt=(args.mainnet_max_notional if args.exchange_mode == "REAL_MAINNET" and args.mainnet_max_notional else getattr(args, "max_total_notional_usdt", 500.0)),
             max_cell_notional_usdt=getattr(args, "max_cell_notional_usdt", 300.0),
             max_open_positions=getattr(args, "max_open_positions", 3),
             risk_enforce=getattr(args, "risk_enforce", "BLOCK"),
@@ -1148,7 +1207,7 @@ def main():
             from tezaver.matrix.live.risk_limiter import GlobalRiskLimiter, RiskLimits
             policy_risk_limiter = GlobalRiskLimiter(
                 limits=RiskLimits(
-                    max_total_notional_usdt=getattr(args, "max_total_notional_usdt", 500.0),
+                    max_total_notional_usdt=(args.mainnet_max_notional if args.exchange_mode == "REAL_MAINNET" and args.mainnet_max_notional else getattr(args, "max_total_notional_usdt", 500.0)),
                     max_cell_notional_usdt=getattr(args, "max_cell_notional_usdt", 300.0),
                     max_open_positions=getattr(args, "max_open_positions", 3),
                     enforce=getattr(args, "risk_enforce", "BLOCK"),
