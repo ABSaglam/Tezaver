@@ -52,7 +52,7 @@ def run_sim_bringup(
     print("✅ Simulation complete.")
 
 def generate_self_check_report(events_path: str) -> None:
-    """Analyze the output and print a report."""
+    """Analyze the output and print a report (v2)."""
     p = Path(events_path)
     if not p.exists():
         print(f"❌ Error: Events file not found at {events_path}")
@@ -70,49 +70,71 @@ def generate_self_check_report(events_path: str) -> None:
                 except:
                     pass
     
-    print(f"  - File size: {len(events)} events ({p.stat().st_size / 1024:.1f} KB)")
+    file_size_kb = p.stat().st_size / 1024
+    print(f"  - File size: {len(events)} events ({file_size_kb:.1f} KB)")
     
     # Counts
-    counts = {}
+    target_types = [
+        "STRATEGY_SIGNAL", 
+        "HTF_PERMISSION_EVAL", 
+        "HTF_VETO_APPLIED", 
+        "POSITION_OPEN", 
+        "POSITION_CLOSE", 
+        "ORDER_LIFECYCLE_DONE"
+    ]
+    counts = {t: 0 for t in target_types}
+    
     for e in events:
         et = e.get("event_type", "UNKNOWN")
-        counts[et] = counts.get(et, 0) + 1
-    
-    print("  - Top event types:")
-    for et, c in sorted(counts.items(), key=lambda x: x[1], reverse=True)[:10]:
-        print(f"    - {et}: {c}")
+        if et in counts:
+            counts[et] += 1
+            
+    print("  - Key Event Counts:")
+    for et in target_types:
+        if counts[et] > 0:
+            print(f"    - {et}: {counts[et]}")
         
     # Trades
     completed = parse_trades_from_events(events)
-    # Check for simple open/close pairs if library parse fails (backup check)
-    opens = [e for e in events if e.get("event_type") in ("PROOF_OPEN_RESULT", "POSITION_OPEN")]
-    closes = [e for e in events if e.get("event_type") in ("PROOF_CLOSE_RESULT", "POSITION_CLOSE")]
-    
     print(f"  - Completed trades: {len(completed)}")
-    print(f"  - Raw Open/Close events: {len(opens)}/{len(closes)}")
     
-    # Chart Data Mode
-    # Use first trade to check OHLCV
-    chart_mode = "UNKNOWN"
-    reason = "No trades to check"
-    
+    # Decision Context Sample
+    decision_summary = "N/A"
     if completed:
-        t = completed[0]
-        candles, _ = load_ohlcv(t.symbol, t.timeframe, t.open_ts, t.close_ts)
-        if candles:
-            chart_mode = "OHLCV (Standard)"
-            reason = "Found parquet data"
-        else:
-            chart_mode = "FALLBACK (Events)"
-            reason = "Missing OHLCV, using events"
-    
-    print(f"  - Chart Data Mode: {chart_mode} ({reason})")
-    
+        try:
+            from tezaver.ui.trade_replay_data import build_decision_context
+            # Find context for first trade
+            t = completed[0]
+            # Need to filter events up to open_ts? build_dec_ctx handles it but needs list
+            ctx = build_decision_context(events, t)
+            decision_summary = ctx.get("summary", "N/A")
+        except Exception as e:
+            decision_summary = f"Error: {e}"
+            
+    print(f"  - First Trade Context: {decision_summary}")
+
     # Verdict
     success = len(completed) > 0
     print(f"  - Trade Replay should show: {'YES' if success else 'NO'}")
     if not success:
         print("    (Reason: No completed trades found)")
+        
+    # JSON Export
+    report_data = {
+        "ts": datetime.now().isoformat(),
+        "events_path": str(events_path),
+        "event_count": len(events),
+        "counts": counts,
+        "completed_trades": len(completed),
+        "decision_context_sample": decision_summary,
+        "verdict": "YES" if success else "NO"
+    }
+    
+    report_path = Path("data/logs/bringup_report.json")
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(report_path, "w") as f:
+        json.dump(report_data, f, indent=2)
+    print(f"  - Report saved to: {report_path}")
 
 def main():
     parser = argparse.ArgumentParser(description="Tezaver Bring-up Reset Tool")

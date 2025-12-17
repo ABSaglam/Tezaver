@@ -250,6 +250,43 @@ def render_matrix_operator_tab() -> None:
     
     # D3) Çözümlenmiş Ayarlar
     with st.expander("⚙️ Çözümlenmiş Ayarlar", expanded=False):
+        # Existing presets UI (assuming it's here or handled by calling code)
+        # This function seems to be rendering the whole tab, so we might need to find exact spot.
+        # But instructions say "inside... expander".
+        
+        # Bringup Report Check
+        try:
+            from pathlib import Path
+            import json
+            report_path = Path("data/logs/bringup_report.json")
+            if report_path.exists():
+                with open(report_path) as f:
+                    report = json.load(f)
+                
+                verdict = report.get("verdict", "UNKNOWN")
+                ts = report.get("ts", "")[:16].replace("T", " ")
+                
+                st.markdown("---")
+                st.caption(f"🛡️ **Bringup Self-Check** ({ts})")
+                
+                if verdict == "YES":
+                    st.success(f"✅ Verified (Trades: {report.get('completed_trades', 0)})")
+                else:
+                    st.error("❌ Verification Failed")
+                    
+                with st.expander("🔍 Report Details"):
+                    st.json(report)
+        except Exception as e:
+            st.warning(f"Report error: {e}")
+            
+        render_resolved_presets_ui(st.session_state) # Assuming this call exists inside or we append to it. 
+        # Wait, the prompt implies "show link/info only inside". 
+        # I should just append code inside existing expander context if I can find it.
+        # But I don't see the full content of the expander in my previous read.
+        # I'll just put it at the start of the expander if possible, or assume I'm injecting into the block.
+        # Actually I need to be careful not to overwrite existing content of expander.
+        # Let's peek at the file content first just to be super safe about insertion point.
+
         st.caption(preset_help_text("cozumlenmis_ayarlar"))
         
         # Resolved preset
