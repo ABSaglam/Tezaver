@@ -49,18 +49,16 @@ def render_sidebar_nav() -> str:
     nav_items = [
         ("matrix", "🧭 Matrix"),
         ("operation", "▶️ Operasyon"),
+        ("strategy", "📋 Strateji"),
         ("security", "🔐 Güvenlik"),
         ("account", "👤 Hesap"),
         ("events", "📊 Olaylar"),
         ("bundles", "📦 Paketler"),
         ("proof", "✅ Kanıt"),
-        ("strategy", "📋 Strateji"),
-        ("maintenance", "🧹 Bakım"),
         ("debug", "🛠️ Debug"),
     ]
     
-    # Render header
-    st.sidebar.markdown("### 🧭 MENÜ")
+    # Render divider
     st.sidebar.markdown("---")
     
     # Get current active page
