@@ -97,7 +97,7 @@ def create_mini_backup() -> Path:
     # Format: 16_Aralik_2025
     months_tr = ['Ocak', 'Subat', 'Mart', 'Nisan', 'Mayis', 'Haziran', 'Temmuz', 'Agustos', 'Eylul', 'Ekim', 'Kasim', 'Aralik']
     now = get_turkey_now()
-    ts = f"{now.day}_{months_tr[now.month - 1]}_{now.year}"
+    ts = f"{now.day}_{months_tr[now.month - 1]}_{now.year}_{now.hour:02d}{now.minute:02d}"
     out_dir = get_daily_backup_dir()
     archive_path = out_dir / f"tezaver_mini_{ts}.zip"
     
@@ -124,31 +124,53 @@ def create_mini_backup() -> Path:
     return archive_path
 
 
-def create_full_backup() -> Path:
+
+def get_ui_backup_dir() -> Path:
+    """Returns the UI backup directory."""
+    ui_dir = get_backup_root() / "UI"
+    ui_dir.mkdir(exist_ok=True)
+    return ui_dir
+
+
+def create_ui_backup() -> Path:
     """
-    Creates a 'full' backup containing all data artifacts.
-    Includes: data/, coin_cells/, library/, config/
+    Creates a 'UI' backup containing ONLY the application code.
+    Includes: src/
+    Excludes: data/, coin_cells/, library/
+    Format: UI_17_Aralık_2025_Saat_22_46.zip
     """
     root = get_project_root()
-    # Format: 16_Aralik_2025
-    months_tr = ['Ocak', 'Subat', 'Mart', 'Nisan', 'Mayis', 'Haziran', 'Temmuz', 'Agustos', 'Eylul', 'Ekim', 'Kasim', 'Aralik']
+    
+    # Format: UI_17_Aralık_2025_Saat_22_46
+    months_tr = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık']
     now = get_turkey_now()
-    ts = f"{now.day}_{months_tr[now.month - 1]}_{now.year}"
-    out_dir = get_full_backup_dir()
-    archive_path = out_dir / f"tezaver_full_{ts}.zip"
+    # Note: now.month is 1-based
+    month_name = months_tr[now.month - 1]
     
-    logger.info(f"Creating full backup at {archive_path}...")
+    ts_str = f"{now.day}_{month_name}_{now.year}_Saat_{now.hour:02d}_{now.minute:02d}"
+    filename = f"UI_{ts_str}.zip"
     
+    out_dir = get_ui_backup_dir()
+    archive_path = out_dir / filename
+    
+    logger.info(f"Creating UI backup at {archive_path}...")
+    
+    count = 0
     with zipfile.ZipFile(archive_path, "w", zipfile.ZIP_DEFLATED) as z:
-        for dir_name in ["data", "coin_cells", "library", "config"]:
-            p = root / dir_name
-            if p.exists():
-                if p.is_dir():
-                    _add_path_to_zip(z, p, Path(dir_name))
-                else:
-                    z.write(p, arcname=dir_name)
-                    
-    logger.info(f"Full backup created successfully: {archive_path.name}")
+        # 1. src folder (The "Application")
+        src_path = root / "src"
+        if src_path.exists():
+            _add_path_to_zip(z, src_path, Path("src"))
+            count += 1
+            
+        # 2. Key root files (requirements.txt, etc - optional but good for 'app' backup)
+        for root_file in ["requirements.txt", "README.md", "run_app.py", "main.py"]:
+            f = root / root_file
+            if f.exists():
+                z.write(f, arcname=root_file)
+                count += 1
+
+    logger.info(f"UI backup created successfully: {archive_path.name} ({count} items)")
     return archive_path
 
 

@@ -97,10 +97,16 @@ class LiveLoopService:
         self._proof_run_id = None
         self._proof_history = deque(maxlen=50)
         self._proof_state = "IDLE"
+        self._proof_started_at: Optional[datetime] = None
+        self._last_proof_event: Optional[Dict[str, Any]] = None
+        self._last_error: Optional[str] = None
         
         # Router/Callback
         self._on_closed_bar_cb = None
         self._router_metrics = {}
+        self._router_attached = False
+        self._router_ticks = 0
+        self._last_router_tick: Optional[Dict[str, Any]] = None
         
         # M3a: HTF Permissions (Symbol -> Decision)
         # e.g. "BTCUSDT" -> "ALLOW_LONG"
@@ -108,6 +114,9 @@ class LiveLoopService:
         
         # Dedup tracking: cell_id -> last_processed_bar_ts (str)
         self._processed_bars: Dict[str, str] = {}
+        
+        # Last poll timestamp
+        self._last_poll_ts: Optional[datetime] = None
     
     @property
     def running(self) -> bool:
@@ -378,13 +387,14 @@ class LiveLoopService:
     
     def get_proof_state(self) -> Dict[str, Any]:
         """Get current proof job state."""
+        proof_started_at = getattr(self, '_proof_started_at', None)
         return {
-            "running": self.running and self._proof_mode,
-            "proof_mode": self._proof_mode,
-            "proof_run_id": self._proof_run_id,
-            "started_at": self._proof_started_at.isoformat() if self._proof_started_at else None,
-            "last_proof_event": self._last_proof_event,
-            "last_error": self._last_error,
+            "running": self.running and getattr(self, '_proof_mode', False),
+            "proof_mode": getattr(self, '_proof_mode', False),
+            "proof_run_id": getattr(self, '_proof_run_id', None),
+            "started_at": proof_started_at.isoformat() if proof_started_at else None,
+            "last_proof_event": getattr(self, '_last_proof_event', None),
+            "last_error": getattr(self, '_last_error', None),
         }
     
     def stop_proof_closed(self) -> bool:
@@ -409,9 +419,9 @@ class LiveLoopService:
     def get_router_state(self) -> Dict[str, Any]:
         """Get router state for UI."""
         return {
-            "attached": self._router_attached,
-            "ticks": self._router_ticks,
-            "last_tick": self._last_router_tick,
+            "attached": getattr(self, '_router_attached', False),
+            "ticks": getattr(self, '_router_ticks', 0),
+            "last_tick": getattr(self, '_last_router_tick', None),
         }
     
     def check_arm_allowed(
@@ -509,11 +519,11 @@ class LiveLoopService:
         """Get current service status."""
         return ServiceStatus(
             running=self.running,
-            last_poll_ts=self._last_poll_ts,
+            last_poll_ts=getattr(self, '_last_poll_ts', None),
             polls=self._stats.poll_count if self._stats else 0,
             ticks=self._stats.tick_count if self._stats else 0,
             skips=self._stats.skip_count if self._stats else 0,
-            last_error=self._last_error,
+            last_error=getattr(self, '_last_error', None),
             cells_count=len(self._cells),
         )
     

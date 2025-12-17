@@ -118,7 +118,7 @@ def render_matrix_operator_tab() -> None:
         st.error(f"Strategy Board yüklenirken hata: {e}")
         rows = []
     
-    with st.expander("📋 Strategy Board – CoinPage V2 Profilleri", expanded=False):
+    with st.expander("📋 Strategy Board | Strateji Panosu", expanded=False):
         _render_strategy_board_table(rows)
     
     st.divider()
@@ -140,7 +140,7 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
     # =========================================================================
     # Live Loop Control (NEW)
     # =========================================================================
-    with st.expander("🔁 Live Loop Control", expanded=True):
+    with st.expander("🔁 Live Loop Control | Canlı Döngü Kontrolü", expanded=True):
         from tezaver.matrix.live.live_loop_service import LiveLoopService
         from tezaver.matrix.live.live_loop import TICK_POLICY_ON_CLOSED_BAR, TICK_POLICY_ON_ANY_NEW_BAR
         
@@ -215,7 +215,7 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
     # =========================================================================
     # E1) Health Summary (from NDJSON events)
     # =========================================================================
-    with st.expander("🩺 System Health Summary", expanded=False):
+    with st.expander("🩺 System Health Summary | Sistem Sağlık Özeti", expanded=False):
         from pathlib import Path
         from tezaver.ui.matrix_operator_data import load_ndjson_tail, summarize_health
         
@@ -265,7 +265,7 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
     # =========================================================================
     # E2) Incident Bundles Panel
     # =========================================================================
-    with st.expander("📦 Incident Bundles", expanded=False):
+    with st.expander("📦 Incident Bundles | Olay Paketi Arşivi", expanded=False):
         from tezaver.ui.matrix_operator_data import list_incident_bundles
         
         incident_dir = Path("data/incidents")
@@ -286,7 +286,7 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
     # =========================================================================
     # E3) Events Explorer
     # =========================================================================
-    with st.expander("📊 Events Explorer", expanded=False):
+    with st.expander("📊 Events Explorer | Olay Gezgini", expanded=False):
         from tezaver.ui.matrix_operator_data import filter_events
         
         col_type, col_sym, col_limit = st.columns([2, 1, 1])
@@ -324,7 +324,7 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
     # =========================================================================
     # G1-G3) Trade Replay v1.1
     # =========================================================================
-    with st.expander("🎬 Trade Replay", expanded=False):
+    with st.expander("🎬 Trade Replay | İşlem Tekrarı", expanded=False):
         from tezaver.ui.trade_replay_data import (
             parse_trades_from_events, build_trade_timeline, 
             load_ohlcv, get_trade_context, Trade, filter_trades
@@ -508,7 +508,7 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
     # =========================================================================
     # Live Freshness Table
     # =========================================================================
-    with st.expander("🟢 Live Freshness / Lag", expanded=status.running):
+    with st.expander("🟢 Live Freshness / Lag | Canlı Veri Tazeliği", expanded=status.running):
         cell_metrics = service.get_cell_metrics()
         
         if cell_metrics:
@@ -538,7 +538,7 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
     # =========================================================================
     # Cycles Report (NEW) - Multi-cycle summary from NDJSON
     # =========================================================================
-    with st.expander("📊 Cycles Report", expanded=False):
+    with st.expander("📊 Cycles Report | Döngü Raporu", expanded=False):
         st.caption("Çalıştırılmış trade cycle'larının özeti. NDJSON log'undan okunur.")
         
         from pathlib import Path
@@ -566,7 +566,7 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
             # =========================================================================
             # Auto-Incident Controls
             # =========================================================================
-            with st.expander("🧯 Auto-Incident on BLOCK", expanded=False):
+            with st.expander("🧯 Auto-Incident on BLOCK | Otomatik Olay Kaydı", expanded=False):
                 st.caption("Automatically export incident bundles for BLOCK/WARN cycles. Matches CLI behavior.")
                 
                 ai_col1, ai_col2, ai_col3 = st.columns(3)
@@ -1097,7 +1097,7 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
     # =========================================================================
     # Closed Bar Proof (NEW)
     # =========================================================================
-    with st.expander("✅ Closed Bar Proof", expanded=False):
+    with st.expander("✅ Closed Bar Proof | Kapalı Bar Kanıtı", expanded=False):
         st.caption("Kapalı bar tick'ini tek tuşla kanıtla. Proof sırasında trade devre dışı.")
         
         from tezaver.matrix.live.timeframe_utils import eta_to_next_close, format_eta
@@ -1206,7 +1206,7 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
     # =========================================================================
     # Dust & Position Hygiene (NEW)
     # =========================================================================
-    with st.expander("🧹 Dust & Position Hygiene", expanded=False):
+    with st.expander("🧹 Dust & Position Hygiene | Bakiye & Pozisyon Temizliği", expanded=False):
         st.caption("Pozisyon temizliği ve dust policy ayarları. Proof cycle çalıştırarak test edebilirsiniz.")
         
         # Control columns
@@ -1251,7 +1251,7 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
         
         # Advanced Debug (hidden by default)
         close_qty_mult = 1.0  # Safe default
-        with st.expander("🔧 Advanced Debug", expanded=False):
+        with st.expander("🔧 Advanced Debug | Gelişmiş Hata Ayıklama", expanded=False):
             close_qty_mult = st.slider(
                 "Close Qty Multiplier",
                 min_value=0.1,
@@ -1442,7 +1442,7 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
     
     # =========================================================================
     # Closed-bar Router (NEW)
-    with st.expander("🔀 Closed-bar Router", expanded=False):
+    with st.expander("🔀 Closed-bar Router | Kapalı Bar Yönlendiricisi", expanded=False):
         st.caption("Kapalı bar tick'lerini MatrixLiveCluster'a yönlendir.")
         
         from tezaver.matrix.live.live_router import MatrixLiveRouter, LiveRouterConfig
@@ -1562,7 +1562,7 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
     # =========================================================================
     # Proof+Router (E2E) Panel
     # =========================================================================
-    with st.expander("🧾 Proof+Router (E2E)", expanded=False):
+    with st.expander("🧾 Proof+Router (E2E) | Kanıt+Yönlendirici (Uçtan Uca)", expanded=False):
         st.caption("Tek butonla 15m bar kapanışını + router tick'ini kanıtla. Forced DRY RUN.")
         
         from tezaver.matrix.live.timeframe_utils import eta_to_next_close, format_eta
@@ -1681,7 +1681,7 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
     # =========================================================================
     # Proof+Router+Cluster (E2E) Panel
     # =========================================================================
-    with st.expander("🧾 Proof+Router+Cluster (E2E)", expanded=False):
+    with st.expander("🧾 Proof+Router+Cluster (E2E) | Kanıt+Yönlendirici+Küme (Uçtan Uca)", expanded=False):
         st.caption("Proof + Router + Cluster (DRY RUN) tam E2E kanıtı. Forced DRY RUN.")
         
         from tezaver.matrix.live.timeframe_utils import eta_to_next_close, format_eta
@@ -1813,7 +1813,7 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
     # =========================================================================
     # 🧭 Live Ops Console
     # =========================================================================
-    with st.expander("🧭 Live Ops Console", expanded=False):
+    with st.expander("🧭 Live Ops Console | Canlı Operasyon Konsolu", expanded=False):
         st.caption("Cells, positions, signals, policy, gates - tüm Live durumunu izle.")
         
         import pandas as pd
@@ -2145,7 +2145,7 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
     # =========================================================================
     # Exchange & Arm Controls (Phase-1)
     # =========================================================================
-    with st.expander("⚙️ Exchange & Arm Controls", expanded=False):
+    with st.expander("⚙️ Exchange & Arm Controls | Borsa & Yetkilendirme Kontrolleri", expanded=False):
         st.caption("Exchange mode ve ARMED kontrolü. DUMMY_ORDER modunda secrets gerekmez.")
         
         from tezaver.matrix.live.live_gateway import ExchangeMode
@@ -2210,7 +2210,7 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
     # =========================================================================
     # Secrets Vault Panel (Phase-1)
     # =========================================================================
-    with st.expander("🔐 Secrets Vault", expanded=False):
+    with st.expander("🔐 Secrets Vault | Gizli Anahtar Kasası", expanded=False):
         st.caption("API key/secret yönetimi. REAL mode için gerekli, DUMMY_ORDER için gerekmez.")
         
         from tezaver.matrix.live.secrets import get_vault_status
@@ -2276,7 +2276,7 @@ export BINANCE_API_SECRET=your_api_secret_here""", language="bash")
     # =========================================================================
     # Live Gate Status (existing)
     # =========================================================================
-    with st.expander("🎮 Live Gate Status", expanded=False):
+    with st.expander("🎮 Live Gate Status | Canlı Kapı Durumu", expanded=False):
         col1, col2, col3 = st.columns(3)
         with col1:
             armed_mode = st.toggle("🔫 Armed Mode", value=False, key="live_armed_mode")
@@ -2342,7 +2342,7 @@ export BINANCE_API_SECRET=your_api_secret_here""", language="bash")
     # =========================================================================
     # NDJSON Tail Viewer
     # =========================================================================
-    with st.expander("📜 NDJSON Tail Viewer", expanded=False):
+    with st.expander("📜 NDJSON Tail Viewer | NDJSON Log Görüntüleyici", expanded=False):
         st.caption("Live event log dosyasından son N satır.")
         
         from tezaver.matrix.live.logs_tail import read_ndjson_tail, filter_events, events_to_table_rows
@@ -2393,7 +2393,7 @@ export BINANCE_API_SECRET=your_api_secret_here""", language="bash")
     # =========================================================================
     # Last Orders (per cell)
     # =========================================================================
-    with st.expander("🧾 Last Orders (per cell)", expanded=False):
+    with st.expander("🧾 Last Orders (per cell) | Son Emirler (hücre bazında)", expanded=False):
         st.caption("Her cell için son ORDER_SUBMIT/ORDER_RESULT durumu.")
         
         from tezaver.matrix.live.order_state import get_order_state_store
