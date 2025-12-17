@@ -1421,7 +1421,9 @@ def render_matrix_operator_tab() -> None:
 
 
 def _render_trade_replay_content(ndjson_path, preset) -> None:
-    """Render Trade Replay chart content."""
+    """Render Trade Replay with full chart (candlestick/fallback + overlays)."""
+    import pandas as pd
+    import plotly.graph_objects as go
     from tezaver.ui.trade_replay_data import (
         parse_trades_from_events, build_trade_timeline,
         load_ohlcv, get_trade_context, filter_trades,
@@ -1452,19 +1454,214 @@ def _render_trade_replay_content(ndjson_path, preset) -> None:
             st.info("📭 İşlem bulunamadı.")
             return
     
-    # Show trade count
-    st.caption(f"Toplam: {len(all_trades)} işlem")
+    # Get toggle states from session
+    show_signals = st.session_state.get("kokpit_tr_signals", True)
+    show_positions = st.session_state.get("kokpit_tr_positions", True)
+    show_rally = st.session_state.get("kokpit_tr_rally", True)
+    show_zones = st.session_state.get("kokpit_tr_zones", True)
     
-    # Simple trade list (first 10)
-    if all_trades:
-        import pandas as pd
+    # Get filter states
+    selected_symbol = st.session_state.get("kokpit_tr_symbol", "TÜMÜ")
+    selected_tf = st.session_state.get("kokpit_tr_tf", "TÜMÜ")
+    
+    # Apply filters
+    filtered_trades = filter_trades(
+        all_trades,
+        symbol=None if selected_symbol == "TÜMÜ" else selected_symbol,
+        timeframe=None if selected_tf == "TÜMÜ" else selected_tf,
+        limit=20
+    )
+    
+    if not filtered_trades:
+        st.info("Filtreye uyan işlem yok.")
+        return
+    
+    # Show trade count
+    st.caption(f"Toplam: {len(all_trades)} işlem | Filtrelenmiş: {len(filtered_trades)}")
+    
+    # Select first trade for chart
+    selected_trade = filtered_trades[0]
+    
+    # Trade selector (compact)
+    if len(filtered_trades) > 1:
+        trade_options = [f"{t.symbol}/{t.timeframe} @ {t.open_ts[:16] if t.open_ts else '?'}" for t in filtered_trades[:10]]
+        selected_idx = st.selectbox("İşlem Seç", range(len(trade_options)), format_func=lambda i: trade_options[i], key="kokpit_trade_select")
+        selected_trade = filtered_trades[selected_idx]
+    
+    # === CHART ===
+    if selected_trade.open_ts:
+        chart_end_ts = selected_trade.close_ts
+        if not chart_end_ts:
+            # Use last event time
+            last_evt = events[-1] if events else {}
+            chart_end_ts = last_evt.get("ts") or last_evt.get("bar_close_ts") or selected_trade.open_ts
+        
+        # Try to load OHLCV
+        candles, paths_tried = load_ohlcv(
+            selected_trade.symbol,
+            selected_trade.timeframe,
+            selected_trade.open_ts,
+            chart_end_ts,
+        )
+        
+        fallback_mode = False
+        if not candles:
+            # Fallback from events
+            candles = build_fallback_candles_from_events(events, selected_trade.open_ts, chart_end_ts)
+            if candles:
+                fallback_mode = True
+        
+        if candles and len(candles) >= 2:
+            # Build chart
+            if fallback_mode:
+                # Line chart for fallback
+                st.caption("⚠️ OHLCV bulunamadı, fallback gösteriliyor.")
+                fig = go.Figure(data=[go.Scatter(
+                    x=[c["ts"] for c in candles],
+                    y=[c["close"] for c in candles],
+                    mode="lines+markers",
+                    line=dict(color="blue", width=1),
+                    marker=dict(size=4),
+                    name="Fiyat"
+                )])
+            else:
+                # Candlestick chart
+                fig = go.Figure(data=[go.Candlestick(
+                    x=[c["ts"] for c in candles],
+                    open=[c["open"] for c in candles],
+                    high=[c["high"] for c in candles],
+                    low=[c["low"] for c in candles],
+                    close=[c["close"] for c in candles],
+                    name="Fiyat"
+                )])
+            
+            # Entry marker
+            if selected_trade.open_px:
+                fig.add_trace(go.Scatter(
+                    x=[selected_trade.open_ts],
+                    y=[selected_trade.open_px],
+                    mode="markers",
+                    marker=dict(size=12, color="green", symbol="triangle-up"),
+                    name="Giriş"
+                ))
+            
+            # Exit marker
+            if selected_trade.close_px and selected_trade.close_ts:
+                fig.add_trace(go.Scatter(
+                    x=[selected_trade.close_ts],
+                    y=[selected_trade.close_px],
+                    mode="markers",
+                    marker=dict(size=12, color="red", symbol="triangle-down"),
+                    name="Çıkış"
+                ))
+            
+            # SL/TP lines
+            x_range = [candles[0]["ts"], candles[-1]["ts"]]
+            if selected_trade.sl_px and show_positions:
+                fig.add_trace(go.Scatter(
+                    x=x_range,
+                    y=[selected_trade.sl_px, selected_trade.sl_px],
+                    mode="lines",
+                    line=dict(color="red", dash="dash", width=1),
+                    name=f"SL @ {selected_trade.sl_px:.2f}"
+                ))
+            if selected_trade.tp_px and show_positions:
+                fig.add_trace(go.Scatter(
+                    x=x_range,
+                    y=[selected_trade.tp_px, selected_trade.tp_px],
+                    mode="lines",
+                    line=dict(color="green", dash="dash", width=1),
+                    name=f"TP @ {selected_trade.tp_px:.2f}"
+                ))
+            
+            # Strategy signals overlay
+            if show_signals:
+                overlay_points = extract_strategy_signals(
+                    events,
+                    selected_trade.open_ts,
+                    selected_trade.close_ts or chart_end_ts,
+                    symbol=selected_trade.symbol,
+                    timeframe=selected_trade.timeframe,
+                )
+                for pt in overlay_points:
+                    y_val = resolve_price_for_signal(pt, candles)
+                    if y_val > 0:
+                        fig.add_trace(go.Scatter(
+                            x=[pt.ts],
+                            y=[y_val],
+                            mode="markers",
+                            marker=dict(size=8, color=pt.color, symbol=pt.symbol_shape),
+                            name=pt.signal,
+                            hovertext=f"{pt.signal}: {pt.reason or ''}",
+                            hoverinfo="text",
+                            showlegend=False,
+                        ))
+            
+            # Rally overlay
+            if show_rally:
+                rallies = extract_rally_events(
+                    events,
+                    selected_trade.open_ts,
+                    selected_trade.close_ts or chart_end_ts,
+                    symbol=selected_trade.symbol,
+                    timeframe=selected_trade.timeframe,
+                )
+                for r in rallies:
+                    dummy_pt = OverlayPoint(ts=r.ts, price=None, marker_type="rally", signal="RALLY", reason=None, passed_filters=None)
+                    y_val = resolve_price_for_signal(dummy_pt, candles)
+                    if y_val > 0:
+                        fig.add_trace(go.Scatter(
+                            x=[r.ts],
+                            y=[y_val],
+                            mode="markers+text",
+                            text=[f"⚡ {r.gain_pct:.1%}"],
+                            textposition="top center",
+                            marker=dict(size=14, color="orange", symbol="star"),
+                            name="Rally",
+                            hovertext=f"Rally: {r.gain_pct:.2%}, {r.bars_to_peak} bar",
+                            hoverinfo="text",
+                            showlegend=False,
+                        ))
+                        
+                        # Rally zone
+                        if show_zones and r.end_ts:
+                            fig.add_shape(
+                                type="rect",
+                                x0=r.ts, x1=r.end_ts,
+                                y0=0, y1=1,
+                                xref="x", yref="paper",
+                                fillcolor="orange",
+                                opacity=0.1,
+                                layer="below",
+                                line_width=0,
+                            )
+            
+            fig.update_layout(
+                title=f"{selected_trade.symbol} / {selected_trade.timeframe} - İşlem Tekrarı",
+                xaxis_title="Zaman",
+                yaxis_title="Fiyat",
+                height=450,
+                showlegend=True,
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            # Not enough data
+            paths_short = [str(p)[-50:] for p in paths_tried[:2]] if paths_tried else []
+            st.warning(f"⚠️ Grafik için yeterli veri yok. Denenen: {', '.join(paths_short) or 'N/A'}")
+    
+    # Trade table (secondary, compact)
+    with st.expander("📋 İşlem Listesi", expanded=False):
         trade_rows = [{
             "Sembol": t.symbol,
             "TF": t.timeframe,
             "Açılış": t.open_ts[:16] if t.open_ts else "-",
+            "Kapanış": t.close_ts[:16] if t.close_ts else "-",
             "PnL": f"${t.net_pnl:.2f}" if t.net_pnl else "-",
-        } for t in all_trades[:10]]
+        } for t in filtered_trades[:10]]
         st.dataframe(pd.DataFrame(trade_rows), use_container_width=True, hide_index=True)
+
+
 
 
 
