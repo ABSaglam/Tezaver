@@ -59,6 +59,16 @@ def fetch_account_snapshot(symbols: List[str] = None) -> AccountSnapshot:
     try:
         gw = get_gateway()
         
+        # Fetch balance using get_balance()
+        try:
+            balance = gw.get_balance()
+            snapshot.equity = balance.get("equity", 0)
+            snapshot.available_balance = balance.get("available", 0)
+            snapshot.used_margin = balance.get("used_margin", 0)
+            snapshot.unrealized_pnl = balance.get("unrealized_pnl", 0)
+        except Exception:
+            pass
+        
         # Fetch positions for each symbol
         positions = []
         total_unrealized = 0.0
@@ -70,17 +80,14 @@ def fetch_account_snapshot(symbols: List[str] = None) -> AccountSnapshot:
                 total_unrealized += pos.get("unrealized_pnl", 0)
         
         snapshot.positions = positions
-        snapshot.unrealized_pnl = total_unrealized
+        if snapshot.unrealized_pnl == 0:
+            snapshot.unrealized_pnl = total_unrealized
         
-        # Try to get account balance
+        # Fetch open orders using get_open_orders()
         try:
-            if hasattr(gw, "get_account_balance"):
-                balance = gw.get_account_balance()
-                snapshot.equity = balance.get("equity", 0)
-                snapshot.available_balance = balance.get("available", 0)
-                snapshot.used_margin = balance.get("used_margin", 0)
+            snapshot.open_orders = gw.get_open_orders()
         except Exception:
-            pass
+            snapshot.open_orders = []
         
     except Exception as e:
         snapshot.error = str(e)

@@ -90,6 +90,41 @@ class IExchangeGateway(Protocol):
         }
         """
         ...
+    
+    def get_balance(self) -> Dict[str, Any]:
+        """
+        Get account balance snapshot.
+        
+        Returns:
+            {
+                "equity": float,
+                "available": float,
+                "used_margin": float,
+                "unrealized_pnl": float,
+                "source": str,  # "dummy", "binance-testnet", etc.
+            }
+        """
+        ...
+    
+    def get_open_orders(self, symbol: str = None) -> list:
+        """
+        Get open orders.
+        
+        Args:
+            symbol: Optional symbol filter
+            
+        Returns list of order dicts:
+            [{
+                "orderId": str,
+                "symbol": str,
+                "side": str,
+                "type": str,
+                "quantity": float,
+                "price": float,
+                "status": str,
+            }]
+        """
+        ...
 
 
 class DummyExchangeGateway:
@@ -172,6 +207,20 @@ class DummyExchangeGateway:
             "status": "CANCELED",
             "success": True,
         }
+    
+    def get_balance(self) -> Dict[str, Any]:
+        """Return dummy balance."""
+        return {
+            "equity": 0.0,
+            "available": 0.0,
+            "used_margin": 0.0,
+            "unrealized_pnl": 0.0,
+            "source": "dummy",
+        }
+    
+    def get_open_orders(self, symbol: str = None) -> list:
+        """Return empty orders list."""
+        return []
 
 
 class BinanceTestnetGateway:
@@ -502,6 +551,75 @@ class BinanceTestnetGateway:
                 "success": False,
                 "error": str(e),
             }
+    
+    def get_balance(self) -> Dict[str, Any]:
+        """Get account balance from Binance Futures Testnet."""
+        import requests
+        
+        try:
+            params = self._sign_request({})
+            headers = {"X-MBX-APIKEY": self._api_key}
+            url = f"{self.TESTNET_BASE_URL}/fapi/v2/account"
+            
+            response = requests.get(url, params=params, headers=headers, timeout=10)
+            data = response.json()
+            
+            if response.status_code == 200:
+                return {
+                    "equity": float(data.get("totalWalletBalance", 0)),
+                    "available": float(data.get("availableBalance", 0)),
+                    "used_margin": float(data.get("totalMarginBalance", 0)) - float(data.get("availableBalance", 0)),
+                    "unrealized_pnl": float(data.get("totalUnrealizedProfit", 0)),
+                    "source": "binance-testnet",
+                }
+            else:
+                return {
+                    "equity": 0.0,
+                    "available": 0.0,
+                    "used_margin": 0.0,
+                    "unrealized_pnl": 0.0,
+                    "source": "binance-testnet",
+                    "error": data.get("msg", f"HTTP {response.status_code}"),
+                }
+        except Exception as e:
+            return {
+                "equity": 0.0,
+                "available": 0.0,
+                "used_margin": 0.0,
+                "unrealized_pnl": 0.0,
+                "source": "binance-testnet",
+                "error": str(e),
+            }
+    
+    def get_open_orders(self, symbol: str = None) -> list:
+        """Get open orders from Binance Futures Testnet."""
+        import requests
+        
+        try:
+            params = {}
+            if symbol:
+                params["symbol"] = symbol
+            signed_params = self._sign_request(params)
+            headers = {"X-MBX-APIKEY": self._api_key}
+            url = f"{self.TESTNET_BASE_URL}/fapi/v1/openOrders"
+            
+            response = requests.get(url, params=signed_params, headers=headers, timeout=10)
+            data = response.json()
+            
+            if response.status_code == 200 and isinstance(data, list):
+                return [{
+                    "orderId": str(o.get("orderId", "")),
+                    "symbol": o.get("symbol", ""),
+                    "side": o.get("side", ""),
+                    "type": o.get("type", ""),
+                    "quantity": float(o.get("origQty", 0)),
+                    "price": float(o.get("price", 0)),
+                    "status": o.get("status", ""),
+                } for o in data]
+            else:
+                return []
+        except Exception:
+            return []
 
 # =============================================================================
 # Fault Injection Gateway
