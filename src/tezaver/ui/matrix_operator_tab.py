@@ -2480,3 +2480,44 @@ export BINANCE_API_SECRET=your_api_secret_here""", language="bash")
         })
 
     st.dataframe(summaries, use_container_width=True)
+
+def _render_live_monitor_section(rows: List[ProfileBoardRow], initial_capital: float) -> None:
+    """Live cell state monitor section."""
+    st.subheader("📡 Live Durum – Hesap & İşlem Özeti")
+
+    st.caption(
+        "Matrix Live cluster'daki LIVE-eligible hücrelerin disk üzerindeki state dosyalarından "
+        "okunan equity ve işlem özeti. State dosyaları: `data/live_state/...`"
+    )
+
+    # Get LIVE eligible rows
+    live_rows = [r for r in rows if getattr(r, 'live_eligible', False)]
+
+    if not live_rows:
+        st.info("Henüz LIVE için uygun profil yok. Strategy Board'dan en az bir profil APPROVED + risk_contract ile işaretlenmeli.")
+        return
+
+    from tezaver.matrix.live.live_state_tools import load_live_cell_state
+    import pandas as pd
+
+    summaries = []
+    for row in live_rows:
+        state = load_live_cell_state(
+            symbol=row.symbol,
+            timeframe=row.timeframe,
+            profile_id=row.profile_id,
+            initial_capital=initial_capital,
+        )
+
+        summaries.append({
+            "Coin": state.symbol,
+            "TF": state.timeframe,
+            "Profil": state.profile_id[:25] + "..." if len(state.profile_id) > 28 else state.profile_id,
+            "Equity": f"{state.equity:.2f}" if state.equity else "-",
+            "PnL %": f"{state.pnl_pct:+.2f}%" if state.pnl_pct else "-",
+            "İşlem": state.trade_count,
+            "Son İşlem": state.last_side or "-",
+            "Son PnL": f"{state.last_pnl:+.2f}" if state.last_pnl else "-",
+        })
+
+    st.dataframe(summaries, use_container_width=True)

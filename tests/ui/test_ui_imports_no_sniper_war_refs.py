@@ -22,6 +22,7 @@ class TestUIImportsNoSniperWarRefs(unittest.TestCase):
             import tezaver.ui.matrix_operator_tab as mod
             # Assert render_matrix_operator_tab exists
             self.assertTrue(hasattr(mod, 'render_matrix_operator_tab'), "render_matrix_operator_tab missing")
+            self.assertTrue(hasattr(mod, '_render_live_monitor_section'), "_render_live_monitor_section missing (Regression Fix)")
             
             # Assert removed functions are GONE
             self.assertFalse(hasattr(mod, '_render_sniper_arena_v4'), "Sniper Arena V4 code still present!")
