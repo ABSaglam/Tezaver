@@ -85,22 +85,29 @@ class LiveLoopService:
         self._cells: List[tuple] = []  # [(symbol, tf), ...]
         self._client: Optional[IMarketDataClient] = None
         self._cluster = None
-        self._cell_metrics: Dict[str, CellMetrics] = {}
-        self._last_error: Optional[str] = None
-        self._last_poll_ts: Optional[datetime] = None
+        self._cells = []
+        self._running = False
+        self._stats = LiveLoopStats()
+        self._cell_metrics = {}  # cell_id -> CellMetrics
+        self._thread = None
+        self._stop_event = threading.Event()
         
-        # Proof mode state
-        self._proof_mode: bool = False
-        self._proof_run_id: Optional[str] = None
-        self._proof_started_at: Optional[datetime] = None
-        self._last_proof_event: Optional[Dict[str, Any]] = None
-        self._proof_history: deque = deque(maxlen=10)  # Last 10 proof results
+        # Proof/Verification state
+        self._proof_mode = False
+        self._proof_run_id = None
+        self._proof_history = deque(maxlen=50)
+        self._proof_state = "IDLE"
         
-        # Router state
-        self._on_closed_bar_cb = None  # Callback for closed bar ticks
-        self._router_attached: bool = False
-        self._router_ticks: int = 0
-        self._last_router_tick: Optional[Dict[str, Any]] = None
+        # Router/Callback
+        self._on_closed_bar_cb = None
+        self._router_metrics = {}
+        
+        # M3a: HTF Permissions (Symbol -> Decision)
+        # e.g. "BTCUSDT" -> "ALLOW_LONG"
+        self._htf_permissions: Dict[str, str] = {}
+        
+        # Dedup tracking: cell_id -> last_processed_bar_ts (str)
+        self._processed_bars: Dict[str, str] = {}
     
     @property
     def running(self) -> bool:
@@ -120,53 +127,29 @@ class LiveLoopService:
         
         Returns True if started, False if already running.
         """
-        if self.running:
-            return False
-        
-        # Create client
-        if use_real:
-            self._client = BinancePublicClient()
-        else:
-            self._client = DummyMarketDataClient()
-        
-        # Config
-        self._config = LiveLoopConfig(
-            poll_interval_sec=poll_interval,
-            tick_policy=tick_policy,
-            max_runtime_sec=max_runtime,
-            dry_run=True,
-        )
-        
-        self._cells = cells
-        self._cluster = cluster
-        self._stop_flag.clear()
-        self._last_error = None
-        self._stats = None
-        
-        # Initialize cell metrics
-        for symbol, tf in cells:
-            key = f"{symbol}|{tf}"
-            self._cell_metrics[key] = CellMetrics(symbol=symbol, timeframe=tf)
-        
-        # Start thread
-        self._thread = threading.Thread(
-            target=self._run_loop,
-            daemon=True,
-            name="LiveLoopService"
-        )
-        self._running = True
-        self._thread.start()
-        
-        return True
+        with self._lock:
+            if self._running:
+                return False
+            
+            self._init()
+            self._cells = cells
+            self._running = True
+            
+            # Initialize metrics for cells
+            for sym, tf in cells:
+                cid = f"{sym}:{tf}"
+                self._cell_metrics[cid] = CellMetrics(symbol=sym, timeframe=tf)
+            
+            self._thread = threading.Thread(
+                target=self._run_loop,
+                args=(use_real, tick_policy, poll_interval, max_runtime, cluster),
+                daemon=True,
+            )
+            self._thread.start()
+            return True
     
     def stop(self) -> bool:
         """Stop live loop gracefully."""
-        if not self.running:
-            return False
-        
-        self._stop_flag.set()
-        
-        # Wait for thread to finish (max 5s)
         if self._thread:
             self._thread.join(timeout=5.0)
         
@@ -584,37 +567,154 @@ class LiveLoopService:
         
         return result
     
-    def _run_loop(self):
+    def _provide_context(self, symbol: str, tf: str) -> Dict[str, Any]:
+        """Provide runtime context (overrides) for tick."""
+        # M3a: HTF Permission injection
+        perm_data = self._htf_permissions.get(symbol)
+        
+        ctx = {}
+        if perm_data:
+            decision = None
+            
+            # Handle both new dict format and legacy string format
+            if isinstance(perm_data, dict):
+                decision_val = perm_data.get("decision")
+                perm_tf = perm_data.get("tf", "4h")
+                perm_ts = perm_data.get("ts")
+                
+                # Check Staleness
+                # 4h -> 4h + 20m buffer (260m)
+                # 1d -> 24h + 60m buffer (1500m)
+                ttl_minutes = 260
+                if perm_tf == "1d":
+                    ttl_minutes = 1500
+                elif perm_tf == "1h": 
+                    ttl_minutes = 70
+                    
+                if perm_ts:
+                    age = datetime.now(timezone.utc) - perm_ts
+                    if age.total_seconds() > ttl_minutes * 60:
+                        # Stale - treat as NO_CONTEXT
+                         print(f"[HTF_STATE] Stale context for {symbol}: {age.total_seconds()/60:.1f}m > {ttl_minutes}m")
+                         decision = None 
+                    else:
+                        decision = decision_val
+                else:
+                    decision = decision_val
+            else:
+                # Legacy string format (no timestamp)
+                decision = perm_data
+                
+            if decision:
+                ctx["htf_decision"] = decision
+        
+        return ctx
+
+    def _run_loop(self, use_real: bool, tick_policy: str, poll_interval: float, max_runtime: float, cluster=None):
         """Internal loop runner (runs in thread)."""
+        # Create client inside thread
+        if use_real:
+            from tezaver.matrix.live.marketdata.client import BinancePublicClient
+            client = BinancePublicClient()
+        else:
+            from tezaver.matrix.live.marketdata.client import DummyMarketDataClient
+            client = DummyMarketDataClient()
+            
+        config = LiveLoopConfig(
+            poll_interval_sec=poll_interval,
+            tick_policy=tick_policy,
+            max_runtime_sec=max_runtime,
+            dry_run=not use_real,
+        )
+        
         try:
             self._stats = run_live_loop(
                 symbols_timeframes=self._cells,
-                data_client=self._client,
-                config=self._config,
-                cluster=self._cluster,
-                stop_flag=self._stop_flag,
+                data_client=client,
+                config=config,
+                cluster=cluster,
+                stop_flag=self._stop_event,
                 event_callback=self._on_event,
+                runtime_context_provider=self._provide_context,
             )
             
             # Final update of metrics from stats
             self._update_metrics_from_stats()
             
         except Exception as e:
-            self._last_error = str(e)
+            self._stats.last_error = str(e)
             print(f"[LIVE_LOOP_SERVICE] Error: {e}")
         finally:
             self._running = False
-    
+
     def _on_event(self, event: Dict[str, Any]):
         """Handle real-time event from loop."""
+        # M3a: Capture HTF Permission
+        et = event.get("event_type", "")
+        if et == "HTF_PERMISSION_EVAL":
+            symbol = event.get("symbol")
+            decision = event.get("decision")
+            tf = event.get("timeframe", "4h") # Default to 4h if missing
+            
+            if symbol and decision:
+                # Store permission with timestamp for staleness check
+                self._htf_permissions[symbol] = {
+                    "decision": decision,
+                    "tf": tf,
+                    "ts": datetime.now(timezone.utc)
+                }
+                print(f"[HTF_STATE] Updated {symbol} -> {decision} ({tf})")
+
         now = datetime.now(timezone.utc)
         
         symbol = event.get("symbol")
         tf = event.get("timeframe")
-        key = f"{symbol}|{tf}"
+        key = f"{symbol}:{tf}"  # Normalized key format
         
         if key not in self._cell_metrics:
-            return
+            # Try alt format from legacy
+            key_alt = f"{symbol}|{tf}"
+            if key_alt in self._cell_metrics:
+                key = key_alt
+            else:
+                return
+
+        metrics = self._cell_metrics[key]
+        
+        if et == "LIVE_TICK":
+            metrics.ticks_count += 1
+            metrics.last_tick_ts = now
+            # Last close from snapshot if available
+            metrics.last_close = event.get("snapshot_close")
+            
+            bar_close_ts = event.get("bar_close_ts")
+            if bar_close_ts:
+                try:
+                    metrics.last_closed_bar_ts = datetime.fromisoformat(bar_close_ts.replace("Z", "+00:00"))
+                except:
+                    pass
+            
+            metrics.last_tick_reason = "TICK"
+            
+            # Router callback
+            if self._on_closed_bar_cb:
+                try:
+                    self._on_closed_bar_cb(event)
+                    self._router_ticks += 1
+                    self._last_router_tick = event
+                except Exception as e:
+                    print(f"Router CB error: {e}")
+
+        elif et == "LIVE_SKIP":
+            metrics.skips_count += 1
+            metrics.last_tick_reason = event.get("tick_reason", "SKIP")
+        
+        # Proof event capture
+        if self._proof_mode:
+             self._last_proof_event = event
+             if et in ("CLOSED_PROOF", "ROUTER_TICK_RESULT", "ROUTER_CLUSTER_OK"):
+                 self._proof_history.append(event)
+
         
         metrics = self._cell_metrics[key]
         event_type = event.get("event_type")

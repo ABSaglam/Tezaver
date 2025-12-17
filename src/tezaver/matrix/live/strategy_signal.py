@@ -374,135 +374,95 @@ class StrategySignalAdapter:
         - CARD_*_WINDOW: evaluate filter window
         - AUTO_OPEN_FLAT / auto_open_on_flat: open on first FLAT tick
         """
+        # 1. Defaults
+        signal = Signal.NONE
+        reason = "NONE"
+        passed_filters = False
+        blocked_by_contract = False
+        in_card_window = False
+        filter_result: Optional[Dict[str, Any]] = None
+        
+        cell_key = self._cell_key(symbol, tf, profile_id)
+        
+        # 2. Check position
         pos = self.position_store.get(symbol, tf, profile_id)
-        cell_key = f"{symbol}|{tf}|{profile_id}"
+        is_flat = (pos.state == PositionState.FLAT)
         
-        # Check cooldown
-        cooldown_ok = self._check_cooldown(cell_key, bar_close_ts)
-        
-        # Position guard - if LONG, check close rule
-        if pos.state == PositionState.LONG or cell_key in self._long_cells:
-            # V4: CLOSE_ON_NEXT_SIGNAL - produce CLOSE_LONG
-            if self.close_rule_mode == "CLOSE_ON_NEXT_SIGNAL" and cooldown_ok:
-                self._long_cells.discard(cell_key)  # Clear LONG tracking
-                self._record_action(cell_key, bar_close_ts)
-                self._emit_signal_event(
-                    symbol, tf, profile_id, bar_close_ts, snapshot,
-                    signal=Signal.CLOSE_LONG,
-                    reason="CLOSE_ON_NEXT_SIGNAL",
-                    passed_filters=True,
-                    blocked_by_contract=False,
-                    cooldown_ok=cooldown_ok,
+        # 3. Evaluate OPEN Logic (if Flat)
+        if is_flat:
+            # A) Auto Open (for testing)
+            if self.open_rule_mode == OpenRuleMode.AUTO_OPEN_FLAT or self.auto_open_on_flat:
+                # Check cooldown
+                if self._check_cooldown(cell_key, bar_close_ts):
+                    signal = Signal.OPEN_LONG
+                    reason = "AUTO_OPEN"
+                    passed_filters = True
+                else:
+                    reason = "COOLDOWN"
+            
+            # B) Card Window (Production logic)
+            elif self.open_rule_mode in (OpenRuleMode.CARD_SOURCE_WINDOW, OpenRuleMode.CARD_STRICT_WINDOW):
+                passed, blocked_contract, res = self._evaluate_card_window(
+                    snapshot, 
+                    self.open_rule_mode, 
+                    symbol=symbol, 
+                    tf=tf
                 )
-                return Signal.CLOSE_LONG
+                filter_result = res
+                blocked_by_contract = blocked_contract
+                
+                if blocked_contract:
+                    reason = "CONTRACT_BLOCK"
+                elif passed:
+                    if self._check_cooldown(cell_key, bar_close_ts):
+                        signal = Signal.OPEN_LONG
+                        reason = "CARD_PASS"
+                        passed_filters = True
+                        in_card_window = True
+                    else:
+                        reason = "COOLDOWN"
+                else:
+                    reason = "FILTER_FAIL"
+                    
+            # C) ALWAYS_OFF
             else:
-                # Default: ALWAYS_OFF close rule - policy handles close
-                self._emit_signal_event(
-                    symbol, tf, profile_id, bar_close_ts, snapshot,
-                    signal=Signal.NONE,
-                    reason="POSITION_LONG_CLOSE_RULE_OFF" if self.close_rule_mode == "ALWAYS_OFF" else "COOLDOWN",
-                    passed_filters=False,
-                    blocked_by_contract=False,
-                    cooldown_ok=cooldown_ok,
-                )
-                return Signal.NONE
+                reason = "ALWAYS_OFF"
         
-        # Check cooldown
+        # 4. Evaluate CLOSE Logic (if Long)
+        else: # is LONG
+            # V4: CLOSE_ON_NEXT_SIGNAL
+            if self.close_rule_mode == "CLOSE_ON_NEXT_SIGNAL":
+                signal = Signal.CLOSE_LONG
+                reason = "CLOSE_RULE_TEST"
+            else:
+                reason = "HOLDING"
+        
+        # 5. Emit STRATEGY_SIGNAL
         cooldown_ok = self._check_cooldown(cell_key, bar_close_ts)
         
-        # ========== OPEN RULE MODES ==========
-        
-        # 1) ALWAYS_OFF - never open
-        if self.open_rule_mode == "ALWAYS_OFF":
+        # Emit if signal present OR significant reason
+        if signal != Signal.NONE or reason in ["FILTER_FAIL", "CONTRACT_BLOCK", "COOLDOWN", "AUTO_OPEN", "CARD_PASS"]:
+            
+            # Record action if OPEN/CLOSE (state change)
+            if signal == Signal.OPEN_LONG:
+                self._record_action(cell_key, bar_close_ts)
+                self._opened_cells.add(cell_key)
+                self._long_cells.add(cell_key)
+            elif signal == Signal.CLOSE_LONG:
+                self._record_action(cell_key, bar_close_ts)
+                self._long_cells.discard(cell_key)
+
             self._emit_signal_event(
                 symbol, tf, profile_id, bar_close_ts, snapshot,
-                signal=Signal.NONE,
-                reason="ALWAYS_OFF",
-                passed_filters=False,
-                blocked_by_contract=False,
+                signal=signal,
+                reason=reason,
+                passed_filters=passed_filters,
+                blocked_by_contract=blocked_by_contract,
                 cooldown_ok=cooldown_ok,
-            )
-            return Signal.NONE
-        
-        # 2) AUTO_OPEN_FLAT or auto_open_on_flat - V1 behavior
-        if self.open_rule_mode == "AUTO_OPEN_FLAT" or self.auto_open_on_flat:
-            if cell_key not in self._opened_cells and cooldown_ok:
-                self._opened_cells.add(cell_key)
-                self._long_cells.add(cell_key)  # V4: Track for CLOSE_LONG
-                self._record_action(cell_key, bar_close_ts)
-                self._emit_signal_event(
-                    symbol, tf, profile_id, bar_close_ts, snapshot,
-                    signal=Signal.OPEN_LONG,
-                    reason="AUTO_OPEN_FLAT",
-                    passed_filters=True,
-                    blocked_by_contract=False,
-                    cooldown_ok=cooldown_ok,
-                )
-                return Signal.OPEN_LONG
-            else:
-                self._emit_signal_event(
-                    symbol, tf, profile_id, bar_close_ts, snapshot,
-                    signal=Signal.NONE,
-                    reason="ALREADY_OPENED_THIS_CYCLE" if cell_key in self._opened_cells else "COOLDOWN",
-                    passed_filters=False,
-                    blocked_by_contract=False,
-                    cooldown_ok=cooldown_ok,
-                )
-                return Signal.NONE
-        
-        # 3) CARD_*_WINDOW - evaluate filter window
-        if self.open_rule_mode in ("CARD_STRICT_WINDOW", "CARD_SOURCE_WINDOW"):
-            passed_filters, blocked_by_contract, filter_result = self._evaluate_card_window(
-                snapshot, self.open_rule_mode, symbol=symbol, tf=tf
+                filter_result=filter_result
             )
             
-            if blocked_by_contract:
-                self._emit_signal_event(
-                    symbol, tf, profile_id, bar_close_ts, snapshot,
-                    signal=Signal.NONE,
-                    reason="BLOCKED_BY_CONTRACT",
-                    passed_filters=passed_filters,
-                    blocked_by_contract=True,
-                    cooldown_ok=cooldown_ok,
-                    filter_result=filter_result,
-                )
-                return Signal.NONE
-            
-            if passed_filters and cooldown_ok:
-                self._long_cells.add(cell_key)  # V4: Track for CLOSE_LONG
-                self._record_action(cell_key, bar_close_ts)
-                self._emit_signal_event(
-                    symbol, tf, profile_id, bar_close_ts, snapshot,
-                    signal=Signal.OPEN_LONG,
-                    reason="CARD_WINDOW_PASSED",
-                    passed_filters=True,
-                    blocked_by_contract=False,
-                    cooldown_ok=cooldown_ok,
-                    filter_result=filter_result,
-                )
-                return Signal.OPEN_LONG
-            else:
-                self._emit_signal_event(
-                    symbol, tf, profile_id, bar_close_ts, snapshot,
-                    signal=Signal.NONE,
-                    reason="CARD_WINDOW_FAILED" if not passed_filters else "COOLDOWN",
-                    passed_filters=passed_filters,
-                    blocked_by_contract=False,
-                    cooldown_ok=cooldown_ok,
-                    filter_result=filter_result,
-                )
-                return Signal.NONE
-        
-        # Default: no signal
-        self._emit_signal_event(
-            symbol, tf, profile_id, bar_close_ts, snapshot,
-            signal=Signal.NONE,
-            reason="UNKNOWN_MODE",
-            passed_filters=False,
-            blocked_by_contract=False,
-            cooldown_ok=cooldown_ok,
-        )
-        return Signal.NONE
+        return signal
     
     def _emit_signal_event(
         self,

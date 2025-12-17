@@ -26,11 +26,13 @@ class MatrixEventType(str, Enum):
     TICK_START = "TICK_START"
     TICK_END = "TICK_END"
     SIGNAL = "SIGNAL"
+    EXECUTION = "EXECUTION"
     DECISION = "DECISION"
     GUARDRAIL_V1 = "GUARDRAIL_V1"  # Classic position/loss limits
     GUARDRAIL_V2 = "GUARDRAIL_V2"  # Profile/risk_contract
     # Rally
     RALLY_DETECTED = "RALLY_DETECTED"
+    STRATEGY_SIGNAL = "STRATEGY_SIGNAL"
     
     # System
     ERROR = "ERROR"
@@ -63,6 +65,15 @@ class MatrixEvent:
         # Convert enum values to strings
         d["event_type"] = self.event_type.value
         d["environment"] = self.environment.value
+        
+        # Flatten details into root
+        if self.details:
+            # Exclude core fields from override
+            core_fields = {"event_type", "symbol", "timeframe", "profile_id", "environment", "ts", "tick_index", "details"}
+            payload = {k: v for k, v in self.details.items() if k not in core_fields}
+            d.update(payload)
+            del d["details"]
+            
         # Convert datetime to ISO string
         if self.ts:
             d["ts"] = self.ts.isoformat()

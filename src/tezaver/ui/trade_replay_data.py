@@ -370,16 +370,24 @@ def build_trade_timeline(
     end_dt = close_dt + window
     
     relevant_types = {
-        "PREFLIGHT_EVAL", "CARD_GATE_EVAL", "RISK_LIMIT_CHECK", "RISK_LIMIT_BLOCK",
-        "MAINNET_GUARD_EVAL", "MAINNET_ARMED", "ORDER_LIFECYCLE_START", 
-        "ORDER_LIFECYCLE_DONE", "POLICY_OPEN", "POLICY_CLOSE", "POLICY_CYCLE_RESULT",
-        "INCIDENT_BUNDLE_EXPORTED", "ROUTER_TICK"
+        "PREFLIGHT_EVAL", "CARD_GATE_EVAL", 
+        "RISK_LIMIT_CHECK", "RISK_LIMIT_BLOCK", "RISK_CONTRACT_CHECK",
+        "HTF_PERMISSION_EVAL", "HTF_VETO_APPLIED",
+        "STRATEGY_SIGNAL",
+        "POSITION_OPEN", "POSITION_CLOSE", "POSITION_UPDATE",
+        "ORDER_LIFECYCLE_DONE", 
+        "INCIDENT_BUNDLE_EXPORTED"
     }
+    
+    # Collect all candidate events first
+    candidates = []
     
     for e in events:
         et = e.get("event_type", "")
+        # Fuzzy match for RISK_* and POSITION_* and HTF_* if not in set
         if et not in relevant_types:
-            continue
+            if not (et.startswith("RISK_") or et.startswith("POSITION_") or et.startswith("HTF_")):
+                continue
         
         # Check symbol/tf match (if present)
         sym = e.get("symbol", "")
@@ -398,28 +406,59 @@ def build_trade_timeline(
         except:
             continue
         
+        candidates.append((evt_dt, e))
+        
+    # Sort by time
+    candidates.sort(key=lambda x: x[0])
+    
+    # Cap at 30 rows logic
+    if len(candidates) > 30:
+        # Take first 20 (context/entry) and last 10 (exit/result)
+        candidates = candidates[:20] + candidates[-10:]
+        # Re-dedupe if overlap
+        seen = set()
+        unique = []
+        for dt, e in candidates:
+            eid = f"{e.get('ts')}_{e.get('event_type')}"
+            if eid not in seen:
+                unique.append((dt, e))
+                seen.add(eid)
+        candidates = unique
+    
+    for _, e in candidates:
+        et = e.get("event_type", "")
+        
         # Extract decision/reason
         decision = e.get("decision") or e.get("allow") or e.get("ok")
-        if isinstance(decision, bool):
+        if et == "STRATEGY_SIGNAL":
+            decision = e.get("signal")
+        elif isinstance(decision, bool):
             decision = "PASS" if decision else "BLOCK"
         
         reason = e.get("reason") or e.get("close_reason") or ""
         if isinstance(e.get("reasons"), list):
             reason = ",".join(e.get("reasons", []))[:50]
+        elif isinstance(e.get("violations"), list) and e.get("violations"):
+             reason = str(e.get("violations")[0])[:50]
         
         # Build details string
         details_parts = []
-        for k in ["action", "side", "qty", "price", "violations"]:
+        for k in ["action", "side", "qty", "price", "pnl", "fill_price"]:
             if k in e:
                 val = e[k]
-                if isinstance(val, list):
-                    val = str(val)[:30]
+                if isinstance(val, (float, int)):
+                     if k in ["price", "fill_price"]: val = f"{val:.2f}"
+                     elif k == "pnl": val = f"{val:.4f}"
                 details_parts.append(f"{k}={val}")
         
+        # For HTF/Signal, add extra details
+        if "HTF" in et and "context" in e:
+            details_parts.append(f"ctx={str(e['context'])[:20]}")
+        
         timeline.append(TimelineRow(
-            ts=ts_str[:19],
+            ts=e.get("ts", "")[:19],
             event_type=et,
-            decision=str(decision) if decision else None,
+            decision=str(decision) if decision is not None else None,
             reason=str(reason)[:50] if reason else None,
             details=", ".join(details_parts)[:60],
         ))
@@ -531,15 +570,20 @@ def load_ohlcv(
         return (None, paths_tried)
 
 
-def get_trade_context(events: List[Dict[str, Any]], trade: Trade) -> Dict[str, Any]:
+def build_decision_context(events: List[Dict[str, Any]], trade: Trade) -> Dict[str, Any]:
     """
-    Get "Why" context for a trade - latest relevant decision events.
+    Build "Why" context for a trade - latest relevant decision events.
+    
+    Returns structured dict with summary and component states.
     """
     context = {
+        "summary": "N/A",
         "preflight": None,
         "card_gate": None,
-        "risk_limit": None,
-        "mainnet_guard": None,
+        "risk": None,
+        "htf": None,
+        "signal": None,
+        "signal_reason": None,
         "close_reason": trade.close_reason,
     }
     
@@ -548,12 +592,19 @@ def get_trade_context(events: List[Dict[str, Any]], trade: Trade) -> Dict[str, A
     except:
         return context
     
+    # Iterate events chronologically up to trade_dt
+    last_preflight = None
+    last_card = None
+    last_risk = None
+    last_htf = None
+    last_signal = None 
+    
     for e in events:
         ts_str = e.get("ts", "")
+        # Only look at events before/at trade open
         try:
             evt_dt = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
-            # Only look at events before/at trade open
-            if evt_dt > trade_dt:
+            if evt_dt > trade_dt + timedelta(seconds=1): # Allow 1s slop
                 continue
         except:
             continue
@@ -561,13 +612,54 @@ def get_trade_context(events: List[Dict[str, Any]], trade: Trade) -> Dict[str, A
         et = e.get("event_type", "")
         
         if et == "PREFLIGHT_EVAL":
-            context["preflight"] = e.get("decision")
+            last_preflight = "PASS" if e.get("decision") else "FAIL"
         elif et == "CARD_GATE_EVAL":
-            context["card_gate"] = e.get("decision") or e.get("gate")
-        elif et in ("RISK_LIMIT_CHECK", "RISK_LIMIT_BLOCK"):
-            context["risk_limit"] = e.get("decision")
-        elif et == "MAINNET_GUARD_EVAL":
-            context["mainnet_guard"] = e.get("decision")
+            # decision can be bool or string
+            dec = e.get("decision")
+            if isinstance(dec, bool): dec = "PASS" if dec else "FAIL"
+            last_card = dec or e.get("gate", "—")
+        elif et.startswith("RISK_"):
+            if et == "RISK_LIMIT_BLOCK":
+                last_risk = "BLOCK"
+            elif et == "RISK_LIMIT_CHECK":
+                last_risk = "PASS" if e.get("decision", True) else "BLOCK"
+        elif et == "HTF_PERMISSION_EVAL":
+             # details: decision=ALLOW/VETO
+             last_htf = e.get("decision", "—")
+        elif et == "HTF_VETO_APPLIED":
+             last_htf = "VETO"
+        elif et == "STRATEGY_SIGNAL":
+             sig = e.get("signal")
+             if sig and sig != "NONE":
+                 last_signal = (sig, e.get("reason", ""))
+    
+    context["preflight"] = last_preflight
+    context["card_gate"] = last_card
+    context["risk"] = last_risk
+    context["htf"] = last_htf
+    
+    if last_signal:
+        context["signal"] = last_signal[0]
+        context["signal_reason"] = last_signal[1]
+    
+    # Build Summary
+    # Format: "Sig: {sig} ({reason}) | HTF: {htf} | Risk: {risk}"
+    parts = []
+    if context["signal"]:
+        reason_short = context["signal_reason"] or ""
+        if reason_short.startswith("FAIL_"): reason_short = reason_short[5:]
+        parts.append(f"Sig: {context['signal']} ({reason_short})")
+    
+    if context["htf"]:
+        parts.append(f"HTF: {context['htf']}")
+        
+    if context["risk"]:
+        parts.append(f"Risk: {context['risk']}")
+        
+    if not parts and trade.close_reason:
+        parts.append(f"Closed: {trade.close_reason}")
+        
+    context["summary"] = " | ".join(parts) if parts else "No Context Available"
     
     return context
 
@@ -648,6 +740,77 @@ def extract_strategy_signals(
                 passed_filters=e.get("passed_filters"),
                 rsi=e.get("rsi"),
                 atr_pct=e.get("atr_pct"),
+                color=color,
+                symbol_shape=shape,
+            ))
+        
+        # Fallback: Legacy SIGNAL events (e.g. from older SIM logs)
+        elif et == "SIGNAL":
+            if symbol and e.get("symbol") != symbol: continue
+            if timeframe and e.get("timeframe") != timeframe: continue
+            
+            ts_str = e.get("ts", "")
+            try:
+                evt_dt = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+                if not (start_dt <= evt_dt <= end_dt): continue
+            except: continue
+            
+            details = e.get("details", {})
+            sig_type = details.get("signal_type") or e.get("signal_type")
+            
+            if sig_type == "SILVER_ENTRY":
+                # Treat as OPEN_LONG
+                marker_type, color, shape = SIGNAL_MARKER_MAP["OPEN_LONG"]
+                signal_label = "OPEN_LONG"
+            else:
+                marker_type = "signal"
+                color = "blue"
+                shape = "circle"
+                signal_label = sig_type or "SIGNAL"
+                
+            price = details.get("close") or e.get("close")
+            if price is None and isinstance(details.get("snapshot"), dict):
+                price = details["snapshot"].get("close")
+            
+            points.append(OverlayPoint(
+                ts=ts_str,
+                price=price,
+                marker_type=marker_type,
+                signal=signal_label,
+                reason=details.get("reason"),
+                passed_filters=None,
+                color=color,
+                symbol_shape=shape,
+            ))
+
+        # Fallback: Router Decisions (Live)
+        elif et == "ROUTER_CLUSTER_DECISION":
+            if symbol and e.get("symbol") != symbol: continue
+            if timeframe and e.get("timeframe") != timeframe: continue
+            
+            ts_str = e.get("ts", "")
+            try:
+                evt_dt = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+                if not (start_dt <= evt_dt <= end_dt): continue
+            except: continue
+            
+            action = e.get("action")
+            if action == "OPEN":
+                marker_type, color, shape = SIGNAL_MARKER_MAP["OPEN_LONG"]
+                signal_label = "OPEN_LONG"
+            elif action == "CLOSE":
+                marker_type, color, shape = SIGNAL_MARKER_MAP["CLOSE_LONG"]
+                signal_label = "CLOSE_LONG"
+            else:
+                continue
+
+            points.append(OverlayPoint(
+                ts=ts_str,
+                price=e.get("price"),
+                marker_type=marker_type,
+                signal=signal_label,
+                reason=e.get("reason"),
+                passed_filters=True,
                 color=color,
                 symbol_shape=shape,
             ))
