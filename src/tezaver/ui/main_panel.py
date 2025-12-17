@@ -36,49 +36,6 @@ import plotly.graph_objects as go
 
 # --- HELPER FUNCTIONS ---
 
-def render_sidebar_nav() -> str:
-    """
-    Render sidebar navigation buttons (skeleton only, no routing).
-    Returns active page key.
-    """
-    # Initialize session state
-    if "nav_page" not in st.session_state:
-        st.session_state["nav_page"] = "matrix"
-    
-    # Nav items: (key, label)
-    nav_items = [
-        ("matrix", "🧭 Matrix"),
-        ("operation", "▶️ Operasyon"),
-        ("strategy", "📋 Strateji"),
-        ("security", "🔐 Güvenlik"),
-        ("account", "👤 Hesap"),
-        ("events", "📊 Olaylar"),
-        ("bundles", "📦 Paketler"),
-        ("proof", "✅ Kanıt"),
-        ("debug", "🛠️ Debug"),
-    ]
-    
-    # Render divider
-    st.sidebar.markdown("---")
-    
-    # Get current active page
-    active_page = st.session_state["nav_page"]
-    
-    # Render buttons
-    for key, label in nav_items:
-        # Add active prefix
-        display_label = f"▶ {label}" if key == active_page else label
-        
-        # Button
-        if st.sidebar.button(display_label, key=f"nav_btn_{key}", use_container_width=True):
-            st.session_state["nav_page"] = key
-            st.rerun()
-    
-    st.sidebar.markdown("---")
-    
-    return active_page
-
-
 def get_img_base64(path):
     try:
         with open(path, "rb") as f:
@@ -486,11 +443,6 @@ def render_cloud_mode():
     st.info("Bulut modu geliştirme aşamasında.")
 
 def render_matrix_mode():
-    # Render sidebar navigation (skeleton only, no routing yet)
-    active_nav = render_sidebar_nav()
-    
-    # IMPORTANT: Continue with existing Matrix UI rendering
-    # Navigation routing will be added in next phase
     from tezaver.ui.matrix_operator_tab import render_matrix_operator_tab
     render_matrix_operator_tab()
 
