@@ -444,69 +444,8 @@ def render_cloud_mode():
     st.info("Bulut modu geliştirme aşamasında.")
 
 def render_matrix_mode():
-    """Matrix mode with sidebar mini status and navigation."""
-    from pathlib import Path
     from tezaver.ui.matrix_operator_tab import render_matrix_operator_tab
-    from tezaver.ui.matrix_operator_data import get_sidebar_status
-    
-    # === SIDEBAR: Mini Status + Navigation ===
-    with st.sidebar:
-        # Mini Status Line (always visible)
-        ndjson_path = Path("data/logs/live_events.ndjson")
-        status = get_sidebar_status(ndjson_path)
-        
-        # Status icons
-        kilit_icon = "✅" if status["kilit"] == "PASS" else ("⚠️" if status["kilit"] == "WARN" else ("⛔" if status["kilit"] == "BLOCK" else "❓"))
-        run_icon = "🟢" if st.session_state.get("matrix_running", False) else "⏸"
-        run_text = "ÇALIŞIYOR" if st.session_state.get("matrix_running", False) else "DURDU"
-        
-        st.caption(f"{kilit_icon} KİLİT: {status['kilit']} | {run_icon} {run_text}")
-        st.caption(f"📍 POZ: {status['poz']} | 🕐 SON: {status['son']}")
-        
-        st.markdown("---")
-        
-        # Navigation (6 items only)
-        if "matrix_nav" not in st.session_state:
-            st.session_state["matrix_nav"] = "🧭 Matrix"
-        
-        nav_items = [
-            "🧭 Matrix",
-            "👤 Hesap",
-            "🃏 Kartlar",
-            "📊 Veri",
-            "📋 Olaylar",
-            "⚙️ Ayarlar",
-        ]
-        
-        for item in nav_items:
-            is_active = st.session_state["matrix_nav"] == item
-            if st.button(item, key=f"matrix_nav_{item}", use_container_width=True, 
-                        type="primary" if is_active else "secondary"):
-                st.session_state["matrix_nav"] = item
-                st.rerun()
-    
-    # === CONTENT ROUTING ===
-    current_nav = st.session_state.get("matrix_nav", "🧭 Matrix")
-    
-    if current_nav == "🧭 Matrix":
-        render_matrix_operator_tab()
-    elif current_nav == "👤 Hesap":
-        from tezaver.ui.subpages.account_page import render_account_page
-        render_account_page()
-    elif current_nav == "🃏 Kartlar":
-        st.header("🃏 Strateji Kartları")
-        st.info("Kart yönetimi burada olacak.")
-    elif current_nav == "📊 Veri":
-        st.header("📊 Veri")
-        st.info("Veri kaynaklari ve OHLCV durumu.")
-    elif current_nav == "📋 Olaylar":
-        st.header("📋 Olaylar")
-        st.info("Detayli olay gezgini burada olacak.")
-    elif current_nav == "⚙️ Ayarlar":
-        st.header("⚙️ Ayarlar")
-        st.info("Gelistirmis ayarlar burada olacak.")
-
-
+    render_matrix_operator_tab()
 
 # --- MODE SWITCHER & MAIN ---
 
