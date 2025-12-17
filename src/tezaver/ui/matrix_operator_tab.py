@@ -189,7 +189,7 @@ def render_matrix_operator_tab() -> None:
         st.selectbox("TF", ["TÜMÜ"] + preset.timeframes, key="kokpit_tr_tf")
     with filter_cols[2]:
         # Overlay toggles row
-        tog_cols = st.columns(4)
+        tog_cols = st.columns(5)
         with tog_cols[0]:
             st.checkbox("📡 Sinyaller", value=True, key="kokpit_tr_signals")
         with tog_cols[1]:
@@ -198,6 +198,8 @@ def render_matrix_operator_tab() -> None:
             st.checkbox("⚡ Rally", value=True, key="kokpit_tr_rally")
         with tog_cols[3]:
             st.checkbox("🟨 Rally Bölgeleri", value=True, key="kokpit_tr_zones")
+        with tog_cols[4]:
+            st.checkbox("🧠 Yorum", value=False, key="kokpit_tr_yorum")
     
     # Trade Replay Chart (reuse existing logic from _render_live_section_v2)
     # Delegate to existing Trade Replay implementation
@@ -343,6 +345,7 @@ def _render_trade_replay_content(ndjson_path, preset) -> None:
     show_positions = st.session_state.get("kokpit_tr_positions", True)
     show_rally = st.session_state.get("kokpit_tr_rally", True)
     show_zones = st.session_state.get("kokpit_tr_zones", True)
+    show_yorum = st.session_state.get("kokpit_tr_yorum", False)
     
     # Get filter states
     selected_symbol = st.session_state.get("kokpit_tr_symbol", "TÜMÜ")
@@ -489,6 +492,7 @@ def _render_trade_replay_content(ndjson_path, preset) -> None:
                     selected_trade.close_ts or chart_end_ts,
                     symbol=selected_trade.symbol,
                     timeframe=selected_trade.timeframe,
+                    show_yorum=show_yorum,
                 )
                 for r in rallies:
                     dummy_pt = OverlayPoint(ts=r.ts, price=None, marker_type="rally", signal="RALLY", reason=None, passed_filters=None)

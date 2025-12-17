@@ -847,16 +847,33 @@ def extract_strategy_signals(
     return points
 
 
+@dataclass
+class RallyOverlay:
+    """Rally event overlay data."""
+    ts: str
+    gain_pct: float
+    bars_to_peak: int
+    label: str
+    raw_details: Dict[str, Any]
+    end_ts: Optional[str] = None
+    ahenk_score: Optional[float] = None
+    betrayal_risk: Optional[float] = None
+
+
 def extract_rally_events(
     events: List[Dict[str, Any]],
     start_ts: str,
     end_ts: str,
     symbol: Optional[str] = None,
     timeframe: Optional[str] = None,
+    show_yorum: bool = False,
 ) -> List[RallyOverlay]:
     """
     Extract RALLY_DETECTED events for overlay.
     """
+    # Lazy import to avoid circular dependency if analysis imports ui
+    from tezaver.analysis.olay_yorum import calculate_ahenk_score, calculate_betrayal_risk
+    
     rallies = []
     try:
         start_dt = datetime.fromisoformat(start_ts.replace("Z", "+00:00"))
@@ -904,6 +921,14 @@ def extract_rally_events(
         
         label = f"RALLY +{gain:.1%} / {bars} bars"
         
+        ahenk = None
+        betrayal = None
+        
+        if show_yorum:
+            ahenk, _ = calculate_ahenk_score(details)
+            betrayal, _ = calculate_betrayal_risk(details)
+            label += f" | Ahenk {ahenk:.2f} | İhanet {betrayal:.2f}"
+        
         # Calculate end_ts for zone
         end_ts_val = None
         if timeframe and bars > 0:
@@ -928,7 +953,9 @@ def extract_rally_events(
             bars_to_peak=bars,
             label=label,
             raw_details=details,
-            end_ts=end_ts_val
+            end_ts=end_ts_val,
+            ahenk_score=ahenk,
+            betrayal_risk=betrayal
         ))
         
     return rallies
