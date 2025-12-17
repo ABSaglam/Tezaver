@@ -1308,12 +1308,19 @@ def render_matrix_operator_tab() -> None:
                 st.caption(f"⛔ {name}: {lock_states[key]['reason'][:40]}")
                 break
     
-    # B2) Pozisyon Özeti
+    # B2) Pozisyon Özeti (real data from account page)
     with card_cols[1]:
         st.markdown("##### 💼 Pozisyon Özeti")
-        pos_count = 0
-        notional = 0.0
-        unrealized_pnl = 0.0
+        try:
+            from tezaver.ui.subpages.account_page import get_position_summary
+            pos_summary = get_position_summary()
+            pos_count = pos_summary["count"]
+            notional = pos_summary["notional"]
+            unrealized_pnl = pos_summary["unrealized_pnl"]
+        except Exception:
+            pos_count = 0
+            notional = 0.0
+            unrealized_pnl = 0.0
         pnl_color = "green" if unrealized_pnl >= 0 else "red"
         st.markdown(f"**{pos_count}** Açık | **${notional:.0f}** Notional")
         st.markdown(f"PnL: :{pnl_color}[${unrealized_pnl:.2f}]")

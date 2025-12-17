@@ -491,8 +491,8 @@ def render_matrix_mode():
     if current_nav == "🧭 Matrix":
         render_matrix_operator_tab()
     elif current_nav == "👤 Hesap":
-        st.header("👤 Hesap")
-        st.info("Hesap sayfası M2'de implement edilecek.")
+        from tezaver.ui.subpages.account_page import render_account_page
+        render_account_page()
     elif current_nav == "🃏 Kartlar":
         st.header("🃏 Strateji Kartları")
         st.info("Kart yönetimi burada olacak.")
