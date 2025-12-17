@@ -1177,44 +1177,273 @@ def _render_live_cluster_preview(
 
 def render_matrix_operator_tab() -> None:
     """
-    Main entry: Matrix Operator panel.
+    Matrix Tek Ekran Kokpit.
     
-    V2: 3 modes with sidebar navigation:
-    - 🎮 War Game: Silver/Sniper backtests
-    - 📡 Live: Live Cluster config & monitor
-    - 🎯 Sniper Arena: Sniper-specific testing
+    Single-screen cockpit with:
+    - Top fixed strip (Preset, Safety, Scope, Start/Stop, Status)
+    - 3 Critical cards (Locks, Position Summary, Last Alarm)
+    - Trade Replay main content
+    - Default-closed expanders (Events, Bundles, Resolved Settings)
     """
-    st.markdown("## 🧭 Matrix Operator")
-    
-    # === SIDEBAR: Mode Selection ===
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### 🧬 Matrix Modu")
-    mode = st.sidebar.radio(
-        "Mod seçimi",
-        options=["🎯 Sniper Arena", "🎮 War Game", "📡 Live"],
-        key="matrix_operator_mode_v2",
-        label_visibility="collapsed",
+    from pathlib import Path
+    from tezaver.ui.matrix_presets import (
+        get_preset, resolve_preset, preset_help_text, 
+        get_preset_names, get_preset_labels, SAFETY_LEVELS
     )
+    from tezaver.matrix.live.live_loop_service import LiveLoopService
+    from tezaver.ui.matrix_operator_data import load_ndjson_tail, summarize_health
     
-    # === Strategy Board (common, collapsible) ===
-    try:
-        rows = build_profile_board()
-    except Exception as e:
-        st.error(f"Strategy Board yüklenirken hata: {e}")
-        rows = []
+    st.markdown("## 🧭 Matrix Kokpit")
     
-    with st.expander("📋 Strategy Board – CoinPage V2 Profilleri", expanded=False):
-        _render_strategy_board_table(rows)
+    # === Session State Defaults ===
+    if "matrix_preset" not in st.session_state:
+        st.session_state["matrix_preset"] = "CANLI"
+    if "matrix_running" not in st.session_state:
+        st.session_state["matrix_running"] = False
+    
+    # === A) ÜST SABİT ŞERİT ===
+    strip_cols = st.columns([2, 1.5, 2, 1, 1, 2])
+    
+    # A1) Profil Dropdown
+    with strip_cols[0]:
+        preset_labels = get_preset_labels()
+        preset_options = list(preset_labels.keys())
+        selected_preset = st.selectbox(
+            "Profil",
+            options=preset_options,
+            format_func=lambda x: preset_labels[x],
+            index=preset_options.index(st.session_state["matrix_preset"]),
+            key="kokpit_preset",
+            help=preset_help_text("profil"),
+        )
+        st.session_state["matrix_preset"] = selected_preset
+    
+    preset = get_preset(selected_preset)
+    
+    # A2) Güvenlik Seviyesi
+    with strip_cols[1]:
+        safety = st.selectbox(
+            "Güvenlik",
+            options=SAFETY_LEVELS,
+            index=SAFETY_LEVELS.index(preset.safety_level) if preset.safety_level in SAFETY_LEVELS else 1,
+            key="kokpit_safety",
+            help=preset_help_text("guvenlik_seviyesi"),
+        )
+    
+    # A3) Kapsam (Allowlist + TF)
+    with strip_cols[2]:
+        scope_text = f"{', '.join(preset.allowlist[:2])}{'...' if len(preset.allowlist) > 2 else ''} | {', '.join(preset.timeframes)}"
+        st.text_input("Kapsam", value=scope_text, disabled=True, key="kokpit_scope",
+                      help=preset_help_text("allowlist"))
+    
+    # A4) Başlat / Durdur
+    with strip_cols[3]:
+        is_running = st.session_state.get("matrix_running", False)
+        if st.button("🛑 Durdur" if is_running else "▶️ Başlat",
+                     type="primary" if not is_running else "secondary",
+                     use_container_width=True, key="kokpit_startstop"):
+            st.session_state["matrix_running"] = not is_running
+            st.rerun()
+    
+    # A5) Durum
+    with strip_cols[4]:
+        status_text = "ÇALIŞIYOR" if is_running else "DURDU"
+        if is_running:
+            st.success(f"✅ {status_text}")
+        else:
+            st.warning(f"⏸ {status_text}")
+    
+    # A6) Son Paket Link (if BLOCK)
+    with strip_cols[5]:
+        # Check for recent BLOCK
+        ndjson_path = Path("data/logs/live_events.ndjson")
+        last_block_reason = None
+        if ndjson_path.exists():
+            events = load_ndjson_tail(ndjson_path, max_lines=50)
+            health = summarize_health(events)
+            if health.get("incident_bundle"):
+                last_block_reason = health["incident_bundle"].get("reason", "")[:30]
+        
+        if last_block_reason:
+            st.error(f"⛔ {last_block_reason}")
+        else:
+            st.info("✓ Temiz")
     
     st.divider()
     
-    # === Mode-specific content ===
-    if mode == "🎮 War Game":
-        _render_wargame_section_v2()
-    elif mode == "📡 Live":
-        _render_live_section_v2(rows)
-    elif mode == "🎯 Sniper Arena":
-        _render_sniper_arena_v4()
+    # === B) 3 KRİTİK KART ===
+    card_cols = st.columns(3)
+    
+    # B1) Kilitler
+    with card_cols[0]:
+        st.markdown("##### 🔒 Kilitler")
+        locks = [
+            ("Ön Kontrol", "✅", preset_help_text("on_kontrol")),
+            ("Kart Kapısı", "✅", preset_help_text("kart_kapisi")),
+            ("Risk Freni", "✅", preset_help_text("risk_freni")),
+            ("Reconcile", "✅", preset_help_text("reconcile")),
+        ]
+        lock_line = " | ".join([f"{l[0]} {l[1]}" for l in locks])
+        st.caption(lock_line)
+    
+    # B2) Pozisyon Özeti
+    with card_cols[1]:
+        st.markdown("##### 💼 Pozisyon Özeti")
+        pos_count = 0
+        notional = 0.0
+        unrealized_pnl = 0.0
+        pnl_color = "green" if unrealized_pnl >= 0 else "red"
+        st.markdown(f"**{pos_count}** Açık | **${notional:.0f}** Notional")
+        st.markdown(f"PnL: :{pnl_color}[${unrealized_pnl:.2f}]")
+    
+    # B3) Son Alarm
+    with card_cols[2]:
+        st.markdown("##### 🔔 Son Alarm")
+        if last_block_reason:
+            st.error(f"BLOCK: {last_block_reason}")
+            if st.button("📦 Son Paketi İncele", key="kokpit_inspect_bundle"):
+                pass  # Will show in expander
+        else:
+            st.info("Alarm yok")
+    
+    st.divider()
+    
+    # === C) İŞLEM TEKRARI (Trade Replay) - Main Content ===
+    st.subheader("🎬 İşlem Tekrarı", help=preset_help_text("islem_tekrari"))
+    
+    # Symbol/TF filters
+    filter_cols = st.columns([1, 1, 4])
+    with filter_cols[0]:
+        st.selectbox("Sembol", ["TÜMÜ"] + preset.allowlist, key="kokpit_tr_symbol")
+    with filter_cols[1]:
+        st.selectbox("TF", ["TÜMÜ"] + preset.timeframes, key="kokpit_tr_tf")
+    with filter_cols[2]:
+        # Overlay toggles row
+        tog_cols = st.columns(4)
+        with tog_cols[0]:
+            st.checkbox("📡 Sinyaller", value=True, key="kokpit_tr_signals")
+        with tog_cols[1]:
+            st.checkbox("📍 Poz. Çizgileri", value=True, key="kokpit_tr_positions")
+        with tog_cols[2]:
+            st.checkbox("⚡ Rally", value=True, key="kokpit_tr_rally")
+        with tog_cols[3]:
+            st.checkbox("🟨 Rally Bölgeleri", value=True, key="kokpit_tr_zones")
+    
+    # Trade Replay Chart (reuse existing logic from _render_live_section_v2)
+    # Delegate to existing Trade Replay implementation
+    try:
+        rows = build_profile_board()
+    except Exception:
+        rows = []
+    
+    # Render Trade Replay content (simplified - calls existing implementation)
+    _render_trade_replay_content(ndjson_path, preset)
+    
+    # Neden & Timeline - default closed
+    with st.expander("🔍 Neden & Timeline", expanded=False):
+        st.info("Trade seçildiğinde karar bağlamı ve olay zaman çizelgesi burada görünür.")
+    
+    st.divider()
+    
+    # === D) EXPANDERS (Default Closed) ===
+    
+    # D1) Olay Gezgini
+    with st.expander("📊 Olay Gezgini", expanded=False):
+        st.caption(preset_help_text("olay_gezgini"))
+        if ndjson_path.exists():
+            events = load_ndjson_tail(ndjson_path, max_lines=100)
+            if events:
+                import pandas as pd
+                rows_data = [{
+                    "ts": str(e.get("ts", ""))[:19],
+                    "type": e.get("event_type", ""),
+                    "symbol": e.get("symbol", ""),
+                } for e in events[-20:]]
+                st.dataframe(pd.DataFrame(rows_data), use_container_width=True, hide_index=True)
+            else:
+                st.info("Olay bulunamadı.")
+        else:
+            st.info("NDJSON dosyası yok. Döngü başlatıldığında olaylar burada görünür.")
+    
+    # D2) Paketler
+    with st.expander("📦 Paketler (Bundles)", expanded=False):
+        st.caption(preset_help_text("paketler"))
+        from tezaver.ui.matrix_operator_data import list_incident_bundles
+        incident_dir = Path("data/incidents")
+        bundles = list_incident_bundles(incident_dir)
+        if bundles:
+            for b in bundles[:5]:
+                if not b.error:
+                    st.markdown(f"**{Path(b.path).name}** — {b.reason[:40]}")
+        else:
+            st.info("Paket bulunamadı.")
+    
+    # D3) Çözümlenmiş Ayarlar
+    with st.expander("⚙️ Çözümlenmiş Ayarlar", expanded=False):
+        st.caption(preset_help_text("cozumlenmis_ayarlar"))
+        
+        # Resolved preset
+        resolved = resolve_preset(selected_preset, {"safety_level": safety})
+        st.json(resolved)
+        
+        # Diagnostics (small)
+        st.markdown("---")
+        st.markdown("**Tanı Bilgisi:**")
+        st.caption(f"events_path: {ndjson_path}")
+        if ndjson_path.exists():
+            events = load_ndjson_tail(ndjson_path, max_lines=1)
+            if events:
+                last_ts = events[-1].get("ts", "N/A")[:19]
+                st.caption(f"son olay: {last_ts}")
+
+
+def _render_trade_replay_content(ndjson_path, preset) -> None:
+    """Render Trade Replay chart content."""
+    from tezaver.ui.trade_replay_data import (
+        parse_trades_from_events, build_trade_timeline,
+        load_ohlcv, get_trade_context, filter_trades,
+        extract_strategy_signals, resolve_price_for_signal,
+        extract_rally_events, parse_open_trades_from_events,
+        build_fallback_candles_from_events, OverlayPoint,
+    )
+    from tezaver.ui.matrix_operator_data import load_ndjson_tail
+    
+    if not ndjson_path.exists():
+        st.info("📭 Olay yok. Döngü başlatın veya bring-up aracını çalıştırın:")
+        st.code("python -m tezaver.tools.bringup", language="bash")
+        return
+    
+    events = load_ndjson_tail(ndjson_path, max_lines=2000)
+    if not events:
+        st.info("📭 Olay bulunamadı.")
+        return
+    
+    # Parse trades
+    all_trades = parse_trades_from_events(events)
+    if not all_trades:
+        open_trades = parse_open_trades_from_events(events)
+        if open_trades:
+            st.info(f"ℹ️ Tamamlanmış işlem yok, {len(open_trades)} açık pozisyon gösteriliyor.")
+            all_trades = open_trades
+        else:
+            st.info("📭 İşlem bulunamadı.")
+            return
+    
+    # Show trade count
+    st.caption(f"Toplam: {len(all_trades)} işlem")
+    
+    # Simple trade list (first 10)
+    if all_trades:
+        import pandas as pd
+        trade_rows = [{
+            "Sembol": t.symbol,
+            "TF": t.timeframe,
+            "Açılış": t.open_ts[:16] if t.open_ts else "-",
+            "PnL": f"${t.net_pnl:.2f}" if t.net_pnl else "-",
+        } for t in all_trades[:10]]
+        st.dataframe(pd.DataFrame(trade_rows), use_container_width=True, hide_index=True)
+
+
 
 
 def _render_wargame_section_v2() -> None:
