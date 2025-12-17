@@ -40,34 +40,6 @@ class TimelineRow:
     details: str
 
 
-@dataclass
-class OverlayPoint:
-    """A marker point for chart overlay."""
-    ts: str  # x coordinate (bar_close_ts or ts)
-    price: Optional[float]  # y coordinate
-    marker_type: str  # "entry", "exit", "signal", "position_open", "position_close"
-    signal: str  # OPEN_LONG, CLOSE_LONG, etc.
-    reason: Optional[str]
-    passed_filters: Optional[bool]
-    rsi: Optional[float] = None
-    atr_pct: Optional[float] = None
-    color: str = "blue"
-    symbol_shape: str = "triangle-up"
-
-
-@dataclass
-class RallyOverlay:
-    """Rally event overlay data."""
-    ts: str
-    gain_pct: float
-    bars_to_peak: int
-    label: str
-    raw_details: Dict[str, Any]
-    end_ts: Optional[str] = None
-
-
-
-
 # SL/TP field name mappings
 SL_FIELDS = ["stop_price", "stop_px", "sl", "stopLoss", "stop_loss"]
 TP_FIELDS = ["take_profit", "tp", "takeProfit", "take_profit_price"]
@@ -176,77 +148,6 @@ def parse_trades_from_events(events: List[Dict[str, Any]]) -> List[Trade]:
                 )
                 trades.append(trade)
         
-        # PROOF_OPEN_RESULT / PROOF_CLOSE_RESULT pairing
-        elif et == "PROOF_OPEN_RESULT":
-            symbol = e.get("symbol", "")
-            tf = e.get("timeframe", "")
-            cell_key = (symbol, tf)
-            open_orders[cell_key] = e
-            
-        elif et == "PROOF_CLOSE_RESULT":
-            symbol = e.get("symbol", "")
-            tf = e.get("timeframe", "")
-            cell_key = (symbol, tf)
-            
-            if cell_key in open_orders:
-                open_evt = open_orders.pop(cell_key)
-                
-                # PROOF fields: open_qty / close_qty, fill_price might be missing or simulated
-                open_px = open_evt.get("fill_price")
-                close_px = e.get("fill_price")
-                qty = open_evt.get("open_qty")
-                
-                pnl = None
-                if open_px and close_px and qty:
-                    # PROOF is typically LONG only for now
-                    pnl = (close_px - open_px) * qty
-                
-                trade = Trade(
-                    trade_id=f"PROOF_{symbol}_{tf}_{open_evt.get('ts', '')[:19]}",
-                    symbol=symbol,
-                    timeframe=tf,
-                    open_ts=open_evt.get("ts", ""),
-                    open_px=open_px,
-                    close_ts=e.get("ts", ""),
-                    close_px=close_px,
-                    side="BUY",  # Default to BUY for PROOF
-                    qty=qty,
-                    net_pnl=pnl,
-                    close_reason=e.get("reason", ""),
-                )
-                trades.append(trade)
-
-        # POSITION_OPEN / POSITION_CLOSE pairing
-        elif et == "POSITION_OPEN":
-            symbol = e.get("symbol", "")
-            tf = e.get("timeframe", "")
-            cell_key = (symbol, tf)
-            open_orders[cell_key] = e
-            
-        elif et == "POSITION_CLOSE":
-            symbol = e.get("symbol", "")
-            tf = e.get("timeframe", "")
-            cell_key = (symbol, tf)
-            
-            if cell_key in open_orders:
-                open_evt = open_orders.pop(cell_key)
-                
-                # POSITION events usually don't have price/qty details in V1, mostly timestamps
-                trade = Trade(
-                    trade_id=f"POS_{symbol}_{tf}_{open_evt.get('ts', '')[:19]}",
-                    symbol=symbol,
-                    timeframe=tf,
-                    open_ts=open_evt.get("ts", ""),
-                    open_px=None,
-                    close_ts=e.get("ts", ""),
-                    close_px=None,
-                    side="BUY", 
-                    qty=open_evt.get("qty"),
-                    net_pnl=None,
-                    close_reason=None,
-                )
-                trades.append(trade)
-        
         # POLICY_CYCLE_RESULT as backup
         elif et == "POLICY_CYCLE_RESULT":
             symbol = e.get("symbol", "")
@@ -270,78 +171,6 @@ def parse_trades_from_events(events: List[Dict[str, Any]]) -> List[Trade]:
     # Reverse to show newest first
     return list(reversed(trades))
 
-
-def parse_open_trades_from_events(events: List[Dict[str, Any]]) -> List[Trade]:
-    """Parse currently open (incomplete) trades from events."""
-    open_trades = []
-    open_orders = {}  # key: (symbol, tf) -> open event
-    
-    # Re-using similar logic to parse_trades but specifically hunting stragglers
-    # Simplification: Just scan for OPENs that are not matched by a CLOSE in the same stream?
-    # Better: Scan sequentially.
-    
-    # We can actually refactor parse_trades_from_events to return (completed, open)
-    # But to avoid breaking valid API, let's create a new function or helper.
-    
-    # Let's do a quick pass for PROOF_OPEN and POSITION_OPEN without matching close
-    # This is "good enough" for the diagnostic view
-    
-    # Efficient approach: Track state
-    state = {} # (symbol, tf) -> event
-    
-    for e in events:
-        et = e.get("event_type", "")
-        sym = e.get("symbol", "")
-        tf = e.get("timeframe", e.get("tf", ""))
-        key = (sym, tf)
-        
-        if et in ("PROOF_OPEN_RESULT", "POSITION_OPEN") or (et == "ORDER_LIFECYCLE_DONE" and e.get("action") == "OPEN"):
-            state[key] = e
-        elif et in ("PROOF_CLOSE_RESULT", "POSITION_CLOSE") or (et == "ORDER_LIFECYCLE_DONE" and e.get("action") == "CLOSE"):
-            if key in state:
-                del state[key]
-                
-    # Remaining in state are open
-    for key, evt in state.items():
-        sym, tf = key
-        open_px = evt.get("fill_price") or evt.get("price") or evt.get("open_px")
-        qty = evt.get("qty") or evt.get("fill_qty") or evt.get("open_qty")
-        
-        open_trades.append(Trade(
-            trade_id=f"OPEN_{sym}_{tf}_{evt.get('ts', '')[:19]}",
-            symbol=sym,
-            timeframe=tf,
-            open_ts=evt.get("ts", ""),
-            open_px=float(open_px) if open_px else None,
-            close_ts=None,
-            close_px=None,
-            side=evt.get("side", "BUY"),
-            qty=float(qty) if qty else None,
-            net_pnl=None,
-            close_reason=None,
-            sl_px=_extract_sl_tp(evt, "sl"),
-            tp_px=_extract_sl_tp(evt, "tp"),
-        ))
-        
-    return list(reversed(open_trades))
-
-
-def get_trade_replay_diagnostics(events: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """Generate diagnostic summary for Trade Replay."""
-    counts = {}
-    for e in events:
-        et = e.get("event_type", "UNKNOWN")
-        counts[et] = counts.get(et, 0) + 1
-        
-    completed = parse_trades_from_events(events)
-    opens = parse_open_trades_from_events(events)
-    
-    return {
-        "event_count": len(events),
-        "counts_by_event_type": counts,
-        "completed_trades": len(completed),
-        "open_trades": len(opens),
-    }
 
 def build_trade_timeline(
     events: List[Dict[str, Any]], 
@@ -370,24 +199,16 @@ def build_trade_timeline(
     end_dt = close_dt + window
     
     relevant_types = {
-        "PREFLIGHT_EVAL", "CARD_GATE_EVAL", 
-        "RISK_LIMIT_CHECK", "RISK_LIMIT_BLOCK", "RISK_CONTRACT_CHECK",
-        "HTF_PERMISSION_EVAL", "HTF_VETO_APPLIED",
-        "STRATEGY_SIGNAL",
-        "POSITION_OPEN", "POSITION_CLOSE", "POSITION_UPDATE",
-        "ORDER_LIFECYCLE_DONE", 
-        "INCIDENT_BUNDLE_EXPORTED"
+        "PREFLIGHT_EVAL", "CARD_GATE_EVAL", "RISK_LIMIT_CHECK", "RISK_LIMIT_BLOCK",
+        "MAINNET_GUARD_EVAL", "MAINNET_ARMED", "ORDER_LIFECYCLE_START", 
+        "ORDER_LIFECYCLE_DONE", "POLICY_OPEN", "POLICY_CLOSE", "POLICY_CYCLE_RESULT",
+        "INCIDENT_BUNDLE_EXPORTED", "ROUTER_TICK"
     }
-    
-    # Collect all candidate events first
-    candidates = []
     
     for e in events:
         et = e.get("event_type", "")
-        # Fuzzy match for RISK_* and POSITION_* and HTF_* if not in set
         if et not in relevant_types:
-            if not (et.startswith("RISK_") or et.startswith("POSITION_") or et.startswith("HTF_")):
-                continue
+            continue
         
         # Check symbol/tf match (if present)
         sym = e.get("symbol", "")
@@ -406,59 +227,28 @@ def build_trade_timeline(
         except:
             continue
         
-        candidates.append((evt_dt, e))
-        
-    # Sort by time
-    candidates.sort(key=lambda x: x[0])
-    
-    # Cap at 30 rows logic
-    if len(candidates) > 30:
-        # Take first 20 (context/entry) and last 10 (exit/result)
-        candidates = candidates[:20] + candidates[-10:]
-        # Re-dedupe if overlap
-        seen = set()
-        unique = []
-        for dt, e in candidates:
-            eid = f"{e.get('ts')}_{e.get('event_type')}"
-            if eid not in seen:
-                unique.append((dt, e))
-                seen.add(eid)
-        candidates = unique
-    
-    for _, e in candidates:
-        et = e.get("event_type", "")
-        
         # Extract decision/reason
         decision = e.get("decision") or e.get("allow") or e.get("ok")
-        if et == "STRATEGY_SIGNAL":
-            decision = e.get("signal")
-        elif isinstance(decision, bool):
+        if isinstance(decision, bool):
             decision = "PASS" if decision else "BLOCK"
         
         reason = e.get("reason") or e.get("close_reason") or ""
         if isinstance(e.get("reasons"), list):
             reason = ",".join(e.get("reasons", []))[:50]
-        elif isinstance(e.get("violations"), list) and e.get("violations"):
-             reason = str(e.get("violations")[0])[:50]
         
         # Build details string
         details_parts = []
-        for k in ["action", "side", "qty", "price", "pnl", "fill_price"]:
+        for k in ["action", "side", "qty", "price", "violations"]:
             if k in e:
                 val = e[k]
-                if isinstance(val, (float, int)):
-                     if k in ["price", "fill_price"]: val = f"{val:.2f}"
-                     elif k == "pnl": val = f"{val:.4f}"
+                if isinstance(val, list):
+                    val = str(val)[:30]
                 details_parts.append(f"{k}={val}")
         
-        # For HTF/Signal, add extra details
-        if "HTF" in et and "context" in e:
-            details_parts.append(f"ctx={str(e['context'])[:20]}")
-        
         timeline.append(TimelineRow(
-            ts=e.get("ts", "")[:19],
+            ts=ts_str[:19],
             event_type=et,
-            decision=str(decision) if decision is not None else None,
+            decision=str(decision) if decision else None,
             reason=str(reason)[:50] if reason else None,
             details=", ".join(details_parts)[:60],
         ))
@@ -570,20 +360,15 @@ def load_ohlcv(
         return (None, paths_tried)
 
 
-def build_decision_context(events: List[Dict[str, Any]], trade: Trade) -> Dict[str, Any]:
+def get_trade_context(events: List[Dict[str, Any]], trade: Trade) -> Dict[str, Any]:
     """
-    Build "Why" context for a trade - latest relevant decision events.
-    
-    Returns structured dict with summary and component states.
+    Get "Why" context for a trade - latest relevant decision events.
     """
     context = {
-        "summary": "N/A",
         "preflight": None,
         "card_gate": None,
-        "risk": None,
-        "htf": None,
-        "signal": None,
-        "signal_reason": None,
+        "risk_limit": None,
+        "mainnet_guard": None,
         "close_reason": trade.close_reason,
     }
     
@@ -592,19 +377,12 @@ def build_decision_context(events: List[Dict[str, Any]], trade: Trade) -> Dict[s
     except:
         return context
     
-    # Iterate events chronologically up to trade_dt
-    last_preflight = None
-    last_card = None
-    last_risk = None
-    last_htf = None
-    last_signal = None 
-    
     for e in events:
         ts_str = e.get("ts", "")
-        # Only look at events before/at trade open
         try:
             evt_dt = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
-            if evt_dt > trade_dt + timedelta(seconds=1): # Allow 1s slop
+            # Only look at events before/at trade open
+            if evt_dt > trade_dt:
                 continue
         except:
             continue
@@ -612,464 +390,12 @@ def build_decision_context(events: List[Dict[str, Any]], trade: Trade) -> Dict[s
         et = e.get("event_type", "")
         
         if et == "PREFLIGHT_EVAL":
-            last_preflight = "PASS" if e.get("decision") else "FAIL"
+            context["preflight"] = e.get("decision")
         elif et == "CARD_GATE_EVAL":
-            # decision can be bool or string
-            dec = e.get("decision")
-            if isinstance(dec, bool): dec = "PASS" if dec else "FAIL"
-            last_card = dec or e.get("gate", "—")
-        elif et.startswith("RISK_"):
-            if et == "RISK_LIMIT_BLOCK":
-                last_risk = "BLOCK"
-            elif et == "RISK_LIMIT_CHECK":
-                last_risk = "PASS" if e.get("decision", True) else "BLOCK"
-        elif et == "HTF_PERMISSION_EVAL":
-             # details: decision=ALLOW/VETO
-             last_htf = e.get("decision", "—")
-        elif et == "HTF_VETO_APPLIED":
-             last_htf = "VETO"
-        elif et == "STRATEGY_SIGNAL":
-             sig = e.get("signal")
-             if sig and sig != "NONE":
-                 last_signal = (sig, e.get("reason", ""))
-    
-    context["preflight"] = last_preflight
-    context["card_gate"] = last_card
-    context["risk"] = last_risk
-    context["htf"] = last_htf
-    
-    if last_signal:
-        context["signal"] = last_signal[0]
-        context["signal_reason"] = last_signal[1]
-    
-    # Build Summary
-    # Format: "Sig: {sig} ({reason}) | HTF: {htf} | Risk: {risk}"
-    parts = []
-    if context["signal"]:
-        reason_short = context["signal_reason"] or ""
-        if reason_short.startswith("FAIL_"): reason_short = reason_short[5:]
-        parts.append(f"Sig: {context['signal']} ({reason_short})")
-    
-    if context["htf"]:
-        parts.append(f"HTF: {context['htf']}")
-        
-    if context["risk"]:
-        parts.append(f"Risk: {context['risk']}")
-        
-    if not parts and trade.close_reason:
-        parts.append(f"Closed: {trade.close_reason}")
-        
-    context["summary"] = " | ".join(parts) if parts else "No Context Available"
+            context["card_gate"] = e.get("decision") or e.get("gate")
+        elif et in ("RISK_LIMIT_CHECK", "RISK_LIMIT_BLOCK"):
+            context["risk_limit"] = e.get("decision")
+        elif et == "MAINNET_GUARD_EVAL":
+            context["mainnet_guard"] = e.get("decision")
     
     return context
-
-
-# Signal to marker mapping
-SIGNAL_MARKER_MAP = {
-    "OPEN_LONG": ("entry", "green", "triangle-up"),
-    "OPEN_SHORT": ("entry", "red", "triangle-down"),
-    "CLOSE_LONG": ("exit", "red", "triangle-down"),
-    "CLOSE_SHORT": ("exit", "green", "triangle-up"),
-    "NONE": ("signal", "gray", "circle"),
-}
-
-
-def extract_strategy_signals(
-    events: List[Dict[str, Any]],
-    start_ts: str,
-    end_ts: str,
-    symbol: Optional[str] = None,
-    timeframe: Optional[str] = None,
-    max_signals: int = 200,
-) -> List[OverlayPoint]:
-    """
-    Extract strategy signals from events within a time window.
-    
-    Returns list of OverlayPoint for chart overlay.
-    """
-    points = []
-    
-    try:
-        start_dt = datetime.fromisoformat(start_ts.replace("Z", "+00:00"))
-        end_dt = datetime.fromisoformat(end_ts.replace("Z", "+00:00"))
-    except:
-        return points
-    
-    for e in events:
-        if len(points) >= max_signals:
-            break
-        
-        et = e.get("event_type", "")
-        
-        # STRATEGY_SIGNAL events
-        if et == "STRATEGY_SIGNAL":
-            # Filter by symbol/timeframe if specified
-            if symbol and e.get("symbol") != symbol:
-                continue
-            if timeframe and e.get("timeframe") != timeframe:
-                continue
-            
-            # Check timestamp in window
-            ts_str = e.get("bar_close_ts") or e.get("ts", "")
-            try:
-                evt_dt = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
-                if not (start_dt <= evt_dt <= end_dt):
-                    continue
-            except:
-                continue
-            
-            # Get signal and map to marker
-            signal = e.get("signal", "NONE")
-            marker_type, color, shape = SIGNAL_MARKER_MAP.get(signal, ("signal", "gray", "circle"))
-            
-            # Skip NONE signals by default
-            if signal == "NONE":
-                continue
-            
-            # Get price
-            price = e.get("close")
-            if price is None and isinstance(e.get("snapshot"), dict):
-                price = e["snapshot"].get("close")
-            
-            points.append(OverlayPoint(
-                ts=ts_str,
-                price=price,
-                marker_type=marker_type,
-                signal=signal,
-                reason=e.get("reason"),
-                passed_filters=e.get("passed_filters"),
-                rsi=e.get("rsi"),
-                atr_pct=e.get("atr_pct"),
-                color=color,
-                symbol_shape=shape,
-            ))
-        
-        # Fallback: Legacy SIGNAL events (e.g. from older SIM logs)
-        elif et == "SIGNAL":
-            if symbol and e.get("symbol") != symbol: continue
-            if timeframe and e.get("timeframe") != timeframe: continue
-            
-            ts_str = e.get("ts", "")
-            try:
-                evt_dt = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
-                if not (start_dt <= evt_dt <= end_dt): continue
-            except: continue
-            
-            details = e.get("details", {})
-            sig_type = details.get("signal_type") or e.get("signal_type")
-            
-            if sig_type == "SILVER_ENTRY":
-                # Treat as OPEN_LONG
-                marker_type, color, shape = SIGNAL_MARKER_MAP["OPEN_LONG"]
-                signal_label = "OPEN_LONG"
-            else:
-                marker_type = "signal"
-                color = "blue"
-                shape = "circle"
-                signal_label = sig_type or "SIGNAL"
-                
-            price = details.get("close") or e.get("close")
-            if price is None and isinstance(details.get("snapshot"), dict):
-                price = details["snapshot"].get("close")
-            
-            points.append(OverlayPoint(
-                ts=ts_str,
-                price=price,
-                marker_type=marker_type,
-                signal=signal_label,
-                reason=details.get("reason"),
-                passed_filters=None,
-                color=color,
-                symbol_shape=shape,
-            ))
-
-        # Fallback: Router Decisions (Live)
-        elif et == "ROUTER_CLUSTER_DECISION":
-            if symbol and e.get("symbol") != symbol: continue
-            if timeframe and e.get("timeframe") != timeframe: continue
-            
-            ts_str = e.get("ts", "")
-            try:
-                evt_dt = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
-                if not (start_dt <= evt_dt <= end_dt): continue
-            except: continue
-            
-            action = e.get("action")
-            if action == "OPEN":
-                marker_type, color, shape = SIGNAL_MARKER_MAP["OPEN_LONG"]
-                signal_label = "OPEN_LONG"
-            elif action == "CLOSE":
-                marker_type, color, shape = SIGNAL_MARKER_MAP["CLOSE_LONG"]
-                signal_label = "CLOSE_LONG"
-            else:
-                continue
-
-            points.append(OverlayPoint(
-                ts=ts_str,
-                price=e.get("price"),
-                marker_type=marker_type,
-                signal=signal_label,
-                reason=e.get("reason"),
-                passed_filters=True,
-                color=color,
-                symbol_shape=shape,
-            ))
-        
-        # POSITION_OPEN / POSITION_CLOSE events
-        elif et in ("POSITION_OPEN", "POSITION_CLOSE"):
-            if symbol and e.get("symbol") != symbol:
-                continue
-            if timeframe and e.get("timeframe") != timeframe:
-                continue
-            
-            ts_str = e.get("ts", "")
-            try:
-                evt_dt = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
-                if not (start_dt <= evt_dt <= end_dt):
-                    continue
-            except:
-                continue
-            
-            marker_type = "position_open" if et == "POSITION_OPEN" else "position_close"
-            color = "green" if et == "POSITION_OPEN" else "red"
-            
-            points.append(OverlayPoint(
-                ts=ts_str,
-                price=None,  # Will be resolved from OHLCV
-                marker_type=marker_type,
-                signal=et,
-                reason=None,
-                passed_filters=None,
-                color=color,
-                symbol_shape="line-ns" if "POSITION" in et else "circle",
-            ))
-    
-    return points
-
-
-@dataclass
-class RallyOverlay:
-    """Rally event overlay data."""
-    ts: str
-    gain_pct: float
-    bars_to_peak: int
-    label: str
-    raw_details: Dict[str, Any]
-    end_ts: Optional[str] = None
-    ahenk_score: Optional[float] = None
-    betrayal_risk: Optional[float] = None
-
-
-def extract_rally_events(
-    events: List[Dict[str, Any]],
-    start_ts: str,
-    end_ts: str,
-    symbol: Optional[str] = None,
-    timeframe: Optional[str] = None,
-    show_yorum: bool = False,
-) -> List[RallyOverlay]:
-    """
-    Extract RALLY_DETECTED events for overlay.
-    """
-    # Lazy import to avoid circular dependency if analysis imports ui
-    from tezaver.analysis.olay_yorum import calculate_ahenk_score, calculate_betrayal_risk
-    
-    rallies = []
-    try:
-        start_dt = datetime.fromisoformat(start_ts.replace("Z", "+00:00"))
-        end_dt = datetime.fromisoformat(end_ts.replace("Z", "+00:00"))
-    except:
-        return []
-        
-    for e in events:
-        if len(rallies) >= 200:
-            break
-            
-        if e.get("event_type") != "RALLY_DETECTED":
-            continue
-            
-        if symbol and e.get("symbol") != symbol:
-            continue
-        if timeframe and e.get("timeframe") != timeframe:
-            continue
-            
-        # Priority: bar_close_ts -> details.event_time -> ts
-        details = e.get("details", {})
-        ts_val = e.get("bar_close_ts") or details.get("event_time") or e.get("ts")
-        
-        if not ts_val:
-            continue
-            
-        try:
-            # Handle potential non-string in details (pandas Timestamp)
-            if hasattr(ts_val, "isoformat"):
-                ts_str = ts_val.isoformat()
-                dt = ts_val
-                if dt.tzinfo is None:
-                     dt = dt.replace(tzinfo=timezone.utc)
-            else:
-                ts_str = str(ts_val)
-                dt = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
-                
-            if not (start_dt <= dt <= end_dt):
-                continue
-        except:
-            continue
-            
-        gain = float(details.get("future_max_gain_pct", 0.0))
-        bars = int(details.get("bars_to_peak", 0))
-        
-        label = f"RALLY +{gain:.1%} / {bars} bars"
-        
-        ahenk = None
-        betrayal = None
-        
-        if show_yorum:
-            ahenk, _ = calculate_ahenk_score(details)
-            betrayal, _ = calculate_betrayal_risk(details)
-            label += f" | Ahenk {ahenk:.2f} | İhanet {betrayal:.2f}"
-        
-        # Calculate end_ts for zone
-        end_ts_val = None
-        if timeframe and bars > 0:
-            try:
-                # Parse timeframe duration (simplified for standard TFs)
-                duration_mins = 0
-                if timeframe == "15m": duration_mins = 15
-                elif timeframe == "1h": duration_mins = 60
-                elif timeframe == "4h": duration_mins = 240
-                elif timeframe.endswith("m"): duration_mins = int(timeframe[:-1])
-                
-                if duration_mins > 0:
-                    delta = timedelta(minutes=duration_mins * bars)
-                    end_ts_dt = dt + delta
-                    end_ts_val = end_ts_dt.isoformat()
-            except:
-                pass
-        
-        rallies.append(RallyOverlay(
-            ts=ts_str,
-            gain_pct=gain,
-            bars_to_peak=bars,
-            label=label,
-            raw_details=details,
-            end_ts=end_ts_val,
-            ahenk_score=ahenk,
-            betrayal_risk=betrayal
-        ))
-        
-    return rallies
-
-
-def resolve_price_for_signal(
-    point: OverlayPoint,
-    candles: Optional[List[Dict[str, Any]]],
-) -> float:
-    """
-    Resolve price for an overlay point.
-    
-    Priority:
-    1. Use point.price if present
-    2. Interpolate from OHLCV candles at point.ts
-    3. Default to 0
-    """
-    if point.price is not None:
-        return point.price
-    
-    if candles and point.ts:
-        # Find closest candle
-        try:
-            point_dt = datetime.fromisoformat(point.ts.replace("Z", "+00:00"))
-            best_candle = None
-            best_diff = None
-            
-            for c in candles:
-                c_ts = c.get("ts", "")
-                try:
-                    c_dt = datetime.fromisoformat(c_ts.replace("Z", "+00:00"))
-                    diff = abs((c_dt - point_dt).total_seconds())
-                    if best_diff is None or diff < best_diff:
-                        best_diff = diff
-                        best_candle = c
-                except:
-                    continue
-            
-            if best_candle:
-                return float(best_candle.get("close", 0))
-        except:
-            pass
-    
-    return 0.0
-
-
-def build_fallback_candles_from_events(
-    events: List[Dict[str, Any]], 
-    start_ts: str, 
-    end_ts: str
-) -> List[Dict[str, Any]]:
-    """
-    Build pseudo-candles from event prices when OHLCV is missing.
-    
-    Extracts prices from STRATEGY_SIGNAL, ORDER lines, PROOF_OPEN/CLOSE, etc.
-    Returns format compatible with load_ohlcv (ts, open=close, volume=0).
-    """
-    pseudo = []
-    try:
-        start_dt = datetime.fromisoformat(start_ts.replace("Z", "+00:00"))
-        end_dt = datetime.fromisoformat(end_ts.replace("Z", "+00:00"))
-    except:
-        return []
-
-    processed_timestamps = set()
-
-    for e in events:
-        # Timestamp mapping: prefer bar_close_ts
-        ts = e.get("bar_close_ts") or e.get("ts", "")
-        if not ts:
-            continue
-            
-        try:
-            dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
-            if not (start_dt <= dt <= end_dt):
-                continue
-        except:
-            continue
-            
-        # Avoid duplicate timestamps for cleaner chart
-        if ts in processed_timestamps:
-            continue
-            
-        # Price Priority: close > close_px > fill_price > price > executed_price > snapshot.close > open_px
-        price = None
-        for key in ["close", "close_px", "fill_price", "price", "executed_price"]:
-            if e.get(key) is not None:
-                price = e[key]
-                break
-        
-        if price is None and isinstance(e.get("snapshot"), dict):
-            price = e["snapshot"].get("close")
-            
-        if price is None:
-             # Fallback to open_px (e.g. for PROOF_OPEN)
-             price = e.get("open_px")
-
-        if price is not None:
-            try:
-                price_val = float(price)
-            except:
-                continue
-            
-            if price_val > 0:
-                pseudo.append({
-                    "ts": ts,
-                    "open": price_val,
-                    "high": price_val,
-                    "low": price_val,
-                    "close": price_val,
-                    "volume": 0
-                })
-                processed_timestamps.add(ts)
-            
-    # Sort by timestamp
-    pseudo.sort(key=lambda x: x["ts"])
-    return pseudo

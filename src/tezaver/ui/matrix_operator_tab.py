@@ -1425,30 +1425,20 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
     with st.expander("🎬 Trade Replay", expanded=False):
         from tezaver.ui.trade_replay_data import (
             parse_trades_from_events, build_trade_timeline, 
-            load_ohlcv, get_trade_context, Trade, filter_trades,
-            extract_strategy_signals, resolve_price_for_signal, OverlayPoint,
-            extract_rally_events,
-            parse_open_trades_from_events, get_trade_replay_diagnostics
+            load_ohlcv, get_trade_context, Trade, filter_trades
         )
         
         # Load events
         events = load_ndjson_tail(ndjson_path, max_lines=2000)
         
         if not events:
-            st.info("📭 No events found. Run live loop or usage tool:")
-            st.code("python -m tezaver.tools.bringup", language="bash")
+            st.info("📭 No events found. Run live loop to generate trade data.")
         else:
             # Parse trades
             all_trades = parse_trades_from_events(events)
             
             if not all_trades:
-                # Fallback to open trades
-                open_trades = parse_open_trades_from_events(events)
-                if open_trades:
-                     st.info(f"ℹ️ No completed trades found, but found {len(open_trades)} open positions. Displaying them.")
-                     all_trades = open_trades
-                else:
-                     st.info("📭 No completed trades or open positions found in events.")
+                st.info("📭 No completed trades found in events.")
             else:
                 # --- G1: Filters ---
                 filter_cols = st.columns(3)
@@ -1510,103 +1500,46 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
                         - **Close Reason:** {selected_trade.close_reason or 'N/A'}
                         """)
                         
-                        # H1/H2: Overlay toggles
-                        toggle_cols = st.columns(3)
-                        with toggle_cols[0]:
-                            show_signals = st.checkbox("📡 Strategy Signals", value=True, key="tr_signals")
-                        with toggle_cols[1]:
-                            show_positions = st.checkbox("📍 Position Lines", value=True, key="tr_positions")
-                        with toggle_cols[2]:
-                            show_rallies = st.checkbox("⚡ Rally Overlay", value=True, key="tr_rallies")
-                            show_zones = st.checkbox("🟨 Rally Zones", value=True, key="tr_rally_zones")
-                        
-                        st.caption("🔺=Entry 🔻=Exit")
-                        
                         # Load OHLCV and render chart
-                        if selected_trade.open_ts:
-                            # Verify close_ts or use end of events
-                            chart_end_ts = selected_trade.close_ts
-                            if not chart_end_ts:
-                                # Use last event time as proxy for "now" in simulation
-                                # Try to find a suitably late timestamp
-                                last_evt = events[-1] if events else {}
-                                chart_end_ts = last_evt.get("ts") or last_evt.get("bar_close_ts") or selected_trade.open_ts
-                            
+                        if selected_trade.open_ts and selected_trade.close_ts:
                             candles, paths_tried = load_ohlcv(
                                 selected_trade.symbol, 
                                 selected_trade.timeframe,
                                 selected_trade.open_ts,
-                                chart_end_ts,
+                                selected_trade.close_ts,
                             )
-                            
-                            fallback_mode = False
-                            if not candles:
-                                # Try fallback from events
-                                from tezaver.ui.trade_replay_data import build_fallback_candles_from_events
-                                candles = build_fallback_candles_from_events(
-                                    events, 
-                                    selected_trade.open_ts, 
-                                    chart_end_ts
-                                )
-                                if candles:
-                                    fallback_mode = True
                             
                             if candles:
                                 import plotly.graph_objects as go
                                 
-                                if fallback_mode:
-                                    # Fallback Chart Validation
-                                    if len(candles) < 2:
-                                        st.error("Need at least 1 OPEN and 1 CLOSE proof event to draw fallback chart.")
-                                        candles = None # Don't draw
-                                    else:
-                                        # Show detailed warning about missing paths
-                                        import os
-                                        abs_paths = [os.path.abspath(str(p)) for p in paths_tried]
-                                        paths_msg = "\n".join([f"- {p}" for p in abs_paths])
-                                        st.warning(f"OHLCV not found — showing fallback from PROOF events.\nTried paths:\n{paths_msg}")
-                                        
-                                        # Render line chart
-                                        fig = go.Figure(data=[go.Scatter(
-                                            x=[c["ts"] for c in candles],
-                                            y=[c["close"] for c in candles],
-                                            mode="lines+markers",
-                                            line=dict(color="blue", width=1),
-                                            marker=dict(size=4),
-                                            name="Signal Price"
-                                        )])
-                                else:
-                                    # Render normal candlestick
-                                    fig = go.Figure(data=[go.Candlestick(
-                                        x=[c["ts"] for c in candles],
-                                        open=[c["open"] for c in candles],
-                                        high=[c["high"] for c in candles],
-                                        low=[c["low"] for c in candles],
-                                        close=[c["close"] for c in candles],
-                                        name="Price"
-                                    )])
+                                fig = go.Figure(data=[go.Candlestick(
+                                    x=[c["ts"] for c in candles],
+                                    open=[c["open"] for c in candles],
+                                    high=[c["high"] for c in candles],
+                                    low=[c["low"] for c in candles],
+                                    close=[c["close"] for c in candles],
+                                    name="Price"
+                                )])
                                 
-                                # Markers and Overlays (Only if candles valid)
-                                if candles:
-                                    # Entry marker
-                                    if selected_trade.open_px:
-                                        fig.add_trace(go.Scatter(
-                                            x=[selected_trade.open_ts],
-                                            y=[selected_trade.open_px],
-                                            mode="markers",
-                                            marker=dict(size=12, color="green", symbol="triangle-up"),
-                                            name="Entry"
-                                        ))
-                                    
-                                    # Exit marker
-                                    if selected_trade.close_px and selected_trade.close_ts:
-                                        fig.add_trace(go.Scatter(
-                                            x=[selected_trade.close_ts],
-                                            y=[selected_trade.close_px],
-                                            mode="markers",
-                                            marker=dict(size=12, color="red", symbol="triangle-down"),
-                                            name="Exit"
-                                        ))
+                                # Entry marker
+                                if selected_trade.open_px:
+                                    fig.add_trace(go.Scatter(
+                                        x=[selected_trade.open_ts],
+                                        y=[selected_trade.open_px],
+                                        mode="markers",
+                                        marker=dict(size=12, color="green", symbol="triangle-up"),
+                                        name="Entry"
+                                    ))
+                                
+                                # Exit marker
+                                if selected_trade.close_px and selected_trade.close_ts:
+                                    fig.add_trace(go.Scatter(
+                                        x=[selected_trade.close_ts],
+                                        y=[selected_trade.close_px],
+                                        mode="markers",
+                                        marker=dict(size=12, color="red", symbol="triangle-down"),
+                                        name="Exit"
+                                    ))
                                 
                                 # G2: SL/TP lines (optional)
                                 x_range = [candles[0]["ts"], candles[-1]["ts"]]
@@ -1626,95 +1559,6 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
                                         line=dict(color="green", dash="dash", width=1),
                                         name=f"TP @ {selected_trade.tp_px:.2f}"
                                     ))
-                                
-                                # H1: Strategy signal overlay
-                                if show_signals:
-                                    overlay_points = extract_strategy_signals(
-                                        events,
-                                        selected_trade.open_ts,
-                                        selected_trade.close_ts,
-                                        symbol=selected_trade.symbol,
-                                        timeframe=selected_trade.timeframe,
-                                    )
-                                    
-                                    for pt in overlay_points:
-                                        # Resolve price if missing
-                                        y_val = resolve_price_for_signal(pt, candles)
-                                        if y_val > 0:
-                                            # Hover text
-                                            hover_text = f"{pt.signal}<br>Reason: {pt.reason or 'N/A'}"
-                                            if pt.rsi is not None:
-                                                hover_text += f"<br>RSI: {pt.rsi:.1f}"
-                                            if pt.atr_pct is not None:
-                                                hover_text += f"<br>ATR%: {pt.atr_pct:.3f}"
-                                            
-                                            fig.add_trace(go.Scatter(
-                                                x=[pt.ts],
-                                                y=[y_val],
-                                                mode="markers",
-                                                marker=dict(size=10, color=pt.color, symbol=pt.symbol_shape),
-                                                name=pt.signal,
-                                                hovertext=hover_text,
-                                                hoverinfo="text",
-                                                showlegend=False,
-                                            ))
-                                
-                                # H2: Position lines overlay
-                                if show_positions:
-                                    for pt in overlay_points if 'overlay_points' in dir() else []:
-                                        if pt.marker_type in ("position_open", "position_close"):
-                                            y_min = min(c["low"] for c in candles)
-                                            y_max = max(c["high"] for c in candles)
-                                            fig.add_shape(
-                                                type="line",
-                                                x0=pt.ts, x1=pt.ts,
-                                                y0=y_min, y1=y_max,
-                                                line=dict(color=pt.color, dash="dot", width=1),
-                                            )
-                                
-                                # H3: Rally Overlay
-                                if show_rallies:
-                                    rallies = extract_rally_events(
-                                        events,
-                                        selected_trade.open_ts,
-                                        selected_trade.close_ts,
-                                        symbol=selected_trade.symbol,
-                                        timeframe=selected_trade.timeframe,
-                                    )
-                                    
-                                    for r in rallies:
-                                        # Create dummy point for price resolution
-                                        dummy_pt = OverlayPoint(
-                                            ts=r.ts, price=None, marker_type="rally", 
-                                            signal="RALLY", reason=None, passed_filters=None
-                                        )
-                                        y_val = resolve_price_for_signal(dummy_pt, candles)
-                                        if y_val > 0:
-                                            # Marker
-                                            fig.add_trace(go.Scatter(
-                                                x=[r.ts],
-                                                y=[y_val],
-                                                mode="markers+text",
-                                                text=[f"⚡ {r.gain_pct:.1%}"],
-                                                textposition="top center",
-                                                marker=dict(size=14, color="orange", symbol="star"),
-                                                name="Rally",
-                                                hoverinfo="text",
-                                                hovertext=f"RALLY DETECTED<br>Time: {r.ts}<br>Gain: {r.gain_pct:.2%}<br>Bars to Peak: {r.bars_to_peak}"
-                                            ))
-                                            
-                                            # Zone Highlight
-                                            if show_zones and r.end_ts:
-                                                fig.add_shape(
-                                                    type="rect",
-                                                    x0=r.ts, x1=r.end_ts,
-                                                    y0=0, y1=1,
-                                                    xref="x", yref="paper",
-                                                    fillcolor="orange",
-                                                    opacity=0.1,
-                                                    layer="below",
-                                                    line_width=0,
-                                                )
                                 
                                 fig.update_layout(
                                     title=f"{selected_trade.symbol} - Trade Replay",
