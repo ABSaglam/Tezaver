@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 import uuid
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Callable
 import pandas as pd
 
 from .scenarios import (
@@ -134,6 +134,7 @@ def _create_silver_components(
     strategy_card_path: str | None,
     risk_per_trade_pct: float = 1.0,
     max_risk_per_trade: float | None = None,  # Risk cap from contract (0.01 = 1%)
+    event_sink: Optional[Callable[[Dict[str, Any]], None]] = None,
 ) -> tuple[IAnalyzer, IStrategist]:
     """
     Create SilverAnalyzer and SilverStrategist for a Silver profile.
@@ -147,6 +148,7 @@ def _create_silver_components(
         strategy_card_path: Path to strategy card JSON.
         risk_per_trade_pct: Risk percentage per trade (1.0 = 1%, 100.0 = 100%).
         max_risk_per_trade: Risk cap from risk_contract_v1 (0.01 = 1%), None = no cap.
+        event_sink: Optional telemetry sink.
     """
     if strategy_card_path and Path(strategy_card_path).exists():
         silver_cfg = load_silver_strategy_config_from_card(
@@ -172,7 +174,8 @@ def _create_silver_components(
             metadata={"source": "default"},
         )
     
-    analyzer = SilverAnalyzer(silver_cfg)
+    # Pass event_sink to Analyzer (M3b)
+    analyzer = SilverAnalyzer(silver_cfg, event_sink=event_sink)
     strategist = SilverStrategist(silver_cfg, risk_per_trade_pct=risk_per_trade_pct)
     
     return analyzer, strategist
@@ -405,6 +408,61 @@ def _run_wargame_with_scenario_and_feed(
     # Create account store
     store = WargameAccountStore(initial_capital=scenario.initial_capital)
     
+    # Create telemetry event sink (Moved up for injection)
+    event_sink = InMemoryEventSink()
+    ndjson_sink = None
+    if events_path:
+        ndjson_sink = JsonFileEventSink(events_path)
+    
+    # Create wrapper sink to log to both (explicitly passed to avoid closure issues)
+    class MultiSink:
+        def __init__(self, memory_sink: InMemoryEventSink, file_sink: JsonFileEventSink | None):
+            self.memory_sink = memory_sink
+            self.file_sink = file_sink
+            
+        def log(self, event: MatrixEvent) -> None:
+            self.memory_sink.log(event)
+            if self.file_sink is not None:
+                self.file_sink.log(event)
+    
+    multi_sink = MultiSink(event_sink, ndjson_sink)
+    
+    # Create adapter for SilverAnalyzer (Dict -> MatrixEvent)
+    def sink_adapter(event_dict: Dict[str, Any]) -> None:
+        etype_str = event_dict.get("event_type", "INFO")
+        try:
+            etype = MatrixEventType(etype_str)
+        except ValueError:
+            etype = MatrixEventType.INFO
+            
+        # Extract core fields if present, else default to scenario/generic
+        sym = event_dict.get("symbol", scenario.symbol)
+        tf = event_dict.get("timeframe", scenario.timeframe)
+        prof = event_dict.get("profile_id", scenario.profile_id)
+        
+        # Parse TS
+        ts_val = event_dict.get("ts")
+        if isinstance(ts_val, str):
+            try:
+                ts = datetime.fromisoformat(ts_val)
+            except ValueError:
+                ts = datetime.now(timezone.utc)
+        elif isinstance(ts_val, datetime):
+            ts = ts_val
+        else:
+            ts = datetime.now(timezone.utc)
+
+        # Create MatrixEvent
+        evt = MatrixEvent(
+            event_type=etype,
+            symbol=sym,
+            timeframe=tf,
+            profile_id=prof,
+            ts=ts,
+            details=event_dict
+        )
+        multi_sink.log(evt)
+
     # Create Silver components using profile-based config from CoinPage V2
     # risk_per_trade_pct: 0.01 = 1% of capital → convert to percentage
     risk_pct_for_strategist = scenario.risk_per_trade_pct * 100.0
@@ -432,7 +490,8 @@ def _run_wargame_with_scenario_and_feed(
             from tezaver.matrix.strategies.silver_core import relax_silver_filters_for_experiment
             strategy_cfg = relax_silver_filters_for_experiment(strategy_cfg, widen_factor)
         
-        analyzer = SilverAnalyzer(strategy_cfg)
+        # Pass sink_adapter to Analyzer
+        analyzer = SilverAnalyzer(strategy_cfg, event_sink=sink_adapter)
         strategist = SilverStrategist(strategy_cfg, risk_per_trade_pct=risk_pct_for_strategist)
     except Exception:
         # Fallback to legacy behavior if profile not found
@@ -443,6 +502,7 @@ def _run_wargame_with_scenario_and_feed(
             None,  # No strategy card, use defaults
             risk_per_trade_pct=risk_pct_for_strategist,
             max_risk_per_trade=max_risk_from_contract,
+            event_sink=sink_adapter, # Pass sink adapter
         )
     
     # Create SimExecutor for real PnL calculation
@@ -456,25 +516,6 @@ def _run_wargame_with_scenario_and_feed(
             min_affinity_score=None,
         )
     )
-    
-    # Create telemetry event sink
-    event_sink = InMemoryEventSink()
-    ndjson_sink = None
-    if events_path:
-        ndjson_sink = JsonFileEventSink(events_path)
-    
-    # Create wrapper sink to log to both (explicitly passed to avoid closure issues)
-    class MultiSink:
-        def __init__(self, memory_sink: InMemoryEventSink, file_sink: JsonFileEventSink | None):
-            self.memory_sink = memory_sink
-            self.file_sink = file_sink
-            
-        def log(self, event: MatrixEvent) -> None:
-            self.memory_sink.log(event)
-            if self.file_sink is not None:
-                self.file_sink.log(event)
-    
-    multi_sink = MultiSink(event_sink, ndjson_sink)
     
     # Create engine with telemetry
     engine = UnifiedEngine(

@@ -370,7 +370,7 @@ def render_coin_detail_page(symbol: str):
         "🚀 Rally",
         "💡 Bilgelik",  
         # LEGACY_SIM_LAB_DISABLED: "🧪 Sim Lab" kaldırıldı
-        "🎯 Sniper Lab",
+
         "🛡️ Risk", 
         "☁️ Bulut Paketi",
         "🌀 Paternler",
@@ -405,32 +405,31 @@ def render_coin_detail_page(symbol: str):
         from tezaver.ui.explanation_cards import render_coin_explanation_cards
         render_coin_explanation_cards(symbol)
 
-    # LEGACY_SIM_LAB_DISABLED: tabs[2] Sim Lab kaldırıldı
-    # Sniper Lab artık tabs[2]
-    
-    # 3. SNIPER LAB
-    with tabs[2]:
-        from tezaver.ui.sniper_lab_tab import render_sniper_lab_tab
-        render_sniper_lab_tab(symbol)
+
 
     # 4. Risk
-    with tabs[3]:
+    # 4. Risk
+    with tabs[2]:
         render_risk_tab(symbol)
         
     # 5. Bulut Paketi (Export & Summary)
-    with tabs[4]:
+    # 5. Bulut Paketi (Export & Summary)
+    with tabs[3]:
         render_bulut_export_tab(symbol)
 
     # 6. Paternler
-    with tabs[5]:
+    # 6. Paternler
+    with tabs[4]:
         render_patterns_tab(symbol)
 
     # 7. Seviyeler
-    with tabs[6]:
+    # 7. Seviyeler
+    with tabs[5]:
         render_levels_tab(symbol)
 
     # 8. Grafik (Main Chart)
-    with tabs[7]:
+    # 8. Grafik (Main Chart)
+    with tabs[6]:
         render_main_price_chart(symbol)
 
 

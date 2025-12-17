@@ -32,7 +32,11 @@ def format_event_line(evt: Dict[str, Any]) -> str:
     etype = evt.get("event_type", "UNKNOWN")
     sym = evt.get("symbol", "")
     tf = evt.get("timeframe", "")
-    details = evt.get("details", {})
+    
+    # Handle flattened events (M3b): use evt as details if 'details' key missing or empty
+    details = evt.get("details")
+    if not isinstance(details, dict) or not details:
+        details = evt
     
     # Format based on event type
     if etype == "TICK_START":

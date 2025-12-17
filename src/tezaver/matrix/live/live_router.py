@@ -122,7 +122,17 @@ class MatrixLiveRouter:
             )
 
     
-    def handle_snapshot(self, snapshot: Dict[str, Any]) -> None:
+    def tick(self, symbol: str, timeframe: str, market_snapshot: Dict[str, Any], runtime_overrides: Dict[str, Any] | None = None) -> None:
+        """Alias for handle_snapshot to satisfy cluster interface."""
+        # Inject symbol/tf if missing (cluster interface assumes explicit, snapshot might be implicit)
+        if "symbol" not in market_snapshot:
+            market_snapshot["symbol"] = symbol
+        if "timeframe" not in market_snapshot:
+            market_snapshot["timeframe"] = timeframe
+            
+        self.handle_snapshot(market_snapshot, runtime_overrides)
+
+    def handle_snapshot(self, snapshot: Dict[str, Any], runtime_overrides: Dict[str, Any] | None = None) -> None:
         """
         Handle incoming closed bar snapshot.
         
@@ -232,6 +242,9 @@ class MatrixLiveRouter:
             
             if self._policy is not None and bar_close_ts:
                 try:
+                    # Extracts overrides
+                    htf_decision = runtime_overrides.get("htf_decision") if runtime_overrides else None
+                    
                     # Policy decides action based on state machine + optional decision
                     policy_result = self._policy.handle_tick(
                         symbol=symbol,
@@ -239,6 +252,7 @@ class MatrixLiveRouter:
                         profile_id=profile_id,
                         bar_close_ts=bar_close_ts,
                         decision=decision,  # From strategy signal
+                        htf_decision=htf_decision, # M3a: Pass HTF veto context
                     )
                     policy_action = policy_result.action if policy_result else None
                     
@@ -302,6 +316,7 @@ class MatrixLiveRouter:
             if self.cluster is not None:
                 try:
                     # cluster.tick might return a result dict
+                    # M3a: Pass runtime_overrides to cluster tick as well
                     result = self.cluster.tick(
                         symbol=symbol,
                         timeframe=timeframe,

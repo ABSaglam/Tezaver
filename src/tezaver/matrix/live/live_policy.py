@@ -201,6 +201,7 @@ class HoldNextClosedPolicy:
         decision: Optional[str] = None,  # "OPEN" or None
         strategy_signal: Optional[str] = None,  # "OPEN_LONG" / "CLOSE_LONG" / "NONE"
         cycle_idx: Optional[int] = None,
+        htf_decision: Optional[str] = None,  # M3a: HTF Veto Context (e.g. "ALLOW", "VETO")
     ) -> PolicyResult:
         """
         Handle a closed bar tick for a cell.
@@ -210,11 +211,55 @@ class HoldNextClosedPolicy:
         """
         from tezaver.matrix.live.live_gateway import ExchangeOrderRequest, OrderSide
         
+        # M3a: HTF Permission Emission (Provider Logic)
+        # If this is a HTF (4h or 1d), current signal determines permission for LTF
+        if tf in ("4h", "1d"):
+            # Determine permission based on current strategy signal
+            # If strategy says OPEN -> ALLOW, else VETO
+            # Note: This is a simplification. Real logic might check trend direction.
+            # Assuming Long-only for now.
+            permission = "ALLOW" if decision == "OPEN" else "VETO"
+            
+            # Emit Permission Event
+            self._emit_event({
+                "event_type": "HTF_PERMISSION_EVAL",
+                "symbol": symbol,
+                "timeframe": tf,
+                "bar_close_ts": bar_close_ts,
+                "decision": permission,
+                "strategy_decision": decision,
+            })
+            # 4h usually acts as permission provider, might not trade itself in this setup?
+            # Proceeding with standard logic just in case it trades too unless it's pure permission.
+        
         cell = self.get_cell_state(symbol, tf, profile_id)
         
         # State machine
         if cell.state == PolicyState.IDLE:
             if decision == "OPEN":
+                # M3a: Apply Veto Logic (Consumer Logic)
+                # If LTF (15m) and we have HTF decision context
+                if tf == "15m" and htf_decision:
+                    if htf_decision == "VETO":
+                        print(f"[POLICY] HTF_VETO_APPLIED {symbol}/{tf} htf={htf_decision}")
+                        
+                        self._emit_event({
+                            "event_type": "HTF_VETO_APPLIED",
+                            "symbol": symbol,
+                            "timeframe": tf,
+                            "bar_close_ts": bar_close_ts,
+                            "htf_decision": htf_decision,
+                        })
+                        
+                        # Block open
+                        return PolicyResult(
+                            action="VETOED", 
+                            success=True, 
+                            state=cell.state, 
+                            bar_close_ts=bar_close_ts,
+                            error="HTF Veto Applied"
+                        )
+                
                 return self._handle_open(symbol, tf, profile_id, bar_close_ts, cell, cycle_idx=cycle_idx)
             else:
                 return PolicyResult(action="SKIP", success=True, state=cell.state, bar_close_ts=bar_close_ts)

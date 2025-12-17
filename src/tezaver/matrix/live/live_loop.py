@@ -75,6 +75,7 @@ def run_live_loop(
     cluster=None,  # Optional MatrixLiveCluster
     stop_flag=None,  # Optional threading.Event for stopping
     event_callback=None,  # Optional callback(event) for real-time updates
+    runtime_context_provider=None,  # Optional callable(symbol, tf) -> dict
 ) -> LiveLoopStats:
     """
     Run live market data loop.
@@ -86,6 +87,7 @@ def run_live_loop(
         cluster: Optional cluster to tick
         stop_flag: Optional stop event for graceful shutdown
         event_callback: Optional callable(event_dict) for real-time event handling
+        runtime_context_provider: Optional callable to provide runtime overrides (e.g. HTF state)
         
     Returns:
         LiveLoopStats with run summary
@@ -138,6 +140,10 @@ def run_live_loop(
         elapsed = time.time() - start_ts
         if elapsed > effective_max_runtime:
             print(f"[LIVE_LOOP] Max runtime reached ({effective_max_runtime:.0f}s)")
+            break
+        
+        if stop_flag is not None and stop_flag.is_set():
+            print("[LIVE_LOOP] Stop flag received")
             break
         
         if stop_flag is not None and stop_flag.is_set():
@@ -246,7 +252,13 @@ def run_live_loop(
                     
                     # Tick cluster if provided
                     if cluster is not None:
-                        cluster.tick(symbol, timeframe, snapshot)
+                        overrides = None
+                        if runtime_context_provider:
+                            try:
+                                overrides = runtime_context_provider(symbol, timeframe)
+                            except Exception as ex:
+                                print(f"[LIVE_LOOP] Context provider error: {ex}")
+                        cluster.tick(symbol, timeframe, snapshot, runtime_overrides=overrides)
                     
                     event["event_type"] = "LIVE_TICK"
                     event["new_bars_added"] = new_count

@@ -7,7 +7,7 @@ and Matrix's trading engine.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 import json
@@ -401,6 +401,8 @@ def load_silver_strategy_config_from_profile(
     )
 
 
+from typing import Optional, Callable, Dict, Any
+
 class SilverAnalyzer(IAnalyzer):
     """
     Silver Analyzer - inspects market snapshots and emits SILVER_ENTRY signals.
@@ -414,14 +416,16 @@ class SilverAnalyzer(IAnalyzer):
     - Multi-timeframe indicators
     """
     
-    def __init__(self, cfg: SilverStrategyConfig) -> None:
+    def __init__(self, cfg: SilverStrategyConfig, event_sink: Optional[Callable[[Dict[str, Any]], None]] = None) -> None:
         """
         Initialize SilverAnalyzer with strategy config.
         
         Args:
             cfg: SilverStrategyConfig loaded from strategy card.
+            event_sink: Optional sink for telemetry events.
         """
         self._cfg = cfg
+        self.event_sink = event_sink
     
     def _check_range(self, value: float | None, range_tuple: tuple[float, float] | None) -> bool:
         """Check if value is within the given range."""
@@ -442,6 +446,7 @@ class SilverAnalyzer(IAnalyzer):
             List of MarketSignal objects (at most 1 for now).
         """
         signals: list[MarketSignal] = []
+        timestamp = market_snapshot.get("timestamp") or market_snapshot.get("ts")
         
         # Extract indicators from snapshot
         rsi_15m = market_snapshot.get("rsi_15m")
@@ -468,8 +473,51 @@ class SilverAnalyzer(IAnalyzer):
         ml_atr_ok = self._check_range(atr_pct_15m, self._cfg.atr_pct_15m_range)
         ml_rsi_1h_ok = self._check_range(rsi_1h, self._cfg.rsi_1h_range)
         
-        # All filters must pass for signal
-        if all([rsi_ok, volume_ok, atr_ok, quality_ok, ml_rsi_gap_ok, ml_atr_ok, ml_rsi_1h_ok]):
+        passed_filters = all([rsi_ok, volume_ok, atr_ok, quality_ok, ml_rsi_gap_ok, ml_atr_ok, ml_rsi_1h_ok])
+        
+        # Emit Telemetry (STRATEGY_SIGNAL)
+        if self.event_sink:
+            signal_enum = "OPEN_LONG" if passed_filters else "NONE"
+            reason = "SILVER_ENTRY" if passed_filters else "FILTER_FAIL"
+            
+            # Construct detailed reason if failed
+            if not passed_filters:
+                failures = []
+                if not rsi_ok: failures.append("RSI")
+                if not volume_ok: failures.append("VOL")
+                if not atr_ok: failures.append("ATR")
+                if not quality_ok: failures.append("QUAL")
+                if not ml_rsi_gap_ok: failures.append("ML_GAP")
+                if not ml_atr_ok: failures.append("ML_ATR")
+                if not ml_rsi_1h_ok: failures.append("ML_1H")
+                if failures:
+                    reason = f"FAIL_{'_'.join(failures)}"
+            
+            ts_iso = timestamp.isoformat() if isinstance(timestamp, datetime) else str(timestamp)
+            
+            # Emit only if signal or if specifically debug (optional)
+            # For now emit everything to enable "Why NO trade?" analysis in SIM
+            self.event_sink({
+                "ts": datetime.now(timezone.utc).isoformat(),
+                "event_type": "STRATEGY_SIGNAL",
+                "symbol": self._cfg.symbol,
+                "timeframe": self._cfg.timeframe,
+                "cell_id": f"{self._cfg.symbol}|{self._cfg.timeframe}|{self._cfg.metadata.get('profile_id', 'SIM')}",
+                "profile_id": self._cfg.metadata.get("profile_id", "SIM"),
+                "bar_close_ts": ts_iso,
+                "signal": signal_enum,
+                "reason": reason,
+                "passed_filters": passed_filters,
+                "in_card_window": passed_filters, # Simplified for SilverAnalyzer
+                "snapshot": {
+                    "close": market_snapshot.get("close"),
+                    "rsi": rsi_15m,
+                    "volume_rel": volume_rel,
+                    "atr_pct": atr_pct,
+                }
+            })
+
+        if passed_filters:
             # Calculate confidence based on how many filters are defined
             confidence = 1.0
             
