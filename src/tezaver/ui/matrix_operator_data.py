@@ -180,3 +180,125 @@ def filter_events(
         result = [e for e in result if e.get("timeframe") == timeframe]
     
     return result
+
+
+def summarize_locks_from_ndjson(events_path: Path, tail_n: int = 2000) -> Dict[str, Dict[str, Any]]:
+    """
+    Extract lock states from NDJSON telemetry events.
+    
+    Returns:
+        {
+            "preflight": {"state": "PASS/WARN/BLOCK/UNKNOWN", "ts": "...", "reason": "..."},
+            "card_gate": {...},
+            "risk": {...},
+            "reconcile": {"state": "UNKNOWN", ...},
+            "last_block_reason": "..." or None
+        }
+    """
+    result = {
+        "preflight": {"state": "UNKNOWN", "ts": None, "reason": None},
+        "card_gate": {"state": "UNKNOWN", "ts": None, "reason": None},
+        "risk": {"state": "UNKNOWN", "ts": None, "reason": None},
+        "reconcile": {"state": "UNKNOWN", "ts": None, "reason": None},
+        "last_block_reason": None,
+    }
+    
+    if not events_path.exists():
+        return result
+    
+    events = load_ndjson_tail(events_path, max_lines=tail_n)
+    if not events:
+        return result
+    
+    # Scan events (chronological, last wins)
+    for e in events:
+        et = e.get("event_type", "")
+        ts = e.get("ts")
+        
+        # PREFLIGHT
+        if et == "PREFLIGHT_EVAL":
+            decision = e.get("decision", "").upper()
+            failed = e.get("failed_checks", [])
+            if decision in ("PASS", "WARN", "BLOCK"):
+                result["preflight"] = {
+                    "state": decision,
+                    "ts": ts,
+                    "reason": ", ".join(failed) if failed else None,
+                }
+                if decision == "BLOCK":
+                    result["last_block_reason"] = f"Preflight: {', '.join(failed)}"
+        
+        # CARD_GATE
+        elif et == "CARD_GATE_EVAL":
+            allow = e.get("allow")
+            gate = e.get("gate") or e.get("decision", "")
+            violations = e.get("violations", [])
+            
+            if allow is True:
+                state = "PASS"
+            elif allow is False:
+                state = "BLOCK"
+            elif gate.upper() in ("PASS", "WARN", "BLOCK"):
+                state = gate.upper()
+            else:
+                state = "UNKNOWN"
+            
+            result["card_gate"] = {
+                "state": state,
+                "ts": ts,
+                "reason": ", ".join(str(v) for v in violations) if violations else None,
+            }
+            if state == "BLOCK":
+                result["last_block_reason"] = f"CardGate: {', '.join(str(v) for v in violations)}"
+        
+        # RISK
+        elif et in ("RISK_LIMIT_CHECK", "RISK_LIMIT_BLOCK", "RISK_LIMIT_EVAL"):
+            allow = e.get("allow")
+            decision = e.get("decision", "").upper()
+            
+            if allow is True or decision == "PASS":
+                state = "PASS"
+            elif allow is False or decision == "BLOCK":
+                state = "BLOCK"
+            elif decision == "WARN":
+                state = "WARN"
+            else:
+                state = "UNKNOWN"
+            
+            reason = e.get("reason") or e.get("message")
+            result["risk"] = {
+                "state": state,
+                "ts": ts,
+                "reason": reason,
+            }
+            if state == "BLOCK":
+                result["last_block_reason"] = f"Risk: {reason or 'limit exceeded'}"
+        
+        # RECONCILE (M2'de gerçek yapılacak)
+        elif et.startswith("RECON_") or et == "RECONCILE_CHECK":
+            ok = e.get("ok")
+            warnings = e.get("warnings", [])
+            
+            if ok is True and not warnings:
+                state = "PASS"
+            elif ok is True and warnings:
+                state = "WARN"
+            elif ok is False:
+                state = "BLOCK"
+            else:
+                state = "UNKNOWN"
+            
+            result["reconcile"] = {
+                "state": state,
+                "ts": ts,
+                "reason": ", ".join(warnings) if warnings else None,
+            }
+        
+        # INCIDENT BUNDLE -> last block reason
+        elif et == "INCIDENT_BUNDLE_EXPORTED":
+            reason = e.get("reason")
+            if reason:
+                result["last_block_reason"] = reason
+    
+    return result
+

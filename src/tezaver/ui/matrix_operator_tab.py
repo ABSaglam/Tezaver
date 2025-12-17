@@ -1274,17 +1274,39 @@ def render_matrix_operator_tab() -> None:
     # === B) 3 KRİTİK KART ===
     card_cols = st.columns(3)
     
+    # Get real lock states from telemetry
+    from tezaver.ui.matrix_operator_data import summarize_locks_from_ndjson
+    lock_states = summarize_locks_from_ndjson(ndjson_path, tail_n=2000)
+    
+    def state_to_icon(state: str) -> str:
+        """Convert state to emoji icon."""
+        if state == "PASS":
+            return "✅"
+        elif state == "WARN":
+            return "⚠️"
+        elif state == "BLOCK":
+            return "⛔"
+        else:  # UNKNOWN
+            return "❓"
+    
     # B1) Kilitler
     with card_cols[0]:
         st.markdown("##### 🔒 Kilitler")
         locks = [
-            ("Ön Kontrol", "✅", preset_help_text("on_kontrol")),
-            ("Kart Kapısı", "✅", preset_help_text("kart_kapisi")),
-            ("Risk Freni", "✅", preset_help_text("risk_freni")),
-            ("Reconcile", "✅", preset_help_text("reconcile")),
+            ("Ön Kontrol", state_to_icon(lock_states["preflight"]["state"])),
+            ("Kart Kapısı", state_to_icon(lock_states["card_gate"]["state"])),
+            ("Risk Freni", state_to_icon(lock_states["risk"]["state"])),
+            ("Reconcile", state_to_icon(lock_states["reconcile"]["state"])),
         ]
         lock_line = " | ".join([f"{l[0]} {l[1]}" for l in locks])
         st.caption(lock_line)
+        
+        # Show reason if any BLOCK
+        for name, key in [("Ön Kontrol", "preflight"), ("Kart Kapısı", "card_gate"), 
+                          ("Risk Freni", "risk"), ("Reconcile", "reconcile")]:
+            if lock_states[key]["state"] == "BLOCK" and lock_states[key].get("reason"):
+                st.caption(f"⛔ {name}: {lock_states[key]['reason'][:40]}")
+                break
     
     # B2) Pozisyon Özeti
     with card_cols[1]:
@@ -1296,11 +1318,12 @@ def render_matrix_operator_tab() -> None:
         st.markdown(f"**{pos_count}** Açık | **${notional:.0f}** Notional")
         st.markdown(f"PnL: :{pnl_color}[${unrealized_pnl:.2f}]")
     
-    # B3) Son Alarm
+    # B3) Son Alarm (from real telemetry)
     with card_cols[2]:
         st.markdown("##### 🔔 Son Alarm")
-        if last_block_reason:
-            st.error(f"BLOCK: {last_block_reason}")
+        last_block = lock_states.get("last_block_reason")
+        if last_block:
+            st.error(f"BLOCK: {last_block[:40]}")
             if st.button("📦 Son Paketi İncele", key="kokpit_inspect_bundle"):
                 pass  # Will show in expander
         else:
