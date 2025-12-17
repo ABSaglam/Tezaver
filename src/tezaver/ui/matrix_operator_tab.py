@@ -140,6 +140,12 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
     )
     
     # =========================================================================
+    # CSS/JS Routing (hide/show expanders based on active page)
+    # =========================================================================
+    from tezaver.ui.expander_routing import apply_expander_routing
+    apply_expander_routing()
+    
+    # =========================================================================
     # Sidebar Routing Infrastructure
     # =========================================================================
     # Get active page from session state (set by sidebar nav buttons)
