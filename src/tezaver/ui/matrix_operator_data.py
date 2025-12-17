@@ -302,3 +302,59 @@ def summarize_locks_from_ndjson(events_path: Path, tail_n: int = 2000) -> Dict[s
     
     return result
 
+
+def get_sidebar_status(events_path: Path) -> Dict[str, str]:
+    """
+    Get mini sidebar status for collapsed view.
+    
+    Returns:
+        {
+            "kilit": "PASS/WARN/BLOCK/—",
+            "run": "ÇALIŞIYOR/DURDU",
+            "poz": "0" or "—",
+            "son": "HH:MM" or "—"
+        }
+    """
+    result = {
+        "kilit": "—",
+        "run": "DURDU",
+        "poz": "—",
+        "son": "—",
+    }
+    
+    if not events_path.exists():
+        return result
+    
+    events = load_ndjson_tail(events_path, max_lines=100)
+    if not events:
+        return result
+    
+    # Get lock status
+    locks = summarize_locks_from_ndjson(events_path, tail_n=500)
+    states = [locks["preflight"]["state"], locks["card_gate"]["state"], 
+              locks["risk"]["state"], locks["reconcile"]["state"]]
+    
+    if "BLOCK" in states:
+        result["kilit"] = "BLOCK"
+    elif "WARN" in states:
+        result["kilit"] = "WARN"
+    elif all(s == "PASS" for s in states):
+        result["kilit"] = "PASS"
+    elif any(s == "PASS" for s in states):
+        result["kilit"] = "PASS"  # At least one is OK
+    
+    # Check if running (look for recent CYCLE_START without CYCLE_DONE)
+    # Simplified: just show "DURDU" unless explicit running flag
+    # This will be wired to session state in UI
+    
+    # Last event timestamp
+    last_evt = events[-1] if events else {}
+    last_ts = last_evt.get("ts")
+    if last_ts:
+        try:
+            result["son"] = last_ts[11:16]  # HH:MM
+        except:
+            pass
+    
+    return result
+
