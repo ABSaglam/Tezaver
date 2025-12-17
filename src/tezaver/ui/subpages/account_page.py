@@ -241,8 +241,19 @@ def render_account_page():
     # === BLOCK 4: Risk + Reconcile ===
     st.subheader("🔒 Risk + Reconcile")
     
-    # Get internal state (mock for now)
-    internal_positions = {}  # Would come from AccountState in production
+    # Get internal state
+    from tezaver.matrix.live.account_state import get_internal_positions
+    internal_positions = get_internal_positions()
+    
+    if internal_positions is None:
+        internal_positions = {}
+        st.caption("⚠️ Dahili durum verisi okunamadı.")
+    else:
+        # Show internal summary briefly
+        if internal_positions:
+            st.caption(f"Dahili: {', '.join(f'{k}:{v}' for k,v in internal_positions.items())}")
+        else:
+            st.caption("Dahili: Flat")
     
     reconcile_result = reconcile_account(snapshot, internal_positions)
     
