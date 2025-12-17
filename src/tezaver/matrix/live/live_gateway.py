@@ -675,6 +675,18 @@ class FaultInjectionGateway:
             return self._inner.get_user_trades(symbol, order_id)
         return {"success": False, "error": "Not supported"}
 
+    def get_balance(self) -> Dict[str, Any]:
+        """Pass-through balance check."""
+        if hasattr(self._inner, "get_balance"):
+            return self._inner.get_balance()
+        return {}
+
+    def get_open_orders(self, symbol: str = None) -> list:
+        """Pass-through open orders check."""
+        if hasattr(self._inner, "get_open_orders"):
+            return self._inner.get_open_orders(symbol)
+        return []
+
     def get_order(self, symbol: str, order_id: str) -> Dict[str, Any]:
         """Intercept get_order to inject faults."""
         if self._fault_mode == "NONE":

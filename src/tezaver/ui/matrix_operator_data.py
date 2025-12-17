@@ -24,15 +24,14 @@ class BundleInfo:
     error: Optional[str] = None
 
 
-def load_ndjson_tail(path: Path, max_lines: int = 500) -> List[Dict[str, Any]]:
+import streamlit as st
+
+def _load_ndjson_tail_raw(path: Path, max_lines: int = 500) -> List[Dict[str, Any]]:
     """
-    Load last N lines from NDJSON file.
+    Internal raw loader: Load last N lines from NDJSON file.
     Returns empty list if file missing/unreadable.
     """
     events = []
-    
-    if not path.exists():
-        return events
     
     try:
         with open(path, "r", encoding="utf-8", errors="replace") as f:
@@ -51,6 +50,32 @@ def load_ndjson_tail(path: Path, max_lines: int = 500) -> List[Dict[str, Any]]:
         return events
     
     return events
+
+
+@st.cache_data(ttl=5, show_spinner=False)
+def _load_events_tail_cached(path_str: str, file_mtime: float, file_size: int, tail_n: int) -> List[Dict[str, Any]]:
+    """
+    Cached worker. Streamlit caches output based on inputs.
+    We pass sensitive file stats (mtime, size) as inputs to force invalidation.
+    """
+    return _load_ndjson_tail_raw(Path(path_str), max_lines=tail_n)
+
+
+def load_ndjson_tail(path: Path, max_lines: int = 500) -> List[Dict[str, Any]]:
+    """
+    Public accessor: Uses smart caching based on file stats.
+    """
+    if not path.exists():
+        return []
+    
+    try:
+        stat = path.stat()
+        # Use cache
+        return _load_events_tail_cached(str(path), stat.st_mtime, stat.st_size, max_lines)
+    except Exception:
+        # Fallback to raw if stat fails
+        return _load_ndjson_tail_raw(path, max_lines)
+
 
 
 def summarize_health(events: List[Dict[str, Any]]) -> Dict[str, Any]:

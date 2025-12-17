@@ -19,6 +19,7 @@ class AccountSnapshot:
     positions: List[Dict[str, Any]] = None
     open_orders: List[Dict[str, Any]] = None
     error: Optional[str] = None
+    source: str = "unknown"
     
     def __post_init__(self):
         if self.positions is None:
@@ -66,6 +67,7 @@ def fetch_account_snapshot(symbols: List[str] = None) -> AccountSnapshot:
             snapshot.available_balance = balance.get("available", 0)
             snapshot.used_margin = balance.get("used_margin", 0)
             snapshot.unrealized_pnl = balance.get("unrealized_pnl", 0)
+            snapshot.source = balance.get("source", "unknown")
         except Exception:
             pass
         
@@ -187,6 +189,9 @@ def render_account_page():
     
     # Fetch data
     snapshot = fetch_account_snapshot()
+    
+    if snapshot.source != "unknown":
+        st.caption(f"Kaynak: {snapshot.source}")
     
     # Connection status
     if snapshot.error:
