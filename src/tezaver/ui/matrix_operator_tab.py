@@ -138,6 +138,61 @@ def _render_live_section_v2(rows: List[ProfileBoardRow]) -> None:
     )
     
     # =========================================================================
+    # SIDEBAR ROUTING: Expander Allow Mapping
+    # =========================================================================
+    ALLOW = {
+        "matrix": {
+            "🎬 Trade Replay | İşlem Tekrarı",
+            "🩺 System Health Summary | Sistem Sağlık Özeti",
+            "🎮 Live Gate Status | Canlı Kapı Durumu",
+            "🟢 Live Freshness / Lag | Canlı Veri Tazeliği",
+            "🔁 Live Loop Control | Canlı Döngü Kontrolü",
+        },
+        "operation": {
+            "🔁 Live Loop Control | Canlı Döngü Kontrolü",
+            "🧭 Live Ops Console | Canlı Operasyon Konsolu",
+            "📊 Cycles Report | Döngü Raporu",
+        },
+        "strategy": {
+            "📋 Strategy Board | Strateji Panosu",
+        },
+        "security": {
+            "⚙️ Exchange & Arm Controls | Borsa & Yetkilendirme Kontrolleri",
+            "🔐 Secrets Vault | Gizli Anahtar Kasası",
+            "🧯 Auto-Incident on BLOCK | Otomatik Olay Kaydı",
+        },
+        "account": {
+            "🧹 Dust & Position Hygiene | Bakiye & Pozisyon Temizliği",
+        },
+        "events": {
+            "📊 Events Explorer | Olay Gezgini",
+            "📜 NDJSON Tail Viewer | NDJSON Log Görüntüleyici",
+            "🧾 Last Orders (per cell) | Son Emirler (hücre bazında)",
+        },
+        "bundles": {
+            "📦 Incident Bundles | Olay Paketi Arşivi",
+        },
+        "proof": {
+            "✅ Closed Bar Proof | Kapalı Bar Kanıtı",
+            "🔀 Closed-bar Router | Kapalı Bar Yönlendiricisi",
+            "🧾 Proof+Router (E2E) | Kanıt+Yönlendirici (Uçtan Uca)",
+            "🧾 Proof+Router+Cluster (E2E) | Kanıt+Yönlendirici+Küme (Uçtan Uca)",
+        },
+        "debug": {
+            "🔧 Advanced Debug | Gelişmiş Hata Ayıklama",
+        },
+    }
+    
+    # Get active page and allowed expanders
+    active_page = st.session_state.get("nav_page", "matrix")
+    allowed_expanders = ALLOW.get(active_page, set())
+    
+    # Helper for conditional rendering
+    def _is_allowed(title: str) -> bool:
+        """Check if expander should be rendered."""
+        return title in allowed_expanders
+    
+    # =========================================================================
     # Live Loop Control (NEW)
     # =========================================================================
     with st.expander("🔁 Live Loop Control | Canlı Döngü Kontrolü", expanded=True):
