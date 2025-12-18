@@ -6,7 +6,7 @@ Fetches Klines (OHLCV).
 
 import aiohttp
 import time
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Dict
 from datetime import datetime, timezone
 
 from tezaver.bulut.core.config import BulutConfig
@@ -85,15 +85,20 @@ class BinanceFuturesRest:
         Get the latest CLOSED bar for a symbol.
         Checks last 2 bars, returns the most recent one that is fully closed.
         """
-        # Use fetch_klines for data retrieval
         try:
-                    close_time_ms = kline[6]
-                    
-                    # Rule: Bar is closed if current_time >= close_time + 1ms
-                    if current_time_ms > close_time_ms:
-                        return self._parse_kline(symbol, interval, kline)
-                
+            klines = await self.fetch_klines(symbol, interval, limit=2)
+            if not klines:
                 return None
+                
+            current_time_ms = int(time.time() * 1000)
+            
+            # Iterate backwards to find first closed bar
+            for kline in reversed(klines):
+                close_time_ms = kline[6]
+                if current_time_ms > close_time_ms:
+                    return self._parse_kline(symbol, interval, kline)
+            
+            return None
                 
         except Exception as e:
             print(f"[BINANCE_REST] Exception for {symbol}: {e}")

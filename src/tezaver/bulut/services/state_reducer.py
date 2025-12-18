@@ -143,6 +143,63 @@ class StateReducer:
             
         return True
 
+    def apply_plan_transition(
+        self, 
+        plan_id: str, 
+        to_state: str, 
+        decision_id: str, 
+        ts_ms: int,
+        result: str = None,
+        reason: str = None
+    ) -> bool:
+        """
+        Apply Plan State Transition (Determinism Bridge).
+        Enforces Exactly-Once and OOO protection.
+        """
+        # Event ID: PLAN:{plan_id}:{to_state}:{decision_id}
+        # Including decision_id ensures we key off the deterministic run.
+        event_id = f"PLAN:{plan_id}:{to_state}:{decision_id}"
+        
+        if not self._check_and_mark(event_id, ts_ms, "INTERNAL", "PLAN", plan_id):
+            return False
+            
+        # OOO Protection
+        # We query current state to ensure we don't regress from Final -> Active
+        current_plan = self._persistence.get_plan(plan_id)
+        if current_plan:
+            # Assuming current_plan is dict or object
+            # persistence_sqlite.get_plan returns dict usually.
+            curr_status = current_plan.get("status") if isinstance(current_plan, dict) else getattr(current_plan, "status", "")
+            
+            final_states = {"EXECUTED", "FAILED", "BLOCKED_FILTERS", "FAILED_NO_PRICE", "FAILED_API_ERROR", "FAILED_EXEC_ERROR"}
+            # Simplify: If current is finalized (not NEW/READY/EXECUTING), ignore updates to EXECUTING
+            
+            # Simple list of "Done" states
+            is_done = curr_status in ["EXECUTED", "FAILED"] or curr_status.startswith("FAILED_") or curr_status.startswith("BLOCKED_")
+            
+            if is_done and to_state == "EXECUTING":
+                 self._ooo_ignored_count += 1
+                 self._telemetry.emit("STATE_OOO_IGNORED", {"id": event_id, "curr": curr_status, "to": to_state})
+                 return False
+                 
+        # Apply
+        if to_state in ["EXECUTED", "FAILED"] or to_state.startswith("FAILED_") or to_state.startswith("BLOCKED_"):
+             # Finalize
+             status_cat = "EXECUTED" if to_state == "EXECUTED" else "FAILED"
+             if to_state != "EXECUTED" and to_state != "FAILED":
+                 self._persistence.update_plan_status(plan_id, to_state)
+                 
+             self._persistence.finalize_plan_execution(plan_id, status_cat, result or reason)
+        else:
+             self._persistence.update_plan_status(plan_id, to_state)
+
+        self._telemetry.emit("EXEC_TRANSITION", {
+            "plan_id": plan_id,
+            "to": to_state,
+            "event_id": event_id
+        })
+        return True
+
     def _check_and_mark(self, event_id: str, ts_ms: int, source: str, kind: str, symbol: str) -> bool:
         """Helper to dedup."""
         self._last_event_ts = ts_ms

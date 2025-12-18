@@ -16,7 +16,9 @@ from tezaver.bulut.api import (
     routes_plans, routes_execution, routes_reconcile, routes_positions,
     routes_exit_profiles, routes_exchangeinfo, routes_time_sync, routes_ops,
     routes_income, routes_fx, routes_env, routes_launch, routes_config,
-    routes_migrations, routes_ui
+    routes_migrations, routes_ui, routes_forensics, routes_intel,
+    routes_status, routes_logs, routes_control, routes_validation,
+    routes_market, routes_reports, routes_sizing
 )
 
 
@@ -128,6 +130,11 @@ async def lifespan(app: FastAPI):
     # Start all via Supervisor
     await ctx.task_supervisor.start_all()
 
+    # v0.29 Determinism Bridge Recovery (Startup)
+    print("[BULUT] Running Determinism Recovery...")
+    await ctx.executor.recover_executing_plans(ctx)
+    ctx.policy.repair_state_drift(ctx)
+
     # v0.25 Config Drift Check (Startup)
     ctx.drift_guard.check_and_record(source="STARTUP")
 
@@ -176,6 +183,8 @@ app.include_router(routes_launch.router, prefix="/launch", tags=["Launch"])
 app.include_router(routes_plans.router, prefix="/plans", tags=["Plans"])
 app.include_router(routes_config.router, prefix="/config", tags=["Config"])
 app.include_router(routes_migrations.router, prefix="/migrations", tags=["Migrations"])
+app.include_router(routes_forensics.router, prefix="/cycles", tags=["Forensics"])
+app.include_router(routes_intel.router, prefix="/intel", tags=["Intel"])
 app.include_router(routes_ui.router, prefix="/ui", tags=["UI"])
 
 

@@ -136,6 +136,19 @@ class StatusService:
         # Let's attach them to the object instance dynamically
         result.reducer = reducer_stats
         
+        # Scheduler Status (v1)
+        if hasattr(ctx, "persistence"):
+            s_cycle = ctx.persistence.get_system_state("sched_cycle")
+            s_cursor = ctx.persistence.get_system_state("sched_cursor")
+            s_missed = ctx.persistence.get_system_state("sched_missed")
+            missed_count = len(s_missed.split(",")) if s_missed else 0
+            
+            result.scheduler = {
+                "cycle_index": int(s_cycle) if s_cycle else 0,
+                "cursor": int(s_cursor) if s_cursor else 0,
+                "missed_count": missed_count
+            }
+        
         # Heartbeats (v0.23)
         if hasattr(ctx, "persistence"):
              result.heartbeats = ctx.persistence.get_heartbeats()

@@ -12,6 +12,7 @@ from tezaver.bulut.core.config import BulutConfig
 from tezaver.bulut.core.context import get_context
 from tezaver.bulut.engine.market_data_poller import MarketDataPoller
 from tezaver.bulut.services.binance_futures_rest import BinanceFuturesRest
+from tezaver.bulut.services.cycle_forensics import CycleForensicsService
 # Routes needing scanners are imported inside methods to avoid circular deps if any
 
 
@@ -34,6 +35,7 @@ class AsyncScheduler:
         # We will retrieve from context or init here.
         self._rest_client: Optional[BinanceFuturesRest] = None
         self._poller: Optional[MarketDataPoller] = None
+        self._forensics: Optional[CycleForensicsService] = CycleForensicsService()
         
     async def start(self):
         """Start the background loop."""
@@ -151,136 +153,7 @@ class AsyncScheduler:
                         # Let's mark after successful ingest start.
                         current_close_ts = ref_bar.close_ts
                         
-                        # 2. Run Ingest Cycle (All symbols)
-                        universe = ctx.universe_source.load()
-                        await self._poller.run_cycle(universe)
-                        
-                        # 3. Run Scan
-                        # Import here to avoid early import issues
-                        from tezaver.bulut.engine.scanner import run_scan
-                        
-                        # Hot reload
-                        ctx.pattern_loader.check_reload()
-                        ctx.exit_profile_loader.check_reload()
-                        
-                        ranking = run_scan(
-                            config=ctx.config,
-                            pattern_loader=ctx.pattern_loader,
-                            universe=universe,
-                            bars_store=ctx.bars_store,
-                            stabilizer=ctx.ranking_stabilizer
-                        )
-                        
-                        # Emit
-                        snap = ranking.to_dict()
-                        meta = ctx.pattern_loader.get_pack_meta()
-                        snap["pattern_pack"] = meta
-                        ctx.telemetry.emit_ranking_snapshot(snap)
-                        
-                        # Update state
-                        ctx.state.last_scan_ts = ranking.cycle_ts
-                        self._last_processed_close_ts = current_close_ts
-                        
-                        # --- PLAN GENERATION ---
-                        
-                        # A. Auto Exits (CLOSE)
-                        close_plans = ctx.exit_engine.evaluate_exits(
-                            persistence=ctx.persistence,
-                            bars_store=ctx.bars_store,
-                            profile_loader=ctx.exit_profile_loader,
-                            cycle_ts=ranking.cycle_ts
-                        )
-                        
-                        # B. Auto Entries (OPEN)
-                        allowlist = ctx.allowlist_source.load()
-                        open_plans = ctx.decider.decide(
-                            ranking=ranking,
-                            open_positions_count=ctx.persistence.get_open_position_count(),
-                            total_notional=ctx.persistence.get_total_notional(),
-                            pattern_pack_loaded=ctx.state.pattern_pack_loaded,
-                            allowlist=allowlist
-                        )
-                        
-                        # --- GATES & MERGE ---
-                        
-                        # Gate: Filter OPEN if already open
-                        current_positions = {p["symbol"] for p in ctx.persistence.get_open_positions()}
-                        final_plans = []
-                        
-                        # Process Close Plans
-                        for p in close_plans:
-                            if p.symbol not in current_positions:
-                                # Orphan close? Block.
-                                print(f"[SCHEDULER] Blocked CLOSE for {p.symbol}: NO_POSITION")
-                                continue
-                            final_plans.append(p)
-                            
-                        # Process Open Plans
-                        for p in open_plans:
-                            # Only block if decision is OPEN
-                            if p.decision.name == "OPEN":
-                                if p.symbol in current_positions:
-                                    print(f"[SCHEDULER] Blocked OPEN for {p.symbol}: ALREADY_OPEN")
-                                    # Convert to SKIP plan for visibility
-                                    p.decision = "SKIP"
-                                    p.reasons["skip_reason"] = "ALREADY_OPEN"
-                                    final_plans.append(p)
-                                else:
-                                    final_plans.append(p)
-                            else:
-                                # BLOCKED/SKIP plans pass
-                                final_plans.append(p)
-                        
-                        # 5. Process Plans
-                        # Sort? Close first handled by append order effectively, but let's ensure.
-                        # Actually executor executes concurrently or sequentially?
-                        # Executor loop is sequential. So Close appended first executes first. Good.
-                        
-                        for plan in final_plans:
-                            # Determine Status
-                            status = "PROPOSED" # Default (Blocked ones are SKIP decision)
-                            
-                            if plan.decision.name == "SKIP":
-                                status = "BLOCKED"
-                                ctx.telemetry.emit_trade_plan_blocked(
-                                    plan.to_dict(), 
-                                    plan.reasons.get("skip_reason", "UNKNOWN")
-                                )
-                            elif ctx.config.auto_trade:
-                                if ctx.config.paper_mode:
-                                    status = "ACCEPTED" # Auto but Paper -> Accepted but not executed
-                                    ctx.telemetry.emit_trade_plan_accepted(plan.to_dict(), mode="PAPER")
-                                else:
-                                    status = "ACCEPTED" # Real execution TODO
-                                    ctx.telemetry.emit_trade_plan_accepted(plan.to_dict(), mode="LIVE")
-                                    # Trigger Execution here (Future Step)
-                            else:
-                                # Manual Mode
-                                status = "PROPOSED"
-                                ctx.telemetry.emit_trade_plan_proposed(plan.to_dict())
-                                
-                            # Persist
-                            inserted = ctx.persistence.insert_plan(plan, status)
-                            if inserted:
-                                print(f"[SCHEDULER] Plan {status}: {plan.symbol} {plan.decision.name}")
-                        
-                        # 6. Execute Plans (Auto Trade & Live)
-                        if ctx.config.auto_trade and not ctx.config.paper_mode:
-                            # Filter accepted plans for execution
-                            # Only execute the ones we JUST created/decided
-                            # (executor handles safety checks)
-                            accepted_plans = [p for p in final_plans if p.decision.name in ["OPEN", "CLOSE"]]
-                            
-                            to_execute = []
-                            for p in accepted_plans:
-                                # Redundant status check but safe
-                                # If we had manual plans queue in DB, we'd fetch them here too.
-                                # For now just loop-generated plans.
-                                to_execute.append(p)
-                                        
-                            if to_execute:
-                                # Run executor
-                                await ctx.executor.execute_plans(to_execute)
+                        await self._run_cycle_logic(ctx, current_close_ts)
 
                     else:
                         # Already processed this bar
@@ -292,3 +165,236 @@ class AsyncScheduler:
             
             # Sleep
             await asyncio.sleep(self._config.poll_interval_seconds)
+
+    async def _run_cycle_logic(self, ctx, current_close_ts: int):
+        """Isolated cycle logic for testing."""
+        # 2. Scheduler Logic (Fair Batching)
+        universe = ctx.universe_source.load()
+        
+        # Load state
+        s_cursor = int(ctx.persistence.get_system_state("sched_cursor") or 0)
+        s_missed_str = ctx.persistence.get_system_state("sched_missed") or ""
+        s_missed = [s.strip() for s in s_missed_str.split(",") if s.strip()]
+        
+        # Deterministic cycle index
+        s_cycle = int(ctx.persistence.get_system_state("sched_cycle") or 0)
+        s_cycle += 1
+        ctx.persistence.set_system_state("sched_cycle", str(s_cycle))
+
+        # Build Priority Lane (Top20 + Missed)
+        priority_lane = set(s_missed)
+        
+        # Fetch Top20 from previous ranking if available
+        if ctx.ranking_stabilizer:
+            last_rank = ctx.ranking_stabilizer.get_last_ranking()
+            if last_rank and last_rank.candidates:
+                # Top20 by score
+                sorted_cands = sorted(last_rank.candidates, key=lambda c: c.score, reverse=True)
+                for c in sorted_cands[:20]:
+                        priority_lane.add(c.symbol)
+                        
+        # Budgeting
+        max_cycle = self._config.universe_scan_max_per_cycle
+        prio_cap = self._config.universe_scan_priority_slots
+        
+        priority_list = list(priority_lane)
+        if len(priority_list) > prio_cap:
+            # Sort: Missed first, then Top20/Others
+            priority_list.sort(key=lambda x: 0 if x in s_missed else 1)
+            priority_list = priority_list[:prio_cap]
+        
+        # Available slots for RR
+        rr_slots = max_cycle - len(priority_list)
+        if rr_slots < 0: rr_slots = 0
+        
+        # Round Robin Selection
+        batch_rr = []
+        if rr_slots > 0 and universe:
+            total_u = len(universe)
+            for _ in range(rr_slots):
+                sym = universe[s_cursor % total_u]
+                s_cursor += 1
+                if sym not in priority_list:
+                    batch_rr.append(sym)
+        
+        # Final Batch
+        batch = list(set(priority_list + batch_rr))
+        batch.sort() # Ensure deterministic order
+        
+        # Persist Cursor
+        ctx.persistence.set_system_state("sched_cursor", str(s_cursor % len(universe) if universe else 0))
+        
+        # Telemetry: CYCLE_START
+        ctx.telemetry.emit("SCHED_CYCLE_START", {
+            "cycle_index": s_cycle,
+            "universe_n": len(universe),
+            "planned_n": len(batch),
+            "priority_n": len(priority_list),
+            "rr_n": len(batch_rr)
+        })
+        print(f"[SCHEDULER] Cycle #{s_cycle}: {len(batch)} symbols (Prio:{len(priority_list)} RR:{len(batch_rr)})")
+        
+        # Run Poller
+        updated_count, failed_symbols = await self._poller.run_cycle(batch)
+        
+        # Update Missed (Backpressure)
+        new_missed = failed_symbols
+        ctx.persistence.set_system_state("sched_missed", ",".join(new_missed))
+        
+        # Telemetry: CYCLE_END
+        ctx.telemetry.emit("SCHED_CYCLE_END", {
+            "cycle_index": s_cycle,
+            "scanned_n": updated_count,
+            "missed_n": len(new_missed),
+            "partial": len(new_missed) > 0
+        })
+        
+        # 3. Run Scan
+        from tezaver.bulut.engine.scanner import run_scan
+        
+        # Hot reload
+        ctx.pattern_loader.check_reload()
+        ctx.exit_profile_loader.check_reload()
+        
+        ranking = run_scan(
+            config=ctx.config,
+            pattern_loader=ctx.pattern_loader,
+            universe=universe,
+            bars_store=ctx.bars_store,
+            stabilizer=ctx.ranking_stabilizer
+        )
+        
+        # Emit
+        snap = ranking.to_dict()
+        meta = ctx.pattern_loader.get_pack_meta()
+        snap["pattern_pack"] = meta
+        ctx.telemetry.emit_ranking_snapshot(snap)
+        
+        # Update state
+        ctx.state.last_scan_ts = ranking.cycle_ts
+        self._last_processed_close_ts = current_close_ts
+        
+        # --- PLAN GENERATION ---
+        
+        # A. Auto Exits (CLOSE)
+        close_plans = ctx.exit_engine.evaluate_exits(
+            persistence=ctx.persistence,
+            bars_store=ctx.bars_store,
+            profile_loader=ctx.exit_profile_loader,
+            cycle_ts=ranking.cycle_ts
+        )
+        
+        # B. Auto Entries (OPEN)
+        allowlist = ctx.allowlist_source.load()
+        open_plans = ctx.decider.decide(
+            ranking=ranking,
+            open_positions_count=ctx.persistence.get_open_position_count(),
+            total_notional=ctx.persistence.get_total_notional(),
+            pattern_pack_loaded=ctx.state.pattern_pack_loaded,
+            allowlist=allowlist
+        )
+        
+        # --- GATES & MERGE ---
+        current_positions = {p["symbol"] for p in ctx.persistence.get_open_positions()}
+        final_plans = []
+        
+        # Process Close Plans
+        for p in close_plans:
+            if p.symbol not in current_positions:
+                print(f"[SCHEDULER] Blocked CLOSE for {p.symbol}: NO_POSITION")
+                continue
+            final_plans.append(p)
+            
+        # Process Open Plans
+        for p in open_plans:
+            if p.decision.name == "OPEN":
+                if p.symbol in current_positions:
+                    print(f"[SCHEDULER] Blocked OPEN for {p.symbol}: ALREADY_OPEN")
+                    p.decision = "SKIP"
+                    p.reasons["skip_reason"] = "ALREADY_OPEN"
+                    final_plans.append(p)
+                else:
+                    final_plans.append(p)
+            else:
+                final_plans.append(p)
+        
+        # 5. Process Plans
+        for plan in final_plans:
+            status = "PROPOSED"
+            
+            if plan.decision.name == "SKIP":
+                status = "BLOCKED"
+                ctx.telemetry.emit_trade_plan_blocked(
+                    plan.to_dict(), 
+                    plan.reasons.get("skip_reason", "UNKNOWN")
+                )
+            elif ctx.config.auto_trade:
+                if ctx.config.paper_mode:
+                    status = "ACCEPTED"
+                    ctx.telemetry.emit_trade_plan_accepted(plan.to_dict(), mode="PAPER")
+                else:
+                    status = "ACCEPTED" 
+                    ctx.telemetry.emit_trade_plan_accepted(plan.to_dict(), mode="LIVE")
+            else:
+                status = "PROPOSED"
+                ctx.telemetry.emit_trade_plan_proposed(plan.to_dict())
+                
+            inserted = ctx.persistence.insert_plan(plan, status)
+            if inserted:
+                print(f"[SCHEDULER] Plan {status}: {plan.symbol} {plan.decision.name}")
+        
+        # 6. Execute Plans
+        if ctx.config.auto_trade and not ctx.config.paper_mode:
+            accepted_plans = [p for p in final_plans if p.decision.name in ["OPEN", "CLOSE"]]
+            if accepted_plans:
+                await ctx.executor.execute_plans(accepted_plans)
+                
+        # 7. Forensics (Timeline)
+        try:
+            # Stats gathering
+            sched_stats = {
+                "universe_n": len(universe),
+                "planned_n": len(batch),
+                "priority_n": len(priority_list),
+                "rr_n": len(batch_rr),
+                "scanned_n": updated_count,
+                "missed_n": len(new_missed)
+            }
+            
+            scan_stats = {
+                "candidates_n": len(ranking.candidates) if ranking else 0,
+                "top_score": ranking.candidates[0].score if ranking and ranking.candidates else 0
+            }
+            
+            decider_stats = {
+                "close_plans_n": len(close_plans),
+                "open_plans_n": len(open_plans),
+                "final_plans_n": len(final_plans)
+            }
+            
+            # Count accepted explicitly
+            acc_n = 0
+            if ctx.config.auto_trade and not ctx.config.paper_mode:
+                # We compiled accepted_plans above
+                acc_n = len([p for p in final_plans if p.decision.name in ["OPEN", "CLOSE"]])
+            
+            exec_stats = {
+                "executed_n": acc_n
+            }
+            
+            risk_stats = {
+                "halted": not ctx.config.execution_enabled,
+                "daily_pnl": ctx.persistence.get_today_net_pnl_utc()
+            }
+            
+            # Ensure cycle_ts is datetime
+            ts = current_close_ts
+            if isinstance(ts, int) or isinstance(ts, float):
+                 ts = datetime.fromtimestamp(ts / 1000.0, timezone.utc)
+            
+            self._forensics.collect_and_save(
+                ctx, s_cycle, ts,
+                sched_stats, scan_stats, decider_stats, exec_stats, risk_stats
+            )
+        except Exception as e:
+            print(f"[SCHEDULER] Forensics failed: {e}")

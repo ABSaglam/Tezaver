@@ -17,31 +17,66 @@ class PatternPackLoader:
     Supports hot-reload by checking file mtime.
     """
     
-    def __init__(self, pack_dir: str):
+    def __init__(self, pack_dir: str, active_pointer_path: Optional[Path] = None):
         self._pack_dir = Path(pack_dir)
+        self._active_ptr_path = active_pointer_path
         self._cached_pack: Optional[PatternPackV1] = None
         self._cached_path: Optional[Path] = None
         self._last_mtime: float = 0.0
+        self._last_ptr_mtime: float = 0.0
     
     def check_reload(self) -> bool:
         """
         Check if reload is needed and perform it.
         Returns True if a NEW pack was loaded.
         """
-        latest_path = self.get_latest_path()
-        if not latest_path:
-            self._clear_cache()
+        # Strategy: Prioritize Active Pointer if configured and exists
+        target_path = None
+        
+        if self._active_ptr_path and self._active_ptr_path.exists():
+            # Check pointer mtime/content
+            ptr_mtime = self._active_ptr_path.stat().st_mtime
+            if ptr_mtime > self._last_ptr_mtime or self._cached_path is None:
+                 # Pointer updated, resolve path
+                 try:
+                     with open(self._active_ptr_path, "r") as f:
+                         ptr_data = json.load(f)
+                         bundle_id = ptr_data.get("bundle_id")
+                         if bundle_id:
+                             # Expected: ../published/{id}/pattern_pack.json relative to active_pointer
+                             # active_pointer is in data/bulut_intel/
+                             # published is in data/bulut_intel/published/
+                             # so parent / published / id / pattern_pack.json
+                             target_path = self._active_ptr_path.parent / "published" / bundle_id / "pattern_pack.json"
+                             self._last_ptr_mtime = ptr_mtime
+                 except Exception as e:
+                     print(f"[PATTERN_LOADER] Error reading pointer: {e}")
+        
+        # Fallback to legacy scan if no pointer target resolved (or pointer missing)
+        if not target_path:
+             target_path = self.get_latest_path()
+
+        if not target_path:
+            # If we had something cached, maybe clear it? 
+            # Or keep old one? Safer to keep old one maybe?
+            # Existing logic clears it.
+            if self._cached_pack:
+                 self._clear_cache()
             return False
             
-        current_mtime = latest_path.stat().st_mtime
+        # Check mtime of the target file
+        if not target_path.exists():
+            return False # Target vanished?
+
+        current_mtime = target_path.stat().st_mtime
         
         # Check if path changed OR content changed (mtime)
-        if latest_path != self._cached_path or current_mtime > self._last_mtime:
-            print(f"[PATTERN_LOADER] Detect change. Loading {latest_path.name}...")
-            pack = self.load_from_path(latest_path)
+        if target_path != self._cached_path or current_mtime > self._last_mtime:
+            print(f"[PATTERN_LOADER] Detect change. Loading {target_path.name} from {target_path.parent.name}...")
+            pack = self.load_from_path(target_path)
             if pack:
                 self._cached_pack = pack
-                self._cached_path = latest_path
+                self._cached_path = target_path
                 self._last_mtime = current_mtime
                 print(f"[PATTERN_LOADER] Loaded pack {pack.pack_id} ({len(pack.symbols)} symbols)")
                 return True
@@ -49,13 +84,13 @@ class PatternPackLoader:
         return False
 
     def list_packs(self) -> list[Path]:
-        """List all pattern pack files in inbox."""
+        """List all pattern pack files in inbox (Legacy)."""
         if not self._pack_dir.exists():
             return []
         return sorted(self._pack_dir.glob("*.json"))
     
     def get_latest_path(self) -> Optional[Path]:
-        """Get path to most recent pattern pack (by name sort)."""
+        """Get path to most recent pattern pack (by name sort) - Legacy Mode."""
         packs = self.list_packs()
         return packs[-1] if packs else None
     

@@ -67,7 +67,15 @@ class IncidentBundleService:
                  if db_path.exists():
                      shutil.copy2(db_path, bundle_dir / "bulut.db")
             
-            # 5. Metadata
+            # 5. Cycle Timelines (v1)
+            # Dump last 20 for forensics
+            if ctx.persistence:
+                timelines = ctx.persistence.get_latest_timelines(limit=20)
+                if timelines:
+                    with open(bundle_dir / "timelines.json", "w") as f:
+                        json.dump(timelines, f, indent=2)
+
+            # 6. Metadata
             with open(bundle_dir / "metadata.txt", "w") as f:
                 f.write(f"Reason: {reason}\n")
                 f.write(f"Timestamp: {ts_str}\n")

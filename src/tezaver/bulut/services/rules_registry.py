@@ -148,3 +148,30 @@ class RulesRegistry:
             self._create_backup(p)
             
         p.write_text(text, encoding="utf-8")
+    # v1 Sizing
+    def list_entry_sizing_profiles(self) -> List[str]:
+        p = self._resolve_path("data/bulut_rules/entry_sizing_profiles")
+        if not p.exists(): return []
+        return [f.name for f in p.glob("*.json")]
+
+    def read_entry_sizing_profile(self, filename: str) -> dict:
+        if not filename.endswith(".json") or ".." in filename or "/" in filename:
+            raise ValueError("Invalid filename")
+        p = self._resolve_path(f"data/bulut_rules/entry_sizing_profiles/{filename}")
+        if not p.exists(): return {}
+        return json.loads(p.read_text(encoding="utf-8"))
+        
+    def write_entry_sizing_profile(self, filename: str, obj: Any, user_backup: bool = True):
+        # We rely on API for validation mostly, but here we can double check wrapper
+        if not filename.endswith(".json") or ".." in filename or "/" in filename:
+            raise ValueError("Invalid filename")
+            
+        text = json.dumps(obj, indent=2, ensure_ascii=False)
+        p = self._resolve_path(f"data/bulut_rules/entry_sizing_profiles/{filename}")
+        
+        p.parent.mkdir(parents=True, exist_ok=True)
+        
+        if user_backup:
+            self._create_backup(p)
+            
+        p.write_text(text, encoding="utf-8")

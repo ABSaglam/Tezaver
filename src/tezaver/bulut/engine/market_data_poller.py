@@ -32,42 +32,65 @@ class MarketDataPoller:
         self._telemetry = telemetry
         self._sem = asyncio.Semaphore(config.poll_concurrency)
         
-    async def run_cycle(self, universe: List[str]) -> int:
+    async def run_cycle(self, universe: List[str]) -> tuple[int, List[str]]:
         """
-        Run one polling cycle. Returns count of Updated Symbols.
+        Run one polling cycle. Returns (updated_count, failed_symbols).
         """
         start_ts = time.time()
         
         # Create tasks
-        tasks = [self._fetch_and_ingest(sym) for sym in universe]
-        results = await asyncio.gather(*tasks) # List[int] bars ingested per symbol
+        # Wrapper to track success/fail per symbol
+        failed_symbols = []
         
-        updated_symbols = sum(1 for r in results if r > 0)
-        total_bars = sum(results)
+        async def _safe_fetch(sym):
+            try:
+                count = await self._fetch_and_ingest(sym)
+                return sym, count, None
+            except Exception as e:
+                return sym, 0, str(e)
+
+        tasks = [_safe_fetch(sym) for sym in universe]
+        results = await asyncio.gather(*tasks) # List[(sym, count, error)]
+        
+        updated_count = 0
+        total_bars = 0
+        
+        for sym, count, err in results:
+            if err:
+                failed_symbols.append(sym)
+                # Maybe log individual error if verbose?
+            else:
+                if count > 0:
+                    updated_count += 1
+                total_bars += count
         
         duration = time.time() - start_ts
         
         # Flags
         flags = []
-        if updated_symbols < len(universe):
-            flags.append("PARTIAL_INGEST")
+        if failed_symbols:
+            flags.append(f"FAILED_{len(failed_symbols)}")
+        if updated_count < (len(universe) - len(failed_symbols)):
+             # Non-failed but 0 updates (up-to-date)
+             pass
         
         # Catch-up detected?
-        if total_bars > updated_symbols:
+        if total_bars > updated_count * 2: # heuristic
             flags.append("CATCH_UP")
             
         # Telemetry
         self._telemetry.emit("BARS_INGEST_CYCLE", {
             "universe_size": len(universe),
-            "updated_symbols": updated_symbols,
+            "updated_symbols": updated_count,
+            "failed_symbols_count": len(failed_symbols),
             "total_bars_ingested": total_bars,
             "duration_s": round(duration, 3),
             "concurrency": self._config.poll_concurrency,
             "flags": flags
         })
         
-        print(f"[POLLER] Updated {updated_symbols}/{len(universe)} symbols ({total_bars} bars) in {duration:.2f}s ({', '.join(flags) if flags else 'OK'})")
-        return updated_symbols
+        print(f"[POLLER] Updated {updated_count}/{len(universe)} symbols ({total_bars} bars), Failed: {len(failed_symbols)} in {duration:.2f}s")
+        return updated_count, failed_symbols
 
     async def _fetch_and_ingest(self, symbol: str) -> int:
         """
@@ -140,5 +163,5 @@ class MarketDataPoller:
                         
                 return ingested
             except Exception as e:
-                # Log error sparingly
-                return 0
+                # Re-raise so caller knows it failed
+                raise e

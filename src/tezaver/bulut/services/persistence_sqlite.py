@@ -97,6 +97,12 @@ class SqlitePersistence:
             )
         """)
         
+        # Schema updates for v1 Sizing
+        try:
+             cursor.execute("ALTER TABLE positions ADD COLUMN sizing_profile_id TEXT")
+             cursor.execute("ALTER TABLE positions ADD COLUMN entry_notional_usdt REAL")
+        except: pass
+        
         # Schema updates for v0.12 (Risk)
         try:
             # Re-create trade_audit with full schema
@@ -127,6 +133,13 @@ class SqlitePersistence:
             
         except Exception as e:
              print(f"[DB] Schema update error: {e}")
+             
+        # Re-add sizing columns in trade_audit as well? 
+        # Requirement says: "trade_audit insert'e de ekle: sizing_profile_id, entry_notional_usdt"
+        try:
+             cursor.execute("ALTER TABLE trade_audit ADD COLUMN sizing_profile_id TEXT")
+             cursor.execute("ALTER TABLE trade_audit ADD COLUMN entry_notional_usdt REAL")
+        except: pass
 
         # Schema updates for v0.14 (Execution v1)
         try:
@@ -141,6 +154,56 @@ class SqlitePersistence:
         try:
              cursor.execute("ALTER TABLE trade_plans ADD COLUMN exec_error TEXT")
         except: pass
+
+        # ... (Rest of schema updates ignored for brevity, keeping original flow) ...
+
+# -------------------------------------------------------------------------------------
+
+    def upsert_position_open(self, symbol: str, entry_ts: datetime, entry_price: float, qty: float, 
+                             notional: float, sl_pct: float, tp_pct: float, 
+                             pattern_id: str = None, exit_profile_id: str = None, 
+                             exit_params: dict = None, last_update_ts_ms: int = 0,
+                             # v1 Sizing
+                             sizing_profile_id: str = None,
+                             entry_notional_usdt: float = 0.0):
+        """Insert or Update OPEN position with OOO protection."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        
+        # We need to respect OOO (Out of Order).
+        # We only update if last_update_ts_ms > existing.last_update_ts_ms
+        
+        cursor.execute("""
+            INSERT INTO positions (
+                symbol, entry_ts, entry_price, qty, notional_usdt, 
+                sl_pct, tp_pct, status, pattern_id, exit_profile_id, exit_params_json,
+                update_ts, side, protective_status, last_update_ts_ms,
+                sizing_profile_id, entry_notional_usdt
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, ?, ?, ?, 'LONG', 'NONE', ?, ?, ?)
+            ON CONFLICT(symbol) DO UPDATE SET
+                entry_ts=excluded.entry_ts,
+                entry_price=excluded.entry_price,
+                qty=excluded.qty,
+                notional_usdt=excluded.notional_usdt,
+                status='OPEN',
+                update_ts=excluded.update_ts,
+                protective_status='NONE',
+                last_update_ts_ms=excluded.last_update_ts_ms,
+                sizing_profile_id=excluded.sizing_profile_id,
+                entry_notional_usdt=excluded.entry_notional_usdt
+            WHERE excluded.last_update_ts_ms > coalesce(positions.last_update_ts_ms, 0)
+        """, (
+            symbol, entry_ts.isoformat(), entry_price, qty, notional,
+            sl_pct, tp_pct, pattern_id, exit_profile_id, 
+            json.dumps(exit_params) if exit_params else "{}",
+            datetime.now(timezone.utc).isoformat(),
+            last_update_ts_ms,
+            sizing_profile_id,
+            entry_notional_usdt
+        ))
+        
+        conn.commit()
+        conn.close()
 
         # Schema updates for v0.15 (Ops Pack)
         cursor.execute("""
@@ -278,10 +341,76 @@ class SqlitePersistence:
             )
         """)
 
+        # v0.29 Policy State Machine
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS policy_states (
+                symbol TEXT PRIMARY KEY,
+                phase TEXT,
+                opened_cycle_ts TEXT,
+                effective_cycle_ts TEXT,
+                last_action_ts TEXT,
+                hold_bars_remaining INTEGER,
+                last_reason TEXT,
+                last_update_ms INTEGER DEFAULT 0
+            ) 
+        """)
+
+        # v1.0 Cycle Forensics Timelines
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS cycle_timelines (
+                cycle_index INTEGER PRIMARY KEY,
+                cycle_ts TEXT,
+                timeline_json TEXT,
+                created_ts TEXT
+            )
+        """)
+
+        conn.commit()
+        conn.close()
+        
+    # --- Policy State Machine (v1) ---
+    
+    def upsert_policy_state(self, state: dict):
+        """Upsert policy state with OOO protection."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        
+        # We use WHERE clause on conflict update to ensure we only overwrite if newer.
+        # Note: SQLite ON CONFLICT clause supports WHERE since 3.24.
+        cursor.execute("""
+            INSERT INTO policy_states (
+                symbol, phase, opened_cycle_ts, effective_cycle_ts, 
+                last_action_ts, hold_bars_remaining, last_reason, last_update_ms
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(symbol) DO UPDATE SET
+                phase=excluded.phase,
+                opened_cycle_ts=excluded.opened_cycle_ts,
+                effective_cycle_ts=excluded.effective_cycle_ts,
+                last_action_ts=excluded.last_action_ts,
+                hold_bars_remaining=excluded.hold_bars_remaining,
+                last_reason=excluded.last_reason,
+                last_update_ms=excluded.last_update_ms
+            WHERE excluded.last_update_ms >= policy_states.last_update_ms
+        """, (
+            state["symbol"], state["phase"], state["opened_cycle_ts"], 
+            state["effective_cycle_ts"], state["last_action_ts"], 
+            state["hold_bars_remaining"], state["last_reason"],
+            state.get("last_update_ms", 0)
+        ))
+        
         conn.commit()
         conn.close()
 
-    # --- Config Snapshots (v0.25) ---
+    def get_policy_state(self, symbol: str) -> Optional[dict]:
+        """Get policy state."""
+        conn = self._get_conn()
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT * FROM policy_states WHERE symbol=?", (symbol,))
+        row = cursor.fetchone()
+        conn.close()
+        return dict(row) if row else None
     
     def insert_config_snapshot(self, hash_val: str, mode: str, content_json: str, source: str):
         """Insert a redacted config snapshot."""
@@ -443,22 +572,24 @@ class SqlitePersistence:
     def upsert_position_open(self, symbol: str, entry_ts: datetime, entry_price: float, qty: float, 
                              notional: float, sl_pct: float, tp_pct: float, 
                              pattern_id: str = None, exit_profile_id: str = None, 
-                             exit_params: dict = None, last_update_ts_ms: int = 0):
+                             exit_params: dict = None, last_update_ts_ms: int = 0,
+                             # v1 Sizing
+                             sizing_profile_id: str = None,
+                             entry_notional_usdt: float = 0.0):
         """Insert or Update OPEN position with OOO protection."""
         conn = self._get_conn()
         cursor = conn.cursor()
         
         # We need to respect OOO (Out of Order).
         # We only update if last_update_ts_ms > existing.last_update_ts_ms
-        # SQLite UPSERT with WHERE clause in DO UPDATE?
-        # Yes: DO UPDATE SET ... WHERE excluded.ts > position.ts
         
         cursor.execute("""
             INSERT INTO positions (
                 symbol, entry_ts, entry_price, qty, notional_usdt, 
                 sl_pct, tp_pct, status, pattern_id, exit_profile_id, exit_params_json,
-                update_ts, side, protective_status, last_update_ts_ms
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, ?, ?, ?, 'LONG', 'NONE', ?)
+                update_ts, side, protective_status, last_update_ts_ms,
+                sizing_profile_id, entry_notional_usdt
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, ?, ?, ?, 'LONG', 'NONE', ?, ?, ?)
             ON CONFLICT(symbol) DO UPDATE SET
                 entry_ts=excluded.entry_ts,
                 entry_price=excluded.entry_price,
@@ -467,14 +598,18 @@ class SqlitePersistence:
                 status='OPEN',
                 update_ts=excluded.update_ts,
                 protective_status='NONE',
-                last_update_ts_ms=excluded.last_update_ts_ms
+                last_update_ts_ms=excluded.last_update_ts_ms,
+                sizing_profile_id=excluded.sizing_profile_id,
+                entry_notional_usdt=excluded.entry_notional_usdt
             WHERE excluded.last_update_ts_ms > coalesce(positions.last_update_ts_ms, 0)
         """, (
             symbol, entry_ts.isoformat(), entry_price, qty, notional,
             sl_pct, tp_pct, pattern_id, exit_profile_id, 
             json.dumps(exit_params) if exit_params else "{}",
             datetime.now(timezone.utc).isoformat(),
-            last_update_ts_ms
+            last_update_ts_ms,
+            sizing_profile_id,
+            entry_notional_usdt
         ))
         
         conn.commit()
@@ -744,6 +879,40 @@ class SqlitePersistence:
         conn.commit()
         conn.close()
 
+    def get_plans_by_status(self, status: str) -> List[dict]:
+        """Get plans by status (e.g. EXECUTING)."""
+        conn = self._get_conn()
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        # Check both status and exec_state?
+        # status used to be primary, but now exec_state tracks lifecycle?
+        # Executor updates 'exec_state' for locking.
+        # But 'status' is also updated.
+        # Let's query based on the passed status comparing check against both for robustness?
+        # Or usually caller passes 'EXECUTING' which refers to exec_state?
+        # get_plans_by_status("EXECUTING") implicitly means exec_state.
+        
+        cursor.execute("SELECT * FROM trade_plans WHERE status=? OR exec_state=?", (status, status))
+        rows = cursor.fetchall()
+        
+        plans = [dict(row) for row in rows]
+        conn.close()
+        return plans
+
+    def get_plan(self, idempotency_key: str) -> Optional[dict]:
+        """Get single plan."""
+        conn = self._get_conn()
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT * FROM trade_plans WHERE idempotency_key=?", (idempotency_key,))
+        row = cursor.fetchone()
+        
+        conn.close()
+        return dict(row) if row else None
+        conn.close()
+
     def get_latest_plans(self, limit: int = 50) -> List[dict]:
         """Get latest trade plans."""
         conn = self._get_conn()
@@ -973,15 +1142,28 @@ class SqlitePersistence:
 
     def set_income_last_sync_ms(self, ms: int):
         """Set last sync timestamp for income."""
+        self.set_system_state("income_last_sync_ms", str(ms))
+
+    def set_system_state(self, key: str, value: str):
+        """Set generic system state key."""
         conn = self._get_conn()
         cursor = conn.cursor()
         now_ts = datetime.now(timezone.utc).isoformat()
         cursor.execute("""
             INSERT INTO system_state (key, value, updated_ts) VALUES (?, ?, ?)
             ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_ts=excluded.updated_ts
-        """, ("income_last_sync_ms", str(ms), now_ts))
+        """, (key, value, now_ts))
         conn.commit()
         conn.close()
+
+    def get_system_state(self, key: str) -> Optional[str]:
+        """Get generic system state value."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT value FROM system_state WHERE key=?", (key,))
+        row = cursor.fetchone()
+        conn.close()
+        return row[0] if row else None
 
     def get_today_income_sum_utc(self, types: List[str] = None, date_str: Optional[str] = None) -> dict:
         """
@@ -1281,3 +1463,48 @@ class SqlitePersistence:
         audit = [dict(row) for row in rows]
         conn.close()
         return audit
+
+    # --- Cycle Forensics (v1) ---
+
+    def upsert_cycle_timeline(self, cycle_index: int, cycle_ts: datetime, timeline_json: str):
+        """
+        Upsert a cycle timeline JSON.
+        """
+        with self._get_conn() as conn:
+            cursor = conn.cursor()
+            created_ts = datetime.now(timezone.utc).isoformat()
+            
+            cursor.execute("""
+                INSERT INTO cycle_timelines (cycle_index, cycle_ts, timeline_json, created_ts)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(cycle_index) DO UPDATE SET
+                    timeline_json = excluded.timeline_json,
+                    created_ts = excluded.created_ts
+            """, (cycle_index, cycle_ts.isoformat(), timeline_json, created_ts))
+            conn.commit()
+
+    def get_latest_timelines(self, limit: int = 20) -> List[Dict]:
+        """
+        Get the latest cycle timelines.
+        Returns list of dicts (parsed JSON).
+        """
+        with self._get_conn() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT cycle_index, cycle_ts, timeline_json, created_ts
+                FROM cycle_timelines
+                ORDER BY cycle_index DESC
+                LIMIT ?
+            """, (limit,))
+            
+            rows = cursor.fetchall()
+            results = []
+            for r in rows:
+                try:
+                    obj = json.loads(r[2])
+                    # Ensure metadata is consistent with DB if needed, 
+                    # but obj should be self-contained.
+                    results.append(obj)
+                except Exception as e:
+                    print(f"[PERSISTENCE] Failed to parse timeline {r[0]}: {e}")
+            return results

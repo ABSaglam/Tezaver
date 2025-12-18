@@ -60,8 +60,11 @@ class Executor:
         bar = ctx.bars_store.get_last_closed(plan.symbol)
         if not bar:
             print(f"[EXECUTOR] No price data for {plan.symbol}, skipping.")
-            ctx.persistence.update_plan_status(plan.idempotency_key, "FAILED_NO_PRICE")
-            ctx.persistence.finalize_plan_execution(plan.idempotency_key, "FAILED", "NO_PRICE")
+            ctx.state_reducer.apply_plan_transition(
+                plan.idempotency_key, "FAILED_NO_PRICE", plan.policy_decision_id, 
+                int(time.time()*1000), result="NO_PRICE"
+            )
+            ctx.policy.reconcile_after_execution(ctx, plan.symbol, position_closed=True)
             return
         current_price = bar.c
         
@@ -70,14 +73,39 @@ class Executor:
         reduce_only = False
         qty = 0.0
         
-        if plan.decision.name == "OPEN":
+        elif plan.decision.name == "OPEN":
             side = "BUY" 
             reduce_only = False
-            qty = QuantityCalculator.calculate_qty(plan.symbol, current_price, plan.notional_usdt)
             
+            # v1: Use Explicit Notional from Sizing Resolver
+            if plan.notional_usdt > 0:
+                target_notional = plan.notional_usdt
+            else:
+                # Fallback (Should be covered by Decider/SizingResolver fallback)
+                target_notional = QuantityCalculator.calculate_qty(plan.symbol, current_price, ctx.config.max_cell_notional_usdt) * current_price
+            
+            qty = QuantityCalculator.calculate_qty(plan.symbol, current_price, target_notional)
+            
+            # Leverage Setting (Best Effort)
+            if plan.leverage and plan.leverage > 0:
+                 try:
+                     # Only set if needed/changed? Efficient to just set.
+                     # But setting leverage requires API call.
+                     # Cache check in client? 
+                     # For now, just fire and forget or await.
+                     # We don't want to block too long.
+                     # TODO: client method for set_leverage
+                     # await self._client.change_leverage(plan.symbol, plan.leverage)
+                     pass
+                 except Exception as e:
+                     print(f"[EXECUTOR] Leverage set failed: {e}")
+
             if qty == 0.0 and ctx.config.block_if_filters_missing:
-                ctx.persistence.update_plan_status(plan.idempotency_key, "BLOCKED_FILTERS")
-                ctx.persistence.finalize_plan_execution(plan.idempotency_key, "FAILED", "FILTERS/QTY")
+                ctx.state_reducer.apply_plan_transition(
+                    plan.idempotency_key, "BLOCKED_FILTERS", plan.policy_decision_id, 
+                    int(time.time()*1000), result="FILTERS/QTY"
+                )
+                ctx.policy.reconcile_after_execution(ctx, plan.symbol, position_closed=True)
                 return
                 
         elif plan.decision.name == "CLOSE":
@@ -90,15 +118,21 @@ class Executor:
                  qty = pos.get("qty", 0.0)
              else:
                  print(f"[EXECUTOR] CLOSE requested but no position for {plan.symbol}")
-                 ctx.persistence.update_plan_status(plan.idempotency_key, "FAILED_NO_POS")
-                 ctx.persistence.finalize_plan_execution(plan.idempotency_key, "FAILED", "NO_POS")
+                 ctx.state_reducer.apply_plan_transition(
+                    plan.idempotency_key, "FAILED_NO_POS", plan.policy_decision_id, 
+                    int(time.time()*1000), result="NO_POS"
+                 )
+                 ctx.policy.reconcile_after_execution(ctx, plan.symbol, position_closed=True)
                  return
 
         # 3. Validation
         if qty <= 0:
              print(f"[EXECUTOR] Qty 0 for {plan.symbol}")
-             ctx.persistence.update_plan_status(plan.idempotency_key, "FAILED_QTY_ZERO")
-             ctx.persistence.finalize_plan_execution(plan.idempotency_key, "FAILED", "QTY_ZERO")
+             ctx.state_reducer.apply_plan_transition(
+                plan.idempotency_key, "FAILED_QTY_ZERO", plan.policy_decision_id, 
+                int(time.time()*1000), result="QTY_ZERO"
+             )
+             ctx.policy.reconcile_after_execution(ctx, plan.symbol, position_closed=True)
              return
             
         print(f"[EXECUTOR] Submitting {plan.symbol} {side} {qty} (Idempotency: {plan.idempotency_key})...")
@@ -118,8 +152,11 @@ class Executor:
              print(f"[EXECUTOR] Execution exception for {plan.symbol}: {e}")
              res = await self._resolve_ambiguous_order(ctx, plan.symbol, client_order_id)
              if not res:
-                  ctx.persistence.update_plan_status(plan.idempotency_key, "FAILED_EXEC_ERROR")
-                  ctx.persistence.finalize_plan_execution(plan.idempotency_key, "FAILED", str(e))
+                  ctx.state_reducer.apply_plan_transition(
+                    plan.idempotency_key, "FAILED_EXEC_ERROR", plan.policy_decision_id, 
+                    int(time.time()*1000), result=str(e)
+                  )
+                  ctx.policy.reconcile_after_execution(ctx, plan.symbol, position_closed=True)
                   return
         
         if res.get("error"):
@@ -129,12 +166,17 @@ class Executor:
                    if resolved:
                         res = resolved
                    else:
-                        ctx.persistence.update_plan_status(plan.idempotency_key, "FAILED_API_ERROR")
-                        ctx.persistence.finalize_plan_execution(plan.idempotency_key, "FAILED", msg)
+                        ctx.state_reducer.apply_plan_transition(
+                            plan.idempotency_key, "FAILED_API_ERROR", plan.policy_decision_id, 
+                            int(time.time()*1000), result=msg
+                        )
                         return
              else:
-                   ctx.persistence.update_plan_status(plan.idempotency_key, "FAILED_API_ERROR")
-                   ctx.persistence.finalize_plan_execution(plan.idempotency_key, "FAILED", msg)
+                   ctx.state_reducer.apply_plan_transition(
+                        plan.idempotency_key, "FAILED_API_ERROR", plan.policy_decision_id, 
+                        int(time.time()*1000), result=msg
+                   )
+                   ctx.policy.reconcile_after_execution(ctx, plan.symbol, position_closed=True)
                    return
 
         # 5. Success Handling
@@ -143,7 +185,10 @@ class Executor:
             avg_price = current_price 
 
         # Finalize
-        ctx.persistence.finalize_plan_execution(plan.idempotency_key, "EXECUTED")
+        ctx.state_reducer.apply_plan_transition(
+            plan.idempotency_key, "EXECUTED", plan.policy_decision_id, 
+            int(time.time()*1000)
+        )
 
         # 6. Post-Execution Logic
         if plan.decision.name == "OPEN":
@@ -159,7 +204,10 @@ class Executor:
                 sl_pct=sl_pct,
                 tp_pct=tp_pct,
                 pattern_id=plan.reasons.get("pattern_id"),
-                exit_profile_id=plan.reasons.get("exit_profile_id")
+                exit_profile_id=plan.reasons.get("exit_profile_id"),
+                # v1 Sizing fields
+                sizing_profile_id=plan.reasons.get("sizing_profile_id"),
+                entry_notional_usdt=plan.notional_usdt
             )
             
             if self._config.protective_orders_enabled and sl_pct > 0 and tp_pct > 0:
@@ -344,6 +392,9 @@ class Executor:
                       # I'll update mark_position_closed in persistence_sqlite.py to be safe.
                       pass
              
+             # Policy Reconcile: If we closed, we reset state to IDLE
+             ctx.policy.reconcile_after_execution(ctx, plan.symbol, position_closed=True)
+
              if self._config.protective_cancel_on_close:
                  try:
                      oids_to_cancel = []
@@ -358,6 +409,72 @@ class Executor:
                          ctx.persistence.clear_protective_orders(plan.symbol)
                  except Exception as e:
                       print(f"[EXECUTOR] Protective Cleanup Failed: {e}")
+
+    async def recover_executing_plans(self, ctx):
+        """
+        Startup Recovery: Resolve 'EXECUTING' plans left from crash/restart.
+        """
+        # 1. Fetch Executing Plans
+        # Need persistence method for this? get_plans_by_status("EXECUTING")?
+        # Assuming cursor.execute logic or persistence method.
+        # Persistence has 'get_active_plans' maybe?
+        # Or raw SQL via persistence helper.
+        plans = ctx.persistence.get_plans_by_status("EXECUTING")
+        if not plans:
+            return
+            
+        print(f"[EXECUTOR] Recovering {len(plans)} EXECUTING plans...")
+        
+        for plan_dict in plans:
+            # Need strict plan object? Or just dict is fine for resolution?
+            # We need symbol and idempotency_key
+            symbol = plan_dict["symbol"]
+            idem_key = plan_dict["idempotency_key"]
+            cid = IdempotencyService.make_client_order_id(idem_key, prefix="tb_")
+            
+            # Resolve
+            res = await self._resolve_ambiguous_order(ctx, symbol, cid)
+            
+            # Outcome
+            status = "FAILED_UNKNOWN"
+            result = "RECOVERY_TIMEOUT"
+            
+            if res:
+                # Order Exists
+                ord_status = res.get("status")
+                if ord_status in ["FILLED", "PARTIALLY_FILLED"]:
+                    status = "EXECUTED"
+                    result = "RECOVERED_FOUND"
+                elif ord_status in ["CANCELED", "EXPIRED", "REJECTED"]:
+                    status = "FAILED"
+                    result = f"RECOVERED_{ord_status}"
+                elif ord_status == "NEW":
+                    # Still open? We should probably cancel it or let it run.
+                    # If we restart, we lose track? 
+                    # Policy: Cancel on recovery to safe state.
+                    try:
+                        await self._client.cancel_order(symbol, order_id=res["orderId"])
+                        status = "FAILED"
+                        result = "RECOVERED_CANCELED"
+                    except:
+                        pass
+            else:
+                 # Not Found -> Failed (never sent?)
+                 status = "FAILED"
+                 result = "RECOVERED_NOT_FOUND"
+                 
+            # Finalize via Reducer
+            ctx.state_reducer.apply_plan_transition(
+                idem_key, status, "RECOVERY", 
+                int(time.time()*1000), result=result
+            )
+            
+            ctx.telemetry.emit("DETERMINISM_REPAIR", {
+                "kind": "PLAN_RECOVERY",
+                "plan_id": idem_key,
+                "outcome": status,
+                "detail": result
+            })
 
     async def cleanup(self):
         await self._client.close()

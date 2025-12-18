@@ -82,6 +82,12 @@ class TradePlanV1:
     idempotency_key: str = field(default_factory=lambda: str(uuid.uuid4()))
     reasons: dict = field(default_factory=dict)
     
+    # Determinism Bridge v1
+    policy_decision_id: str = ""
+    policy_phase_at_decision: str = ""
+    cycle_index: int = 0
+    input_fingerprint: str = ""
+    
     @property
     def schema(self) -> str:
         return SCHEMA_VERSION
@@ -103,6 +109,10 @@ class TradePlanV1:
             "tp": self.tp.to_dict(),
             "idempotency_key": self.idempotency_key,
             "reasons": self.reasons,
+            "policy_decision_id": self.policy_decision_id,
+            "policy_phase_at_decision": self.policy_phase_at_decision,
+            "cycle_index": self.cycle_index,
+            "input_fingerprint": self.input_fingerprint,
         }
     
     @classmethod
@@ -126,6 +136,10 @@ class TradePlanV1:
                 plan_ts=plan_ts,
                 idempotency_key=data.get("idempotency_key", str(uuid.uuid4())),
                 reasons=data.get("reasons", {}),
+                policy_decision_id=data.get("policy_decision_id", ""),
+                policy_phase_at_decision=data.get("policy_phase_at_decision", ""),
+                cycle_index=int(data.get("cycle_index", 0)),
+                input_fingerprint=data.get("input_fingerprint", ""),
             )
         except Exception:
             return None

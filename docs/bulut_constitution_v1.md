@@ -103,3 +103,14 @@ Canlı sisteme geçiş (Launch) prosedürü:
 8.  **Arm**: (Opsiyonel) UI üzerinden veya API ile sistemi "ARMED" durumuna getir.
 9.  **Pilot Phase**: İlk 24 saat boyunca `MAINNET_PILOT_MAX_TOTAL_NOTIONAL_USDT` (50 USDT) limitini aşma. Alarm veya beklenmeyen davranış varsa durdur. Ancak 24 saatlik temiz (clean) çalışma sonrası limiti artır.
 10. **Monitoring**: Dashboard üzerinden Heartbeats, PnL ve Logs panellerini sürekli izle.
+
+## 12. Intel Contract (v1)
+Tezaver Mac -> Bulut zeka aktarımı sıkı kurallara tabidir:
+1.  **Intel Bundle**: PatternPack (v2) + Metadata (Hash, Timestamp, Producer). deterministic ve imzalı olmalıdır.
+2.  **Lifecycle**:
+    *   **Incoming**: Mac'ten gelen ham paket. `validate` edilerek bütünlüğü doğrulanır.
+    *   **Published**: Doğrulanmış ve `published` klasörüne alınmış paket. **Immutable** (değiştirilemez).
+    *   **Active**: `active_pointer.json` ile işaret edilen, o an çalışan paket.
+3.  **Mainnet Safety**: `REAL_MAINNET` modunda ve `ARMED` iken Intel değişikliği (Publish, Activate, Rollback) **BLOKLANIR**.
+    *   Değişiklik için önce sistem `DISARM` edilmelidir.
+    *   Bu kural `intel_edit_block_on_mainnet_armed` config ile yönetilir (Varsayılan: True).

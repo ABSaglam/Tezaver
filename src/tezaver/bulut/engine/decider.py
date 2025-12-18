@@ -24,8 +24,9 @@ class Decider:
     Decider making trade decisions.
     """
     
-    def __init__(self, config: BulutConfig, risk_service: Optional['PortfolioRiskService'] = None):
-        self._config = config
+    def __init__(self, ctx, risk_service: Optional['PortfolioRiskService'] = None):
+        self._ctx = ctx
+        self._config = ctx.config
         self._risk = risk_service
     
     def decide(
@@ -75,8 +76,25 @@ class Decider:
         
         for cand in consideration_list:
             
-            # Notional Calculation (Deterministic)
-            notional = min(self._config.max_cell_notional_usdt, 100.0)
+            # Entry Sizing Resolver (v1)
+            # Must run BEFORE risk check to get correct notional
+            pattern_id_for_sizing = None
+            if cand.matched_patterns:
+                pattern_id_for_sizing = cand.matched_patterns[0].get("pattern_id")
+
+            sizing_res = self._ctx.entry_sizing_resolver.resolve(cand.symbol, pattern_id_for_sizing)
+            
+            # If Sizing Blocked -> Block Entry
+            if sizing_res.blocked:
+                 plans.append(self._create_plan(
+                    cand, ranking.cycle_ts, TradeDecision.SKIP,
+                    reasons={"skip_reason": f"SIZING_BLOCK: {sizing_res.block_reason}"},
+                    policy_decision_id=p_did,
+                    input_fingerprint=fingerprint
+                 ))
+                 continue
+                 
+            notional = sizing_res.notional_usdt
             
             # Risk Guard Check (v0.12)
             if self._risk:
@@ -89,7 +107,9 @@ class Decider:
                 if not allowed:
                     plans.append(self._create_plan(
                         cand, ranking.cycle_ts, TradeDecision.SKIP,
-                        reasons={"skip_reason": code, "risk_details": meta}
+                        reasons={"skip_reason": code, "risk_details": meta},
+                        policy_decision_id=p_did,
+                        input_fingerprint=fingerprint
                     ))
                     continue
             else:
@@ -97,7 +117,9 @@ class Decider:
                 if open_positions_count >= self._config.max_open_positions:
                     plans.append(self._create_plan(
                         cand, ranking.cycle_ts, TradeDecision.SKIP,
-                        reasons={"skip_reason": "MAX_POSITIONS_REACHED"}
+                        reasons={"skip_reason": "MAX_POSITIONS_REACHED"},
+                        policy_decision_id=p_did,
+                        input_fingerprint=fingerprint
                     ))
                     continue
                 
@@ -105,7 +127,9 @@ class Decider:
             if new_entries_count >= self._config.max_new_entries_per_cycle:
                 plans.append(self._create_plan(
                     cand, ranking.cycle_ts, TradeDecision.SKIP,
-                    reasons={"skip_reason": "CYCLE_ENTRY_LIMIT_REACHED"}
+                    reasons={"skip_reason": "CYCLE_ENTRY_LIMIT_REACHED"},
+                    policy_decision_id=p_did,
+                    input_fingerprint=fingerprint
                 ))
                 continue
             
@@ -124,17 +148,32 @@ class Decider:
                 reasons["pattern_id"] = top_match.get("pattern_id")
                 reasons["pattern_confidence"] = top_match.get("confidence")
                 reasons["pattern_note"] = top_match.get("note")
+            
+            # Add Sizing Info
+            reasons["sizing_profile_id"] = sizing_res.profile_id
+            reasons["sizing_explain"] = sizing_res.explain
+            if sizing_res.leverage:
+                reasons["leverage"] = sizing_res.leverage
                 
             plan = self._create_plan(
                 cand, ranking.cycle_ts, TradeDecision.OPEN,
                 notional=notional,
-                reasons=reasons
+                reasons=reasons,
+                policy_decision_id=p_did,
+                input_fingerprint=fingerprint
             )
+            
+            # Inject Leverage into Plan Metadata if present
+            if sizing_res.leverage:
+                plan.leverage = sizing_res.leverage
             
             # Set SL/TP (1% / 2%) - Placeholder logic
             # In real system, these come from volatility/ATR
             plan.sl = StopConfig(type="PERCENT", value=1.0)
             plan.tp = StopConfig(type="PERCENT", value=2.0)
+            
+            # Policy Transition (OPEN SUBMITTED)
+            self._ctx.policy.transition_on_open_submit(self._ctx, cand.symbol, ranking.cycle_ts)
             
             plans.append(plan)
             new_entries_count += 1
@@ -148,7 +187,12 @@ class Decider:
         ts: datetime, 
         decision: TradeDecision,
         notional: float = 0.0,
-        reasons: dict = None
+        reasons: dict = None,
+        # Determinism Bridge v1
+        policy_decision_id: str = "",
+        policy_phase_at_decision: str = "",
+        cycle_index: int = 0,
+        input_fingerprint: str = ""
     ) -> TradePlanV1:
         """Helper to create TradePlanV1."""
         # Idempotency key: cycle_ts:symbol:decision
@@ -164,5 +208,9 @@ class Decider:
             sl=StopConfig(type=StopType.PCT, value=1.0), # Default placeholder
             tp=StopConfig(type=StopType.PCT, value=2.0), # Default placeholder
             idempotency_key=key,
-            reasons=reasons or {}
+            reasons=reasons or {},
+            policy_decision_id=policy_decision_id,
+            policy_phase_at_decision=policy_phase_at_decision,
+            cycle_index=cycle_index,
+            input_fingerprint=input_fingerprint
         )

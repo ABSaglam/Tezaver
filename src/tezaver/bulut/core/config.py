@@ -54,6 +54,11 @@ class BulutConfig:
     scan_min_score: int = field(default_factory=lambda: _env_int("SCAN_MIN_SCORE", 70))
     universe_path: str = field(default_factory=lambda: _env_str("UNIVERSE_PATH", "data/universe/universe_symbols.txt"))
     universe_fallback_symbols: List[str] = field(default_factory=list)
+    
+    # Fair Scheduler (v1)
+    universe_scan_max_per_cycle: int = field(default_factory=lambda: _env_int("UNIVERSE_SCAN_MAX_PER_CYCLE", 400))
+    universe_scan_priority_slots: int = field(default_factory=lambda: _env_int("UNIVERSE_SCAN_PRIORITY_SLOTS", 120))
+    universe_scan_concurrency: int = field(default_factory=lambda: _env_int("UNIVERSE_SCAN_CONCURRENCY", 30))
 
     # Trading Rules
     auto_trade: bool = field(default_factory=lambda: str(_env_str("AUTO_TRADE", "false")).lower() == "true")
@@ -204,6 +209,11 @@ class BulutConfig:
     max_cell_notional_usdt: float = field(default_factory=lambda: _env_float("MAX_CELL_NOTIONAL_USDT", 300.0))
     risk_enforce: str = field(default_factory=lambda: _env_str("RISK_ENFORCE", "BLOCK"))
     
+    # Policy State Machine (v1)
+    policy_min_hold_bars: int = field(default_factory=lambda: _env_int("POLICY_MIN_HOLD_BARS", 2))
+    policy_dust_policy: str = field(default_factory=lambda: _env_str("POLICY_DUST_POLICY", "FLATTEN_AFTER"))
+    policy_htf_veto_enabled: bool = field(default_factory=lambda: str(_env_str("POLICY_HTF_VETO_ENABLED", "true")).lower() == "true")
+
     # Paths
     pattern_pack_dir: str = field(default_factory=lambda: _env_str("PATTERN_PACK_DIR", "data/bulut_inbox/pattern_packs"))
     sqlite_path: str = field(default_factory=lambda: _env_str("SQLITE_PATH", "data/bulut_state/tezaver.db"))

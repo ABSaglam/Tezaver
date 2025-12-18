@@ -94,7 +94,107 @@ def render_command_center(api_base: str = "http://localhost:8000"):
 
     with m4:
         if st.button("📥 Export Incident"):
-             st.toast("Exporting Incident Bundle...")
+             ok, res = call_api("POST", "/ops/incident/export", {"reason": "manual_ui"})
+             if ok:
+                 st.success(f"Exported: {res.get('path')}")
+             else:
+                 st.error(f"Export Failed: {res}")
+                 
+    st.divider()
+
+    # 3. Forensics Timeline (v1)
+    st.subheader("🧾 Cycles Timeline")
+    
+    # Refresh button
+    if st.button("🔄 Refresh Timelines"):
+        st.rerun()
+
+    with st.expander("Cycle History (Last 10)", expanded=True):
+        ok, data = call_api("GET", "/cycles/timelines?limit=10")
+        
+        if ok and isinstance(data, list) and len(data) > 0:
+             # Header
+             h1, h2, h3, h4 = st.columns([1, 3, 3, 2])
+             h1.markdown("**#**")
+             h2.markdown("**Time**")
+             h3.markdown("**Status**")
+             h4.markdown("**Data**")
+             st.divider()
+             
+             for t in data:
+                 idx = t.get('cycle_index', 'N/A')
+                 ts = t.get('cycle_ts', '')
+                 # Format TS
+                 try:
+                     dt = ts.split('.')[0].replace('T', ' ')
+                 except: dt = ts
+                 
+                 stages = t.get('stages', [])
+                 
+                 # Extract summary
+                 sched_stage = next((s for s in stages if s['name'] == 'SCHED'), {})
+                 risk_stage = next((s for s in stages if s['name'] == 'RISK'), {})
+                 
+                 sched_det = sched_stage.get('details', {})
+                 missed_n = sched_det.get('missed_n', 0)
+                 scanned_n = sched_det.get('scanned_n', 0)
+                 halted = risk_stage.get('details', {}).get('halted', False)
+                 
+                 c1, c2, c3, c4 = st.columns([1, 3, 3, 2])
+                 with c1: st.write(f"#{idx}")
+                 with c2: st.caption(dt)
+                 with c3:
+                     if halted:
+                         st.error("RISK HALT")
+                     elif missed_n > 0:
+                         st.warning(f"⚠️ {missed_n} Missed")
+                     else:
+                         st.success(f"✅ {scanned_n} OK")
+                 with c4:
+                     # Using unique key for popover based on cycle index
+                     with st.popover("JSON", help=f"Cycle {idx} Details"):
+                         st.json(t)
+                 
+                 st.divider()
+                 
+        elif not ok:
+             st.error(f"Failed to load timelines: {data}")
+        else:
+             st.info("No cycle history found yet.")
+             
+    # 4. Active Plans Table (v1 Sizing Vis)
+    st.subheader("📋 Active Plans")
+    
+    # We can fetch Active Plans from /ui/summary or specialized route?
+    # /ui/summary usually contains plan cache.
+    # Or fetch plans explicitly if route exists.
+    # Let's assume ui_summary has 'plans' or create specific call.
+    # Let's use `call_api("GET", "/plans/active")` (hypothetical, need to check if plans routes exist)
+    # The `routes_plans.py` (not shown) likely has list.
+    # Assuming endpoint `/plans/` returns active plans.
+    
+    ok_plans, plans_data = call_api("GET", "/plans/")
+    if ok_plans and isinstance(plans_data, list) and len(plans_data) > 0:
+        # Show table: Symbol | Decision | Sizing Profile | Notional | Reason
+        t_data = []
+        for p in plans_data:
+            reasons = p.get('reasons', {}) or {}
+            sizing_id = reasons.get('sizing_profile_id', p.get('sizing_profile_id', '-'))
+            notional = p.get('notional_usdt', 0.0)
+            
+            t_data.append({
+                "Symbol": p.get('symbol'),
+                "Decision": p.get('decision'),
+                "Profile": sizing_id,
+                "Notional": f"{notional:.2f}",
+                "Lev": p.get('leverage'),
+                "Reason": reasons.get('sizing_explain', '')
+            })
+        st.dataframe(t_data, use_container_width=True)
+    elif not ok_plans:
+        st.warning("Could not fetch plans.")
+    else:
+        st.info("No active plans.")
              
     # 3. Status View (Reuse API summary)
     st.subheader("Backend Status")

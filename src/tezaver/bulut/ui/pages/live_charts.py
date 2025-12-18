@@ -60,3 +60,33 @@ def render_live_charts(api_base: str = "http://localhost:8000"):
         
     except Exception as e:
         st.error(f"Chart render error: {e}")
+
+    # Sizing Preview
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### 🔮 Entry Sizing Preview")
+    
+    # We can't easily call internal ctx from UI process if separated, but here it's monolithic (Streamlit + FastAPI same proc usually in dev, or separate in prod).
+    # If separate, we need API.
+    # In `main_panel.py`, we import `routes_sizing`.
+    # Let's assume we can use `requests` to our own API base.
+    
+    if st.sidebar.button("Check Sizing"):
+        try:
+             # Need a resolve endpoint? Or just assume we can't do it easily without one?
+             # Let's add a quick resolve endpoint to routes_sizing first?
+             # Or just use `ctx` if running locally?
+             # MainPanel runs in same process as API usually in this setup? 
+             # Wait, `get_context()` works in Streamlit if same process.
+             from tezaver.bulut.core.context import get_context
+             ctx = get_context()
+             res = ctx.entry_sizing_resolver.resolve(symbol)
+             
+             st.sidebar.info(f"**Profile:** `{res.profile_id}`")
+             if res.blocked:
+                 st.sidebar.error(f"🚫 Blocked: {res.block_reason}")
+             else:
+                 st.sidebar.success(f"✅ Notional: {res.notional_usdt:.2f} USDT")
+                 st.sidebar.caption(f"Lev: {res.leverage}x | {res.explain}")
+                 
+        except Exception as e:
+             st.sidebar.error(f"Preview Failed: {e}")

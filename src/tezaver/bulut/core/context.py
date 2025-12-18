@@ -104,8 +104,42 @@ class BulutContext:
         """Get pattern pack loader (lazy-loaded)."""
         if self._pattern_loader is None:
             from tezaver.bulut.services.pattern_pack_loader import PatternPackLoader
-            self._pattern_loader = PatternPackLoader(self._config.pattern_pack_dir)
+            from pathlib import Path
+            # Pointer path (Bulut Intel Contract v1)
+            # Assumes data/bulut_intel/active_pointer.json relative to CWD
+            ptr_path = Path("data/bulut_intel/active_pointer.json")
+            self._pattern_loader = PatternPackLoader(self._config.pattern_pack_dir, active_pointer_path=ptr_path)
         return self._pattern_loader
+
+    @property
+    def entry_sizing_loader(self) -> Any:
+        """Get entry sizing loader (lazy-loaded)."""
+        if getattr(self, "_entry_sizing_loader", None) is None:
+            from tezaver.bulut.services.entry_sizing_loader import EntrySizingLoader
+            from pathlib import Path
+            # Rule path (Bulut Entry Sizing Formulas v1)
+            # data/bulut_rules/entry_sizing_profiles/
+            rules_path = Path("data/bulut_rules")
+            self._entry_sizing_loader = EntrySizingLoader(rules_path)
+        return self._entry_sizing_loader
+
+    @property
+    def entry_sizing_resolver(self) -> Any:
+        """Get entry sizing resolver (lazy-loaded)."""
+        if getattr(self, "_entry_sizing_resolver", None) is None:
+            from tezaver.bulut.services.entry_sizing_resolver import EntrySizingResolver
+            self._entry_sizing_resolver = EntrySizingResolver(self, self.entry_sizing_loader)
+        return self._entry_sizing_resolver
+    
+    @property
+    def intel_registry(self) -> Any:
+        """Get intel registry service (lazy-loaded)."""
+        if getattr(self, "_intel_registry", None) is None:
+            from tezaver.bulut.services.intel_registry import IntelRegistryService
+            from pathlib import Path
+            # Root for registry is 'data' (it creates 'bulut_intel' inside)
+            self._intel_registry = IntelRegistryService(Path("data"))
+        return self._intel_registry
 
     @property
     def universe_source(self) -> Any:
@@ -208,7 +242,7 @@ class BulutContext:
         """Get decider engine (lazy-loaded)."""
         if getattr(self, "_decider", None) is None:
             from tezaver.bulut.engine.decider import Decider
-            self._decider = Decider(self.config, risk_service=self.portfolio_risk)
+            self._decider = Decider(self, risk_service=self.portfolio_risk)
         return self._decider
 
     @property
@@ -413,6 +447,14 @@ class BulutContext:
             from tezaver.bulut.services.constitution_guard import ConstitutionGuard
             self._constitution_guard = ConstitutionGuard(self)
         return self._constitution_guard
+
+    @property
+    def policy(self) -> Any:
+        """Get policy state machine (lazy-loaded)."""
+        if getattr(self, "_policy", None) is None:
+            from tezaver.bulut.engine.policy_state_machine import PolicyStateMachine
+            self._policy = PolicyStateMachine(self.config)
+        return self._policy
 
     def check_trade_lock(self) -> tuple[bool, Optional[str]]:
         """
