@@ -189,6 +189,30 @@ class SqlitePersistence:
                  cursor.execute(f"ALTER TABLE trade_audit ADD COLUMN {col} {dtype}")
              except: pass
 
+        # Schema updates for v0.18 (Income Sync)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS income_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tran_id TEXT UNIQUE,
+                symbol TEXT,
+                income_type TEXT,
+                asset TEXT,
+                income REAL,
+                time_ms INTEGER,
+                time_ts TEXT,
+                info TEXT,
+                raw_json TEXT
+            )
+        """)
+        
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS system_state (
+                key TEXT PRIMARY KEY,
+                value TEXT,
+                updated_ts TEXT
+            )
+        """)
+
         conn.commit()
         conn.close()
 
@@ -518,6 +542,132 @@ class SqlitePersistence:
                 
         conn.close()
         return alerts
+
+    # --- Income Sync (v0.18) ---
+
+    def upsert_income_events(self, events: List[dict]) -> int:
+        """
+        Batch insert income events (ignore duplicates by tranId).
+        Returns count of inserted rows.
+        """
+        if not events:
+            return 0
+            
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        
+        inserted_count = 0
+        
+        # We process one by one to count insertions or use executemany with IGNORE
+        # sqlite3 doesn't return inserted count easily with executemany + IGNORE
+        # But for performance executemany is better.
+        # We can just check rowcount but IGNORE might affect it.
+        # Or better: "INSERT OR IGNORE"
+        
+        data = []
+        for e in events:
+            # e is raw binance income dict
+            # keys: tranId, symbol, incomeType, income, asset, time, info
+            time_ms = int(e.get("time", 0))
+            time_ts = datetime.fromtimestamp(time_ms/1000.0, timezone.utc).isoformat()
+            
+            data.append((
+                str(e.get("tranId")),
+                e.get("symbol"),
+                e.get("incomeType"),
+                e.get("asset"),
+                float(e.get("income", 0)),
+                time_ms,
+                time_ts,
+                e.get("info", ""),
+                json.dumps(e)
+            ))
+            
+        cursor.executemany("""
+            INSERT OR IGNORE INTO income_events (
+                tran_id, symbol, income_type, asset, income, time_ms, time_ts, info, raw_json
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, data)
+        
+        inserted_count = cursor.rowcount # rowcount is reliable for INSERT OR IGNORE in recent sqlite
+        
+        conn.commit()
+        conn.close()
+        return inserted_count
+
+    def get_income_last_sync_ms(self) -> int:
+        """Get last sync timestamp for income."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT value FROM system_state WHERE key='income_last_sync_ms'")
+        row = cursor.fetchone()
+        conn.close()
+        return int(row[0]) if row else 0
+
+    def set_income_last_sync_ms(self, ms: int):
+        """Set last sync timestamp for income."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        now_ts = datetime.now(timezone.utc).isoformat()
+        cursor.execute("""
+            INSERT INTO system_state (key, value, updated_ts) VALUES (?, ?, ?)
+            ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_ts=excluded.updated_ts
+        """, ("income_last_sync_ms", str(ms), now_ts))
+        conn.commit()
+        conn.close()
+
+    def get_today_income_sum_utc(self, types: List[str] = None, date_str: Optional[str] = None) -> dict:
+        """
+        Get sum of income for specific types today.
+        Returns: { "FUNDING_FEE": 1.23, "TOTAL": 1.23, "non_usdt_count": 0 }
+        """
+        if not date_str:
+            date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        
+        # Filter by types if provided
+        type_clause = ""
+        args = [date_str]
+        if types:
+            placeholders = ",".join("?" * len(types))
+            type_clause = f"AND income_type IN ({placeholders})"
+            args.extend(types)
+            
+        query = f"""
+            SELECT income_type, asset, SUM(income), COUNT(*)
+            FROM income_events
+            WHERE substr(time_ts, 1, 10) = ? {type_clause}
+            GROUP BY income_type, asset
+        """
+        
+        cursor.execute(query, tuple(args))
+        rows = cursor.fetchall()
+        conn.close()
+        
+        result = {"TOTAL": 0.0, "non_usdt_count": 0}
+        
+        for r in rows:
+            # income_type, asset, sum, count
+            i_type = r[0]
+            asset = r[1]
+            val = r[2]
+            
+            # Aggregate per type
+            result[i_type] = result.get(i_type, 0.0) + val
+            
+            # Aggregate total (ONLY USDT IS SUMMED DIRECTLY)
+            # If asset is not USDT, we do NOT add it to TOTAL PnL number directly for now
+            # as per user instructions v0.17 (alerting) -> v0.19 will convert.
+            # Wait, v0.18 requirements: "fee/income asset != USDT ise: emit_alert WARN code="NON_USDT_INCOME_UNACCOUNTED""
+            # So for "TOTAL", we only sum USDT.
+            if asset == "USDT":
+                result["TOTAL"] += val
+            else:
+                result["non_usdt_count"] += r[3]
+                
+        return result
 
     # --- Fill Sync (v0.17) ---
 

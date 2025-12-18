@@ -100,7 +100,8 @@ class BulutConfig:
         "POST:/fapi/v1/order": 1,
         "DELETE:/fapi/v1/order": 1,
         "DELETE:/fapi/v1/allOpenOrders": 1,
-        "GET:/fapi/v1/userTrades": 5
+        "GET:/fapi/v1/userTrades": 5,
+        "GET:/fapi/v1/income": 30
     })
 
     # Portfolio Risk (v0.12)
@@ -123,6 +124,14 @@ class BulutConfig:
     fill_sync_retry_interval_ms: int = 400
     fill_sync_window_ms: int = 10 * 60 * 1000
     alert_on_non_usdt_fee: bool = True
+
+    # Income Sync (v0.18)
+    income_sync_enabled: bool = True
+    income_sync_types: str = "FUNDING_FEE" # Comma separated list
+    income_sync_refresh_seconds: int = 900 # 15 min
+    income_sync_lookback_hours: int = 48
+    income_sync_limit: int = 1000
+    include_income_in_daily_loss_guard: bool = True
 
     # Binance Credentials
     binance_api_key: Optional[str] = field(default_factory=lambda: os.getenv("BINANCE_API_KEY"))

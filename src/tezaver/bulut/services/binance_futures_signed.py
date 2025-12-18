@@ -216,3 +216,27 @@ class BinanceFuturesSigned:
             params["endTime"] = end_time
             
         return await self._request("GET", "/fapi/v1/userTrades", params)
+
+    async def get_income_history(
+        self,
+        income_type: Optional[str] = None,
+        symbol: Optional[str] = None,
+        start_time: Optional[int] = None,
+        end_time: Optional[int] = None,
+        limit: int = 1000
+    ) -> List[Dict]:
+        """
+        Get income history (Funding Fee, etc).
+        Weight: 30
+        """
+        params = {"limit": limit}
+        if income_type:
+            params["incomeType"] = income_type
+        if symbol:
+            params["symbol"] = symbol
+        if start_time:
+            params["startTime"] = start_time
+        if end_time:
+            params["endTime"] = end_time
+            
+        return await self._request("GET", "/fapi/v1/income", params)

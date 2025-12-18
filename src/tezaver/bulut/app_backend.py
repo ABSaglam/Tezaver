@@ -99,6 +99,9 @@ app.include_router(time_sync_router)
 from tezaver.bulut.api.routes_ops import router as ops_router
 app.include_router(ops_router)
 
+from tezaver.bulut.api.routes_income import router as income_router
+app.include_router(income_router)
+
 
 @app.get("/")
 async def root():

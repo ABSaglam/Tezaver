@@ -266,7 +266,31 @@ class BulutContext:
                 self.persistence, 
                 self.time_sync
             )
+            self._fill_sync = FillSyncService(
+                self.config,
+                client,
+                self.telemetry,
+                self.persistence, 
+                self.time_sync
+            )
         return self._fill_sync
+
+    @property
+    def income_sync(self) -> Any:
+        if getattr(self, "_income_sync", None) is None:
+            from tezaver.bulut.services.binance_futures_signed import BinanceFuturesSigned
+            from tezaver.bulut.services.income_sync import IncomeSyncService
+            
+            client = BinanceFuturesSigned(self.config, self.rate_limit_governor, self.time_sync)
+            
+            self._income_sync = IncomeSyncService(
+                self.config,
+                client,
+                self.persistence,
+                self.telemetry,
+                self.time_sync
+            )
+        return self._income_sync
 
     def check_trade_lock(self) -> tuple[bool, Optional[str]]:
         """

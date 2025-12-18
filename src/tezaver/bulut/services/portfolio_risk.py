@@ -38,11 +38,25 @@ class PortfolioRiskService:
         details = {}
         
         # 1. Daily Loss Guard
-        today_pnl = self._db.get_today_net_pnl_utc()
+        today_trade_pnl = self._db.get_today_net_pnl_utc()
+        
+        today_income = 0.0
+        if getattr(self._config, "include_income_in_daily_loss_guard", True):
+             types_str = getattr(self._config, "income_sync_types", "FUNDING_FEE")
+             types = [t.strip() for t in types_str.split(",") if t.strip()]
+             income_stats = self._db.get_today_income_sum_utc(types=types)
+             today_income = income_stats.get("TOTAL", 0.0)
+             
+        today_total_pnl = today_trade_pnl + today_income
         limit = -abs(self._config.daily_loss_limit_usdt)
         
-        if self._config.entry_halted_on_daily_loss and today_pnl <= limit:
-            details = {"today_pnl": today_pnl, "limit": limit}
+        if self._config.entry_halted_on_daily_loss and today_total_pnl <= limit:
+            details = {
+                "today_trade_pnl": today_trade_pnl, 
+                "today_income": today_income,
+                "today_total_pnl": today_total_pnl,
+                "limit": limit
+            }
             self._telemetry.emit_custom("RISK_GUARD_EVAL", {"symbol": symbol, "result": "BLOCK", "reason": "DAILY_LOSS_GUARD", **details})
             self._telemetry.emit_custom("RISK_GUARD_BLOCK", {"symbol": symbol, "reason": "DAILY_LOSS_GUARD", "details": details})
             return False, "DAILY_LOSS_GUARD", details
@@ -113,18 +127,35 @@ class PortfolioRiskService:
     def get_risk_status(self) -> Dict[str, Any]:
         """Get summary status for UI."""
         stats = self._db.get_today_pnl_stats_utc()
-        today_pnl = stats["net_pnl"]
+        today_net_pnl = stats["net_pnl"]
+        
+        # Income Logic
+        today_income = 0.0
+        income_breakdown = {}
+        if getattr(self._config, "include_income_in_daily_loss_guard", True): # Or just always show it? Always show.
+             types_str = getattr(self._config, "income_sync_types", "FUNDING_FEE")
+             types = [t.strip() for t in types_str.split(",") if t.strip()]
+             income_stats = self._db.get_today_income_sum_utc(types=types)
+             today_income = income_stats.get("TOTAL", 0.0)
+             income_breakdown = income_stats
+             
+        today_total_pnl = today_net_pnl + today_income
+        
         loss_limit = -abs(self._config.daily_loss_limit_usdt)
-        halted = self._config.entry_halted_on_daily_loss and today_pnl <= loss_limit
+        halted = self._config.entry_halted_on_daily_loss and today_total_pnl <= loss_limit
         
         open_positions = self._db.get_open_positions()
         group_counts = self._groups.get_open_counts(open_positions)
         
         return {
-            "today_net_pnl": stats["net_pnl"],
-            "today_gross_pnl": stats["gross_pnl"],
-            "today_fees": stats["fees"],
-            "today_pnl": today_pnl, # for compat
+            "today_trade_net_pnl": stats["net_pnl"],
+            "today_trade_gross_pnl": stats["gross_pnl"],
+            "today_trade_fees": stats["fees"],
+            
+            "today_income": today_income,
+            "today_income_breakdown": income_breakdown,
+            "today_total_pnl": today_total_pnl,
+            
             "daily_loss_limit": loss_limit,
             "entry_halted": halted,
             "open_positions": len(open_positions),

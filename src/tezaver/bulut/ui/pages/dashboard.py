@@ -67,18 +67,25 @@ def render_dashboard():
             st.caption("Daily Loss Limit Hit!")
             
     with risk_cols[1]:
-        today_net = risk_status["today_net_pnl"]
-        today_gross = risk_status["today_gross_pnl"]
-        today_fees = risk_status["today_fees"]
+        today_net = risk_status.get("today_trade_net_pnl", risk_status.get("today_net_pnl", 0.0))
+        today_income = risk_status.get("today_income", 0.0)
+        today_total = risk_status.get("today_total_pnl", today_net)
         limit = risk_status["daily_loss_limit"]
         
-        st.metric("Net Daily PnL", f"${today_net:.2f}", f"Gross: {today_gross:.2f}")
-        st.caption(f"Fees: ${today_fees:.2f} | Limit: ${limit:.2f}")
+        st.metric("Total Daily PnL", f"${today_total:.2f}", f"Trade: ${today_net:.2f}")
+        st.caption(f"Income: ${today_income:.2f} | Limit: ${limit:.2f}")
         
     with risk_cols[2]:
         op = risk_status["open_positions"]
         mx = risk_status["max_positions"]
         st.metric("Global Cap", f"{op} / {mx}")
+
+    # =========================================================================
+    # Income Details (v0.18)
+    # =========================================================================
+    if "today_income_breakdown" in risk_status and risk_status["today_income_breakdown"]:
+        with st.expander("💰 Income Breakdown (Today)", expanded=False):
+            st.json(risk_status["today_income_breakdown"])
 
     # =========================================================================
     # Last Trades (v0.17)
