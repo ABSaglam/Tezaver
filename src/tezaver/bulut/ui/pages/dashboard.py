@@ -42,11 +42,39 @@ def render_dashboard():
             f"{ctx.state.open_positions_count} / {ctx.config.max_open_positions}",
         )
     
+    
     with col3:
         st.metric(
             "Notional USDT",
             f"${ctx.state.total_notional_usdt:.2f} / ${ctx.config.max_total_notional_usdt:.2f}",
         )
+        
+    # =========================================================================
+    # Portfolio Risk (v0.12)
+    # =========================================================================
+    st.subheader("🛡️ Risk Status")
+    
+    # Lazy load if needed context access ensures it
+    risk_status = ctx.portfolio_risk.get_risk_status()
+    
+    risk_cols = st.columns(3)
+    
+    with risk_cols[0]:
+        halted = risk_status["entry_halted"]
+        status_text = "HALTED ⛔" if halted else "ACTIVE ✅"
+        st.metric("Entry Status", status_text)
+        if halted:
+            st.caption("Daily Loss Limit Hit!")
+            
+    with risk_cols[1]:
+        today_pnl = risk_status["today_pnl"]
+        limit = risk_status["daily_loss_limit"]
+        st.metric("Daily PnL", f"${today_pnl:.2f}", f"Limit: {limit}")
+        
+    with risk_cols[2]:
+        op = risk_status["open_positions"]
+        mx = risk_status["max_positions"]
+        st.metric("Global Cap", f"{op} / {mx}")
     
     # =========================================================================
     # Open Positions

@@ -21,17 +21,11 @@ from tezaver.bulut.schemas.trade_plan_v1 import (
 class Decider:
     """
     Decider making trade decisions.
-    
-    Pipeline:
-    1. Input Validation (Pack loaded?)
-    2. Candidate Filtering (Score, Allowlist)
-    3. Global Limits Check (Max Pos, Max Notional)
-    4. Cycle Limits Check (Max New Entries)
-    5. Plan Generation (SL/TP, Notional)
     """
     
-    def __init__(self, config: BulutConfig):
+    def __init__(self, config: BulutConfig, risk_service: Optional['PortfolioRiskService'] = None):
         self._config = config
+        self._risk = risk_service
     
     def decide(
         self,
@@ -49,22 +43,9 @@ class Decider:
         
         # 1. Check Global Trade Lock (Pattern Pack)
         if not pattern_pack_loaded:
-            # If pack missing, we can't trade comfortably.
-            # Only generate one generic blocked plan or return empty?
-            # Requirement: "Eğer pattern pack yoksa: OPEN plan üretme; sadece BLOCKED reason..."
-            # Implementation: Skip processing, maybe log? 
-            # Or generate a dummy "system block" plan if explicitly asked? 
-            # Usually we just don't trade.
-            # But let's return a dummy plan to indicate decision was made but blocked?
-            # V0.01 used create_locked_plan.
-            # Let's iterate candidates but block all?
-            # Better: if not loaded, return empty list or single system warning plan.
-            # Let's return NO plans if not loaded to avoid spam, but caller should check lock.
             return []
 
         # 2. Candidate Selection
-        # Use ranking.candidates (which should be stabilized/shortlisted by scanner)
-        # But filter by trade_min_score explicitly just in case
         candidates = [
             c for c in ranking.candidates 
             if c.score >= self._config.trade_min_score
@@ -74,9 +55,6 @@ class Decider:
         filtered_candidates = []
         for cand in candidates:
             if allowlist is not None and cand.symbol not in allowlist:
-                # Can create BLOCKED plan or just skip? 
-                # "Allowlist dışındaysa: BLOCKED reason: ALLOWLIST"
-                # Let's create a BLOCKED plan for visibility.
                 plans.append(self._create_plan(
                     cand, ranking.cycle_ts, TradeDecision.SKIP, 
                     reasons={"skip_reason": "ALLOWLIST_BLOCK"}
@@ -84,25 +62,39 @@ class Decider:
             else:
                 filtered_candidates.append(cand)
         
-        # Sort by score again to be safe
         filtered_candidates.sort(key=lambda x: x.score, reverse=True)
-        
-        # Take TopN for consideration
         consideration_list = filtered_candidates[:self._config.trade_topn_from_ranking]
         
         # 3. Entry Logic
         new_entries_count = 0
         
         for cand in consideration_list:
-            # Check limits
             
-            # Global Max Position Limit
-            if open_positions_count >= self._config.max_open_positions:
-                plans.append(self._create_plan(
-                    cand, ranking.cycle_ts, TradeDecision.SKIP,
-                    reasons={"skip_reason": "MAX_POSITIONS_REACHED"}
-                ))
-                continue
+            # Notional Calculation (Deterministic)
+            notional = min(self._config.max_cell_notional_usdt, 100.0)
+            
+            # Risk Guard Check (v0.12)
+            if self._risk:
+                allowed, code, meta = self._risk.check_entry_allowed(
+                    cand.symbol, 
+                    notional, 
+                    ranking.cycle_ts.timestamp()
+                )
+                
+                if not allowed:
+                    plans.append(self._create_plan(
+                        cand, ranking.cycle_ts, TradeDecision.SKIP,
+                        reasons={"skip_reason": code, "risk_details": meta}
+                    ))
+                    continue
+            else:
+                # Fallback to simple check if risk service missing (tests?)
+                if open_positions_count >= self._config.max_open_positions:
+                    plans.append(self._create_plan(
+                        cand, ranking.cycle_ts, TradeDecision.SKIP,
+                        reasons={"skip_reason": "MAX_POSITIONS_REACHED"}
+                    ))
+                    continue
                 
             # Cycle Limit
             if new_entries_count >= self._config.max_new_entries_per_cycle:
@@ -113,8 +105,6 @@ class Decider:
                 continue
             
             # If passed all gates -> OPEN
-            # Notional Calculation (Deterministic)
-            notional = min(self._config.max_cell_notional_usdt, 100.0)
             
             # Create OPEN Plan
             plan = self._create_plan(

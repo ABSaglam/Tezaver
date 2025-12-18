@@ -97,6 +97,14 @@ class SqlitePersistence:
             )
         """)
         
+        # Schema updates for v0.12 (Risk)
+        try:
+            cursor.execute("CREATE TABLE IF NOT EXISTS trade_audit (symbol TEXT, close_ts TEXT, pnl REAL, exit_reason TEXT, notional REAL)")
+            cursor.execute("ALTER TABLE positions ADD COLUMN last_exit_reason TEXT")
+            cursor.execute("ALTER TABLE positions ADD COLUMN last_exit_ts TEXT")
+        except:
+             pass
+
         conn.commit()
         conn.close()
 
@@ -111,12 +119,27 @@ class SqlitePersistence:
         cursor = conn.cursor()
         
         # Check if exists? REPLACE INTO works for upsert on PRIMARY KEY
+        # For v0.12, we want to preserve last_exit info if updating same symbol?
+        # If we REPLACE, we lose old columns if not provided?
+        # Yes, REPLACE deletes and inserts.
+        # So we should use UPDATE if exists, else INSERT.
+        # Or better: read `last_exit_reason` and `last_exit_ts` before replace, pass them back?
+        # Or use ON CONFLICT UPDATE logic (Upsert). `INSERT ... ON CONFLICT(symbol) DO UPDATE SET ...`
+        
         cursor.execute("""
-            REPLACE INTO positions (
+            INSERT INTO positions (
                 symbol, entry_ts, entry_price, qty, notional_usdt, 
                 sl_pct, tp_pct, status, pattern_id, exit_profile_id, exit_params_json,
-                update_ts, side
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, ?, ?, ?, 'LONG')
+                update_ts, side, protective_status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, ?, ?, ?, 'LONG', 'NONE')
+            ON CONFLICT(symbol) DO UPDATE SET
+                entry_ts=excluded.entry_ts,
+                entry_price=excluded.entry_price,
+                qty=excluded.qty,
+                notional_usdt=excluded.notional_usdt,
+                status='OPEN',
+                update_ts=excluded.update_ts,
+                protective_status='NONE'
         """, (
             symbol, entry_ts.isoformat(), entry_price, qty, notional,
             sl_pct, tp_pct, pattern_id, exit_profile_id, 
@@ -127,25 +150,28 @@ class SqlitePersistence:
         conn.commit()
         conn.close()
 
-    def mark_position_closed(self, symbol: str, close_ts: datetime, close_price: float):
-        """Mark position as CLOSED (or delete row?). Usually delete or move to history."""
+    def mark_position_closed(self, symbol: str, close_ts: datetime, close_price: float, pnl: float = 0.0, exit_reason: str = "MANUAL"):
+        """Mark position CLOSED and audit."""
         conn = self._get_conn()
         cursor = conn.cursor()
         
-        # For simplicity in Bulut v0.08, we DELETE closed positions from 'positions' table
-        # and maybe log to a 'trades_history' table (not implemented in this step).
-        # Requirement: "positions tablosunu CLOSED yap"
-        # If we keep it, scan logic must filter status='OPEN'.
+        ts_str = close_ts.isoformat()
         
+        # Update positions
         cursor.execute("""
-            UPDATE positions SET status='CLOSED', update_ts=? 
+            UPDATE positions SET 
+                status='CLOSED', 
+                update_ts=?, 
+                last_exit_reason=?,
+                last_exit_ts=?
             WHERE symbol=?
-        """, (datetime.now(timezone.utc).isoformat(), symbol))
+        """, (ts_str, exit_reason, ts_str, symbol))
         
-        # Optional: Delete if we only track OPEN positions here?
-        # User prompt implies "positions tablosunu CLOSED yap" -> update status.
-        # But auto-exit engine says "sadece DB’de OPEN pozisyonlara bak".
-        # So keeping closed rows is fine.
+        # Audit
+        cursor.execute("""
+            INSERT INTO trade_audit (symbol, close_ts, pnl, exit_reason)
+            VALUES (?, ?, ?, ?)
+        """, (symbol, ts_str, pnl, exit_reason))
         
         conn.commit()
         conn.close()
@@ -214,6 +240,26 @@ class SqlitePersistence:
         conn = self._get_conn()
         cursor = conn.cursor()
         cursor.execute("SELECT SUM(notional_usdt) FROM positions WHERE status='OPEN'")
+        total = cursor.fetchone()[0]
+        conn.close()
+        return total if total else 0.0
+
+    def get_today_net_pnl(self, date_str: Optional[str] = None) -> float:
+        """
+        Get net PnL for a specific date (YYYY-MM-DD).
+        Defaults to today UTC.
+        """
+        if not date_str:
+            date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        
+        # close_ts like '2025-12-18T...'
+        # Check substring match
+        query = "SELECT SUM(pnl) FROM trade_audit WHERE substr(close_ts, 1, 10) = ?"
+        cursor.execute(query, (date_str,))
+        
         total = cursor.fetchone()[0]
         conn.close()
         return total if total else 0.0

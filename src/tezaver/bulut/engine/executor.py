@@ -146,10 +146,40 @@ class Executor:
                             
                  # ... Close Logic ...
                     # CLOSE Logic
+                    # Calculate PnL if possible
+                    pnl = 0.0
+                    exit_reason = "UNKNOWN"
+                    
+                    pos = ctx.persistence.get_position(plan.symbol)
+                    if pos:
+                        entry_price = pos["entry_price"]
+                        # Assume LONG
+                        # filled_qty from order result usually, but here 'qty' was sent order qty.
+                        # Using 'qty' as approximation or parse 'res' for 'executedQty'.
+                        # 'res' is available from `_client.market_close` result?
+                        # `res = await self._client.place_order(...)`
+                        # avg_price comes from `float(res.get("avgPrice", 0))` or similar logic above.
+                        # Assuming avg_price is valid.
+                        pnl = (avg_price - entry_price) * qty
+                    
+                    # Determine Exit Reason
+                    if plan.reasons.get("manual_trigger"):
+                        exit_reason = "MANUAL"
+                    elif plan.reasons.get("is_sl"):
+                        exit_reason = "SL"
+                    elif plan.reasons.get("is_tp"):
+                        exit_reason = "TP"
+                    elif plan.reasons.get("timeout"):
+                         exit_reason = "TIME"
+                    elif "exit_reason" in plan.reasons:
+                        exit_reason = plan.reasons["exit_reason"]
+                        
                     ctx.persistence.mark_position_closed(
                         symbol=plan.symbol,
                         close_ts=plan.plan_ts,
-                        close_price=avg_price
+                        close_price=avg_price,
+                        pnl=pnl,
+                        exit_reason=exit_reason
                     )
                     
                     # --- V0.09 Cleanup Protective Orders ---

@@ -61,6 +61,8 @@ class BulutContext:
         self._bars_store = None
         self._exchange_cache = None
         self._governor = None
+        self._group_caps = None
+        self._risk = None
     
     @property
     def config(self) -> BulutConfig:
@@ -163,6 +165,33 @@ class BulutContext:
             from tezaver.bulut.services.rate_limit_governor import RateLimitGovernor
             self._governor = RateLimitGovernor(self.config, self.telemetry)
         return self._governor
+
+    @property
+    def group_caps_loader(self) -> Any:
+        if self._group_caps is None:
+            from tezaver.bulut.services.group_caps_loader import GroupCapsLoader
+            self._group_caps = GroupCapsLoader(self.config)
+        return self._group_caps
+
+    @property
+    def portfolio_risk(self) -> Any:
+        if self._risk is None:
+            from tezaver.bulut.services.portfolio_risk import PortfolioRiskService
+            self._risk = PortfolioRiskService(
+                self.config,
+                self.persistence,
+                self.group_caps_loader,
+                self.telemetry
+            )
+        return self._risk
+
+    @property
+    def decider(self) -> Any:
+        """Get decider engine (lazy-loaded)."""
+        if getattr(self, "_decider", None) is None:
+            from tezaver.bulut.engine.decider import Decider
+            self._decider = Decider(self.config, risk_service=self.portfolio_risk)
+        return self._decider
 
     @property
     def reconciliation_service(self) -> Any:

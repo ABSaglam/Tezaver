@@ -94,16 +94,21 @@ class BulutConfig:
     # Endpoint Weights (v0.11.1)
     endpoint_weights: Dict[str, int] = field(default_factory=lambda: {
         "GET:/fapi/v1/klines": 1, 
-        # Note: klines weight depends on limit. default limit=99 is weight 1.
-        # If limit > 100, weight increases. We usually use small limit.
         "GET:/fapi/v1/exchangeInfo": 1,
         "GET:/fapi/v1/openOrders": 1,
         "GET:/fapi/v2/positionRisk": 5,
-        "POST:/fapi/v1/order": 1,     # Limit order is 0, Market is 1? Docs say Order is 0. 
-        # But let's be conservative with 1 for now.
+        "POST:/fapi/v1/order": 1,
         "DELETE:/fapi/v1/order": 1,
         "DELETE:/fapi/v1/allOpenOrders": 1
     })
+
+    # Portfolio Risk (v0.12)
+    cooldown_cycles_after_sl: int = 8
+    daily_loss_limit_usdt: float = 200.0
+    entry_halted_on_daily_loss: bool = True
+    group_caps_path: str = "data/bulut_rules/group_caps.json"
+    default_group_cap_max_open: int = 1
+    symbol_groups_path: str = "data/bulut_rules/symbol_groups.json"
 
     # Binance Credentials
     binance_api_key: Optional[str] = field(default_factory=lambda: os.getenv("BINANCE_API_KEY"))
