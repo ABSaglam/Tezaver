@@ -56,8 +56,8 @@ class AsyncScheduler:
         await self._rest_client.create_session()
         
         print(f"[SCHEDULER] Starting async loop (interval={self._config.poll_interval_seconds}s)")
-        
-        # Initial Reconciliation
+
+        # Initial Reconciliation (from original start)
         if ctx.config.execution_enabled:
              print("[SCHEDULER] Running initial reconciliation...")
              try:
@@ -67,12 +67,48 @@ class AsyncScheduler:
                  print(f"[SCHEDULER] Reconciliation Failed: {e}")
 
         self._task = asyncio.create_task(self._loop())
+        print("[Scheduler] Started.")
+
+    async def run_forever(self, ctx):
+        """Run scheduler loop forever (Supervisor mode)."""
+        # This overwrites start/stop logic usage.
+        self._running = True 
+        
+        # Init services (from original start, adapted for run_forever)
+        # Assuming ctx is passed, we can use it directly
+        self._rest_client = BinanceFuturesRest(self._config)
+        self._poller = MarketDataPoller(
+            self._config, 
+            self._rest_client, 
+            ctx.bars_store,
+            ctx.telemetry
+        )
+        await self._rest_client.create_session()
+        print(f"[SCHEDULER] Starting async loop (interval={self._config.poll_interval_seconds}s) in supervisor mode.")
+
+        # Initial Reconciliation (from original start)
+        if ctx.config.execution_enabled:
+             print("[SCHEDULER] Running initial reconciliation...")
+             try:
+                 report = await ctx.reconciliation_service.reconcile()
+                 print(f"[SCHEDULER] Reconciliation Report: {report['status']}")
+             except Exception as e:
+                 print(f"[SCHEDULER] Reconciliation Failed: {e}")
+
+        try:
+             await self._loop(ctx)
+        finally:
+             self._running = False
+             if self._rest_client: # Close client if it was opened
+                 await self._rest_client.close()
+             print("[Scheduler] Stopped (run_forever).")
 
     async def stop(self):
-        """Stop the background loop."""
+        """Stop scheduler."""
         self._running = False
-        self._stop_event.set()
+        self._stop_event.set() # Keep existing stop_event set
         if self._task:
+            self._task.cancel()
             try:
                 await self._task
             except asyncio.CancelledError:
@@ -86,13 +122,23 @@ class AsyncScheduler:
     def is_running(self) -> bool:
         return self._running
 
-    async def _loop(self):
-        """Main check loop."""
-        ctx = get_context()
+    async def _loop(self, ctx=None):
+        """Main loop."""
+        # Use provided ctx or rely on self ref (requires refactor if self doesn't have ctx)
+        # Existing usage implies Scheduler has ref to components?
+        # Let's check init. It gets `scanner`, `executor`...
+        # It doesn't seem to hold global `ctx`.
+        # But `app_backend` passes ctx to `scheduler.start()`? No, `scheduler.start()` takes no args.
+        # It uses injected dependencies.
+        # If we use supervisor, we might need access to `task_supervisor` for heartbeats.
+        # We can pass `ctx` to `run_forever`.
+        
+        # If ctx is not provided (e.g., from old start method), get it globally
+        if ctx is None:
+            ctx = get_context()
         
         while self._running:
             try:
-                # 1. Check for new 15m close via BTCUSDT (Reference)
                 ref_bar = await self._rest_client.get_latest_closed_bar("BTCUSDT", interval=self._config.base_tf)
                 
                 if ref_bar:

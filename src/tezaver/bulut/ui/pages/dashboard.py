@@ -5,16 +5,94 @@ Dashboard page for Bulut UI.
 
 import streamlit as st
 from datetime import datetime, timezone
+import time
 
-from tezaver.bulut.core.context import get_context
+from tezaver.bulut.core.context import get_context, BulutContext
 
 
-def render_dashboard():
+def render_dashboard(ctx: BulutContext):
     """Render main dashboard."""
-    ctx = get_context()
+    st.title("Tezaver Bulut - Dashboard")
     
-    st.title("🌩️ Tezaver Bulut Dashboard")
-    st.caption("Cloud Trading System v0.01")
+    # v0.24 Mainnet Banner
+    mode = ctx.config.mode
+    armed = ctx.executor.is_armed()
+    
+    if mode == "REAL_MAINNET":
+        if armed:
+             st.error(f"⚠️ MODE: {mode} | ARMED: YES (LIVE TRADING ENABLED)")
+        else:
+             st.warning(f"🛡️ MODE: {mode} | ARMED: NO")
+    else:
+        st.success(f"🧪 MODE: {mode} | ARMED: {armed}")
+
+    # v0.24 Launch Checklist Panel
+    with st.expander("🚀 Launch Checklist", expanded=(mode=="REAL_MAINNET")):
+        c_col1, c_col2 = st.columns([3, 1])
+        if c_col2.button("Run Checklist"):
+            ctx.launch_checklist.run_checks(ctx)
+            st.rerun()
+            
+        last = ctx.launch_checklist.get_last_result()
+        if last:
+            if last.get("pass"):
+                st.success(f"PASS (Last run: {int(time.time() - last.get('ts', 0))}s ago)")
+            else:
+                st.error(f"FAIL (Last run: {int(time.time() - last.get('ts', 0))}s ago)")
+            
+            checks = last.get("checks", [])
+            # Table
+            c_data = [{"Check": c["name"], "Pass": "✅" if c["pass"] else "❌", "Detail": c["detail"]} for c in checks]
+            st.table(c_data)
+        else:
+            st.info("Checklist not run yet.")
+
+        else:
+            st.info("Checklist not run yet.")
+
+    # v0.25 Config Drift
+    with st.expander("🧬 Config Drift"):
+        if hasattr(ctx, "persistence"):
+            latest = ctx.persistence.get_latest_config_snapshot()
+            if latest:
+                l_hash = latest["hash"]
+                l_ts = latest["ts"]
+                l_source = latest["source"]
+                
+                # Check current vs latest
+                curr_snap = ctx.config.to_dict() # raw
+                # We need snapshot service to hash properly
+                # If we don't have it exposed in ctx, we can't easily check?
+                # We added it to context.
+                if hasattr(ctx, "config_snapshot"):
+                     c_snap = ctx.config_snapshot.snapshot_config(ctx)
+                     c_hash = ctx.config_snapshot.hash_config(c_snap)
+                     
+                     drift = (c_hash != l_hash)
+                     
+                     d_col1, d_col2 = st.columns(2)
+                     d_col1.metric("Current Hash", c_hash[:8], delta="Drift" if drift else "Synced", delta_color="inverse")
+                     d_col2.metric("Saved Hash", l_hash[:8])
+                     
+                     st.caption(f"Last Saved: {l_ts} (Source: {l_source})")
+                     
+                     if drift:
+                         st.error("Configuration has drifted from saved snapshot!")
+                     
+                     if st.button("📸 Save Snapshot (Golden)"):
+                         ctx.drift_guard.check_and_record(source="MANUAL")
+                         st.success("Snapshot saved.")
+                         st.rerun()
+                else:
+                    st.warning("Config Snapshot service missing.")
+            else:
+                st.info("No config snapshot found.")
+                if st.button("📸 Take Initial Snapshot"):
+                     ctx.drift_guard.check_and_record(source="MANUAL")
+                     st.rerun()
+
+    # Status Overview
+    st.subheader("System Status")
     
     # =========================================================================
     # Trade Lock Status
@@ -374,6 +452,80 @@ def render_dashboard():
                  st.session_state["env_report"] = ctx.env_doctor.run_checks(ctx)
             st.rerun()
 
+            with st.spinner("Checking system..."):
+                 st.session_state["env_report"] = ctx.env_doctor.run_checks(ctx)
+            st.rerun()
+
+    st.divider()
+
+    # =========================================================================
+    # User Data Stream (v0.21)
+    # =========================================================================
+    st.subheader("📡 User Data Stream")
+    uds = ctx.user_data_stream
+    
+    ucs1, ucs2, ucs3 = st.columns(3)
+    
+    conn_status = "Connected" if uds.connected else "Disconnected"
+    conn_color = "green" if uds.connected else "red"
+    ucs1.metric("WS Status", conn_status)
+    
+    age = int(time.time() - uds.listen_key_created_at) if uds.listen_key_created_at else 0
+    ucs2.metric("ListenKey Age", f"{age // 60}m {age % 60}s")
+    
+    last_evt = int(time.time() - uds.last_event_ts) if uds.last_event_ts else "Never"
+    ucs3.metric("Last Event", f"{last_evt}s ago" if isinstance(last_evt, int) else last_evt)
+    
+    if uds._listen_key:
+        st.caption(f"Key: `{uds._listen_key[:8]}...`")
+    else:
+        st.caption("No ListenKey")
+
+    else:
+        st.caption("No ListenKey")
+
+    # =========================================================================
+    # State Reducer (v0.22)
+    # =========================================================================
+    st.subheader("🧩 State Reducer")
+    reducer_stats = ctx.state_reducer.get_stats()
+    
+    r1, r2, r3 = st.columns(3)
+    r1.metric("Duplicates", reducer_stats.get("duplicates", 0))
+    r2.metric("OOO Ignored", reducer_stats.get("ooo_ignored", 0))
+    
+    last_r_event = reducer_stats.get("last_event_ts_ago", 0)
+    ago_r = int(time.time()*1000 - last_r_event)/1000.0 if last_r_event > 0 else "Never"
+    r3.metric("Last Event", f"{ago_r:.1f}s ago" if isinstance(ago_r, float) else ago_r)
+    
+    ago_r = int(time.time()*1000 - last_r_event)/1000.0 if last_r_event > 0 else "Never"
+    r3.metric("Last Event", f"{ago_r:.1f}s ago" if isinstance(ago_r, float) else ago_r)
+    
+    st.divider()
+
+    # =========================================================================
+    # Heartbeats (v0.23)
+    # =========================================================================
+    st.subheader("💓 Heartbeats")
+    if hasattr(ctx, "persistence"):
+        hbs = ctx.persistence.get_heartbeats() # dict
+        if hbs:
+            # Table
+            h_data = []
+            for name, h in hbs.items():
+                last_ms = h.get("last_ms", 0)
+                age = (time.time()*1000 - last_ms)/1000.0 if last_ms > 0 else -1
+                status = h.get("status", "UNK")
+                h_data.append({
+                    "Task": name,
+                    "Status": status,
+                    "Age (s)": f"{age:.1f}" if age >= 0 else "N/A",
+                    "Detail": h.get("detail", "")
+                })
+            st.table(h_data)
+        else:
+            st.info("No heartbeats recorded.")
+    
     st.divider()
 
     # =========================================================================

@@ -8,6 +8,7 @@ Run with:
 
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
+import asyncio
 
 from tezaver.bulut.core.context import bootstrap_context
 from tezaver.bulut.api.routes_health import router as health_router
@@ -98,11 +99,38 @@ async def lifespan(app: FastAPI):
                 ctx.state.startup_degraded = True
                 ctx.update_trade_lock() # Lock trading
     
+    # v0.23 Task Supervisor Setup
+    # Register tasks
+    
+    # 1. Daemon (Scheduler)
+    # Scheduler needs to support being run as a task.
+    # We pass a lambda/partial to run_forever(ctx)
+    ctx.task_supervisor.register("daemon", lambda: ctx.scheduler.run_forever(ctx))
+    
+    # 2. User Data Stream
+    if ctx.config.user_data_ws_enabled:
+        ctx.task_supervisor.register("user_data", lambda: ctx.user_data_stream.run_forever(ctx))
+
+    # Start all via Supervisor
+    await ctx.task_supervisor.start_all()
+
+    # v0.25 Config Drift Check (Startup)
+    ctx.drift_guard.check_and_record(source="STARTUP")
+
     yield
     
     # Shutdown
     print("[BULUT] Shutting down...")
-    await ctx.scheduler.stop()
+    
+    # Stop Supervisor (stops all tasks)
+    await ctx.task_supervisor.stop_all()
+    
+    # Cleanup components
+    # ctx.scheduler.stop() handled by supervisor stop?
+    # run_forever logic has finally: running=False.
+    # explicit stop() call might be redundant but safe?
+    # Supervisor cancels tasks.
+    
     if getattr(ctx, "_executor", None):
         await ctx.executor.cleanup()
     ctx.telemetry.emit_system_event("SHUTDOWN")
@@ -116,38 +144,23 @@ app = FastAPI(
 )
 
 # Include routers
-app.include_router(health_router)
-app.include_router(ranking_router)
-app.include_router(trade_router)
-app.include_router(bars_router)
-app.include_router(daemon_router)
-app.include_router(plans_router)
-app.include_router(execution_router)
-app.include_router(reconcile_router)
-app.include_router(positions_router)
-app.include_router(exit_profiles_router)
-app.include_router(exchangeinfo_router)
-
-from tezaver.bulut.api.routes_risk import router as risk_router
-app.include_router(risk_router)
-
-from tezaver.bulut.api.routes_time_sync import router as time_sync_router
-app.include_router(time_sync_router)
-
-from tezaver.bulut.api.routes_ops import router as ops_router
-app.include_router(ops_router)
-
-from tezaver.bulut.api.routes_income import router as income_router
-app.include_router(income_router)
-
-# v0.19 FX
-from tezaver.bulut.api.routes_fx import router as fx_router
-app.include_router(fx_router)
-
-# v0.20 Env
-from tezaver.bulut.api.routes_env import router as env_router
-app.include_router(env_router)
-
+app.include_router(routes_health.router, prefix="/health", tags=["Health"])
+app.include_router(routes_ranking.router, prefix="/ranking", tags=["Ranking"])
+app.include_router(routes_trade.router, prefix="/trade", tags=["Trade"])
+app.include_router(routes_bars.router, prefix="/bars", tags=["Bars"])
+app.include_router(routes_daemon.router, prefix="/daemon", tags=["Daemon"])
+app.include_router(routes_reconcile.router, prefix="/reconcile", tags=["Reconcile"])
+app.include_router(routes_positions.router, prefix="/positions", tags=["Positions"])
+app.include_router(routes_exit_profiles.router, prefix="/exit-profiles", tags=["Exit Profiles"])
+app.include_router(routes_exchangeinfo.router, prefix="/exchangeinfo", tags=["Exchange Info"])
+app.include_router(routes_time_sync.router, prefix="/time-sync", tags=["Time Sync"])
+app.include_router(routes_ops.router, prefix="/ops", tags=["Ops"])
+app.include_router(routes_income.router, prefix="/income", tags=["Income"])
+app.include_router(routes_fx.router, prefix="/fx", tags=["FX"])
+app.include_router(routes_env.router, prefix="/env", tags=["Environment"])
+app.include_router(routes_launch.router, prefix="/launch", tags=["Launch"])
+app.include_router(routes_plans.router, prefix="/plans", tags=["Plans"])
+app.include_router(routes_config.router, prefix="/config", tags=["Config"])
 
 
 @app.get("/")

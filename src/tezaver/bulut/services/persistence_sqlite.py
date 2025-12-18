@@ -235,11 +235,172 @@ class SqlitePersistence:
              cursor.execute("ALTER TABLE trade_audit ADD COLUMN fee_fx_source TEXT")
         except: pass
         
-        # Ensure fee_usdt exists (v0.17 added it, but good to ensure)
         try:
              cursor.execute("ALTER TABLE trade_audit ADD COLUMN fee_usdt REAL")
         except: pass
 
+        # v0.22 State Reducer
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS applied_events (
+                event_id TEXT PRIMARY KEY,
+                event_ts_ms INTEGER,
+                source TEXT,
+                kind TEXT,
+                symbol TEXT,
+                inserted_ts TEXT
+            )
+        """)
+        
+        try:
+             cursor.execute("ALTER TABLE positions ADD COLUMN last_update_ts_ms INTEGER")
+        except: pass
+
+        # v0.23 Task Supervisor / Heartbeats
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS heartbeats (
+                name TEXT PRIMARY KEY,
+                last_ts TEXT,
+                last_ms INTEGER,
+                status TEXT,
+                detail TEXT
+            )
+        """)
+        
+        # v0.25 Config Snapshots
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS config_snapshots (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ts TEXT,
+                hash TEXT,
+                mode TEXT,
+                content_json TEXT,
+                source TEXT
+            )
+        """)
+
+        conn.commit()
+        conn.close()
+
+    # --- Config Snapshots (v0.25) ---
+    
+    def insert_config_snapshot(self, hash_val: str, mode: str, content_json: str, source: str):
+        """Insert a redacted config snapshot."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        now_ts = datetime.now(timezone.utc).isoformat()
+        
+        cursor.execute("""
+            INSERT INTO config_snapshots (ts, hash, mode, content_json, source)
+            VALUES (?, ?, ?, ?, ?)
+        """, (now_ts, hash_val, mode, content_json, source))
+        
+        conn.commit()
+        conn.close()
+
+    def get_latest_config_snapshot(self) -> Optional[dict]:
+        """Get the most recent config snapshot."""
+        conn = self._get_conn()
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM config_snapshots ORDER BY id DESC LIMIT 1")
+        row = cursor.fetchone()
+        conn.close()
+        return dict(row) if row else None
+
+    # --- Heartbeats (v0.23) ---
+
+    def beat(self, name: str, status: str = "OK", detail: str = ""):
+        """Update task heartbeat."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        now = datetime.now(timezone.utc)
+        ts_str = now.isoformat()
+        ms = int(now.timestamp() * 1000)
+        
+        cursor.execute("""
+            INSERT INTO heartbeats (name, last_ts, last_ms, status, detail)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(name) DO UPDATE SET
+                last_ts=excluded.last_ts,
+                last_ms=excluded.last_ms,
+                status=excluded.status,
+                detail=excluded.detail
+        """, (name, ts_str, ms, status, detail))
+        
+        conn.commit()
+        conn.close()
+
+    def get_heartbeats(self) -> Dict[str, dict]:
+        """Get all heartbeats."""
+        conn = self._get_conn()
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM heartbeats")
+        rows = cursor.fetchall()
+        conn.close()
+        
+        return {r["name"]: dict(r) for r in rows}
+
+    # --- Trade Audit (Direct Event) v0.22 ---
+    
+    def upsert_trade_audit_event(self, order_id: str, client_id: str, symbol: str, status: str, exec_type: str, filled_qty: float, avg_price: float, event_time: int):
+        """
+        Upsert trade audit from execution event (WS/Reducer).
+        If (order_id, symbol) exists? 
+        Table `trade_audit` currently just ID primary key.
+        We check `close_order_id` or `open_order_id`? Or just append log?
+        Requirements say: "Upsert". 
+        But `trade_audit` is for COMPLETED trades (Pnl).
+        ORDER_TRADE_UPDATE often is just "FILLED".
+        If "FILLED" and "filled_qty" > 0, it contributes to position.
+        The current `trade_audit` table is for storing PnL items (closed trades).
+        But if we want to log "Orders" we should use `order_fills` table or similar.
+        v0.17 created `order_fills`.
+        Let's use `upsert_fill_event` instead?
+        Or append to `order_fills`?
+        The reducer calls `upsert_trade_audit_event`.
+        If the intention is to populate the "Audit Log", we need to map to audit fields.
+        However, "Trade Audit" usually implies "Closed Position PnL Record".
+        If this is just an Order Fill, maybe we store in `order_fills`?
+        Let's check `order_fills` schema.
+        It has: symbol, order_id, trade_id, price, qty... 
+        Let's implement `upsert_trade_audit_event` to INSERT INTO order_fills?
+        Wait, requirements said: "update order_fills/trade_audit".
+        If it's a CLOSE (reduce only?), we might want to generate trade_audit PnL record.
+        But calculation of PnL requires entry price memory.
+        For now, let's implement `upsert_trade_audit_event` to insert into `order_fills` (granular).
+        AND if status is FILLED/PARTIALLY_FILLED?
+        Actually, let's rename it to `upsert_fill_event` in thought, but keep signature for `reducer`.
+        Or better: just implement the method provided signature and put data into appropriate places.
+        I will insert into `order_fills` for now as that's the raw fill log.
+        If we want to generate `trade_audit` (PnL), we relies on `mark_position_closed`.
+        So `upsert_trade_audit_event` -> `order_fills`.
+        """
+        if exec_type not in ("TRADE", "FILLED", "PARTIALLY_FILLED"):
+             return # Only track fills for audit purposes
+             
+        if filled_qty <= 0:
+             return
+
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        
+        # Check if trade_id/fill exists?
+        # events usually have `t` tradeId.
+        # But here we pass basic info.
+        # We'll just insert for now. It's better to have duplicate fills than missing, but dedup handles it upstream!
+        # Because Reducer calls this, we know it's unique EVENT.
+        # So we insert.
+        
+        event_ts_iso = datetime.fromtimestamp(event_time/1000.0, timezone.utc).isoformat()
+        
+        cursor.execute("""
+            INSERT INTO order_fills (
+                symbol, order_id, trade_id, price, qty, 
+                realized_pnl, commission, commission_asset, ts, raw_json
+            ) VALUES (?, ?, ?, ?, ?, 0, 0, 'UNK', ?, '{}')
+        """, (symbol, order_id, f"evt_{event_time}", avg_price, filled_qty, event_ts_iso))
+        
         conn.commit()
         conn.close()
 
@@ -248,18 +409,22 @@ class SqlitePersistence:
     def upsert_position_open(self, symbol: str, entry_ts: datetime, entry_price: float, qty: float, 
                              notional: float, sl_pct: float, tp_pct: float, 
                              pattern_id: str = None, exit_profile_id: str = None, 
-                             exit_params: dict = None):
-        """Insert or Update OPEN position."""
+                             exit_params: dict = None, last_update_ts_ms: int = 0):
+        """Insert or Update OPEN position with OOO protection."""
         conn = self._get_conn()
         cursor = conn.cursor()
         
-        # Upsert
+        # We need to respect OOO (Out of Order).
+        # We only update if last_update_ts_ms > existing.last_update_ts_ms
+        # SQLite UPSERT with WHERE clause in DO UPDATE?
+        # Yes: DO UPDATE SET ... WHERE excluded.ts > position.ts
+        
         cursor.execute("""
             INSERT INTO positions (
                 symbol, entry_ts, entry_price, qty, notional_usdt, 
                 sl_pct, tp_pct, status, pattern_id, exit_profile_id, exit_params_json,
-                update_ts, side, protective_status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, ?, ?, ?, 'LONG', 'NONE')
+                update_ts, side, protective_status, last_update_ts_ms
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, ?, ?, ?, 'LONG', 'NONE', ?)
             ON CONFLICT(symbol) DO UPDATE SET
                 entry_ts=excluded.entry_ts,
                 entry_price=excluded.entry_price,
@@ -267,12 +432,15 @@ class SqlitePersistence:
                 notional_usdt=excluded.notional_usdt,
                 status='OPEN',
                 update_ts=excluded.update_ts,
-                protective_status='NONE'
+                protective_status='NONE',
+                last_update_ts_ms=excluded.last_update_ts_ms
+            WHERE excluded.last_update_ts_ms > coalesce(positions.last_update_ts_ms, 0)
         """, (
             symbol, entry_ts.isoformat(), entry_price, qty, notional,
             sl_pct, tp_pct, pattern_id, exit_profile_id, 
             json.dumps(exit_params) if exit_params else "{}",
-            datetime.now(timezone.utc).isoformat()
+            datetime.now(timezone.utc).isoformat(),
+            last_update_ts_ms
         ))
         
         conn.commit()
@@ -309,9 +477,10 @@ class SqlitePersistence:
         pnl_is_estimated: bool = False,
         exit_reason: str = "MANUAL",
         cycle_ts: Optional[datetime] = None,
-        close_order_id: Optional[int] = None
+        close_order_id: Optional[int] = None,
+        last_update_ts_ms: int = 0
     ):
-        """Mark position CLOSED and audit (ESTIMATED fallback)."""
+        """Mark position CLOSED and audit (ESTIMATED fallback) with OOO protection."""
         conn = self._get_conn()
         cursor = conn.cursor()
         
@@ -319,30 +488,40 @@ class SqlitePersistence:
         cycle_ts_str = cycle_ts.isoformat() if cycle_ts else ts_str
         
         # Update positions
+        # Only update if last_update_ts_ms is newer
         cursor.execute("""
             UPDATE positions SET 
                 status='CLOSED', 
                 update_ts=?, 
                 last_exit_reason=?,
-                last_exit_cycle_ts=?
-            WHERE symbol=?
-        """, (ts_str, exit_reason, cycle_ts_str, symbol))
+                last_exit_cycle_ts=?,
+                last_update_ts_ms=?
+            WHERE symbol=? AND ? > coalesce(last_update_ts_ms, 0)
+        """, (ts_str, exit_reason, cycle_ts_str, last_update_ts_ms, symbol, last_update_ts_ms))
         
-        # Audit
-        cursor.execute("""
-            INSERT INTO trade_audit (
-                symbol, close_ts, exit_reason, 
-                entry_price, exit_price, qty, 
-                pnl_usdt, pnl_is_estimated, cycle_ts,
-                pnl_source, close_order_id
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'ESTIMATED', ?)
-        """, (
-            symbol, ts_str, exit_reason,
-            entry_price, exit_price, qty,
-            pnl_usdt, 1 if pnl_is_estimated else 0, cycle_ts_str,
-            close_order_id
-        ))
+        if cursor.rowcount > 0:
+            # Audit only if we actually closed it?
+            # Or audit always? Audit is append-only log. 
+            # If we receive "closed at T1" then "closed at T2" (OOO?)
+            # TradeAudit duplicate check handles audit Idempotency if key is provided?
+            # Current TradeAudit has no unique key other than ID.
+            # But duplicate audits for same trade are bad.
+            # If we have Dedup (try_mark_event_applied) before this, we are safe from duplicates.
+            # So we just insert.
+            cursor.execute("""
+                INSERT INTO trade_audit (
+                    symbol, close_ts, exit_reason, 
+                    entry_price, exit_price, qty, 
+                    pnl_usdt, pnl_is_estimated, cycle_ts,
+                    pnl_source, close_order_id
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'ESTIMATED', ?)
+            """, (
+                symbol, ts_str, exit_reason,
+                entry_price, exit_price, qty,
+                pnl_usdt, 1 if pnl_is_estimated else 0, cycle_ts_str,
+                close_order_id
+            ))
         
         conn.commit()
         conn.close()
@@ -416,6 +595,32 @@ class SqlitePersistence:
         return total if total else 0.0
 
 
+
+    # --- State Reducer (v0.22) ---
+
+    def try_mark_event_applied(self, event_id: str, event_ts_ms: int, source: str, kind: str, symbol: str) -> bool:
+        """
+        Atomically mark event as applied.
+        Returns True if successful (new event), False if duplicate (idempotency).
+        """
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        now_ts = datetime.now(timezone.utc).isoformat()
+        
+        try:
+            cursor.execute("""
+                INSERT INTO applied_events (event_id, event_ts_ms, source, kind, symbol, inserted_ts)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (event_id, event_ts_ms, source, kind, symbol, now_ts))
+            conn.commit()
+            conn.close()
+            return True
+        except sqlite3.IntegrityError:
+            conn.close()
+            return False
+        except Exception:
+            conn.close()
+            return False
 
     # --- Trade Plans ---
 

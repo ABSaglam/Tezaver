@@ -29,10 +29,16 @@ class IncidentBundleService:
         
         try:
             # 1. Config Dump (Redacted)
-            cfg = ctx.config.to_dict()
-            # Redact keys
-            if "binance_api_secret" in cfg: cfg["binance_api_secret"] = "***"
-            if "arm_token" in cfg: cfg["arm_token"] = "***"
+            # Use v0.25 Config Snapshot service if available
+            if hasattr(ctx, "config_snapshot"):
+                cfg = ctx.config_snapshot.snapshot_config(ctx)
+                cfg_hash = ctx.config_snapshot.hash_config(cfg)
+                cfg["_snapshot_hash"] = cfg_hash
+            else:
+                # Fallback legacy redaction
+                cfg = ctx.config.to_dict()
+                if "binance_api_secret" in cfg: cfg["binance_api_secret"] = "***"
+                if "arm_token" in cfg: cfg["arm_token"] = "***"
             
             with open(bundle_dir / "config.json", "w") as f:
                 json.dump(cfg, f, indent=2)

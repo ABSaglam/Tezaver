@@ -115,6 +115,21 @@ class BulutConfig:
     startup_export_incident_on_fail: bool = True
     startup_selftest_timeout_seconds: float = 8.0
 
+    # v0.24 Mainnet Launch Gate
+    mode: str = field(default_factory=lambda: _env_str("MODE", "REAL_TESTNET"))
+    mainnet_allowlist_path: str = "data/bulut_rules/mainnet_allowlist.txt"
+    require_allowlist_on_mainnet: bool = True
+    mainnet_max_total_notional_usdt: float = 500.0
+    mainnet_require_checklist_pass: bool = True
+    checklist_max_age_seconds: float = 60.0
+
+    # v0.21 USER_DATA Websocket
+    user_data_ws_enabled: bool = True
+    user_data_keepalive_seconds: int = 1800 # 30 mins
+    user_data_reconnect_backoff_ms: int = 500
+    user_data_max_backoff_ms: int = 8000
+    user_data_ws_base_url: str = field(default_factory=lambda: _env_str("USER_DATA_WS_BASE_URL", "wss://fstream.binance.com/ws"))
+
     # Endpoint Weights (approximate)
     endpoint_weights: Dict[str, int] = field(default_factory=lambda: {
         "GET:/fapi/v1/order": 1,

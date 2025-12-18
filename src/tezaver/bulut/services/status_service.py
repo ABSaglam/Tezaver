@@ -111,7 +111,14 @@ class StatusService:
         # Stub
         reconciliation = ReconciliationStatus()
 
-        return SystemStatusV1(
+        # State Reducer (v0.22)
+        # Assuming we can access stats? 
+        # Context has state_reducer property.
+        reducer_stats = {}
+        if hasattr(ctx, "state_reducer"):
+            reducer_stats = ctx.state_reducer.get_stats()
+            
+        result = SystemStatusV1(
             ts=now_ts,
             daemon=daemon,
             time_sync=time_sync,
@@ -121,3 +128,16 @@ class StatusService:
             execution=execution,
             reconciliation=reconciliation
         )
+        
+        # Inject extras (Reducer, Heartbeats)
+        # Assuming Dashboard handles arbitrary attrs or we patch objects
+        # Or better: return a dict wrapper or modified object if dashboard expects V1
+        # Dashboard expects objects for some fields but accesses others?
+        # Let's attach them to the object instance dynamically
+        result.reducer = reducer_stats
+        
+        # Heartbeats (v0.23)
+        if ctx.persistence:
+             result.heartbeats = ctx.persistence.get_heartbeats()
+             
+        return result

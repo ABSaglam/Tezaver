@@ -336,6 +336,70 @@ class BulutContext:
             self._env_doctor = EnvDoctor(self.config, self.telemetry)
         return self._env_doctor
 
+    @property
+    def user_data_stream(self) -> Any:
+        if getattr(self, "_user_data_stream", None) is None:
+            from tezaver.bulut.services.binance_futures_signed import BinanceFuturesSigned
+            from tezaver.bulut.services.user_data_stream import UserDataStream
+            
+            # Use dedicated client or shared?
+            # Reusing client from FillSync or creating new?
+            # Creating new one for stream management is cleaner.
+            client = BinanceFuturesSigned(self.config, self.rate_limit_governor, self.time_sync)
+            
+            self._user_data_stream = UserDataStream(
+                self.config,
+                client,
+                self.telemetry
+            )
+            # v0.22 Inject Reducer
+            self._user_data_stream.set_reducer(self.state_reducer)
+            
+        return self._user_data_stream
+
+    @property
+    def state_reducer(self) -> Any:
+        if getattr(self, "_state_reducer", None) is None:
+            from tezaver.bulut.services.state_reducer import StateReducer
+            self._state_reducer = StateReducer(
+                self.config,
+                self.persistence,
+                self.telemetry
+            )
+        return self._state_reducer
+
+    @property
+    def task_supervisor(self) -> Any:
+        if getattr(self, "_task_supervisor", None) is None:
+            from tezaver.bulut.services.task_supervisor import TaskSupervisor
+            self._task_supervisor = TaskSupervisor(
+                self.config,
+                self.persistence,
+                self.telemetry
+            )
+        return self._task_supervisor
+
+    @property
+    def launch_checklist(self) -> Any:
+        if getattr(self, "_launch_checklist", None) is None:
+            from tezaver.bulut.services.launch_checklist import LaunchChecklist
+            self._launch_checklist = LaunchChecklist(self.config, self.telemetry)
+        return self._launch_checklist
+
+    @property
+    def config_snapshot(self) -> Any:
+        if getattr(self, "_config_snapshot", None) is None:
+            from tezaver.bulut.services.config_snapshot import ConfigSnapshotService
+            self._config_snapshot = ConfigSnapshotService()
+        return self._config_snapshot
+
+    @property
+    def drift_guard(self) -> Any:
+        if getattr(self, "_drift_guard", None) is None:
+            from tezaver.bulut.services.drift_guard import DriftGuard
+            self._drift_guard = DriftGuard(self)
+        return self._drift_guard
+
     def check_trade_lock(self) -> tuple[bool, Optional[str]]:
         """
         Checks if trading should be locked based on various conditions.

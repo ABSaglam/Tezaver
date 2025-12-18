@@ -9,15 +9,24 @@ from tezaver.bulut.core.context import get_context
 router = APIRouter(prefix="/execution", tags=["execution"])
 
 @router.get("/status")
-async def execution_status():
-    """Get execution system status."""
+def get_execution_status():
     ctx = get_context()
+    if not ctx: return {}
+    
+    status = ctx.executor.get_status()
+    # v0.24 extensions
+    status["mode"] = ctx.config.mode
+    status["armed"] = ctx.executor.is_armed()
+    
+    cl = ctx.launch_checklist.get_last_result()
+    status["checklist_pass"] = cl.get("pass", False)
+    
+    if hasattr(ctx, "allowlist_source"):
+        status["allowlist_count"] = ctx.allowlist_source.get_allowlist_count()
+        
+    return status
     
     # Check guard status (simulation)
-    from tezaver.bulut.services.safety_guard import SafetyGuard
-    allowed, reason = SafetyGuard.check_execution_allowed(ctx)
-    
-    return {
         "enabled": ctx.config.execution_enabled,
         "mode": ctx.config.mode,
         "require_arm": ctx.config.require_arm,

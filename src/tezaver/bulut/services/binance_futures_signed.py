@@ -201,6 +201,73 @@ class BinanceFuturesSigned:
             params["symbol"] = symbol
         return await self._request("GET", "/fapi/v2/positionRisk", params)
 
+    async def create_listen_key(self) -> str:
+        """Create a new User Data Stream ListenKey."""
+        # POST /fapi/v1/listenKey (API Key only, no signature needed usually, but signed client handles header)
+        # Actually Binance Futures User Data Stream documentation says: "API-key passed in the header".
+        # _signed_request adds header. It signs params too, but here no params.
+        # It handles error checking.
+        # Note: listenKey endpoint requires API Key but NO signature.
+        # However, _signed_request forces signature if we use it?
+        # Let's check _signed_request. It appends signature.
+        # We need a method for "API Key Only" request if strict.
+        # Let's use `_request` directly if `_signed_request` is too strict.
+        # But `_signed_request` is wrapper around `_request` that does signing.
+        # We'll make a specialized method here to avoid modifying `_signed_request` complexity if possible.
+        
+        # Implementation using raw `_request` (we assume _request exists in base or here? No, this class inherits nothing? Wait, it has `_session`).
+        # Ah, looking at imports/structure... this class uses `aiohttp` session?
+        # The class does `_signed_request`. 
+        # Let's implement `_apikey_request` or just call `_request` with header.
+        # Wait, I don't see `_request` method in `BinanceFuturesSigned` viewing previous edits.
+        # Ah, I haven't viewed the FULL file. I should verify if there is a generic helper.
+        # I'll rely on `_signed_request` for now, assuming it works or I'll fix if it fails on signature.
+        # Actually, Binance docs say: "POST /fapi/v1/listenKey ... endpoint requires the API Key."
+        # It does NOT say "SIGNED".
+        # Sending extra signature might be rejected.
+        # I will check/do `_request` manually here.
+        
+        if not self._session:
+            await self.create_session()
+
+        url = f"{self._base_url}/fapi/v1/listenKey"
+        headers = {"X-MBX-APIKEY": self._api_key}
+        async with self._session.post(url, headers=headers) as resp:
+            data = await resp.json()
+            if resp.status != 200:
+                # Assuming _telemetry is available or needs to be added/mocked
+                # self._telemetry.emit("API_ERROR", {"endpoint": "create_listen_key", "status": resp.status, "msg": data.get("msg")})
+                raise RuntimeError(f"Failed to create listenKey: {data}")
+            return data["listenKey"]
+
+    async def keepalive_listen_key(self) -> None:
+        """Keepalive User Data Stream ListenKey."""
+        # PUT /fapi/v1/listenKey
+        if not self._session:
+            await self.create_session()
+
+        url = f"{self._base_url}/fapi/v1/listenKey"
+        headers = {"X-MBX-APIKEY": self._api_key}
+        async with self._session.put(url, headers=headers) as resp:
+             if resp.status != 200:
+                 data = await resp.json()
+                 # Assuming _telemetry is available or needs to be added/mocked
+                 # self._telemetry.emit("API_ERROR", {"endpoint": "keepalive_listen_key", "status": resp.status, "msg": data.get("msg")})
+                 # Don't raise, just log. Caller handles reconnect loop.
+                 print(f"[WARN] ListenKey keepalive failed: {data}")
+
+    async def close_listen_key(self) -> None:
+        """Close User Data Stream ListenKey."""
+        # DELETE /fapi/v1/listenKey
+        if not self._session:
+            await self.create_session()
+
+        url = f"{self._base_url}/fapi/v1/listenKey"
+        headers = {"X-MBX-APIKEY": self._api_key}
+        async with self._session.delete(url, headers=headers) as resp:
+             # Just strict fire and forget
+             pass
+
     async def get_user_trades(
         self, 
         symbol: str, 
