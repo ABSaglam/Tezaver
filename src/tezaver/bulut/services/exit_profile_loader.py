@@ -26,41 +26,127 @@ class ExitProfileLoader:
         self._profiles_dir = get_data_dir() / "bulut_rules" / "exit_profiles"
         self._profiles_dir.mkdir(parents=True, exist_ok=True)
         
-        # Ensure defaults
-        self.ensure_defaults()
+        # Ensure defaults (soft check on init, no force, no telemetry)
+        self.ensure_defaults(force=False)
         
-    def ensure_defaults(self, force: bool = False):
+    def ensure_defaults(self, force: bool = False) -> Dict:
         """
         Copy example profiles from resources if dir is empty or force=True.
+        Returns statistics dict.
         """
-        # Locate resources (assuming src layout)
-        # We are in tezaver/bulut/services/exit_profile_loader.py
-        # Resources in tezaver/bulut/resources/exit_profiles_examples
+        result = {
+            "ok": True,
+            "force": force,
+            "copied_count": 0,
+            "skipped_existing_count": 0,
+            "backup_dir": None,
+            "errors": []
+        }
         
-        # Safe way relative to project root or this file
-        # Using get_project_root() which usually points to repo root?
-        # core/paths.py: get_project_root usually returns '.../TezaverMac'
-        
-        # Let's try finding it via expected src path
+        # Locate resources
         resource_dir = get_project_root() / "src" / "tezaver" / "bulut" / "resources" / "exit_profiles_examples"
         
         if not resource_dir.exists():
-            print(f"[EXIT_LOADER] Resources dir not found at {resource_dir}")
-            return
+            msg = f"Resources dir not found at {resource_dir}"
+            print(f"[EXIT_LOADER] {msg}")
+            result["errors"].append(msg)
+            result["ok"] = False
+            return result
 
-        is_empty = not any(self._profiles_dir.iterdir())
+        # Check existing
+        existing_files = list(self._profiles_dir.glob("*.json"))
+        is_empty = len(existing_files) == 0
         
-        if is_empty or force:
-            print(f"[EXIT_LOADER] Bootstrapping exit profiles (Force={force})...")
+        if not is_empty and not force:
+            # Skip mode
+            result["skipped_existing_count"] = len(existing_files)
+            # Check if any new files in resource dir are missing in target?
+            # User requirement: "force=false (default): sadece eksik profilleri kopyala, mevcutları EZME."
+            # So we iterate resources and copy ONLY if not exists.
+            
+            for item in resource_dir.glob("*.json"):
+                target = self._profiles_dir / item.name
+                if not target.exists():
+                    try:
+                        if self._validate_and_copy(item, target):
+                            result["copied_count"] += 1
+                        else:
+                            result["errors"].append(f"Validation failed for {item.name}")
+                    except Exception as e:
+                        result["errors"].append(str(e))
+            
+            return result
+            
+        elif force:
+            # Backup Logic
+            if not is_empty:
+                ts_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+                backup_root = get_data_dir() / "bulut_rules" / "exit_profiles_backup" / ts_str
+                backup_root.mkdir(parents=True, exist_ok=True)
+                
+                try:
+                    for exist_f in existing_files:
+                        shutil.copy2(exist_f, backup_root / exist_f.name)
+                    result["backup_dir"] = str(backup_root)
+                except Exception as e:
+                    result["ok"] = False
+                    result["errors"].append(f"Backup failed: {e}")
+                    return result
+
+            # Overwrite Logic
             for item in resource_dir.glob("*.json"):
                 target = self._profiles_dir / item.name
                 try:
-                    shutil.copy2(item, target)
-                    print(f"[EXIT_LOADER] Copied {item.name}")
+                    if self._validate_and_copy(item, target):
+                        result["copied_count"] += 1
+                    else:
+                        result["errors"].append(f"Validation failed for {item.name}")
                 except Exception as e:
-                    print(f"[EXIT_LOADER] Failed to copy {item.name}: {e}")
+                    result["errors"].append(str(e))
+                    
         else:
-             print("[EXIT_LOADER] Profiles directory not empty, skipping bootstrap.")
+            # Empty dir, simple copy
+             for item in resource_dir.glob("*.json"):
+                target = self._profiles_dir / item.name
+                try:
+                    if self._validate_and_copy(item, target):
+                        result["copied_count"] += 1
+                    else:
+                        result["errors"].append(f"Validation failed for {item.name}")
+                except Exception as e:
+                    result["errors"].append(str(e))
+                    
+        return result
+
+    def _validate_and_copy(self, source: Path, target: Path) -> bool:
+        """Validate JSON content then copy."""
+        try:
+            with open(source, "r") as f:
+                data = json.load(f)
+            
+            # Validation
+            if data.get("schema") != "exit_profile_v1":
+                return False
+            
+            required = ["profile_id", "version", "priority", "scope", "rules"]
+            for r in required:
+                if r not in data:
+                    return False
+            
+            if not isinstance(data["rules"], list) or len(data["rules"]) == 0:
+                return False
+                
+            for rule in data["rules"]:
+                if rule.get("type") not in ["fixed_pct", "time_stop"]:
+                    return False
+            
+            # Additional logic can go here (e.g. check types)
+            
+            shutil.copy2(source, target)
+            return True
+            
+        except Exception:
+            return False
         
     def check_reload(self):
         """Check for updates and reload if needed."""

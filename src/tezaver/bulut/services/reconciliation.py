@@ -61,8 +61,31 @@ class ReconciliationService:
                 if sym not in exchange_positions:
                     # Maybe it was closed while we were down?
                     report["db_positions_missing_on_exchange"].append(sym)
-                    # Use caution before auto-closing in DB in v0.07, just report.
                     
+            # 5. Protective Order Orphans (v0.09)
+            # Fetch open orders?
+            open_orders = await client.get_open_orders()
+            if open_orders and isinstance(open_orders, list):
+                sl_prefix = self._ctx.config.protective_client_id_prefix_sl
+                tp_prefix = self._ctx.config.protective_client_id_prefix_tp
+                
+                for o in open_orders:
+                    cid = o.get("clientOrderId", "")
+                    sym = o.get("symbol")
+                    
+                    if cid.startswith(sl_prefix) or cid.startswith(tp_prefix):
+                        # It's one of ours.
+                        # Do we have an open position for it?
+                        if sym not in exchange_positions: # True source of truth
+                             # Position closed but order remains -> Orphan
+                             print(f"[RECONCILE] Cancelling orphan protective order {o.get('orderId')} for {sym}")
+                             await client.cancel_order(symbol=sym, order_id=o.get("orderId"))
+                             self._ctx.telemetry.emit("ORPHAN_PROTECTIVE_CANCELLED", {
+                                 "symbol": sym,
+                                 "order_id": o.get("orderId"),
+                                 "client_id": cid
+                             })
+
             self._ctx.telemetry.emit("RECONCILE_REPORT", report)
             return report
             

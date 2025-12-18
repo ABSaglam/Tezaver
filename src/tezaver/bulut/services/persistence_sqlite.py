@@ -57,9 +57,30 @@ class SqlitePersistence:
                 exit_params_json TEXT,
                 open_ts TEXT,  -- Deprecated/Same as entry_ts
                 update_ts TEXT,
-                side TEXT -- 'LONG'
+                side TEXT, -- 'LONG'
+                sl_order_id TEXT,
+                tp_order_id TEXT,
+                sl_client_order_id TEXT,
+                tp_client_order_id TEXT,
+                protective_status TEXT -- NONE|PLACED|CANCELLED|FAILED
             )
         """)
+        
+        # Check if columns exit (migration hack for dev)
+        # If we just add them to create if not exists, it won't add to existing table.
+        # We can try ALTER TABLE safely.
+        try:
+            cursor.execute("ALTER TABLE positions ADD COLUMN sl_order_id TEXT")
+            cursor.execute("ALTER TABLE positions ADD COLUMN tp_order_id TEXT")
+            cursor.execute("ALTER TABLE positions ADD COLUMN sl_client_order_id TEXT")
+            cursor.execute("ALTER TABLE positions ADD COLUMN tp_client_order_id TEXT")
+            cursor.execute("ALTER TABLE positions ADD COLUMN protective_status TEXT")
+        except:
+            pass # Already exists or table created new with full schema?
+            # Actually standard Create if not exists with new schema won't update exist.
+            # But the Create statement above DOES NOT HAVE the new columns if I'm editing it.
+            # I must ensure the CREATE statement has them for new tables.
+            # And ALTER for existing.
         
         # ... Trade Plans table unchanged ...
         cursor.execute("""
@@ -126,6 +147,31 @@ class SqlitePersistence:
         # But auto-exit engine says "sadece DB’de OPEN pozisyonlara bak".
         # So keeping closed rows is fine.
         
+        conn.commit()
+        conn.close()
+
+    def set_protective_orders(self, symbol: str, sl_order_id: str = None, tp_order_id: str = None,
+                              sl_client_id: str = None, tp_client_id: str = None, status: str = "PLACED"):
+        """Update position with protective order info."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE positions 
+            SET sl_order_id=?, tp_order_id=?, sl_client_order_id=?, tp_client_order_id=?, protective_status=?, update_ts=?
+            WHERE symbol=?
+        """, (sl_order_id, tp_order_id, sl_client_id, tp_client_id, status, datetime.now(timezone.utc).isoformat(), symbol))
+        conn.commit()
+        conn.close()
+
+    def clear_protective_orders(self, symbol: str, status: str = "CANCELLED"):
+        """Clear protective orders from position (e.g. after close)."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE positions 
+            SET sl_order_id=NULL, tp_order_id=NULL, sl_client_order_id=NULL, tp_client_order_id=NULL, protective_status=?, update_ts=?
+            WHERE symbol=?
+        """, (status, datetime.now(timezone.utc).isoformat(), symbol))
         conn.commit()
         conn.close()
 

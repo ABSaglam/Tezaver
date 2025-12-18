@@ -55,6 +55,35 @@ class NdjsonTelemetry:
             "plan": plan
         })
 
+    def emit_execution_blocked(self, data: Dict[str, Any]):
+        """Emit execution blocked event."""
+        self.emit("EXECUTION_BLOCKED", data)
+
+    def emit_exit_profiles_bootstrap(self, data: Dict[str, Any]):
+        """Emit exit profiles bootstrap event."""
+        self.emit("EXIT_PROFILES_BOOTSTRAP", data)
+
+    def emit_protective_orders_placed(self, data: Dict[str, Any]):
+        """Emit protective orders placed."""
+        self.emit("PROTECTIVE_ORDERS_PLACED", data)
+
+    def emit_protective_orders_cancelled(self, data: Dict[str, Any]):
+        """Emit protective orders cancelled."""
+        self.emit("PROTECTIVE_ORDERS_CANCELLED", data)
+
+    def emit_exchangeinfo_refresh(self, ok: bool, details: Dict[str, Any]):
+        """Emit exchange info refresh status."""
+        event = "EXCHANGEINFO_REFRESH_OK" if ok else "EXCHANGEINFO_REFRESH_FAIL"
+        self.emit(event, details)
+
+    def emit_filters_missing(self, symbol: str, where: str):
+        """Emit filters missing event."""
+        self.emit("FILTERS_MISSING", {"symbol": symbol, "where": where})
+
+    def emit_filters_violation(self, symbol: str, reason: str):
+        """Emit filters violation event."""
+        self.emit("FILTERS_VIOLATION", {"symbol": symbol, "reason": reason})
+
     def emit_trade_plan_blocked(self, plan: dict, reason: str) -> None:
         """Emit TRADE_PLAN_BLOCKED."""
         self.emit("TRADE_PLAN_BLOCKED", {

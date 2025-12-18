@@ -49,6 +49,46 @@ def render_dashboard():
         )
     
     # =========================================================================
+    # Open Positions
+    # =========================================================================
+    st.subheader("📈 Open Positions")
+    
+    # helper to fetch positions
+    try:
+        from tezaver.bulut.services.persistence_sqlite import SqlitePersistence
+        persistence = ctx.persistence
+        positions = persistence.get_open_positions()
+    except Exception as e:
+        positions = []
+        st.error(f"Failed to load positions: {e}")
+
+    if positions:
+        import pandas as pd
+        pos_df = pd.DataFrame(positions)
+        
+        # Format / Select Columns
+        # Expecting: symbol, entry_price, qty, notional_usdt, sl_pct, tp_pct, status, protective_status
+        display_cols = [
+            "symbol", "entry_price", "qty", "notional_usdt", 
+            "sl_pct", "tp_pct", "protective_status"
+        ]
+        
+        # Check availability
+        final_cols = [c for c in display_cols if c in pos_df.columns]
+        
+        st.dataframe(
+            pos_df[final_cols].style.format({
+                "entry_price": "{:.4f}",
+                "notional_usdt": "{:.2f}",
+                "sl_pct": "{:.2f}%",
+                "tp_pct": "{:.2f}%",
+            }),
+            use_container_width=True
+        )
+    else:
+        st.info("No open positions.")
+
+    # =========================================================================
     # Latest Ranking
     # =========================================================================
     st.subheader("📊 Latest Ranking")
@@ -143,6 +183,69 @@ def render_dashboard():
             st.write(f"Expected path: `{ctx.config.pattern_pack_dir}`")
             st.write("Place a valid `pattern_pack_v1.json` file in this directory.")
 
+
+    # =========================================================================
+    # Exit Profiles
+    # =========================================================================
+    with st.expander("🚪 Exit Profiles"):
+        st.info("Manage dynamic exit rules (SL/TP/Time).")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button("Reload Profiles"):
+                ctx.exit_profile_loader.check_reload()
+                st.success("Exit profiles reloaded.")
+                st.rerun()
+        
+        with col2:
+            st.write("Bootstrap / Reset")
+            force_reset = st.checkbox("Force Reset (Overwrite w/ Backup)", value=False)
+            
+            if st.button("Run Bootstrap"):
+                with st.spinner("Bootstrapping..."):
+                    val_res = ctx.exit_profile_loader.ensure_defaults(force=force_reset)
+                    
+                    # Emit Telemetry from UI
+                    telemetry_data = {"ts": datetime.now().isoformat(), "source": "UI", **val_res}
+                    ctx.telemetry.emit_exit_profiles_bootstrap(telemetry_data)
+                    
+                    if val_res.get("ok"):
+                        st.success("Bootstrap Successful")
+                        # Reload to reflect changes
+                        ctx.exit_profile_loader._load_profiles()
+                    else:
+                        st.error("Bootstrap Failed")
+                        
+                    st.json(val_res)
+        
+        # List loaded
+        profiles = list(ctx.exit_profile_loader._profiles.values())
+        if profiles:
+            st.write(f"**Loaded {len(profiles)} profiles:**")
+            # Create simple view
+            prof_data = []
+            for p in profiles:
+                # Format scope
+                scope_str = "Global"
+                if p.scope.symbol:
+                    scope_str = f"Sym:{p.scope.symbol}"
+                if p.scope.pattern_id:
+                    scope_str += f" Pat:{p.scope.pattern_id}"
+                
+                # Format rules
+                rules_str = ", ".join([r.type for r in p.rules])
+                
+                prof_data.append({
+                    "ID": p.profile_id, 
+                    "Priority": p.priority, 
+                    "Scope": scope_str,
+                    "Rules": rules_str
+                })
+            
+            st.dataframe(prof_data, use_container_width=True)
+        else:
+            st.warning("No exit profiles loaded.")
 
 if __name__ == "__main__":
     render_dashboard()

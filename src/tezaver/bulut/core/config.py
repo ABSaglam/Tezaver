@@ -8,7 +8,7 @@ NO MATRIX IMPORTS - Bulut is standalone.
 
 import os
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Optional
 
 
 def _env_str(key: str, default: str) -> str:
@@ -65,10 +65,26 @@ class BulutConfig:
     # Execution Settings
     execution_enabled: bool = field(default_factory=lambda: str(_env_str("EXECUTION_ENABLED", "false")).lower() == "true")
     require_arm: bool = field(default_factory=lambda: str(_env_str("REQUIRE_ARM", "true")).lower() == "true")
-    arm_token: str = field(default_factory=lambda: _env_str("TEZAVER_ARM_TOKEN", ""))
+    arm_token: Optional[str] = field(default_factory=lambda: os.getenv("TEZAVER_ARM_TOKEN"))
     mode: str = field(default_factory=lambda: _env_str("MODE", "REAL_TESTNET"))
     
-    binance_api_key: str = field(default_factory=lambda: _env_str("BINANCE_API_KEY", ""))
+    # Protective Orders (v0.09)
+    protective_orders_enabled: bool = field(default_factory=lambda: str(_env_str("PROTECTIVE_ORDERS_ENABLED", "true")).lower() == "true")
+    protective_working_type: str = field(default_factory=lambda: _env_str("PROTECTIVE_WORKING_TYPE", "MARK_PRICE")) # or CONTRACT_PRICE
+    protective_price_protect: bool = field(default_factory=lambda: str(_env_str("PROTECTIVE_PRICE_PROTECT", "true")).lower() == "true")
+    protective_cancel_on_close: bool = field(default_factory=lambda: str(_env_str("PROTECTIVE_CANCEL_ON_CLOSE", "true")).lower() == "true")
+    protective_client_id_prefix_sl: str = field(default_factory=lambda: _env_str("PROTECTIVE_CLIENT_ID_PREFIX_SL", "tbsl_"))
+    protective_client_id_prefix_tp: str = field(default_factory=lambda: _env_str("PROTECTIVE_CLIENT_ID_PREFIX_TP", "tbtp_"))
+
+    # ExchangeInfo Cache (v0.10)
+    exchangeinfo_cache_path: str = "data/bulut_state/exchangeinfo_cache.json"
+    exchangeinfo_ttl_seconds: int = 3600
+    exchangeinfo_refresh_on_start: bool = True
+    exchangeinfo_symbols_mode: str = "ALL"
+    block_if_filters_missing: bool = True
+
+    # Binance Credentials
+    binance_api_key: Optional[str] = field(default_factory=lambda: os.getenv("BINANCE_API_KEY"))
     binance_api_secret: str = field(default_factory=lambda: _env_str("BINANCE_API_SECRET", ""))
     
     order_type: str = field(default_factory=lambda: _env_str("ORDER_TYPE", "MARKET"))

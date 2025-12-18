@@ -23,17 +23,3 @@ async def list_exit_profiles():
     # Accessing ._profiles
     profiles = [p.to_dict() for p in ctx.exit_profile_loader._profiles.values()]
     return {"count": len(profiles), "profiles": profiles}
-
-@router.post("/exits/bootstrap")
-async def bootstrap_exit_profiles(force: bool = False):
-    """
-    Force bootstrap example exit profiles.
-    """
-    ctx = get_context()
-    try:
-        ctx.exit_profile_loader.ensure_defaults(force=force)
-        # Force reload to pick up changes immediately
-        ctx.exit_profile_loader._load_profiles()
-        return {"status": "bootstrapped", "force": force}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}

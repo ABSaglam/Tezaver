@@ -7,8 +7,8 @@ import aiohttp
 import time
 import hmac
 import hashlib
-import urllib.parse
-from typing import Optional, Dict, Any
+from urllib.parse import urlencode
+from typing import Dict, Any, Optional, List
 
 from tezaver.bulut.core.config import BulutConfig
 
@@ -106,6 +106,64 @@ class BinanceFuturesSigned:
             
         return await self._request("POST", "/fapi/v1/order", params)
     
+    async def place_stop_market_close_all(
+        self,
+        symbol: str,
+        stop_price: float,
+        client_order_id: str,
+        working_type: str = "MARK_PRICE",
+        price_protect: bool = True
+    ) -> Dict:
+        """Place STOP_MARKET close-all order."""
+        params = {
+            "symbol": symbol,
+            "side": "SELL", # Long-only closure
+            "type": "STOP_MARKET",
+            "stopPrice": stop_price,
+            "closePosition": "true", # Close-All
+            "workingType": working_type,
+            "priceProtect": "TRUE" if price_protect else "FALSE",
+            "newClientOrderId": client_order_id
+        }
+        return await self._request("POST", "/fapi/v1/order", params)
+
+    async def place_take_profit_market_close_all(
+        self,
+        symbol: str,
+        stop_price: float, # Trigger price
+        client_order_id: str,
+        working_type: str = "MARK_PRICE",
+        price_protect: bool = True
+    ) -> Dict:
+        """Place TAKE_PROFIT_MARKET close-all order."""
+        params = {
+            "symbol": symbol,
+            "side": "SELL", # Long-only closure
+            "type": "TAKE_PROFIT_MARKET",
+            "stopPrice": stop_price,
+            "closePosition": "true", # Close-All
+            "workingType": working_type,
+            "priceProtect": "TRUE" if price_protect else "FALSE",
+            "newClientOrderId": client_order_id
+        }
+        return await self._request("POST", "/fapi/v1/order", params)
+
+    async def get_open_orders(self, symbol: Optional[str] = None) -> List[Dict]:
+        """Get all open orders."""
+        params = {}
+        if symbol:
+            params["symbol"] = symbol
+        return await self._request("GET", "/fapi/v1/openOrders", params)
+
+    async def cancel_order(self, symbol: str, order_id: Optional[int] = None, orig_client_order_id: Optional[str] = None) -> Dict:
+        """Cancel an order."""
+        params = {"symbol": symbol}
+        if order_id:
+            params["orderId"] = order_id
+        if orig_client_order_id:
+            params["origClientOrderId"] = orig_client_order_id
+        return await self._request("DELETE", "/fapi/v1/order", params)
+
     async def get_position_risk(self, symbol: Optional[str] = None) -> Any:
         """Get position risk."""
         params = {}
