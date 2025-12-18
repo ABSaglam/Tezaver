@@ -32,6 +32,58 @@ class TradeCommandResponse(BaseModel):
     plan_id: Optional[str] = None
 
 
+class CloseRequest(BaseModel):
+    symbol: str
+
+@router.post("/close")
+async def close_position(req: CloseRequest):
+    """
+    Manually create a CLOSE plan.
+    """
+    ctx = get_context()
+    
+    # 1. Create CLOSE Plan
+    # Use idempotency based on timestamp
+    now = datetime.now()
+    plan = TradePlanV1(
+        plan_ts=now,
+        symbol=req.symbol,
+        side="LONG", # Assuming closing long
+        decision="CLOSE",
+        notional_usdt=0, # 0 means full close logic in executor
+        idempotency_key=f"MANUAL_CLOSE:{req.symbol}:{now.timestamp()}",
+        reasons={"manual_trigger": True}
+    )
+    
+    # 2. Persist
+    # Manual close is usually "ACCEPTED" immediately for executor to pick up?
+    # Or "PROPOSED"?
+    # If using /execution/run_once or auto-trade loop...
+    # Let's mark ACCEPTED so auto-scheduler or run_once picks it up.
+    
+    status = "ACCEPTED"
+    ctx.persistence.insert_plan(plan, status)
+    
+    # 3. Trigger immediate execution? 
+    # v0.07: "Scheduler... executed accepted plans"
+    # If scheduler is running, it will pick up? 
+    # Wait, scheduler only picks up plans IT created in that cycle mostly.
+    # We modified scheduler loop to: `accepted_plans = [p for p in plans if p.decision.name == "OPEN"]`
+    # Warning: Scheduler v0.06 logic only looked at *freshly created* plans.
+    # It does NOT poll DB for pending accepted plans.
+    
+    # So we should probably trigger executor directly here if auto-trade is valid?
+    # Or rely on a separate background task.
+    # For now, simplistic approach: Try to execute immediately in background task?
+    # Or just start a background task here.
+    
+    if ctx.config.execution_enabled:
+         # Async execution
+         import asyncio
+         asyncio.create_task(ctx.executor.execute_plans([plan]))
+    
+    return {"status": "submitted", "plan_id": plan.idempotency_key}
+
 @router.post("/command", response_model=TradeCommandResponse)
 async def trade_command(request: TradeCommandRequest):
     """

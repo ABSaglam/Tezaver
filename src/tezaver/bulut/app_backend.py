@@ -17,13 +17,14 @@ from tezaver.bulut.api.routes_bars import router as bars_router
 from tezaver.bulut.api.routes_daemon import router as daemon_router
 from tezaver.bulut.api.routes_plans import router as plans_router
 from tezaver.bulut.api.routes_execution import router as execution_router
+from tezaver.bulut.api.routes_reconcile import router as reconcile_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler."""
     # Startup
-    print("[BULUT] Starting Tezaver Bulut v0.06...")
+    print("[BULUT] Starting Tezaver Bulut v0.07...")
     ctx = bootstrap_context()
     
     # Try to load pattern pack
@@ -41,7 +42,7 @@ async def lifespan(app: FastAPI):
     await ctx.scheduler.start()
 
     ctx.telemetry.emit_system_event("STARTUP", {
-        "version": "0.06",
+        "version": "0.07",
         "pattern_pack_loaded": ctx.state.pattern_pack_loaded,
         "trade_locked": ctx.state.trade_locked,
     })
@@ -59,7 +60,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Tezaver Bulut",
     description="Cloud trading system for Tezaver",
-    version="0.06",
+    version="0.07",
     lifespan=lifespan,
 )
 
@@ -71,6 +72,7 @@ app.include_router(bars_router)
 app.include_router(daemon_router)
 app.include_router(plans_router)
 app.include_router(execution_router)
+app.include_router(reconcile_router)
 
 
 @app.get("/")
