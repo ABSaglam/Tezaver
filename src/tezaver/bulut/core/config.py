@@ -91,17 +91,42 @@ class BulutConfig:
     backoff_base_ms: int = 250
     backoff_max_ms: int = 8000
     
-    # Endpoint Weights (v0.11.1)
+    # v0.18 Income Sync
+    income_sync_enabled: bool = True
+    income_sync_types: str = "FUNDING_FEE" # Comma separated
+    income_sync_refresh_seconds: int = 900
+    income_sync_lookback_hours: int = 48
+    income_sync_limit: int = 1000
+    include_income_in_daily_loss_guard: bool = True
+    
+    # v0.19 FX Conversion
+    fx_enabled: bool = True
+    fx_quote_asset: str = "USDT"
+    fx_ttl_seconds: int = 300
+    fx_refresh_seconds: int = 300
+    fx_refresh_on_start: bool = True
+    fx_price_mode: str = "BOOK_MID" # BOOK_MID | LAST_PRICE
+    fx_fallback_last_price: bool = True
+    fx_max_assets_per_refresh: int = 25
+
+    # v0.20 Startup / Env Doctor
+    startup_selftest_enabled: bool = True
+    startup_fail_fast: bool = True
+    startup_export_incident_on_fail: bool = True
+    startup_selftest_timeout_seconds: float = 8.0
+
+    # Endpoint Weights (approximate)
     endpoint_weights: Dict[str, int] = field(default_factory=lambda: {
-        "GET:/fapi/v1/klines": 1, 
-        "GET:/fapi/v1/exchangeInfo": 1,
-        "GET:/fapi/v1/openOrders": 1,
-        "GET:/fapi/v2/positionRisk": 5,
-        "POST:/fapi/v1/order": 1,
+        "GET:/fapi/v1/order": 1,
+        "POST:/fapi/v1/order": 0, # Orders count towards order limit, handled separately
         "DELETE:/fapi/v1/order": 1,
-        "DELETE:/fapi/v1/allOpenOrders": 1,
-        "GET:/fapi/v1/userTrades": 5,
-        "GET:/fapi/v1/income": 30
+        "GET:/fapi/v1/positionRisk": 5,
+        "GET:/fapi/v1/account": 5,
+        "GET:/fapi/v2/balance": 5,
+        "GET:/fapi/v1/exchangeInfo": 1,
+        "GET:/fapi/v1/income": 30, # Heavy endpoint
+        "GET:/fapi/v1/ticker/bookTicker": 2, # v0.19
+        "GET:/fapi/v1/ticker/price": 1,      # v0.19
     })
 
     # Portfolio Risk (v0.12)

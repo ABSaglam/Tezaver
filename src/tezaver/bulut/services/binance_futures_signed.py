@@ -224,9 +224,9 @@ class BinanceFuturesSigned:
         start_time: Optional[int] = None,
         end_time: Optional[int] = None,
         limit: int = 1000
-    ) -> List[Dict]:
+    ) -> List[dict]:
         """
-        Get income history (Funding Fee, etc).
+        Get income history (Funding Fees, etc).
         Weight: 30
         """
         params = {"limit": limit}
@@ -239,4 +239,20 @@ class BinanceFuturesSigned:
         if end_time:
             params["endTime"] = end_time
             
-        return await self._request("GET", "/fapi/v1/income", params)
+        return await self._get("/fapi/v1/income", params, signed=True)
+
+    # --- Market Data (v0.19) ---
+
+    async def get_book_ticker(self, symbol: str) -> dict:
+        """
+        Get best bid/ask for symbol.
+        Weight: 2 (Single Symbol)
+        """
+        return await self._get("/fapi/v1/ticker/bookTicker", {"symbol": symbol}, signed=False)
+
+    async def get_last_price(self, symbol: str) -> dict:
+        """
+        Get last price for symbol.
+        Weight: 1
+        """
+        return await self._get("/fapi/v1/ticker/price", {"symbol": symbol}, signed=False)

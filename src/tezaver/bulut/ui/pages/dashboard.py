@@ -329,6 +329,54 @@ def render_dashboard():
         st.rerun()
     
     # =========================================================================
+    # Env Doctor (v0.20)
+    # =========================================================================
+    st.subheader("🧪 Env Doctor")
+    
+    # We can fetch report from API or context if local
+    # If using API: requests.get 
+    # But dashboard "render_dashboard" is sync. "requests" is sync. Good.
+    # But we can also use ctx.env_doctor.run_checks(ctx). Dashboard allows direct ctx usage.
+    # Let's use direct ctx for speed/simplicity, matching rest of dashboard.
+    
+    if "env_report" not in st.session_state:
+        # Run on first load or button click only? Expensive?
+        # Maybe lightweight checks are fast. Doctor checks file rights and imports. Should be <100ms.
+        # Let's run only if explicitly requested or on startup?
+        # Better: Show "Last Run" and button "Run Diagnostics".
+        st.session_state["env_report"] = None
+
+    c1, c2 = st.columns([3, 1])
+    with c1:
+        if st.session_state["env_report"]:
+             rep = st.session_state["env_report"]
+             status = rep.get("status", "UNKNOWN")
+             color = "green" if status == "OK" else ("orange" if status == "WARN" else "red")
+             st.markdown(f"Status: :{color}[{status}]")
+             
+             if rep.get("errors"):
+                 st.error(f"Errors: {len(rep['errors'])}")
+                 for e in rep["errors"]:
+                     st.markdown(f"- {e}")
+             if rep.get("warnings"):
+                 st.warning(f"Warnings: {len(rep['warnings'])}")
+                 for w in rep["warnings"]:
+                     st.markdown(f"- {w}")
+
+             with st.expander("Detailed Report"):
+                 st.json(rep)
+        else:
+            st.info("Run diagnostics to check environment health.")
+            
+    with c2:
+        if st.button("Run Diagnostics"):
+            with st.spinner("Checking system..."):
+                 st.session_state["env_report"] = ctx.env_doctor.run_checks(ctx)
+            st.rerun()
+
+    st.divider()
+
+    # =========================================================================
     # Config Summary
     # =========================================================================
     with st.expander("⚙️ Configuration"):
@@ -352,6 +400,58 @@ def render_dashboard():
             st.write(f"- Scan Top-K: `{config['scan_topk']}`")
             st.write(f"- Scan Min Score: `{config['scan_min_score']}`")
     
+    # =========================================================================
+    # FX Conversion (v0.19)
+    # =========================================================================
+    with st.expander("💱 FX Conversion Rates"):
+        # Fetch rates
+        fx_rates = ctx.persistence.get_all_fx_rates()
+        if fx_rates:
+            st.dataframe(fx_rates, use_container_width=True)
+        else:
+            st.info("No FX rates cached yet.")
+            
+        c1, c2 = st.columns(2)
+        with c1:
+             if st.button("Refresh FX Rates"):
+                 with st.spinner("Fetching..."):
+                     try:
+                         # Use API (cleaner) or ctx (direct)
+                         # ctx direct is async. Dashboard is sync wrapper.
+                         # Need asyncio run.
+                         import asyncio
+                         # Just refresh a default list or all known assets?
+                         # Dashboard doesn't know assets easily unless we query positions/income.
+                         # Let's pass a few majors for demo or allow input?
+                         assets_to_refresh = ["BNB", "BTC", "ETH"] # Default common non-usdt
+                         
+                         # We can iterate ctx.fx_rate_cache.refresh_asset
+                         async def _refresh():
+                             for a in assets_to_refresh:
+                                 await ctx.fx_rate_cache.refresh_asset(a)
+                         
+                         asyncio.run(_refresh())
+                         st.success("Refreshed (BNB, BTC, ETH)")
+                         st.rerun()
+                     except Exception as e:
+                         st.error(f"Error: {e}")
+                         
+        with c2:
+             if st.button("Recompute Today's Conversions"):
+                 with st.spinner("Recomputing..."):
+                     try:
+                         import asyncio
+                         # Call recompute service
+                         async def _recompute():
+                             return await ctx.fx_recompute.recompute_today_utc()
+                             
+                         stats = asyncio.run(_recompute())
+                         st.success(f"Recomputed! Fixed: Income={stats['income_fixed']}, Audit={stats['audit_fixed']}")
+                         if stats['missing_rates']:
+                             st.warning(f"Missing rates for: {stats['missing_rates']}")
+                     except Exception as e:
+                         st.error(f"Error: {e}")
+
     # =========================================================================
     # Exchange Info / Filters
     # =========================================================================

@@ -21,18 +21,22 @@ class FillSummary:
     net_pnl: float
     ts_first: int
     ts_last: int
+    fee_usdt: Optional[float] = None
+    fx_rate: Optional[float] = None
+    fx_source: Optional[str] = None
 
 
 class FillSyncService:
     """
     Syncs execution fills to audit PnL accurately.
     """
-    def __init__(self, config: BulutConfig, binance_client, telemetry, persistence, time_sync):
+    def __init__(self, config: BulutConfig, binance_client, telemetry, persistence, time_sync, fx_cache=None):
         self._config = config
         self._client = binance_client
         self._telemetry = telemetry
         self._persistence = persistence
         self._time_sync = time_sync
+        self._fx_cache = fx_cache
         
     async def sync_order_fills(
         self, 
@@ -114,10 +118,47 @@ class FillSyncService:
                 else:
                     main_asset = list(comm_assets)[0]
 
-            net = total_pnl
-            if main_asset == "USDT":
-                net = total_pnl - total_comm
+            # FX Conversion (v0.19)
+            fee_usdt = None
+            fx_val = None
+            fx_src = None
             
+            if main_asset == "USDT":
+                fee_usdt = total_comm
+            elif self._fx_cache:
+                 # Try convert total_comm of main_asset to USDT
+                 # (If mixed assets, this is approximation using main_asset. 
+                 #  Ideally should convert individual fills, but aggregation expects one asset.
+                 #  Usually commission asset is uniform per trade unless BNB deduction toggled mid-way.)
+                 # Let's use FxRateCache synchronously if rate cached, or rely on async fetch?
+                 # FxRateCache methods are async for fetch.
+                 # FillSync is async.
+                 
+                 rate = await self._fx_cache.get_rate(main_asset)
+                 if rate:
+                     fee, r, s = self._fx_cache.convert_to_usdt(main_asset, total_comm, known_rate=rate)
+                     fee_usdt = fee
+                     fx_val = r
+                     fx_src = s
+            
+            net = total_pnl
+            if fee_usdt is not None:
+                net = total_pnl - fee_usdt
+            else:
+                 # v0.17 legacy behavior: if not USDT and not converted, net = gross pnl.
+                 # Alerts handled by persistence/executor?
+                 pass
+
+            # Alert if non-USDT and conversion failed
+            if main_asset != "USDT" and fee_usdt is None:
+                if getattr(self._config, "alert_on_non_usdt_fee", True):
+                     self._telemetry.emit("ALERT", {
+                         "level": "WARN", 
+                         "code": "NON_USDT_FEE_UNACCOUNTED",
+                         "message": f"Fill fee in {main_asset} not converted. PnL might be inaccurate.",
+                         "details": {"asset": main_asset, "amount": total_comm}
+                     })
+
             summary = FillSummary(
                 symbol=symbol,
                 order_id=order_id,
@@ -128,7 +169,10 @@ class FillSyncService:
                 commission_asset=main_asset,
                 net_pnl=net,
                 ts_first=min(ts_list) if ts_list else 0,
-                ts_last=max(ts_list) if ts_list else 0
+                ts_last=max(ts_list) if ts_list else 0,
+                fee_usdt=fee_usdt,
+                fx_rate=fx_val,
+                fx_source=fx_src
             )
             
             # Persist Fills
@@ -139,7 +183,8 @@ class FillSyncService:
                 "order_id": order_id, 
                 "fills": len(matches),
                 "net_pnl": net,
-                "fee_asset": main_asset
+                "fee_asset": main_asset,
+                "fee_usdt": fee_usdt
             })
             
             return summary

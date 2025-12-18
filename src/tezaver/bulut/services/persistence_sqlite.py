@@ -213,6 +213,33 @@ class SqlitePersistence:
             )
         """)
 
+        # v0.19 FX Conversion
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS fx_rates (
+                asset TEXT PRIMARY KEY,
+                quote TEXT,
+                rate REAL,
+                source TEXT,
+                updated_ts TEXT
+            )
+        """)
+
+        try:
+             cursor.execute("ALTER TABLE income_events ADD COLUMN income_usdt REAL")
+             cursor.execute("ALTER TABLE income_events ADD COLUMN fx_rate REAL")
+             cursor.execute("ALTER TABLE income_events ADD COLUMN fx_source TEXT")
+        except: pass
+
+        try:
+             cursor.execute("ALTER TABLE trade_audit ADD COLUMN fee_fx_rate REAL")
+             cursor.execute("ALTER TABLE trade_audit ADD COLUMN fee_fx_source TEXT")
+        except: pass
+        
+        # Ensure fee_usdt exists (v0.17 added it, but good to ensure)
+        try:
+             cursor.execute("ALTER TABLE trade_audit ADD COLUMN fee_usdt REAL")
+        except: pass
+
         conn.commit()
         conn.close()
 
@@ -558,16 +585,10 @@ class SqlitePersistence:
         
         inserted_count = 0
         
-        # We process one by one to count insertions or use executemany with IGNORE
-        # sqlite3 doesn't return inserted count easily with executemany + IGNORE
-        # But for performance executemany is better.
-        # We can just check rowcount but IGNORE might affect it.
-        # Or better: "INSERT OR IGNORE"
-        
         data = []
         for e in events:
-            # e is raw binance income dict
-            # keys: tranId, symbol, incomeType, income, asset, time, info
+            # e is raw binance income dict + optional FX fields (v0.19)
+            # keys: tranId, symbol, incomeType, income, asset, time, info, income_usdt, fx_rate, fx_source
             time_ms = int(e.get("time", 0))
             time_ts = datetime.fromtimestamp(time_ms/1000.0, timezone.utc).isoformat()
             
@@ -580,16 +601,20 @@ class SqlitePersistence:
                 time_ms,
                 time_ts,
                 e.get("info", ""),
-                json.dumps(e)
+                json.dumps(e),
+                e.get("income_usdt"),
+                e.get("fx_rate"),
+                e.get("fx_source")
             ))
             
         cursor.executemany("""
             INSERT OR IGNORE INTO income_events (
-                tran_id, symbol, income_type, asset, income, time_ms, time_ts, info, raw_json
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                tran_id, symbol, income_type, asset, income, time_ms, time_ts, info, raw_json,
+                income_usdt, fx_rate, fx_source
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, data)
         
-        inserted_count = cursor.rowcount # rowcount is reliable for INSERT OR IGNORE in recent sqlite
+        inserted_count = cursor.rowcount 
         
         conn.commit()
         conn.close()
@@ -603,6 +628,109 @@ class SqlitePersistence:
         row = cursor.fetchone()
         conn.close()
         return int(row[0]) if row else 0
+
+    # --- FX (v0.19) ---
+
+    def upsert_fx_rate(self, asset: str, quote: str, rate: float, source: str):
+        """Upsert FX rate."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        now_ts = datetime.now(timezone.utc).isoformat()
+        cursor.execute("""
+            INSERT INTO fx_rates (asset, quote, rate, source, updated_ts)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(asset) DO UPDATE SET
+                rate=excluded.rate,
+                source=excluded.source,
+                quote=excluded.quote,
+                updated_ts=excluded.updated_ts
+        """, (asset, quote, rate, source, now_ts))
+        conn.commit()
+        conn.close()
+
+    def get_all_fx_rates(self) -> List[dict]:
+        """
+        Get all cached FX rates.
+        """
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT asset, quote, rate, source, updated_ts FROM fx_rates ORDER BY updated_ts DESC")
+        rows = cursor.fetchall()
+        conn.close()
+        
+        return [
+            {"asset": r[0], "quote": r[1], "rate": r[2], "source": r[3], "updated_ts": r[4]}
+            for r in rows
+        ]
+
+    def get_fx_rate(self, asset: str) -> Optional[dict]:
+        """Get FX rate for asset."""
+        conn = self._get_conn()
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM fx_rates WHERE asset=?", (asset,))
+        row = cursor.fetchone()
+        conn.close()
+        return dict(row) if row else None
+        
+    def get_unconverted_income(self, date_str: str) -> List[dict]:
+        """Get income events needing conversion today."""
+        conn = self._get_conn()
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        # asset != 'USDT' AND (income_usdt IS NULL)
+        cursor.execute("""
+            SELECT * FROM income_events 
+            WHERE substr(time_ts, 1, 10) = ?
+              AND asset != 'USDT'
+              AND income_usdt IS NULL
+        """, (date_str,))
+        rows = cursor.fetchall()
+        conn.close()
+        return [dict(r) for r in rows]
+
+    def update_income_conversion(self, tran_id: str, income_usdt: float, rate: float, source: str):
+        """Update income event with conversion data."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE income_events
+            SET income_usdt=?, fx_rate=?, fx_source=?
+            WHERE tran_id=?
+        """, (income_usdt, rate, source, tran_id))
+        conn.commit()
+        conn.close()
+
+    def get_unconverted_audits(self, date_str: str) -> List[dict]:
+        """Get trade audits needing conversion today."""
+        conn = self._get_conn()
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        # fee_asset != 'USDT' AND (fee_usdt IS NULL)
+        cursor.execute("""
+            SELECT * FROM trade_audit 
+            WHERE substr(close_ts, 1, 10) = ?
+              AND fee_asset IS NOT NULL
+              AND fee_asset != 'USDT'
+              AND fee_usdt IS NULL
+        """, (date_str,))
+        rows = cursor.fetchall()
+        conn.close()
+        return [dict(r) for r in rows]
+
+    def update_audit_conversion(self, audit_id: int, fee_usdt: float, net_pnl_usdt: float, rate: float, source: str):
+        """Update trade audit with conversion data."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE trade_audit
+            SET fee_usdt=?, net_pnl_usdt=?, fee_fx_rate=?, fee_fx_source=?
+            WHERE id=?
+        """, (fee_usdt, net_pnl_usdt, rate, source, audit_id))
+        conn.commit()
+        conn.close()
+
+
 
     def set_income_last_sync_ms(self, ms: int):
         """Set last sync timestamp for income."""
@@ -619,7 +747,12 @@ class SqlitePersistence:
     def get_today_income_sum_utc(self, types: List[str] = None, date_str: Optional[str] = None) -> dict:
         """
         Get sum of income for specific types today.
-        Returns: { "FUNDING_FEE": 1.23, "TOTAL": 1.23, "non_usdt_count": 0 }
+        Returns: { 
+            "FUNDING_FEE": 1.23, # Native sum (mixed) - purely informational now? Or per-asset?
+            "TOTAL": 1.23,       # Sum of income_usdt (or native USDT)
+            "non_usdt_count": 0, # Assets != USDT with NULL income_usdt
+            "unconverted_sum": 0.0 # Sum of unconverted native amounts? Hard to sum different assets.
+        }
         """
         if not date_str:
             date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -627,7 +760,7 @@ class SqlitePersistence:
         conn = self._get_conn()
         cursor = conn.cursor()
         
-        # Filter by types if provided
+        # Filter by types
         type_clause = ""
         args = [date_str]
         if types:
@@ -635,8 +768,16 @@ class SqlitePersistence:
             type_clause = f"AND income_type IN ({placeholders})"
             args.extend(types)
             
+        # Group by asset, income_type.
+        # Also sum income_usdt.
         query = f"""
-            SELECT income_type, asset, SUM(income), COUNT(*)
+            SELECT 
+                income_type, 
+                asset, 
+                SUM(income), 
+                COUNT(*), 
+                SUM(COALESCE(income_usdt, (CASE WHEN asset='USDT' THEN income ELSE 0 END))),
+                SUM(CASE WHEN asset != 'USDT' AND income_usdt IS NULL THEN 1 ELSE 0 END)
             FROM income_events
             WHERE substr(time_ts, 1, 10) = ? {type_clause}
             GROUP BY income_type, asset
@@ -649,23 +790,23 @@ class SqlitePersistence:
         result = {"TOTAL": 0.0, "non_usdt_count": 0}
         
         for r in rows:
-            # income_type, asset, sum, count
+            # 0:type, 1:asset, 2:sum_native, 3:count, 4:sum_usdt, 5:unconverted_count
             i_type = r[0]
-            asset = r[1]
-            val = r[2]
+            val_native = r[2]
+            val_usdt = r[4] if r[4] is not None else 0.0
+            unconverted_cnt = r[5]
             
-            # Aggregate per type
-            result[i_type] = result.get(i_type, 0.0) + val
+            # Aggregate per type (native? No, let's use USDT if possible, but keep native for type breakdown?)
+            # The dashboard shows "Income Breakdown". Previously it showed native sums per type.
+            # If we return native sums, it's confusing if mixed assets.
+            # Let's return USDT sums for safety for "TOTAL".
+            # Breakdown keys: maybe "FUNDING_FEE" -> native sum? Or USDT sum?
+            # Existing dashboard expects "FUNDING_FEE": value.
+            # Let's strive to return USDT sum for the type if possible.
             
-            # Aggregate total (ONLY USDT IS SUMMED DIRECTLY)
-            # If asset is not USDT, we do NOT add it to TOTAL PnL number directly for now
-            # as per user instructions v0.17 (alerting) -> v0.19 will convert.
-            # Wait, v0.18 requirements: "fee/income asset != USDT ise: emit_alert WARN code="NON_USDT_INCOME_UNACCOUNTED""
-            # So for "TOTAL", we only sum USDT.
-            if asset == "USDT":
-                result["TOTAL"] += val
-            else:
-                result["non_usdt_count"] += r[3]
+            result[i_type] = result.get(i_type, 0.0) + val_usdt
+            result["TOTAL"] += val_usdt
+            result["non_usdt_count"] += unconverted_cnt
                 
         return result
 
@@ -720,10 +861,32 @@ class SqlitePersistence:
         
         now_ts = datetime.now(timezone.utc).isoformat()
         
-        # summary: {qty, vwap, realized_pnl, commission, commission_asset, net_pnl, ts_last}
+        # summary: {qty, vwap, realized_pnl, commission, commission_asset, net_pnl, ts_last, fee_usdt, fx_rate, fx_source}
         
         # We insert a new record for this "Closed Position Event"
         # Source=USER_TRADES
+        
+        # v0.19: explicitly use summary["fee_usdt"] if present (calculated via FX)
+        # fallback to commission if asset is USDT.
+        
+        comm = summary.get("commission", 0.0)
+        asset = summary.get("commission_asset", "USDT")
+        fee_usdt = summary.get("fee_usdt")
+        
+        if fee_usdt is None:
+            # Fallback v0.17 logic
+            if asset == "USDT":
+                fee_usdt = comm
+            else:
+                fee_usdt = None # Unconverted
+                
+        # Net PnL calculation:
+        # If we have fee_usdt, Realized - Fee.
+        realized = summary.get("realized_pnl", 0.0)
+        
+        # If fee_usdt is None (unconverted), we treat net_pnl = realized (gross).
+        # This is temporary until recompute fixes it.
+        net_pnl = realized - (fee_usdt if fee_usdt is not None else 0.0)
         
         cursor.execute("""
             INSERT INTO trade_audit (
@@ -732,8 +895,9 @@ class SqlitePersistence:
                 pnl_usdt, pnl_is_estimated, cycle_ts,
                 gross_pnl_usdt, fee_usdt, net_pnl_usdt, 
                 pnl_source, close_order_id, pattern_id,
-                fee_asset, fee_native
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, 'USER_TRADES', ?, ?, ?, ?)
+                fee_asset, fee_native,
+                fee_fx_rate, fee_fx_source
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, 'USER_TRADES', ?, ?, ?, ?, ?, ?)
         """, (
             symbol, 
             datetime.fromtimestamp(summary["ts_last"]/1000.0, timezone.utc).isoformat(),
@@ -741,15 +905,17 @@ class SqlitePersistence:
             entry_price,
             summary["vwap"],
             summary["qty"],
-            summary["net_pnl"], # pnl_usdt = net for compat? Or gross? Let's use NET as authoritative pnl_usdt 
+            net_pnl, # authoritative pnl_usdt is net
             cycle_ts,
-            summary["realized_pnl"],
-            summary["commission"] if summary.get("commission_asset") == "USDT" else 0.0, # fee_usdt only if USDT
-            summary["net_pnl"],
+            realized,
+            fee_usdt,
+            net_pnl,
             close_order_id,
             pattern_id,
-            summary.get("commission_asset"),
-            summary.get("commission")
+            asset,
+            comm,
+            summary.get("fx_rate"),
+            summary.get("fx_source")
         ))
         
         conn.commit()
@@ -840,15 +1006,6 @@ class SqlitePersistence:
         conn.close()
         return total
 
-    def get_today_pnl_stats_utc(self, date_str: Optional[str] = None) -> dict:
-        """
-        Get breakdown of PnL for a date (Net, Gross, Fees).
-        """
-        if not date_str:
-            date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-            
-        conn = self._get_conn()
-        cursor = conn.cursor()
         
         # Net: COALESCE(net_pnl_usdt, pnl_usdt, 0)
         # Gross: COALESCE(gross_pnl_usdt, pnl_usdt, 0)

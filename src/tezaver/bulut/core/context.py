@@ -23,6 +23,7 @@ class BulutState:
     trade_lock_reason: Optional[str] = "PATTERN_PACK_MISSING"
     open_positions_count: int = 0
     total_notional_usdt: float = 0.0
+    startup_degraded: bool = False # v0.20
     
     def to_dict(self) -> dict:
         """Convert to dictionary for serialization."""
@@ -271,7 +272,8 @@ class BulutContext:
                 client,
                 self.telemetry,
                 self.persistence, 
-                self.time_sync
+                self.time_sync,
+                self.fx_rate_cache # Inject FX Cache
             )
         return self._fill_sync
 
@@ -288,15 +290,61 @@ class BulutContext:
                 client,
                 self.persistence,
                 self.telemetry,
-                self.time_sync
+                self.time_sync,
+                # Inject FX Cache if needed? 
+                # Actually IncomeSyncService needs to use cache.
+                # But IncomeSyncService constructor above doesn't have it yet.
+                # We need to update IncomeSyncService to accept it.
+                # For now, let's inject it via property or update constructor later in this plan.
+                self.fx_rate_cache 
             )
         return self._income_sync
+
+    @property
+    def fx_rate_cache(self) -> Any:
+        if getattr(self, "_fx_cache", None) is None:
+            from tezaver.bulut.services.binance_futures_signed import BinanceFuturesSigned
+            from tezaver.bulut.services.fx_rate_cache import FxRateCache
+            
+            # Use shared or new client? Market data client.
+            client = BinanceFuturesSigned(self.config, self.rate_limit_governor, self.time_sync)
+            
+            self._fx_cache = FxRateCache(
+                self.config,
+                client,
+                self.persistence,
+                self.telemetry
+            )
+        return self._fx_cache
+
+    @property
+    def fx_recompute(self) -> Any:
+        if getattr(self, "_fx_recompute", None) is None:
+            from tezaver.bulut.services.fx_recompute import FxRecomputeService
+            self._fx_recompute = FxRecomputeService(
+                self.config,
+                self.fx_rate_cache,
+                self.persistence,
+                self.telemetry
+            )
+        return self._fx_recompute
+
+    @property
+    def env_doctor(self) -> Any:
+        if getattr(self, "_env_doctor", None) is None:
+            from tezaver.bulut.services.env_doctor import EnvDoctor
+            self._env_doctor = EnvDoctor(self.config, self.telemetry)
+        return self._env_doctor
 
     def check_trade_lock(self) -> tuple[bool, Optional[str]]:
         """
         Checks if trading should be locked based on various conditions.
         Returns a tuple: (is_locked, reason_if_locked)
         """
+        # Rule 0: Startup Self-Test Failed (v0.20)
+        if self._state.startup_degraded:
+            return True, "STARTUP_SELFTEST_FAIL"
+
         # Rule 1: Pattern pack must be loaded
         if not self._state.pattern_pack_loaded:
             return True, "PATTERN_PACK_MISSING"

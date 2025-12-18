@@ -161,5 +161,8 @@ class PortfolioRiskService:
             "open_positions": len(open_positions),
             "max_positions": self._config.max_open_positions,
             "group_counts": group_counts,
-            "cooldown_cycles": self._config.cooldown_cycles_after_sl
+            "cooldown_cycles": self._config.cooldown_cycles_after_sl,
+            
+            "unconverted_fee_count": stats.get("unconverted_fee_count", 0),
+            "unconverted_income_count": income_stats.get("non_usdt_count", 0) if getattr(self._config, "include_income_in_daily_loss_guard", True) else 0
         }

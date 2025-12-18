@@ -60,6 +60,44 @@ async def lifespan(app: FastAPI):
         "trade_locked": ctx.state.trade_locked,
     })
     
+    # v0.20 Startup Self-Test
+    if getattr(ctx.config, "startup_selftest_enabled", True):
+        print("[BULUT] Running startup self-test (Env Doctor)...")
+        report = ctx.env_doctor.run_checks(ctx)
+        status = report.get("status", "OK")
+        
+        print(f"[BULUT] Env Status: {status}")
+        if report.get("errors"):
+            print(f"[BULUT] Errors: {report['errors']}")
+            
+        if status == "FAIL":
+            print("[BULUT] CRITICAL: Startup Self-Test Failed!")
+            
+            # Alert
+            ctx.persistence.insert_alert(
+                "ERROR", "STARTUP_SELFTEST_FAIL", 
+                "Environment checks failed. System unsafe.",
+                {"errors": report["errors"]}
+            )
+            
+            # Export Incident
+            if getattr(ctx.config, "startup_export_incident_on_fail", True):
+                try:
+                    path = ctx.incident_bundle.create_bundle(ctx, "startup_selftest_fail")
+                    print(f"[BULUT] Incident exported to: {path}")
+                except Exception as e:
+                    print(f"[BULUT] Failed to export incident: {e}")
+            
+            # Fail Fast or Degrade
+            if getattr(ctx.config, "startup_fail_fast", True):
+                print("[BULUT] Fail-Fast enabled. Aborting startup.")
+                # We raise RuntimeError to stop uvicorn/fastapi startup
+                raise RuntimeError(f"Startup Self-Test Failed: {report['errors']}")
+            else:
+                print("[BULUT] Fail-Fast disabled. Entering DEGRADED mode.")
+                ctx.state.startup_degraded = True
+                ctx.update_trade_lock() # Lock trading
+    
     yield
     
     # Shutdown
@@ -101,6 +139,15 @@ app.include_router(ops_router)
 
 from tezaver.bulut.api.routes_income import router as income_router
 app.include_router(income_router)
+
+# v0.19 FX
+from tezaver.bulut.api.routes_fx import router as fx_router
+app.include_router(fx_router)
+
+# v0.20 Env
+from tezaver.bulut.api.routes_env import router as env_router
+app.include_router(env_router)
+
 
 
 @app.get("/")
