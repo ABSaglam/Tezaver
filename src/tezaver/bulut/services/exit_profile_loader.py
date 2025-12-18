@@ -4,12 +4,13 @@ Loads and resolves exit profiles.
 """
 
 import json
+import shutil
 from pathlib import Path
 from typing import Dict, Optional, List
 from datetime import datetime
 
 from tezaver.bulut.core.config import BulutConfig
-from tezaver.bulut.core.paths import get_data_dir
+from tezaver.bulut.core.paths import get_data_dir, get_project_root
 from tezaver.bulut.schemas.exit_profile_v1 import ExitProfileV1, DEFAULT_EXIT_PROFILE
 
 
@@ -21,10 +22,45 @@ class ExitProfileLoader:
     def __init__(self, config: BulutConfig):
         self._config = config
         self._profiles: Dict[str, ExitProfileV1] = {} # profile_id -> obj
-        self._profiles_by_key: Dict[str, ExitProfileV1] = {} # sym+pat key -> obj
         self._last_reload_ts = 0
         self._profiles_dir = get_data_dir() / "bulut_rules" / "exit_profiles"
         self._profiles_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Ensure defaults
+        self.ensure_defaults()
+        
+    def ensure_defaults(self, force: bool = False):
+        """
+        Copy example profiles from resources if dir is empty or force=True.
+        """
+        # Locate resources (assuming src layout)
+        # We are in tezaver/bulut/services/exit_profile_loader.py
+        # Resources in tezaver/bulut/resources/exit_profiles_examples
+        
+        # Safe way relative to project root or this file
+        # Using get_project_root() which usually points to repo root?
+        # core/paths.py: get_project_root usually returns '.../TezaverMac'
+        
+        # Let's try finding it via expected src path
+        resource_dir = get_project_root() / "src" / "tezaver" / "bulut" / "resources" / "exit_profiles_examples"
+        
+        if not resource_dir.exists():
+            print(f"[EXIT_LOADER] Resources dir not found at {resource_dir}")
+            return
+
+        is_empty = not any(self._profiles_dir.iterdir())
+        
+        if is_empty or force:
+            print(f"[EXIT_LOADER] Bootstrapping exit profiles (Force={force})...")
+            for item in resource_dir.glob("*.json"):
+                target = self._profiles_dir / item.name
+                try:
+                    shutil.copy2(item, target)
+                    print(f"[EXIT_LOADER] Copied {item.name}")
+                except Exception as e:
+                    print(f"[EXIT_LOADER] Failed to copy {item.name}: {e}")
+        else:
+             print("[EXIT_LOADER] Profiles directory not empty, skipping bootstrap.")
         
     def check_reload(self):
         """Check for updates and reload if needed."""
