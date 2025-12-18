@@ -85,6 +85,23 @@ class NdjsonTelemetry:
         """Emit filters violation event."""
         self.emit("FILTERS_VIOLATION", {"symbol": symbol, "reason": reason})
 
+    def emit_request_budget(self, used: int, budget: int, window_age: float):
+        """Emit rate limit budget stats."""
+        self.emit("REQUEST_BUDGET", {
+            "used": used,
+            "budget": budget,
+            "pct": round((used / budget) * 100, 1) if budget > 0 else 0,
+            "window_age": f"{window_age:.1f}s"
+        })
+
+    def emit_rate_limit_throttle(self, sleep_ms: int, endpoint: str):
+        """Emit throttle event."""
+        self.emit("RATE_LIMIT_THROTTLE", {"sleep_ms": sleep_ms, "endpoint": endpoint})
+
+    def emit_backoff_applied(self, attempt: int, sleep_ms: int, error: str):
+        """Emit backoff event."""
+        self.emit("BACKOFF_APPLIED", {"attempt": attempt, "sleep_ms": sleep_ms, "error": error})
+
     def emit_trade_plan_blocked(self, plan: dict, reason: str) -> None:
         """Emit TRADE_PLAN_BLOCKED."""
         self.emit("TRADE_PLAN_BLOCKED", {

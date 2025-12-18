@@ -46,15 +46,21 @@ class MarketDataPoller:
         ingested_count = sum(1 for r in results if r)
         duration = time.time() - start_ts
         
+        # Determine flags
+        flags = []
+        if ingested_count < len(universe):
+            flags.append("PARTIAL_INGEST")
+            
         # Telemetry
         self._telemetry.emit("BARS_INGEST_CYCLE", {
             "universe_size": len(universe),
             "ingested_count": ingested_count,
             "duration_s": round(duration, 3),
-            "concurrency": self._config.poll_concurrency
+            "concurrency": self._config.poll_concurrency,
+            "flags": flags
         })
         
-        print(f"[POLLER] Ingested {ingested_count}/{len(universe)} bars in {duration:.2f}s")
+        print(f"[POLLER] Ingested {ingested_count}/{len(universe)} bars in {duration:.2f}s ({', '.join(flags) if flags else 'OK'})")
         return ingested_count
 
     async def _fetch_and_ingest(self, symbol: str) -> bool:

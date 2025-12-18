@@ -38,41 +38,55 @@ class BinanceFuturesRest:
             await self._session.close()
             self._session = None
             
+    async def fetch_klines(self, symbol: str, interval: str, limit: int = 99) -> List[Dict]:
+        """Fetch klines."""
+        url = f"{self._base_url}/fapi/v1/klines"
+        params = {"symbol": symbol, "interval": interval, "limit": limit}
+        
+        # Rate Limit
+        if self._governor:
+            await self._governor.acquire(weight=2, endpoint="klines")
+            
+        # Ensure session
+        if not self._session:
+            await self.create_session()
+
+        async with self._session.get(url, params=params, timeout=10) as resp:
+             if resp.status != 200:
+                 # Backoff if governor available and 429/418
+                 if self._governor and resp.status in [429, 418]:
+                     await self._governor.handle_backoff(1, f"HTTP {resp.status}")
+                     # Retry? Or just fail this time? 
+                     # Poller architecture handles failures differently?
+                     # For now, just backoff and raise.
+                 raise Exception(f"Binance Error {resp.status}: {await resp.text()}")
+             return await resp.json()
+             
+    async def fetch_exchange_info(self) -> Dict:
+        """Fetch exchange info."""
+        url = f"{self._base_url}/fapi/v1/exchangeInfo"
+        
+        if self._governor:
+            await self._governor.acquire(weight=1, endpoint="exchangeInfo")
+            
+        # Ensure session
+        if not self._session:
+            await self.create_session()
+
+        async with self._session.get(url, timeout=10) as resp:
+             if resp.status != 200:
+                 if self._governor and resp.status in [429, 418]:
+                     await self._governor.handle_backoff(1, f"HTTP {resp.status}")
+                 raise Exception(f"HTTP {resp.status}")
+             return await resp.json()
+            
     async def get_latest_closed_bar(self, symbol: str, interval: str = "15m") -> Optional[BarV1]:
         """
         Get the latest CLOSED bar for a symbol.
         Checks last 2 bars, returns the most recent one that is fully closed.
         """
-        # Ensure session
-        if not self._session:
-            await self.create_session()
-            
-        limit = self._config.kline_limit
-        url = f"{self._base_url}/fapi/v1/klines"
-        params = {
-            "symbol": symbol,
-            "interval": interval,
-            "limit": limit
-        }
-        
+        # Use fetch_klines for data retrieval
         try:
-            async with self._session.get(url, params=params, timeout=5) as resp:
-                if resp.status != 200:
-                    print(f"[BINANCE_REST] Error {resp.status} for {symbol}")
-                    return None
-                    
-                data = await resp.json()
-                if not data or not isinstance(data, list):
-                    return None
-                
-                # Evaluate bars to find latest closed
-                # Binance Kline: [open_time, open, high, low, close, volume, close_time, ...]
-                # All times in ms.
-                
-                current_time_ms = int(time.time() * 1000)
-                
-                # Check from newest (last) to oldest
-                for kline in reversed(data):
                     close_time_ms = kline[6]
                     
                     # Rule: Bar is closed if current_time >= close_time + 1ms

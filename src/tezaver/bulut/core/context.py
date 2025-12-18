@@ -60,6 +60,7 @@ class BulutContext:
         self._universe_source = None
         self._bars_store = None
         self._exchange_cache = None
+        self._governor = None
     
     @property
     def config(self) -> BulutConfig:
@@ -141,10 +142,10 @@ class BulutContext:
 
     @property
     def executor(self) -> Any:
-        """Get executor engine (lazy-loaded)."""
+        """Get execution engine (lazy-loaded)."""
         if getattr(self, "_executor", None) is None:
             from tezaver.bulut.engine.executor import Executor
-            self._executor = Executor(self._config)
+            self._executor = Executor(self.config, governor=self.rate_limit_governor)
         return self._executor
 
     @property
@@ -154,6 +155,14 @@ class BulutContext:
             from tezaver.bulut.services.exchangeinfo_cache import ExchangeInfoCache
             self._exchange_cache = ExchangeInfoCache(self.config, self.telemetry)
         return self._exchange_cache
+
+    @property
+    def rate_limit_governor(self) -> Any:
+        """Get rate limit governor (lazy-loaded)."""
+        if self._governor is None:
+            from tezaver.bulut.services.rate_limit_governor import RateLimitGovernor
+            self._governor = RateLimitGovernor(self.config, self.telemetry)
+        return self._governor
 
     @property
     def reconciliation_service(self) -> Any:

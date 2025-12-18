@@ -83,6 +83,13 @@ class BulutConfig:
     exchangeinfo_symbols_mode: str = "ALL"
     block_if_filters_missing: bool = True
 
+    # Rate Limit Governor (v0.11)
+    rate_limit_enabled: bool = True
+    rate_limit_budget_per_min: int = 2000
+    rate_limit_safety_pct: float = 0.85
+    backoff_base_ms: int = 250
+    backoff_max_ms: int = 8000
+
     # Binance Credentials
     binance_api_key: Optional[str] = field(default_factory=lambda: os.getenv("BINANCE_API_KEY"))
     binance_api_secret: str = field(default_factory=lambda: _env_str("BINANCE_API_SECRET", ""))

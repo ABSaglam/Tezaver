@@ -21,10 +21,10 @@ class BinanceFuturesSigned:
     def __init__(self, config: BulutConfig):
         self._config = config
         self._base_url = (
-            config.rest_base_url_testnet 
-            if config.use_testnet 
-            else config.rest_base_url
-        )
+        self._governor = governor
+        self._base_url = "https://fapi.binance.com"
+        if config.use_testnet: # Assuming config.use_testnet is the flag for testnet
+             self._base_url = "https://testnet.binancefuture.com"
         self._session: Optional[aiohttp.ClientSession] = None
         self._api_key = config.binance_api_key
         self._api_secret = config.binance_api_secret
@@ -40,7 +40,7 @@ class BinanceFuturesSigned:
             
     def _sign(self, params: Dict[str, Any]) -> str:
         """Sign params with HMAC SHA256."""
-        query_string = urllib.parse.urlencode(params)
+        query_string = urlencode(params)
         signature = hmac.new(
             self._api_secret.encode("utf-8"),
             query_string.encode("utf-8"),
@@ -48,25 +48,40 @@ class BinanceFuturesSigned:
         ).hexdigest()
         return signature
 
-    async def _request(self, method: str, endpoint: str, params: Dict[str, Any]) -> Dict:
+    async def _request(self, method: str, endpoint: str, params: Dict = None, signed: bool = True, weight: int = 1) -> Dict:
         """Make signed request."""
+        if params is None:
+            params = {}
+
         if not self._session:
             await self.create_session()
             
         if not self._api_key or not self._api_secret:
             raise ValueError("API Key/Secret missing")
-            
+
+        # Governor
+        if self._governor:
+             await self._governor.acquire(weight, endpoint.split("/")[-1]) # coarse endpoint name
+
         # Add timestamp
-        params["timestamp"] = int(time.time() * 1000)
-        
-        # Sign
-        signature = self._sign(params)
-        params["signature"] = signature
+        if signed:
+            params["timestamp"] = int(time.time() * 1000)
+            params["recvWindow"] = 5000 # Default recvWindow
+
+            # Sign
+            query_string = urlencode(params)
+            signature = hmac.new(
+                self._api_secret.encode("utf-8"),
+                query_string.encode("utf-8"),
+                hashlib.sha256
+            ).hexdigest()
+            
+            url = f"{self._base_url}{endpoint}?{query_string}&signature={signature}"
+        else:
+            query_string = urlencode(params)
+            url = f"{self._base_url}{endpoint}?{query_string}"
         
         headers = {"X-MBX-APIKEY": self._api_key}
-        url = f"{self._base_url}{endpoint}"
-        
-        # aiohttp params handling? 
         # For POST, Binance typically expects form-data or urlencoded body?
         # Actually Binance supports query-string style parameters even for POST usually, or mixed.
         # But safest is passing everything as params in URL for GET/DELETE,
@@ -164,16 +179,14 @@ class BinanceFuturesSigned:
             params["origClientOrderId"] = orig_client_order_id
         return await self._request("DELETE", "/fapi/v1/order", params)
 
-    async def get_position_risk(self, symbol: Optional[str] = None) -> Any:
+    async def get_position_risk(self, symbol: Optional[str] = None) -> List[Dict]:
         """Get position risk."""
         params = {}
         if symbol:
             params["symbol"] = symbol
-        return await self._request("GET", "/fapi/v2/positionRisk", params)
+        return await self._request("GET", "/fapi/v2/positionRisk", params, weight=5)
 
     async def get_open_orders(self, symbol: Optional[str] = None) -> Any:
         """Get open orders."""
         params = {}
-        if symbol:
-            params["symbol"] = symbol
         return await self._request("GET", "/fapi/v1/openOrders", params)
