@@ -8,6 +8,11 @@ import asyncio
 from typing import List, Optional
 
 from tezaver.bulut.core.config import BulutConfig
+from tezaver.bulut.core.context import get_context
+from tezaver.bulut.schemas.trade_plan_v1 import TradePlanV1
+from tezaver.bulut.services.binance_futures_signed import BinanceFuturesSigned
+from tezaver.bulut.services.safety_guard import SafetyGuard
+from tezaver.bulut.services.qty_calc import QuantityCalculator
 from tezaver.bulut.services.idempotency import IdempotencyService
 
 
@@ -160,16 +165,60 @@ class Executor:
             ctx.persistence.update_plan_status(plan.idempotency_key, "EXECUTED")
             
             if status == "FILLED":
+                avg_price = float(resp.get("avgPrice", 0.0) or current_price) # Fallback to bar price if avgPrice is 0 or missing
+                
                 ctx.telemetry.emit("ORDER_FILLED" if not reduce_only else "CLOSE_ORDER_FILLED", {
                     "symbol": plan.symbol,
                     "order_id": order_id,
-                    "avg_price": resp.get("avgPrice"),
+                    "avg_price": avg_price,
                     "plan_id": plan.idempotency_key
                 })
-
+                
+                # --- DB Position Sync ---
+                if not reduce_only:
+                    # OPEN Logic
+                    # Resolve Exit Profile
+                    pattern_id = plan.reasons.get("pattern_id") if plan.reasons else None
+                    profile = ctx.exit_profile_loader.resolve(plan.symbol, pattern_id)
+                    
+                    # Extract initial SL/TP from profile to store in DB for reference
+                    # Or use plan values?
+                    # The exit engine uses the profile dynamically, but storing snapshot is good.
+                    
+                    sl_pct = 0.0
+                    tp_pct = 0.0
+                    if profile:
+                        for rule in profile.rules:
+                            if rule.type == "fixed_pct":
+                                sl_pct = rule.sl_pct or 0.0
+                                tp_pct = rule.tp_pct or 0.0
+                                break
+                    
+                    ctx.persistence.upsert_position_open(
+                        symbol=plan.symbol,
+                        entry_ts=plan.plan_ts, # Approximate entry time
+                        entry_price=avg_price,
+                        qty=qty,
+                        notional=plan.notional_usdt,
+                        sl_pct=sl_pct,
+                        tp_pct=tp_pct,
+                        pattern_id=pattern_id,
+                        exit_profile_id=profile.profile_id if profile else None,
+                        exit_params=profile.to_dict() if profile else None
+                    )
+                    
+                else:
+                    # CLOSE Logic
+                    # Assume full close?
+                    ctx.persistence.mark_position_closed(
+                        symbol=plan.symbol,
+                        close_ts=plan.plan_ts, # Approximate
+                        close_price=avg_price
+                    )
         else:
             # Partial/Rejected?
             pass
             
     async def cleanup(self):
         await self._client.close()
+```

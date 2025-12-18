@@ -115,6 +115,7 @@ class AsyncScheduler:
                         
                         # Hot reload
                         ctx.pattern_loader.check_reload()
+                        ctx.exit_profile_loader.check_reload()
                         
                         ranking = run_scan(
                             config=ctx.config,
@@ -134,10 +135,19 @@ class AsyncScheduler:
                         ctx.state.last_scan_ts = ranking.cycle_ts
                         self._last_processed_close_ts = current_close_ts
                         
-                        # 4. Run Decider (Trade Plan Generation)
-                        allowlist = ctx.allowlist_source.load()
+                        # --- PLAN GENERATION ---
                         
-                        plans = ctx.decider.decide(
+                        # A. Auto Exits (CLOSE)
+                        close_plans = ctx.exit_engine.evaluate_exits(
+                            persistence=ctx.persistence,
+                            bars_store=ctx.bars_store,
+                            profile_loader=ctx.exit_profile_loader,
+                            cycle_ts=ranking.cycle_ts
+                        )
+                        
+                        # B. Auto Entries (OPEN)
+                        allowlist = ctx.allowlist_source.load()
+                        open_plans = ctx.decider.decide(
                             ranking=ranking,
                             open_positions_count=ctx.persistence.get_open_position_count(),
                             total_notional=ctx.persistence.get_total_notional(),
@@ -145,8 +155,42 @@ class AsyncScheduler:
                             allowlist=allowlist
                         )
                         
+                        # --- GATES & MERGE ---
+                        
+                        # Gate: Filter OPEN if already open
+                        current_positions = {p["symbol"] for p in ctx.persistence.get_open_positions()}
+                        final_plans = []
+                        
+                        # Process Close Plans
+                        for p in close_plans:
+                            if p.symbol not in current_positions:
+                                # Orphan close? Block.
+                                print(f"[SCHEDULER] Blocked CLOSE for {p.symbol}: NO_POSITION")
+                                continue
+                            final_plans.append(p)
+                            
+                        # Process Open Plans
+                        for p in open_plans:
+                            # Only block if decision is OPEN
+                            if p.decision.name == "OPEN":
+                                if p.symbol in current_positions:
+                                    print(f"[SCHEDULER] Blocked OPEN for {p.symbol}: ALREADY_OPEN")
+                                    # Convert to SKIP plan for visibility
+                                    p.decision = "SKIP"
+                                    p.reasons["skip_reason"] = "ALREADY_OPEN"
+                                    final_plans.append(p)
+                                else:
+                                    final_plans.append(p)
+                            else:
+                                # BLOCKED/SKIP plans pass
+                                final_plans.append(p)
+                        
                         # 5. Process Plans
-                        for plan in plans:
+                        # Sort? Close first handled by append order effectively, but let's ensure.
+                        # Actually executor executes concurrently or sequentially?
+                        # Executor loop is sequential. So Close appended first executes first. Good.
+                        
+                        for plan in final_plans:
                             # Determine Status
                             status = "PROPOSED" # Default (Blocked ones are SKIP decision)
                             
@@ -179,24 +223,14 @@ class AsyncScheduler:
                             # Filter accepted plans for execution
                             # Only execute the ones we JUST created/decided
                             # (executor handles safety checks)
-                            accepted_plans = [p for p in plans if p.decision.name == "OPEN"]
-                            # Re-verify status logic: 
-                            # If manual mode, status is PROPOSED (not executed).
-                            # If auto + live, status is ACCEPTED (ready to execute).
-                            # But wait, we set status="ACCEPTED" above.
-                            # So pick those.
+                            accepted_plans = [p for p in final_plans if p.decision.name in ["OPEN", "CLOSE"]]
                             
                             to_execute = []
-                            for p in plans:
-                                # We need to check if we marked it ACCEPTED in step 5
-                                # Since we iterate "plans" which are objects, their status attribute isn't on the object directly 
-                                # (TradePlanV1 doesn't have 'status' field in schema, it's a DB concept).
-                                # But we know the logic above.
-                                if p.decision.name == "OPEN":
-                                    # Status check re-eval
-                                    # Redundant if logic copy-paste:
-                                    if ctx.config.auto_trade and not ctx.config.paper_mode:
-                                        to_execute.append(p)
+                            for p in accepted_plans:
+                                # Redundant status check but safe
+                                # If we had manual plans queue in DB, we'd fetch them here too.
+                                # For now just loop-generated plans.
+                                to_execute.append(p)
                                         
                             if to_execute:
                                 # Run executor

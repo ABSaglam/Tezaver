@@ -154,6 +154,22 @@ class BulutContext:
             self._reconciler = ReconciliationService(self)
         return self._reconciler
 
+    @property
+    def exit_profile_loader(self) -> Any:
+        """Get exit profile loader (lazy-loaded)."""
+        if getattr(self, "_exit_loader", None) is None:
+            from tezaver.bulut.services.exit_profile_loader import ExitProfileLoader
+            self._exit_loader = ExitProfileLoader(self._config)
+        return self._exit_loader
+
+    @property
+    def exit_engine(self) -> Any:
+        """Get exit engine (lazy-loaded)."""
+        if getattr(self, "_exit_engine", None) is None:
+            from tezaver.bulut.engine.exit_engine import ExitEngine
+            self._exit_engine = ExitEngine(self._config)
+        return self._exit_engine
+
     def check_trade_lock(self) -> tuple[bool, Optional[str]]:
             (is_locked, reason)
         """
