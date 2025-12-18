@@ -101,17 +101,76 @@ class PatternPackLoader:
         Calculate pattern score for a symbol.
         Returns 0..60 score based on patterns present.
         """
+    def match_symbol(self, symbol: str, tf: str = "15m", topn: int = 3) -> dict:
+        """
+        Match patterns for symbol.
+        Returns:
+            {
+                "score": float (0-100),
+                "matches": [ {pattern_id, confidence, note, tf, kind} ]
+            }
+        """
         if not self._cached_pack:
-            return 0.0
+            return {"score": 0.0, "matches": []}
             
         patterns = self._cached_pack.get_patterns_for_symbol(symbol)
         if not patterns:
-            return 0.0
+             return {"score": 0.0, "matches": []}
+             
+        # Filter by TF if needed? Usually packs are mixed.
+        # We process matches.
+        
+        matches = []
+        for p in patterns:
+            # v2 support
+            conf = p.confidence
+            note = p.evidence.get("note", "")
             
-        # Basic scoring logic:
-        # Each pattern adds 15 points, max 60.
-        score = min(len(patterns) * 15.0, 60.0)
-        return score
+            # Legacy v1 fallback: assume score=1.0 if not set but present?
+            # Or rely on loader defaulting 0.0.
+            # If 0.0, check payload["score"] (v1 internal convention)
+            if conf == 0.0:
+                 conf = float(p.payload.get("score", 0)) / 100.0 if "score" in p.payload else 0.5 # Default confidence for v1
+            
+            matches.append({
+                "pattern_id": p.pattern_id,
+                "confidence": conf,
+                "note": note,
+                "tf": p.tf,
+                "kind": p.kind
+            })
+            
+        # Sort by confidence desc
+        matches.sort(key=lambda x: x["confidence"], reverse=True)
+        
+        # Calculate Deterministic Score
+        # Average of top N
+        top_matches = matches[:topn]
+        if not top_matches:
+             return {"score": 0.0, "matches": []}
+             
+        avg_conf = sum(m["confidence"] for m in top_matches) / len(top_matches)
+        
+        # Map to 0-100, but clamp to 60 for component weight? 
+        # Wait, Scanner expects 0-60 usually for component.
+        # But this function returns 0-100 raw score.
+        # Scanner will re-scale if needed.
+        # Score = avg_conf * 100
+        score = min(avg_conf * 100.0, 100.0)
+
+        return {
+            "score": score,
+            "matches": matches
+        }
+
+    def score_symbol(self, symbol: str, tf: str = "15m") -> float:
+        """
+        Legacy wrapper for score.
+        Rescales 0-100 match score to 0-60 component score for backward compat.
+        """
+        match = self.match_symbol(symbol, tf)
+        # Scale 0-100 -> 0-60
+        return match["score"] * 0.6
 
     def _clear_cache(self):
         self._cached_pack = None

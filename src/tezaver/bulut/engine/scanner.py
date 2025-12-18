@@ -131,8 +131,12 @@ class Scanner:
         
         # Pattern Score
         score_pattern = 0.0
+        matched_patterns = []
         if self._pattern_loader:
-            score_pattern = self._pattern_loader.score_symbol(symbol, "15m")
+            match_res = self._pattern_loader.match_symbol(symbol, "15m")
+            score_pattern = match_res.get("score", 0.0) * 0.6 # Scaling to 60 point max for component
+            matched_patterns = match_res.get("matches", [])
+            
             if score_pattern > 0:
                 flags.append("PATTERN_MATCH")
         
@@ -159,6 +163,11 @@ class Scanner:
         
         # Total
         total_raw = score_pattern + score_trend + score_risk
+        
+        # Ensure pattern score scaling didn't break total logic
+        # If Pattern gives 100, we scaled to 60.
+        # Trend gives 25. Risk gives 5. Total 90. Fits in 0-100.
+        
         total_clamped = max(0.0, min(100.0, total_raw))
         
         return CandidateScore(
@@ -169,7 +178,8 @@ class Scanner:
                 "trend": score_trend,
                 "risk": score_risk
             },
-            flags=flags
+            flags=flags,
+            matched_patterns=matched_patterns
         )
 
 

@@ -21,6 +21,9 @@ class PatternEntry:
     tf: str  # e.g., "15m"
     kind: str  # e.g., "SILVER_ENTRY", "RALLY_START"
     payload: dict = field(default_factory=dict)
+    # v2 Fields
+    confidence: float = 0.0
+    evidence: dict = field(default_factory=dict)
     
     def to_dict(self) -> dict:
         return {
@@ -28,6 +31,8 @@ class PatternEntry:
             "tf": self.tf,
             "kind": self.kind,
             "payload": self.payload,
+            "confidence": self.confidence,
+            "evidence": self.evidence
         }
 
 
@@ -102,6 +107,8 @@ class PatternPackV1:
                         tf=e.get("tf", ""),
                         kind=e.get("kind", ""),
                         payload=e.get("payload", {}),
+                        confidence=e.get("confidence", 0.0),
+                        evidence=e.get("evidence", {}),
                     )
                     for e in entries
                 ]

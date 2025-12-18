@@ -177,8 +177,20 @@ def render_dashboard():
         import pandas as pd
         df_plans = pd.DataFrame(plans)
         
+        # v0.16: Extract Pattern Info from reasons
+        def _fmt_pattern(row):
+            reasons = row.get("reasons", {})
+            if not isinstance(reasons, dict): return ""
+            pid = reasons.get("pattern_id")
+            conf = reasons.get("pattern_confidence")
+            if pid:
+                return f"{pid} ({conf:.2f})" if conf else pid
+            return ""
+            
+        df_plans["Pattern"] = df_plans.apply(_fmt_pattern, axis=1)
+        
         # Display Columns
-        cols_p = ["plan_ts", "symbol", "decision", "status", "exec_state", "exec_error", "notional"]
+        cols_p = ["plan_ts", "symbol", "decision", "Pattern", "status", "exec_state", "exec_error", "notional"]
         # Filter available
         cols_p = [c for c in cols_p if c in df_plans.columns]
         
@@ -213,18 +225,24 @@ def render_dashboard():
             shortlist = ranking.shortlist
             if shortlist:
                 import pandas as pd
-                df = pd.DataFrame([
-                    {
+                df = []
+                for c in shortlist:
+                    # v0.16 Pattern Display
+                    pat_str = str(c.components.get("pattern", 0))
+                    if getattr(c, "matched_patterns", None):
+                        top = c.matched_patterns[0]
+                        pat_str += f" ({top['pattern_id']}:{top['confidence']:.2f})"
+                        
+                    df.append({
                         "Symbol": c.symbol,
                         "Score": c.score,
-                        "Pattern": c.components.get("pattern", 0),
+                        "Pattern": pat_str,
                         "Trend": c.components.get("trend", 0),
                         "Risk": c.components.get("risk", 0),
                         "Flags": ", ".join(c.flags),
-                    }
-                    for c in shortlist
-                ])
-                st.dataframe(df, use_container_width=True)
+                    })
+                
+                st.dataframe(pd.DataFrame(df), use_container_width=True)
             else:
                 st.warning("Shortlist is empty (no candidates above threshold)")
     

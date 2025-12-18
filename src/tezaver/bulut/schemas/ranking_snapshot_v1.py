@@ -20,6 +20,7 @@ class CandidateScore:
     score: float  # 0..100
     components: dict = field(default_factory=dict)  # e.g., {"pattern": 60, "trend": 15, "risk": 10}
     flags: list[str] = field(default_factory=list)  # e.g., ["HIGH_VOLUME", "PATTERN_MATCH"]
+    matched_patterns: list[dict] = field(default_factory=list) # v0.16 [ {id, conf, note} ]
     
     def to_dict(self) -> dict:
         return {
@@ -27,6 +28,7 @@ class CandidateScore:
             "score": round(self.score, 2),
             "components": self.components,
             "flags": self.flags,
+            "matched_patterns": self.matched_patterns,
         }
 
 
@@ -99,6 +101,7 @@ class RankingSnapshotV1:
                     score=float(c.get("score", 0)),
                     components=c.get("components", {}),
                     flags=c.get("flags", []),
+                    matched_patterns=c.get("matched_patterns", []),
                 )
                 for c in data.get("candidates", [])
             ]

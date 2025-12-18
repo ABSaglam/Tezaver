@@ -14,6 +14,7 @@ from tezaver.bulut.schemas.trade_plan_v1 import (
     TradeSide, 
     TradeDecision, 
     StopConfig,
+    StopType,
     create_locked_plan
 )
 
@@ -111,14 +112,23 @@ class Decider:
             # If passed all gates -> OPEN
             
             # Create OPEN Plan
+            reasons = {
+                "entry_score": cand.score,
+                "pattern_score": cand.components.get("pattern", 0),
+                "trend_score": cand.components.get("trend", 0)
+            }
+            
+            # v0.16 Match Propagation
+            if cand.matched_patterns:
+                top_match = cand.matched_patterns[0]
+                reasons["pattern_id"] = top_match.get("pattern_id")
+                reasons["pattern_confidence"] = top_match.get("confidence")
+                reasons["pattern_note"] = top_match.get("note")
+                
             plan = self._create_plan(
                 cand, ranking.cycle_ts, TradeDecision.OPEN,
                 notional=notional,
-                reasons={
-                    "entry_score": cand.score,
-                    "pattern_score": cand.components.get("pattern", 0),
-                    "trend_score": cand.components.get("trend", 0)
-                }
+                reasons=reasons
             )
             
             # Set SL/TP (1% / 2%) - Placeholder logic
@@ -151,6 +161,8 @@ class Decider:
             side=TradeSide.LONG, # Hardcoded LONG_ONLY for now
             decision=decision,
             notional_usdt=notional,
+            sl=StopConfig(type=StopType.PCT, value=1.0), # Default placeholder
+            tp=StopConfig(type=StopType.PCT, value=2.0), # Default placeholder
             idempotency_key=key,
             reasons=reasons or {}
         )
