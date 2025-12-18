@@ -170,6 +170,14 @@ class BinanceFuturesSigned:
         }
         return await self._request("POST", "/fapi/v1/order", params)
 
+    async def get_order_by_client_id(self, symbol: str, client_order_id: str) -> Dict:
+        """Fetch a specific order by client ID (ambiguous resolution)."""
+        params = {
+            "symbol": symbol,
+            "origClientOrderId": client_order_id
+        }
+        return await self._request("GET", "/fapi/v1/order", params)
+
     async def get_open_orders(self, symbol: Optional[str] = None) -> List[Dict]:
         """Get all open orders."""
         params = {}

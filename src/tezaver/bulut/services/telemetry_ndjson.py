@@ -34,6 +34,26 @@ class NdjsonTelemetry:
             **data,
         }
         self._write(event)
+        
+    def emit_custom(self, event_type: str, data: dict) -> None:
+        """Emit a custom event."""
+        self.emit(event_type, data)
+
+    def emit_execution_state(self, client_order_id: str, state: str, extra: dict = None) -> None:
+        """Emit execution state change."""
+        payload = {"cid": client_order_id, "state": state}
+        if extra:
+            payload.update(extra)
+        self.emit("EXECUTION_STATE", payload)
+
+    def emit_alert(self, level: str, code: str, message: str, details: dict = None) -> None:
+        """Emit system alert."""
+        self.emit("ALERT", {
+            "level": level,
+            "code": code,
+            "message": message,
+            "details": details or {}
+        })
     
     def emit_ranking_snapshot(self, snapshot_dict: dict) -> None:
         """

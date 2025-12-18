@@ -96,6 +96,9 @@ app.include_router(risk_router)
 from tezaver.bulut.api.routes_time_sync import router as time_sync_router
 app.include_router(time_sync_router)
 
+from tezaver.bulut.api.routes_ops import router as ops_router
+app.include_router(ops_router)
+
 
 @app.get("/")
 async def root():

@@ -128,6 +128,32 @@ class SqlitePersistence:
         except Exception as e:
              print(f"[DB] Schema update error: {e}")
 
+        # Schema updates for v0.14 (Execution v1)
+        try:
+             cursor.execute("ALTER TABLE trade_plans ADD COLUMN exec_state TEXT")
+        except: pass
+        try:
+             cursor.execute("ALTER TABLE trade_plans ADD COLUMN exec_started_ts TEXT")
+        except: pass
+        try:
+             cursor.execute("ALTER TABLE trade_plans ADD COLUMN exec_finished_ts TEXT")
+        except: pass
+        try:
+             cursor.execute("ALTER TABLE trade_plans ADD COLUMN exec_error TEXT")
+        except: pass
+
+        # Schema updates for v0.15 (Ops Pack)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS alerts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ts TEXT,
+                level TEXT,
+                code TEXT,
+                message TEXT,
+                details_json TEXT
+            )
+        """)
+
         conn.commit()
         conn.close()
 
@@ -347,6 +373,49 @@ class SqlitePersistence:
         conn.commit()
         conn.close()
 
+    def try_mark_executing(self, idempotency_key: str) -> bool:
+        """
+        Atomic execution lock.
+        Marks plan as EXECUTING only if it hasn't been started yet.
+        Returns True if lock acquired, False otherwise.
+        """
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        
+        now_ts = datetime.now(timezone.utc).isoformat()
+        
+        # We allow execution if exec_state is NULL or 'ACCEPTED' or 'PROPOSED'
+        # If it is 'EXECUTING', 'EXECUTED', 'FAILED', we reject.
+        cursor.execute("""
+            UPDATE trade_plans 
+            SET exec_state='EXECUTING', exec_started_ts=?
+            WHERE idempotency_key=? 
+              AND (exec_state IS NULL OR exec_state IN ('ACCEPTED', 'PROPOSED'))
+        """, (now_ts, idempotency_key))
+        
+        success = cursor.rowcount > 0
+        conn.commit()
+        conn.close()
+        return success
+
+    def finalize_plan_execution(self, idempotency_key: str, state: str, error: Optional[str] = None):
+        """
+        Finalize execution state (EXECUTED, FAILED).
+        """
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        
+        now_ts = datetime.now(timezone.utc).isoformat()
+        
+        cursor.execute("""
+            UPDATE trade_plans 
+            SET exec_state=?, exec_finished_ts=?, exec_error=?
+            WHERE idempotency_key=?
+        """, (state, now_ts, error, idempotency_key))
+        
+        conn.commit()
+        conn.close()
+
     def get_latest_plans(self, limit: int = 50) -> List[dict]:
         """Get latest trade plans."""
         conn = self._get_conn()
@@ -373,3 +442,41 @@ class SqlitePersistence:
                 
         conn.close()
         return plans
+
+    # --- Alerts (v0.15) ---
+
+    def insert_alert(self, level: str, code: str, message: str, details: dict = None) -> None:
+        """Insert a system alert."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        
+        ts = datetime.now(timezone.utc).isoformat()
+        details_json = json.dumps(details) if details else "{}"
+        
+        cursor.execute("""
+            INSERT INTO alerts (ts, level, code, message, details_json)
+            VALUES (?, ?, ?, ?, ?)
+        """, (ts, level, code, message, details_json))
+        
+        conn.commit()
+        conn.close()
+
+    def get_latest_alerts(self, limit: int = 20) -> List[dict]:
+        """Get latest system alerts."""
+        conn = self._get_conn()
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT * FROM alerts ORDER BY id DESC LIMIT ?", (limit,))
+        
+        rows = cursor.fetchall()
+        alerts = [dict(row) for row in rows]
+        
+        for a in alerts:
+            try:
+                a["details"] = json.loads(a["details_json"])
+            except:
+                a["details"] = {}
+                
+        conn.close()
+        return alerts

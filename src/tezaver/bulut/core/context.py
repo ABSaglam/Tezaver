@@ -65,6 +65,8 @@ class BulutContext:
         self._risk = None
         self._decider = None
         self._time_sync = None
+        self._status_service = None
+        self._incident_bundle = None
         
         # V0.12 Risk Bootstrap
         from tezaver.bulut.services.risk_rules_bootstrap import RiskRulesBootstrap
@@ -230,6 +232,21 @@ class BulutContext:
             from tezaver.bulut.engine.exit_engine import ExitEngine
             self._exit_engine = ExitEngine(self._config)
         return self._exit_engine
+
+    @property
+    def status_service(self) -> Any:
+        if self._status_service is None:
+            from tezaver.bulut.services.status_service import StatusService
+            self._status_service = StatusService(self.config)
+        return self._status_service
+
+    @property
+    def incident_bundle(self) -> Any:
+        if self._incident_bundle is None:
+            from tezaver.bulut.services.incident_bundle import IncidentBundleService
+            # We use 'data/bulut_incidents' as default export dir
+            self._incident_bundle = IncidentBundleService("data/bulut_incidents")
+        return self._incident_bundle
 
     def check_trade_lock(self) -> tuple[bool, Optional[str]]:
         """

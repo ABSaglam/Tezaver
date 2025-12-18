@@ -164,6 +164,36 @@ def render_dashboard():
         st.info("No open positions.")
 
     # =========================================================================
+    # Trade Plans (v0.14)
+    # =========================================================================
+    st.subheader("📜 Recent Plans")
+    
+    try:
+        plans = ctx.persistence.get_latest_plans(10)
+    except:
+        plans = []
+        
+    if plans:
+        import pandas as pd
+        df_plans = pd.DataFrame(plans)
+        
+        # Display Columns
+        cols_p = ["plan_ts", "symbol", "decision", "status", "exec_state", "exec_error", "notional"]
+        # Filter available
+        cols_p = [c for c in cols_p if c in df_plans.columns]
+        
+        st.dataframe(
+            df_plans[cols_p].style.format({
+                "notional": "{:.2f}"
+            }),
+            use_container_width=True
+        )
+    else:
+        st.info("No trade plans logged yet.")
+
+    st.divider()
+
+    # =========================================================================
     # Latest Ranking
     # =========================================================================
     st.subheader("📊 Latest Ranking")
@@ -351,8 +381,58 @@ def render_dashboard():
                 })
             
             st.dataframe(prof_data, use_container_width=True)
+    # =========================================================================
+    # Ops Pack (v0.15)
+    # =========================================================================
+    st.divider()
+    st.subheader("🧭 System Status")
+    
+    # 1. System Status
+    try:
+        status = ctx.status_service.get_status(ctx)
+        
+        # Display key metrics
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
+            st.metric("Daemon", "RUNNING" if status.daemon.running else "STOPPED")
+        with c2:
+            st.metric("Time Sync", "OK" if status.time_sync.healthy else f"BAD ({status.time_sync.offset_ms}ms)")
+        with c3:
+            st.metric("Exchange Info", "FRESH" if status.exchangeinfo.fresh else f"STALE ({status.exchangeinfo.age_s:.1f}s)")
+        with c4:
+            st.metric("Risk Entry", "ACTIVE" if not status.risk.entry_halted else "HALTED")
+            
+    except Exception as e:
+        st.error(f"Status Error: {e}")
+
+    # 2. Alerts
+    st.subheader("🚨 Alerts")
+    try:
+        alerts = ctx.persistence.get_latest_alerts(20)
+        if alerts:
+             import pandas as pd
+             df_alerts = pd.DataFrame(alerts)
+             st.dataframe(df_alerts[["ts", "level", "code", "message"]], use_container_width=True)
         else:
-            st.warning("No exit profiles loaded.")
+             st.info("No active alerts.")
+    except Exception as e:
+        st.error(f"Alerts Error: {e}")
+
+    # 3. Incident Bundle Export
+    with st.expander("📦 Incident Bundle Export"):
+        st.info("Export logs, config, and DB snapshot for debugging.")
+        reason = st.text_input("Reason", placeholder="e.g. execution_failure_param_error")
+        
+        if st.button("Export Bundle"):
+            if not reason:
+                st.error("Please provide a reason.")
+            else:
+                with st.spinner("Generating Log Bundle..."):
+                    try:
+                        path = ctx.incident_bundle.create_bundle(ctx, reason)
+                        st.success(f"Bundle Exported: `{path}`")
+                    except Exception as e:
+                        st.error(f"Export Failed: {e}")
 
 if __name__ == "__main__":
     render_dashboard()
