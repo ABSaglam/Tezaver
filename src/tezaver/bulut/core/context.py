@@ -456,6 +456,14 @@ class BulutContext:
             self._policy = PolicyStateMachine(self.config)
         return self._policy
 
+    @property
+    def proof_ladder(self) -> Any:
+        """Get proof ladder service (lazy-loaded)."""
+        if getattr(self, "_proof_ladder", None) is None:
+            from tezaver.bulut.services.proof_ladder import ProofLadderService
+            self._proof_ladder = ProofLadderService(self)
+        return self._proof_ladder
+
     def check_trade_lock(self) -> tuple[bool, Optional[str]]:
         """
         Checks if trading should be locked based on various conditions.
@@ -474,7 +482,14 @@ class BulutContext:
             return True, "MAX_POSITIONS_REACHED"
         
         # Rule 3: Notional limit check
-        if self._state.total_notional_usdt >= self._config.max_total_notional_usdt:
+        max_notional = self._config.max_total_notional_usdt
+        # v1.1 Proof Ladder Override (Real Mainnet)
+        if self._config.mode == "REAL_MAINNET" and self._config.proof_ladder_enabled:
+             # Ensure proof_ladder service available (lazy load)
+             # But calling method computes effective.
+             max_notional = self.proof_ladder.compute_effective_mainnet_cap()
+             
+        if self._state.total_notional_usdt >= max_notional:
             return True, "MAX_NOTIONAL_REACHED"
         
         return False, None

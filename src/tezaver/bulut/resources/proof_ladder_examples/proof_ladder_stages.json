@@ -1,0 +1,29 @@
+{
+    "schema": "proof_ladder_stages_v1",
+    "stages": [
+        {
+            "stage_id": "PILOT_50_24H",
+            "cap_usdt": 50,
+            "min_hours_clean": 24,
+            "next": "STAGE_200_72H"
+        },
+        {
+            "stage_id": "STAGE_200_72H",
+            "cap_usdt": 200,
+            "min_hours_clean": 72,
+            "next": "STAGE_500_7D"
+        },
+        {
+            "stage_id": "STAGE_500_7D",
+            "cap_usdt": 500,
+            "min_hours_clean": 168,
+            "next": "STAGE_1000"
+        },
+        {
+            "stage_id": "STAGE_1000",
+            "cap_usdt": 1000,
+            "min_hours_clean": 336,
+            "next": null
+        }
+    ]
+}

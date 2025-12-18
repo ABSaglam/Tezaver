@@ -172,6 +172,28 @@ class LaunchChecklist:
         checks.append({"name": "Constitution Lock", "pass": c_pass, "detail": c_detail})
         if not c_pass: all_passed = False
 
+        # 11. Proof Ladder (v1)
+        # Verify valid stage and effective cap > 0.
+        pl_ok = False
+        pl_detail = "Skipped"
+        if ctx.config.proof_ladder_enabled and hasattr(ctx, "proof_ladder"):
+             # Get Status
+             state = ctx.persistence.get_proof_ladder_state()
+             if not state:
+                 pl_detail = "Not Seeded"
+             else:
+                 stage_id = state["stage_id"]
+                 eff_cap = ctx.proof_ladder.compute_effective_mainnet_cap()
+                 
+                 pl_ok = (eff_cap > 0)
+                 pl_detail = f"{stage_id} (Cap: {eff_cap})"
+                 if not pl_ok: pl_detail += " [Zero Cap]"
+                 
+             if ctx.config.mode == "REAL_MAINNET":
+                 checks.append({"name": "Proof Ladder", "pass": pl_ok, "detail": pl_detail})
+                 if not pl_ok: all_passed = False
+        
+
         # Result
         self._last_run_ts = time.time()
         self._last_result = {

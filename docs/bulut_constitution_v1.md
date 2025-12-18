@@ -114,3 +114,14 @@ Tezaver Mac -> Bulut zeka aktarımı sıkı kurallara tabidir:
 3.  **Mainnet Safety**: `REAL_MAINNET` modunda ve `ARMED` iken Intel değişikliği (Publish, Activate, Rollback) **BLOKLANIR**.
     *   Değişiklik için önce sistem `DISARM` edilmelidir.
     *   Bu kural `intel_edit_block_on_mainnet_armed` config ile yönetilir (Varsayılan: True).
+
+## 13. Proof Ladder Contract (v1)
+Mainnet Cap Escalation (Limit Artırma) prosedürü kanıta dayalıdır:
+1.  **Fail-Closed**: Kanıt yoksa cap artmaz. Varsayılan (Pilot) seviyede kalır.
+2.  **Evidence**: Cap artışı için sistemin `min_hours_clean` süresince "temiz" (Clean Run) çalışması gerekir.
+    *   **Clean Run**: CRITICAL/ERROR alert yok, Drift yok, Audit hatası yok, FX sorunu yok.
+3.  **Stages**: Limit basamaklar halindedir (Örn. 50 -> 200 -> 500 USDT).
+    *   Her basamak için yeniden kanıt toplanmalıdır.
+4.  **Mainnet Safety**: `REAL_MAINNET` modunda ve `ARMED` iken Stage değişimi (Advance) varsayılan olarak **BLOKLANIR**.
+    *   Yükseltme yapmak için önce `Mainnet Cap` artışı onaylanmalı ve `DISARM` edilerek stage geçişi yapılmalıdır (veya `PROOF_LADDER_ALLOW_ADVANCE_WHEN_ARMED=true` yapılmalıdır).
+5.  **Effective Cap**: Borsa limiti, `min(Config.Max, CurrentStage.Cap)` olarak hesaplanır. Stage izni olsa bile Config limiti (Hard Cap) aşılamaz.

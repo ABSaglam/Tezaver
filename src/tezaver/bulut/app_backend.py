@@ -18,7 +18,7 @@ from tezaver.bulut.api import (
     routes_income, routes_fx, routes_env, routes_launch, routes_config,
     routes_migrations, routes_ui, routes_forensics, routes_intel,
     routes_status, routes_logs, routes_control, routes_validation,
-    routes_market, routes_reports, routes_sizing
+    routes_market, routes_reports, routes_sizing, routes_proof_ladder
 )
 
 
@@ -109,6 +109,33 @@ async def lifespan(app: FastAPI):
     if ctx.config.user_data_ws_enabled:
         ctx.task_supervisor.register("user_data", lambda: ctx.user_data_stream.run_forever(ctx))
 
+    # 3. Proof Ladder Auto Evaluate (v1)
+    if ctx.config.proof_ladder_auto_evaluate_enabled:
+        async def _proof_ladder_loop(app_ctx: BulutContext):
+            while True:
+                try:
+                    # Evaluate
+                    res = app_ctx.proof_ladder.evaluate()
+                    if not res.passed:
+                        # Log or Alert if critical failures found during auto-eval?
+                        # Usually silent unless state degrades.
+                        pass
+                    
+                    # Auto Advance?
+                    if app_ctx.config.proof_ladder_auto_advance_enabled:
+                        ok, msg = app_ctx.proof_ladder.advance_stage()
+                        if ok:
+                            print(f"[ProofLadder] Auto-Advanced: {msg}")
+                            
+                    await asyncio.sleep(app_ctx.config.proof_ladder_auto_evaluate_seconds)
+                except asyncio.CancelledError:
+                    break
+                except Exception as e:
+                    print(f"[ProofLadder] Auto-Eval Error: {e}")
+                    await asyncio.sleep(60) # Backoff
+        
+        ctx.task_supervisor.register("proof_ladder", lambda: _proof_ladder_loop(ctx))
+
     # v0.26 Migrations (First thing logic)
     if ctx.config.migrations_enabled:
         dry = ctx.config.migrations_dry_run_on_start
@@ -186,6 +213,7 @@ app.include_router(routes_migrations.router, prefix="/migrations", tags=["Migrat
 app.include_router(routes_forensics.router, prefix="/cycles", tags=["Forensics"])
 app.include_router(routes_intel.router, prefix="/intel", tags=["Intel"])
 app.include_router(routes_ui.router, prefix="/ui", tags=["UI"])
+app.include_router(routes_proof_ladder.router, prefix="/mainnet/ladder", tags=["Proof Ladder"])
 
 
 @app.get("/")

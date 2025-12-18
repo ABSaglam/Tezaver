@@ -144,8 +144,21 @@ class BulutConfig:
     constitution_path: str = "docs/bulut_constitution_v1.md"
     constitution_version: str = "bulut_constitution_v1"
     constitution_checksum_enforce: bool = True
-    mainnet_pilot_max_total_notional_usdt: float = 50.0
-    mainnet_pilot_hours: int = 24
+    # v1 Proof Ladder (Evidence-Gated Cap)
+    proof_ladder_enabled: bool = field(default_factory=lambda: str(_env_str("PROOF_LADDER_ENABLED", "true")).lower() == "true")
+    proof_ladder_auto_evaluate_enabled: bool = field(default_factory=lambda: str(_env_str("PROOF_LADDER_AUTO_EVALUATE_ENABLED", "true")).lower() == "true")
+    proof_ladder_auto_evaluate_seconds: int = field(default_factory=lambda: _env_int("PROOF_LADDER_AUTO_EVALUATE_SECONDS", 3600))
+    proof_ladder_auto_advance_enabled: bool = field(default_factory=lambda: str(_env_str("PROOF_LADDER_AUTO_ADVANCE_ENABLED", "false")).lower() == "true")
+    proof_ladder_require_clean_hours: float = field(default_factory=lambda: _env_float("PROOF_LADDER_REQUIRE_CLEAN_HOURS", 24.0))
+    proof_ladder_max_critical_alerts: int = field(default_factory=lambda: _env_int("PROOF_LADDER_MAX_CRITICAL_ALERTS", 0))
+    proof_ladder_max_error_alerts: int = field(default_factory=lambda: _env_int("PROOF_LADDER_MAX_ERROR_ALERTS", 0))
+    proof_ladder_max_estimated_audits: int = field(default_factory=lambda: _env_int("PROOF_LADDER_MAX_ESTIMATED_AUDITS", 0))
+    proof_ladder_max_unconverted_fx_count: int = field(default_factory=lambda: _env_int("PROOF_LADDER_MAX_UNCONVERTED_FX_COUNT", 0))
+    proof_ladder_require_time_sync_healthy: bool = field(default_factory=lambda: str(_env_str("PROOF_LADDER_REQUIRE_TIME_SYNC_HEALTHY", "true")).lower() == "true")
+    proof_ladder_require_drift_free: bool = field(default_factory=lambda: str(_env_str("PROOF_LADDER_REQUIRE_DRIFT_FREE", "true")).lower() == "true")
+    proof_ladder_stages_path: str = field(default_factory=lambda: _env_str("PROOF_LADDER_STAGES_PATH", "data/bulut_rules/proof_ladder_stages.json"))
+    proof_ladder_allow_advance_when_armed: bool = field(default_factory=lambda: str(_env_str("PROOF_LADDER_ALLOW_ADVANCE_WHEN_ARMED", "false")).lower() == "true")
+
 
     # Endpoint Weights (approximate)
     endpoint_weights: Dict[str, int] = field(default_factory=lambda: {

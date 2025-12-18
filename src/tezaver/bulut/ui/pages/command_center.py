@@ -72,6 +72,52 @@ def render_command_center(api_base: str = "http://localhost:8000"):
              call_api("POST", "/ui/scan_now_placeholder") # Placeholder
 
     st.divider()
+
+    # 1.5 Proof Ladder (v1)
+    st.subheader("🪜 Proof Ladder")
+    
+    # Fetch Status
+    ok_pl, pl_data = call_api("GET", "/mainnet/ladder/status")
+    if ok_pl:
+        # Layout: Current Stage | Cap | Effective Cap | Clean Hours
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Stage", pl_data.get("stage_id", "N/A"))
+        c2.metric("Stage Cap", f"${pl_data.get('cap_usdt', 0)}")
+        c3.metric("Effective Cap", f"${pl_data.get('effective_cap_usdt', 0)}")
+        c4.metric("Clean Hours", f"{pl_data.get('clean_hours', 0):.1f}")
+        
+        # Details & Check
+        if st.expander("Details & Actions", expanded=False):
+            st.json(pl_data)
+            
+            # Actions
+            b1, b2 = st.columns(2)
+            with b1:
+                if st.button("Evaluate Now"):
+                    ok_ev, res_ev = call_api("POST", "/mainnet/ladder/evaluate")
+                    if ok_ev:
+                        if res_ev.get("passed"): st.success("PASSED")
+                        else: st.error(f"FAILED: {res_ev.get('reasons')}")
+                        st.json(res_ev)
+                    else:
+                        st.error(f"Error: {res_ev}")
+            
+            with b2:
+                # Advance Button
+                next_stage = pl_data.get("next_stage")
+                dis = (not next_stage)
+                if st.button(f"Advance to {next_stage or 'Type Max'}", disabled=dis):
+                    ok_adv, res_adv = call_api("POST", "/mainnet/ladder/advance")
+                    if ok_adv:
+                        st.success(res_adv["message"])
+                        st.rerun()
+                    else:
+                        st.error(f"Advance Failed: {res_adv}")
+                        
+    else:
+        st.error(f"Proof Ladder Status Failed: {pl_data}")
+
+    st.divider()
     
     # 2. Maintenance
     st.subheader("Maintenance")

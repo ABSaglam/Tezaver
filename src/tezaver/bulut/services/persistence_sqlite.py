@@ -364,6 +364,33 @@ class SqlitePersistence:
                 created_ts TEXT
             )
         """)
+        
+        # Ensure Alerts table (Critical for Proof Ladder)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS alerts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ts TEXT,
+                level TEXT,
+                code TEXT,
+                message TEXT,
+                details_json TEXT
+            )
+        """)
+
+        # v1.1 Proof Ladder (Mainnet Cap Evidence)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS proof_ladder_state (
+                id INTEGER PRIMARY KEY DEFAULT 1,
+                stage_id TEXT,
+                cap_usdt REAL,
+                last_evaluated_ts TEXT,
+                clean_hours REAL,
+                last_result_json TEXT,
+                updated_ts TEXT
+            )
+        """)
+        # Ensure single row constraint via ID=1 logic on insert, or just code enforce
+
 
         conn.commit()
         conn.close()
@@ -1508,3 +1535,107 @@ class SqlitePersistence:
                 except Exception as e:
                     print(f"[PERSISTENCE] Failed to parse timeline {r[0]}: {e}")
             return results
+
+    # --- Proof Ladder (v1) ---
+
+    def get_proof_ladder_state(self) -> Optional[dict]:
+        """Get current proof ladder state."""
+        conn = self._get_conn()
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        try:
+            cursor.execute("SELECT * FROM proof_ladder_state WHERE id=1")
+            row = cursor.fetchone()
+            return dict(row) if row else None
+        except sqlite3.OperationalError:
+            # Table might not exist yet if not migrated or initialized
+            return None
+        finally:
+            conn.close()
+
+    def upsert_proof_ladder_state(self, stage_id: str, cap_usdt: float, clean_hours: float, last_result_obj: dict):
+        """Update proof ladder state (always row 1)."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        now_ts = datetime.now(timezone.utc).isoformat()
+        
+        cursor.execute("CREATE TABLE IF NOT EXISTS proof_ladder_state (id INTEGER PRIMARY KEY DEFAULT 1, stage_id TEXT, cap_usdt REAL, last_evaluated_ts TEXT, clean_hours REAL, last_result_json TEXT, updated_ts TEXT)")
+
+        cursor.execute("""
+            INSERT INTO proof_ladder_state (
+                id, stage_id, cap_usdt, clean_hours, last_result_json, last_evaluated_ts, updated_ts
+            ) VALUES (1, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                stage_id=excluded.stage_id,
+                cap_usdt=excluded.cap_usdt,
+                clean_hours=excluded.clean_hours,
+                last_result_json=excluded.last_result_json,
+                last_evaluated_ts=excluded.last_evaluated_ts,
+                updated_ts=excluded.updated_ts
+        """, (
+            stage_id, cap_usdt, clean_hours, 
+            json.dumps(last_result_obj), now_ts, now_ts
+        ))
+        
+        conn.commit()
+        conn.close()
+
+    def get_proof_ladder_metrics(self, since_ts: str) -> Dict[str, int]:
+        """
+        Get aggregated metrics for Proof Ladder evaluation since timestamp.
+        Returns counts of critical alerts, error alerts, estimated audits, unconverted fx.
+        """
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        
+        metrics = {
+            "alerts_critical": 0,
+            "alerts_error": 0,
+            "audits_estimated": 0,
+            "fx_unconverted": 0
+        }
+        
+        
+        # Alerts
+        # Lazy create if missing (Recover from init failures)
+        try:
+             cursor.execute("""
+                CREATE TABLE IF NOT EXISTS alerts (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ts TEXT,
+                    level TEXT,
+                    code TEXT,
+                    message TEXT,
+                    details_json TEXT
+                )
+             """)
+        except: pass
+
+        # Assuming alerts table has `level` and `ts` AND `alerts` table exists
+        try:
+            cursor.execute("SELECT COUNT(*) FROM alerts WHERE ts >= ? AND level='CRITICAL'", (since_ts,))
+            metrics["alerts_critical"] = cursor.fetchone()[0]
+            
+            cursor.execute("SELECT COUNT(*) FROM alerts WHERE ts >= ? AND level='ERROR'", (since_ts,))
+            metrics["alerts_error"] = cursor.fetchone()[0]
+        except: pass
+        
+        # Audits
+        try:
+            cursor.execute("SELECT COUNT(*) FROM trade_audit WHERE close_ts >= ? AND pnl_source='ESTIMATED'", (since_ts,))
+            metrics["audits_estimated"] = cursor.fetchone()[0]
+        except: pass
+
+        # FX Unconverted
+        try:
+            # income_events: fx_rate IS NULL or 0
+            # AND asset != USDT (implicitly or filtered?)
+            # Actually unconverted means we needed conversion but didn't get it.
+            # Usually implies asset!=USDT and (rate is missing/null/0).
+            # Let's count where asset != 'USDT' AND (fx_rate IS NULL OR fx_rate = 0)
+            cursor.execute("SELECT COUNT(*) FROM income_events WHERE time_ts >= ? AND asset != 'USDT' AND (fx_rate IS NULL OR fx_rate=0)", (since_ts,))
+            metrics["fx_unconverted"] = cursor.fetchone()[0]
+        except: pass
+        
+        conn.close()
+        return metrics
