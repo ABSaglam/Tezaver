@@ -1,0 +1,149 @@
+# Tezaver Bulut - Core Configuration
+"""
+Centralized configuration for Tezaver Bulut.
+All values can be overridden via environment variables.
+
+NO MATRIX IMPORTS - Bulut is standalone.
+"""
+
+import os
+from dataclasses import dataclass, field
+from typing import List
+
+
+def _env_str(key: str, default: str) -> str:
+    return os.environ.get(key, default)
+
+
+def _env_int(key: str, default: int) -> int:
+    return int(os.environ.get(key, str(default)))
+
+
+def _env_float(key: str, default: float) -> float:
+    return float(os.environ.get(key, str(default)))
+
+
+def _env_list(key: str, default: str) -> List[str]:
+    raw = os.environ.get(key, default)
+    return [s.strip() for s in raw.split(",") if s.strip()]
+
+
+@dataclass(frozen=True)
+class BulutConfig:
+    """Immutable configuration for Tezaver Bulut."""
+    
+    # Exchange Settings
+    exchange: str = field(default_factory=lambda: _env_str("EXCHANGE", "BINANCE"))
+    market: str = field(default_factory=lambda: _env_str("MARKET", "FUTURES"))
+    direction: str = field(default_factory=lambda: _env_str("DIRECTION", "LONG_ONLY"))
+    
+    # Timeframe Settings
+    base_tf: str = field(default_factory=lambda: _env_str("BASE_TF", "15m"))
+    derived_tfs: List[str] = field(default_factory=lambda: _env_list("DERIVED_TFS", "1h,4h"))
+    
+    # Data Source Settings
+    rest_base_url: str = field(default_factory=lambda: _env_str("REST_BASE_URL", "https://fapi.binance.com"))
+    rest_base_url_testnet: str = field(default_factory=lambda: _env_str("REST_BASE_URL_TESTNET", "https://testnet.binancefuture.com"))
+    use_testnet: bool = field(default_factory=lambda: str(_env_str("USE_TESTNET", "false")).lower() == "true")
+    poll_interval_seconds: int = field(default_factory=lambda: _env_int("POLL_INTERVAL_SECONDS", 2))
+    poll_concurrency: int = field(default_factory=lambda: _env_int("POLL_CONCURRENCY", 40))
+    kline_limit: int = field(default_factory=lambda: _env_int("KLINE_LIMIT", 2))
+    
+    # Scanning Rules
+    scan_topk: int = field(default_factory=lambda: _env_int("SCAN_TOPK", 20))
+    scan_min_score: int = field(default_factory=lambda: _env_int("SCAN_MIN_SCORE", 70))
+    universe_path: str = field(default_factory=lambda: _env_str("UNIVERSE_PATH", "data/universe/universe_symbols.txt"))
+    universe_fallback_symbols: List[str] = field(default_factory=list)
+
+    # Trading Rules
+    auto_trade: bool = field(default_factory=lambda: str(_env_str("AUTO_TRADE", "false")).lower() == "true")
+    paper_mode: bool = field(default_factory=lambda: str(_env_str("PAPER_MODE", "true")).lower() == "true")
+    allowlist_path: str = field(default_factory=lambda: _env_str("ALLOWLIST_PATH", "data/universe/allowlist.txt"))
+    trade_min_score: int = field(default_factory=lambda: _env_int("TRADE_MIN_SCORE", 70))
+    trade_topn_from_ranking: int = field(default_factory=lambda: _env_int("TRADE_TOPN_FROM_RANKING", 20))
+    
+    # Execution Settings
+    execution_enabled: bool = field(default_factory=lambda: str(_env_str("EXECUTION_ENABLED", "false")).lower() == "true")
+    require_arm: bool = field(default_factory=lambda: str(_env_str("REQUIRE_ARM", "true")).lower() == "true")
+    arm_token: str = field(default_factory=lambda: _env_str("TEZAVER_ARM_TOKEN", ""))
+    mode: str = field(default_factory=lambda: _env_str("MODE", "REAL_TESTNET"))
+    
+    binance_api_key: str = field(default_factory=lambda: _env_str("BINANCE_API_KEY", ""))
+    binance_api_secret: str = field(default_factory=lambda: _env_str("BINANCE_API_SECRET", ""))
+    
+    order_type: str = field(default_factory=lambda: _env_str("ORDER_TYPE", "MARKET"))
+    leverage: int = field(default_factory=lambda: _env_int("LEVERAGE", 1))
+    reduce_only_on_close: bool = field(default_factory=lambda: str(_env_str("REDUCE_ONLY_ON_CLOSE", "true")).lower() == "true")
+    execution_timeout_sec: int = field(default_factory=lambda: _env_int("TIMEOUT_SECONDS", 8))
+    execution_retry_count: int = field(default_factory=lambda: _env_int("RETRY_COUNT", 2))
+    
+    # Position Limits
+    max_open_positions: int = field(default_factory=lambda: _env_int("MAX_OPEN_POSITIONS", 3))
+    max_new_entries_per_cycle: int = field(default_factory=lambda: _env_int("MAX_NEW_ENTRIES_PER_CYCLE", 1))
+    
+    # Risk Limits (USDT)
+    max_total_notional_usdt: float = field(default_factory=lambda: _env_float("MAX_TOTAL_NOTIONAL_USDT", 500.0))
+    max_cell_notional_usdt: float = field(default_factory=lambda: _env_float("MAX_CELL_NOTIONAL_USDT", 300.0))
+    risk_enforce: str = field(default_factory=lambda: _env_str("RISK_ENFORCE", "BLOCK"))
+    
+    # Paths
+    pattern_pack_dir: str = field(default_factory=lambda: _env_str("PATTERN_PACK_DIR", "data/bulut_inbox/pattern_packs"))
+    sqlite_path: str = field(default_factory=lambda: _env_str("SQLITE_PATH", "data/bulut_state/tezaver.db"))
+    ndjson_path: str = field(default_factory=lambda: _env_str("NDJSON_PATH", "data/bulut_logs/events.ndjson"))
+    
+    def to_dict(self) -> dict:
+        """Convert to dictionary for serialization."""
+        return {
+            "exchange": self.exchange,
+            "market": self.market,
+            "direction": self.direction,
+            "base_tf": self.base_tf,
+            "derived_tfs": self.derived_tfs,
+            "use_testnet": self.use_testnet,
+            "poll_interval": self.poll_interval_seconds,
+            "scan_topk": self.scan_topk,
+            "scan_min_score": self.scan_min_score,
+            "universe_path": self.universe_path,
+            "auto_trade": self.auto_trade,
+            "paper_mode": self.paper_mode,
+            "trade_min_score": self.trade_min_score,
+            "execution_enabled": self.execution_enabled,
+            "mode": self.mode,
+            "max_open_positions": self.max_open_positions,
+            "max_new_entries_per_cycle": self.max_new_entries_per_cycle,
+            "max_total_notional_usdt": self.max_total_notional_usdt,
+            "max_cell_notional_usdt": self.max_cell_notional_usdt,
+            "risk_enforce": self.risk_enforce,
+            "pattern_pack_dir": self.pattern_pack_dir,
+            "sqlite_path": self.sqlite_path,
+            "ndjson_path": self.ndjson_path,
+        }
+
+
+# Global config instance (lazy-loaded)
+_config: BulutConfig | None = None
+
+
+def get_config() -> BulutConfig:
+    """Get or create global config instance."""
+    global _config
+    if _config is None:
+        _config = BulutConfig()
+    return _config
+
+
+def reload_config() -> BulutConfig:
+    """Force reload config from environment."""
+    global _config
+    _config = BulutConfig()
+    return _config
+
+
+# Default symbol universe (placeholder - 400+ symbols)
+DEFAULT_SYMBOLS: List[str] = [
+    "BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT",
+    "ADAUSDT", "AVAXUSDT", "DOGEUSDT", "DOTUSDT", "LINKUSDT",
+    "MATICUSDT", "LTCUSDT", "ATOMUSDT", "UNIUSDT", "AAVEUSDT",
+    "INJUSDT", "ARBUSDT", "OPUSDT", "SUIUSDT", "SEIUSDT",
+    # ... placeholder for 400+ symbols - loaded from external source in production
+]
