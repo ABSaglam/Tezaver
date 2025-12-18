@@ -63,6 +63,11 @@ class BulutContext:
         self._governor = None
         self._group_caps = None
         self._risk = None
+        self._decider = None
+        
+        # V0.12 Risk Bootstrap
+        from tezaver.bulut.services.risk_rules_bootstrap import RiskRulesBootstrap
+        RiskRulesBootstrap(self.config, self.telemetry).ensure_risk_rules()
     
     @property
     def config(self) -> BulutConfig:

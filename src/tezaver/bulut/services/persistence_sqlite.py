@@ -99,11 +99,34 @@ class SqlitePersistence:
         
         # Schema updates for v0.12 (Risk)
         try:
-            cursor.execute("CREATE TABLE IF NOT EXISTS trade_audit (symbol TEXT, close_ts TEXT, pnl REAL, exit_reason TEXT, notional REAL)")
-            cursor.execute("ALTER TABLE positions ADD COLUMN last_exit_reason TEXT")
-            cursor.execute("ALTER TABLE positions ADD COLUMN last_exit_ts TEXT")
-        except:
-             pass
+            # Re-create trade_audit with full schema
+            cursor.execute("DROP TABLE IF EXISTS trade_audit")
+            cursor.execute("""
+                CREATE TABLE trade_audit (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    symbol TEXT,
+                    entry_price REAL, 
+                    exit_price REAL, 
+                    qty REAL, 
+                    pnl_usdt REAL, 
+                    pnl_is_estimated INTEGER, 
+                    close_ts TEXT, 
+                    exit_reason TEXT, 
+                    cycle_ts TEXT
+                )
+            """)
+            
+            # Add columns to positions if missing
+            try:
+                cursor.execute("ALTER TABLE positions ADD COLUMN last_exit_reason TEXT")
+            except: pass
+            
+            try:
+                cursor.execute("ALTER TABLE positions ADD COLUMN last_exit_cycle_ts TEXT")
+            except: pass
+            
+        except Exception as e:
+             print(f"[DB] Schema update error: {e}")
 
         conn.commit()
         conn.close()
@@ -118,14 +141,7 @@ class SqlitePersistence:
         conn = self._get_conn()
         cursor = conn.cursor()
         
-        # Check if exists? REPLACE INTO works for upsert on PRIMARY KEY
-        # For v0.12, we want to preserve last_exit info if updating same symbol?
-        # If we REPLACE, we lose old columns if not provided?
-        # Yes, REPLACE deletes and inserts.
-        # So we should use UPDATE if exists, else INSERT.
-        # Or better: read `last_exit_reason` and `last_exit_ts` before replace, pass them back?
-        # Or use ON CONFLICT UPDATE logic (Upsert). `INSERT ... ON CONFLICT(symbol) DO UPDATE SET ...`
-        
+        # Upsert
         cursor.execute("""
             INSERT INTO positions (
                 symbol, entry_ts, entry_price, qty, notional_usdt, 
@@ -150,12 +166,24 @@ class SqlitePersistence:
         conn.commit()
         conn.close()
 
-    def mark_position_closed(self, symbol: str, close_ts: datetime, close_price: float, pnl: float = 0.0, exit_reason: str = "MANUAL"):
+    def mark_position_closed(
+        self, 
+        symbol: str, 
+        close_ts: datetime, 
+        exit_price: float, 
+        entry_price: float = 0.0,
+        qty: float = 0.0,
+        pnl_usdt: float = 0.0,
+        pnl_is_estimated: bool = False,
+        exit_reason: str = "MANUAL",
+        cycle_ts: Optional[datetime] = None
+    ):
         """Mark position CLOSED and audit."""
         conn = self._get_conn()
         cursor = conn.cursor()
         
         ts_str = close_ts.isoformat()
+        cycle_ts_str = cycle_ts.isoformat() if cycle_ts else ts_str
         
         # Update positions
         cursor.execute("""
@@ -163,15 +191,23 @@ class SqlitePersistence:
                 status='CLOSED', 
                 update_ts=?, 
                 last_exit_reason=?,
-                last_exit_ts=?
+                last_exit_cycle_ts=?
             WHERE symbol=?
-        """, (ts_str, exit_reason, ts_str, symbol))
+        """, (ts_str, exit_reason, cycle_ts_str, symbol))
         
         # Audit
         cursor.execute("""
-            INSERT INTO trade_audit (symbol, close_ts, pnl, exit_reason)
-            VALUES (?, ?, ?, ?)
-        """, (symbol, ts_str, pnl, exit_reason))
+            INSERT INTO trade_audit (
+                symbol, close_ts, exit_reason, 
+                entry_price, exit_price, qty, 
+                pnl_usdt, pnl_is_estimated, cycle_ts
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            symbol, ts_str, exit_reason,
+            entry_price, exit_price, qty,
+            pnl_usdt, 1 if pnl_is_estimated else 0, cycle_ts_str
+        ))
         
         conn.commit()
         conn.close()
@@ -244,10 +280,10 @@ class SqlitePersistence:
         conn.close()
         return total if total else 0.0
 
-    def get_today_net_pnl(self, date_str: Optional[str] = None) -> float:
+    def get_today_net_pnl_utc(self, date_str: Optional[str] = None) -> float:
         """
-        Get net PnL for a specific date (YYYY-MM-DD).
-        Defaults to today UTC.
+        Get net PnL for a specific date (YYYY-MM-DD) in UTC.
+        Defaults to today.
         """
         if not date_str:
             date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -255,14 +291,16 @@ class SqlitePersistence:
         conn = self._get_conn()
         cursor = conn.cursor()
         
-        # close_ts like '2025-12-18T...'
-        # Check substring match
-        query = "SELECT SUM(pnl) FROM trade_audit WHERE substr(close_ts, 1, 10) = ?"
+        # pnl_usdt sum
+        query = "SELECT COALESCE(SUM(pnl_usdt), 0) FROM trade_audit WHERE substr(close_ts, 1, 10) = ?"
         cursor.execute(query, (date_str,))
         
         total = cursor.fetchone()[0]
         conn.close()
-        return total if total else 0.0
+        return total
+    
+    # Alias for compatibility if needed
+    get_today_net_pnl = get_today_net_pnl_utc
 
     # --- Trade Plans ---
 

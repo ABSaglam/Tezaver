@@ -45,7 +45,11 @@ class Decider:
         if not pattern_pack_loaded:
             return []
 
-        # 2. Candidate Selection
+        # 2. Reload Risk Rules
+        if self._risk:
+            self._risk.reload_rules()
+
+        # 3. Candidate Selection
         candidates = [
             c for c in ranking.candidates 
             if c.score >= self._config.trade_min_score

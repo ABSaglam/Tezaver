@@ -146,21 +146,25 @@ class Executor:
                             
                  # ... Close Logic ...
                     # CLOSE Logic
-                    # Calculate PnL if possible
+                    # Calculate PnL
                     pnl = 0.0
+                    entry_price = 0.0
+                    pos_qty = 0.0
                     exit_reason = "UNKNOWN"
+                    pnl_is_estimated = False
                     
                     pos = ctx.persistence.get_position(plan.symbol)
                     if pos:
-                        entry_price = pos["entry_price"]
-                        # Assume LONG
-                        # filled_qty from order result usually, but here 'qty' was sent order qty.
-                        # Using 'qty' as approximation or parse 'res' for 'executedQty'.
-                        # 'res' is available from `_client.market_close` result?
-                        # `res = await self._client.place_order(...)`
-                        # avg_price comes from `float(res.get("avgPrice", 0))` or similar logic above.
-                        # Assuming avg_price is valid.
-                        pnl = (avg_price - entry_price) * qty
+                        entry_price = pos.get("entry_price", 0.0)
+                        pos_qty = pos.get("qty", 0.0)
+                        
+                        # PnL = (Exit - Entry) * Qty (LONG)
+                        # Use actual position qty for PnL
+                        pnl = (avg_price - entry_price) * pos_qty
+                        
+                        # Check if avg_price is reliable (if 0, estimation)
+                        if avg_price <= 0:
+                            pnl_is_estimated = True
                     
                     # Determine Exit Reason
                     if plan.reasons.get("manual_trigger"):
@@ -177,9 +181,13 @@ class Executor:
                     ctx.persistence.mark_position_closed(
                         symbol=plan.symbol,
                         close_ts=plan.plan_ts,
-                        close_price=avg_price,
-                        pnl=pnl,
-                        exit_reason=exit_reason
+                        exit_price=avg_price,
+                        entry_price=entry_price,
+                        qty=pos_qty,
+                        pnl_usdt=pnl,
+                        pnl_is_estimated=pnl_is_estimated,
+                        exit_reason=exit_reason,
+                        cycle_ts=plan.plan_ts
                     )
                     
                     # --- V0.09 Cleanup Protective Orders ---

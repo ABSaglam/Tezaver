@@ -85,6 +85,9 @@ app.include_router(positions_router)
 app.include_router(exit_profiles_router)
 app.include_router(exchangeinfo_router)
 
+from tezaver.bulut.api.routes_risk import router as risk_router
+app.include_router(risk_router)
+
 
 @app.get("/")
 async def root():
