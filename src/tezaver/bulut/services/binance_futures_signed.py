@@ -90,7 +90,8 @@ class BinanceFuturesSigned:
         side: str, 
         qty: float, 
         order_type: str = "MARKET",
-        reduce_only: bool = False
+        reduce_only: bool = False,
+        client_order_id: Optional[str] = None
     ) -> Dict:
         """Create new order."""
         params = {
@@ -100,6 +101,9 @@ class BinanceFuturesSigned:
             "quantity": qty,
             "reduceOnly": "true" if reduce_only else "false"
         }
+        if client_order_id:
+            params["newClientOrderId"] = client_order_id
+            
         return await self._request("POST", "/fapi/v1/order", params)
     
     async def get_position_risk(self, symbol: Optional[str] = None) -> Any:

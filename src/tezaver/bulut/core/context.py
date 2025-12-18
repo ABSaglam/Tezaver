@@ -146,6 +146,14 @@ class BulutContext:
             self._executor = Executor(self._config)
         return self._executor
 
+    @property
+    def reconciliation_service(self) -> Any:
+        """Get reconciliation service (lazy-loaded)."""
+        if getattr(self, "_reconciler", None) is None:
+            from tezaver.bulut.services.reconciliation import ReconciliationService
+            self._reconciler = ReconciliationService(self)
+        return self._reconciler
+
     def check_trade_lock(self) -> tuple[bool, Optional[str]]:
             (is_locked, reason)
         """

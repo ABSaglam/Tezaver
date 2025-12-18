@@ -56,6 +56,16 @@ class AsyncScheduler:
         await self._rest_client.create_session()
         
         print(f"[SCHEDULER] Starting async loop (interval={self._config.poll_interval_seconds}s)")
+        
+        # Initial Reconciliation
+        if ctx.config.execution_enabled:
+             print("[SCHEDULER] Running initial reconciliation...")
+             try:
+                 report = await ctx.reconciliation_service.reconcile()
+                 print(f"[SCHEDULER] Reconciliation Report: {report['status']}")
+             except Exception as e:
+                 print(f"[SCHEDULER] Reconciliation Failed: {e}")
+
         self._task = asyncio.create_task(self._loop())
 
     async def stop(self):
