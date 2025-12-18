@@ -159,6 +159,12 @@ class BulutConfig:
     proof_ladder_stages_path: str = field(default_factory=lambda: _env_str("PROOF_LADDER_STAGES_PATH", "data/bulut_rules/proof_ladder_stages.json"))
     proof_ladder_allow_advance_when_armed: bool = field(default_factory=lambda: str(_env_str("PROOF_LADDER_ALLOW_ADVANCE_WHEN_ARMED", "false")).lower() == "true")
 
+    # Ops Auth Gate (v0.32)
+    ops_auth_enabled: bool = field(default_factory=lambda: str(_env_str("OPS_AUTH_ENABLED", "true")).lower() == "true")
+    ops_auth_token_env: str = field(default_factory=lambda: _env_str("TEZAVER_OPS_TOKEN", ""))
+    ops_auth_header: str = field(default_factory=lambda: _env_str("OPS_AUTH_HEADER", "X-TEZAVER-OPS-TOKEN"))
+    ops_auth_readonly_allow: bool = field(default_factory=lambda: str(_env_str("OPS_AUTH_READONLY_ALLOW", "true")).lower() == "true")
+
 
     # Endpoint Weights (approximate)
     endpoint_weights: Dict[str, int] = field(default_factory=lambda: {

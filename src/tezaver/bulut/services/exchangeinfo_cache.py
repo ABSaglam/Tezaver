@@ -73,7 +73,7 @@ class ExchangeInfoCache:
 
     async def refresh(self) -> bool:
         """Fetch fresh data from Binance."""
-        base_url = "https://testnet.binancefuture.com" if "TESTNET" in self._config.mode.name else "https://fapi.binance.com"
+        base_url = "https://testnet.binancefuture.com" if "TESTNET" in str(self._config.mode) else "https://fapi.binance.com"
         url = f"{base_url}/fapi/v1/exchangeInfo"
         
         print(f"[EXCHANGE_INFO] Refreshing from {url}...")

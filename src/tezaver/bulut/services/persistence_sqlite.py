@@ -389,6 +389,17 @@ class SqlitePersistence:
                 updated_ts TEXT
             )
         """)
+        
+        # Drift Guard (Config Snapshots)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS config_snapshots (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                source TEXT,
+                config_json TEXT,
+                hash TEXT,
+                ts TEXT
+            )
+        """)
         # Ensure single row constraint via ID=1 logic on insert, or just code enforce
 
 

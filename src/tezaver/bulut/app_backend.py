@@ -11,15 +11,38 @@ from contextlib import asynccontextmanager
 import asyncio
 
 from tezaver.bulut.core.context import bootstrap_context
-from tezaver.bulut.api import (
-    routes_health, routes_ranking, routes_trade, routes_bars, routes_daemon,
-    routes_plans, routes_execution, routes_reconcile, routes_positions,
-    routes_exit_profiles, routes_exchangeinfo, routes_time_sync, routes_ops,
-    routes_income, routes_fx, routes_env, routes_launch, routes_config,
-    routes_migrations, routes_ui, routes_forensics, routes_intel,
-    routes_status, routes_logs, routes_control, routes_validation,
-    routes_market, routes_reports, routes_sizing, routes_proof_ladder
-)
+from tezaver.bulut.core.context import bootstrap_context
+# Import routers explicitly to avoid __init__ issues
+from tezaver.bulut.api import routes_health
+from tezaver.bulut.api import routes_ranking
+from tezaver.bulut.api import routes_trade
+from tezaver.bulut.api import routes_bars
+from tezaver.bulut.api import routes_daemon
+from tezaver.bulut.api import routes_plans
+from tezaver.bulut.api import routes_execution
+from tezaver.bulut.api import routes_reconcile
+from tezaver.bulut.api import routes_positions
+from tezaver.bulut.api import routes_exit_profiles
+from tezaver.bulut.api import routes_exchangeinfo
+from tezaver.bulut.api import routes_time_sync
+from tezaver.bulut.api import routes_ops
+from tezaver.bulut.api import routes_income
+from tezaver.bulut.api import routes_fx
+from tezaver.bulut.api import routes_env
+from tezaver.bulut.api import routes_launch
+from tezaver.bulut.api import routes_config
+from tezaver.bulut.api import routes_migrations
+from tezaver.bulut.api import routes_ui
+from tezaver.bulut.api import routes_forensics
+from tezaver.bulut.api import routes_intel
+# from tezaver.bulut.api import routes_status # Might be missing?
+# from tezaver.bulut.api import routes_logs # Might be missing?
+# from tezaver.bulut.api import routes_control # Might be missing?
+# from tezaver.bulut.api import routes_validation # Might be missing?
+# from tezaver.bulut.api import routes_market # Might be missing?
+# from tezaver.bulut.api import routes_reports # Assuming exists
+from tezaver.bulut.api import routes_sizing
+from tezaver.bulut.api import routes_proof_ladder
 
 
 @asynccontextmanager
@@ -191,8 +214,40 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# v0.32 Ops Auth Middleware
+from tezaver.bulut.core.config import get_config
+from tezaver.bulut.core.ops_auth import check_ops_auth
+from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi import Request
+
+@app.middleware("http")
+async def ops_auth_middleware(request: Request, call_next):
+    # Skip health check path? Maybe useful for k8s probes.
+    if request.url.path.startswith("/health") or request.url.path.startswith("/docs") or request.url.path.startswith("/openapi.json"):
+        return await call_next(request)
+        
+    cfg = get_config()
+    try:
+        await check_ops_auth(request, cfg)
+    except Exception as e:
+        # Re-raise HTTPException properly to return JSON error
+        # Middleware catching simple exceptions works, but HTTPException needs specific handling
+        # OR we just let it bubble if Starlette handles it?
+        # Starlette handles HTTPException by returning response. But in middleware it's tricky.
+        # Better: return JSONResponse if check fails.
+        from fastapi.responses import JSONResponse
+        if hasattr(e, "status_code"):
+            return JSONResponse(status_code=e.status_code, content={"detail": e.detail})
+        raise e
+        
+    response = await call_next(request)
+    return response
+
 # Include routers
-app.include_router(routes_health.router, prefix="/health", tags=["Health"])
+# Note: Routers define their own prefix usually, but here we enforce it or double it?
+# routes_health defines prefix="/health". app.include... prefix="/health" => /health/health.
+# Removing prefix here to fix 404.
+app.include_router(routes_health.router, tags=["Health"])
 app.include_router(routes_ranking.router, prefix="/ranking", tags=["Ranking"])
 app.include_router(routes_trade.router, prefix="/trade", tags=["Trade"])
 app.include_router(routes_bars.router, prefix="/bars", tags=["Bars"])

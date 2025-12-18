@@ -38,20 +38,11 @@ class LaunchChecklist:
         ts_ok = False
         ts_detail = "Indeterminate"
         if hasattr(ctx, "time_sync"):
-            ts_res = ctx.time_sync.get_sync_status() # {synced, offset...}
-            # Assuming get_sync_status returns object or dict. 
-            # Actually get_sync_info returns primitives usually.
-            # Let's check logic: calling get_time_offset() works?
-            # Or use `ctx.time_sync.synced`?
-            # checking `status_service` logic: `time_sync` in status is object.
-            # `ctx.time_sync` probably has `is_synced()`?
-            # Let's assume passed if offset is small (< 1000ms).
-            offset = ctx.time_sync.get_time_offset()
-            if abs(offset) < 1000:
-                ts_ok = True
-                ts_detail = f"Offset {offset:.1f}ms"
-            else:
-                ts_detail = f"Offset too high: {offset}ms"
+            ts_healthy, ts_details = ctx.time_sync.is_healthy()
+            ts_ok = ts_healthy
+            ts_detail = f"Healthy: {ts_healthy}, {ts_details}"
+            # Already set from is_healthy()
+            pass
         else:
             ts_detail = "Service missing"
             
@@ -63,7 +54,7 @@ class LaunchChecklist:
         ex_ok = False
         ex_detail = "Empty"
         if hasattr(ctx, "exchangeinfo_cache"):
-             info = ctx.exchangeinfo_cache.get_cached_info()
+             info = getattr(ctx.exchangeinfo_cache, 'exchange_info', {})
              if info and info.get("symbols"):
                  ex_ok = True
                  ex_detail = f"{len(info['symbols'])} symbols"

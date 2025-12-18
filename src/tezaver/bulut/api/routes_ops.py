@@ -28,6 +28,12 @@ async def get_alerts(limit: int = 50):
     alerts = ctx.persistence.get_latest_alerts(limit)
     return {"alerts": alerts}
 
+
+@router.post("/ping")
+async def ops_ping():
+    """Simple ping for auth testing."""
+    return {"ok": True, "msg": "pong"}
+
 @router.post("/incident/export")
 async def export_incident_bundle(req: IncidentExportRequest, background_tasks: BackgroundTasks):
     """

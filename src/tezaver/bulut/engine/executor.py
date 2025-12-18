@@ -73,7 +73,7 @@ class Executor:
         reduce_only = False
         qty = 0.0
         
-        elif plan.decision.name == "OPEN":
+        if plan.decision.name == "OPEN":
             side = "BUY" 
             reduce_only = False
             

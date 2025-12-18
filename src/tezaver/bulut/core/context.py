@@ -171,6 +171,7 @@ class BulutContext:
         if getattr(self, "_scheduler", None) is None:
             from tezaver.bulut.engine.scheduler import AsyncScheduler
             self._scheduler = AsyncScheduler(self._config)
+        return self._scheduler
     @property
     def allowlist_source(self) -> Any:
         """Get allowlist source (lazy-loaded)."""
@@ -507,7 +508,7 @@ class BulutContext:
         Returns:
             True if loaded successfully, False otherwise.
         """
-        pack = self.pattern_loader.load_latest()
+        pack = self.pattern_loader.load_latest_parsed()
         if pack is None:
             self._state.pattern_pack_loaded = False
             self._state.pattern_pack_id = None
