@@ -400,6 +400,13 @@ class BulutContext:
             self._drift_guard = DriftGuard(self)
         return self._drift_guard
 
+    @property
+    def migration_runner(self) -> Any:
+        if getattr(self, "_migration_runner", None) is None:
+            from tezaver.bulut.services.migration_runner import MigrationRunner
+            self._migration_runner = MigrationRunner(self.persistence)
+        return self._migration_runner
+
     def check_trade_lock(self) -> tuple[bool, Optional[str]]:
         """
         Checks if trading should be locked based on various conditions.

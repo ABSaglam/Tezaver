@@ -111,6 +111,21 @@ async def lifespan(app: FastAPI):
     if ctx.config.user_data_ws_enabled:
         ctx.task_supervisor.register("user_data", lambda: ctx.user_data_stream.run_forever(ctx))
 
+    # v0.26 Migrations (First thing logic)
+    if ctx.config.migrations_enabled:
+        dry = ctx.config.migrations_dry_run_on_start
+        try:
+            report = ctx.migration_runner.run_pending(dry_run=dry)
+            if dry and report["plan"]:
+                print(f"[Migrations] Dry Run Plan: {report['plan']}")
+            elif report["executed"]:
+                print(f"[Migrations] Executed {len(report['executed'])} migrations.")
+        except Exception as e:
+            if ctx.config.migrations_fail_fast:
+                print(f"[Migrations] CRITICAL FAILURE: {e}")
+                # We can't easily exit here without crashing uvicorn, but we can try
+                raise e
+
     # Start all via Supervisor
     await ctx.task_supervisor.start_all()
 
@@ -161,6 +176,7 @@ app.include_router(routes_env.router, prefix="/env", tags=["Environment"])
 app.include_router(routes_launch.router, prefix="/launch", tags=["Launch"])
 app.include_router(routes_plans.router, prefix="/plans", tags=["Plans"])
 app.include_router(routes_config.router, prefix="/config", tags=["Config"])
+app.include_router(routes_migrations.router, prefix="/migrations", tags=["Migrations"])
 
 
 @app.get("/")

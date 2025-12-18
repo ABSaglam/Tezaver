@@ -123,6 +123,11 @@ class BulutConfig:
     mainnet_require_checklist_pass: bool = True
     checklist_max_age_seconds: float = 60.0
 
+    # Migrations (v0.26)
+    migrations_enabled: bool = True
+    migrations_fail_fast: bool = True
+    migrations_dry_run_on_start: bool = False
+
     # v0.21 USER_DATA Websocket
     user_data_ws_enabled: bool = True
     user_data_keepalive_seconds: int = 1800 # 30 mins

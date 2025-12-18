@@ -91,6 +91,37 @@ def render_dashboard(ctx: BulutContext):
                      ctx.drift_guard.check_and_record(source="MANUAL")
                      st.rerun()
 
+                if st.button("📸 Take Initial Snapshot"):
+                     ctx.drift_guard.check_and_record(source="MANUAL")
+                     st.rerun()
+
+    # v0.26 Migrations
+    with st.expander("🧱 Migrations"):
+        if hasattr(ctx, "migration_runner"):
+             # Check status via dry run
+             report = ctx.migration_runner.run_pending(dry_run=True)
+             c_ver = report["current_version"]
+             t_ver = report["target_version"]
+             pending = report.get("plan", [])
+             
+             m_col1, m_col2 = st.columns(2)
+             m_col1.metric("Schema Version", f"v{c_ver}", delta=f"{len(pending)} Pending" if pending else "Up to date")
+             m_col2.metric("Target Version", f"v{t_ver}")
+             
+             if pending:
+                 st.warning(f"Pending Migrations: {len(pending)}")
+                 for p in pending:
+                     st.text(f"v{p['version']}: {p['description']}")
+                 
+                 if st.button("Run Migrations"):
+                     res = ctx.migration_runner.run_pending(dry_run=False)
+                     st.success(f"Executed: {res['executed']}")
+                     st.rerun()
+             else:
+                 st.success("All migrations applied.")
+        else:
+             st.info("Migration runner not available.")
+
     # Status Overview
     st.subheader("System Status")
     

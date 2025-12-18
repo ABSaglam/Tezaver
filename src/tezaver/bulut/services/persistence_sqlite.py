@@ -306,6 +306,35 @@ class SqlitePersistence:
         row = cursor.fetchone()
         conn.close()
         return dict(row) if row else None
+        
+    # --- Schema Meta (v0.26) ---
+
+    def get_schema_version(self) -> int:
+        """Get current schema version."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        # Bootstrap schema_meta if not exists (circular dependency with migration runner otherwise)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS schema_meta (
+                key TEXT PRIMARY KEY,
+                value TEXT
+            )
+        """)
+        cursor.execute("SELECT value FROM schema_meta WHERE key='schema_version'")
+        row = cursor.fetchone()
+        conn.close()
+        return int(row[0]) if row else 0
+
+    def set_schema_version(self, version: int):
+        """Set schema version."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO schema_meta (key, value) VALUES ('schema_version', ?)
+            ON CONFLICT(key) DO UPDATE SET value=excluded.value
+        """, (str(version),))
+        conn.commit()
+        conn.close()
 
     # --- Heartbeats (v0.23) ---
 
