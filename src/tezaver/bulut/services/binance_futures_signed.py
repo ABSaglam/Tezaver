@@ -201,7 +201,18 @@ class BinanceFuturesSigned:
             params["symbol"] = symbol
         return await self._request("GET", "/fapi/v2/positionRisk", params)
 
-    async def get_open_orders(self, symbol: Optional[str] = None) -> Any:
-        """Get open orders."""
-        params = {}
-        return await self._request("GET", "/fapi/v1/openOrders", params)
+    async def get_user_trades(
+        self, 
+        symbol: str, 
+        start_time: Optional[int] = None, 
+        end_time: Optional[int] = None, 
+        limit: int = 500
+    ) -> List[Dict]:
+        """Get trades for a specific account and symbol."""
+        params = {"symbol": symbol, "limit": limit}
+        if start_time:
+            params["startTime"] = start_time
+        if end_time:
+            params["endTime"] = end_time
+            
+        return await self._request("GET", "/fapi/v1/userTrades", params)

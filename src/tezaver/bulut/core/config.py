@@ -99,7 +99,8 @@ class BulutConfig:
         "GET:/fapi/v2/positionRisk": 5,
         "POST:/fapi/v1/order": 1,
         "DELETE:/fapi/v1/order": 1,
-        "DELETE:/fapi/v1/allOpenOrders": 1
+        "DELETE:/fapi/v1/allOpenOrders": 1,
+        "GET:/fapi/v1/userTrades": 5
     })
 
     # Portfolio Risk (v0.12)

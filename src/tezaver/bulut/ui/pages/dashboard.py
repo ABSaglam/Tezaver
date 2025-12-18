@@ -67,14 +67,51 @@ def render_dashboard():
             st.caption("Daily Loss Limit Hit!")
             
     with risk_cols[1]:
-        today_pnl = risk_status["today_pnl"]
+        today_net = risk_status["today_net_pnl"]
+        today_gross = risk_status["today_gross_pnl"]
+        today_fees = risk_status["today_fees"]
         limit = risk_status["daily_loss_limit"]
-        st.metric("Daily PnL", f"${today_pnl:.2f}", f"Limit: {limit}")
+        
+        st.metric("Net Daily PnL", f"${today_net:.2f}", f"Gross: {today_gross:.2f}")
+        st.caption(f"Fees: ${today_fees:.2f} | Limit: ${limit:.2f}")
         
     with risk_cols[2]:
         op = risk_status["open_positions"]
         mx = risk_status["max_positions"]
         st.metric("Global Cap", f"{op} / {mx}")
+
+    # =========================================================================
+    # Last Trades (v0.17)
+    # =========================================================================
+    st.subheader("🏁 Last Trades (Audit)")
+    try:
+        audits = ctx.persistence.get_latest_audit(10)
+        if audits:
+            import pandas as pd
+            df_audit = pd.DataFrame(audits)
+            
+            # Format display
+            # symbol, net_pnl_usdt, pnl_source, exit_reason, pattern_id
+            # Fallback for old records without net_pnl_usdt
+            if "net_pnl_usdt" in df_audit.columns:
+                df_audit["Net PnL"] = df_audit["net_pnl_usdt"].fillna(df_audit["pnl_usdt"])
+            else:
+                df_audit["Net PnL"] = df_audit["pnl_usdt"]
+                
+            cols_audit = ["close_ts", "symbol", "Net PnL", "pnl_source", "exit_reason", "pattern_id"]
+            # Available cols
+            cols_audit = [c for c in cols_audit if c in df_audit.columns]
+            
+            st.dataframe(
+                df_audit[cols_audit].style.format({
+                    "Net PnL": "{:.2f}"
+                }),
+                use_container_width=True
+            )
+        else:
+            st.info("No closed trades in audit yet.")
+    except Exception as e:
+        st.error(f"Audit Error: {e}")
     # =========================================================================
     # Time Sync (v0.13)
     # =========================================================================

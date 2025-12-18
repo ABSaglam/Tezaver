@@ -112,7 +112,8 @@ class PortfolioRiskService:
         
     def get_risk_status(self) -> Dict[str, Any]:
         """Get summary status for UI."""
-        today_pnl = self._db.get_today_net_pnl_utc()
+        stats = self._db.get_today_pnl_stats_utc()
+        today_pnl = stats["net_pnl"]
         loss_limit = -abs(self._config.daily_loss_limit_usdt)
         halted = self._config.entry_halted_on_daily_loss and today_pnl <= loss_limit
         
@@ -120,7 +121,10 @@ class PortfolioRiskService:
         group_counts = self._groups.get_open_counts(open_positions)
         
         return {
-            "today_pnl": today_pnl,
+            "today_net_pnl": stats["net_pnl"],
+            "today_gross_pnl": stats["gross_pnl"],
+            "today_fees": stats["fees"],
+            "today_pnl": today_pnl, # for compat
             "daily_loss_limit": loss_limit,
             "entry_halted": halted,
             "open_positions": len(open_positions),

@@ -240,18 +240,54 @@ class Executor:
                   exit_reason = "TIME"
              elif "exit_reason" in plan.reasons:
                  exit_reason = plan.reasons["exit_reason"]
-                 
-             ctx.persistence.mark_position_closed(
-                 symbol=plan.symbol,
-                 close_ts=plan.plan_ts,
-                 exit_price=avg_price,
-                 entry_price=entry_price,
-                 qty=pos_qty,
-                 pnl_usdt=pnl,
-                 pnl_is_estimated=pnl_is_estimated,
-                 exit_reason=exit_reason,
-                 cycle_ts=plan.plan_ts
-             )
+             
+             # v0.17 Fill Sync
+             fill_summary = None
+             order_id = int(res.get("orderId", 0)) if res else 0
+             
+             if order_id > 0 and ctx.fill_sync:
+                 try:
+                     print(f"[EXECUTOR] Syncing fills for order {order_id}...")
+                     # Await a bit for Binance backend propagation? 
+                     # API weight is 5. We can wait 1s.
+                     await asyncio.sleep(1.0) 
+                     fill_summary = await ctx.fill_sync.sync_order_fills(plan.symbol, order_id=order_id)
+                 except Exception as e:
+                     print(f"[EXECUTOR] Fill Sync Error: {e}")
+             
+             if fill_summary:
+                  # Accurate Audit
+                  ctx.persistence.update_position_closed_state(
+                      symbol=plan.symbol,
+                      close_ts=plan.plan_ts,
+                      exit_reason=exit_reason,
+                      cycle_ts=plan.plan_ts
+                  )
+                  
+                  ctx.persistence.upsert_trade_audit_from_fills(
+                      symbol=plan.symbol,
+                      close_order_id=order_id,
+                      summary=fill_summary.__dict__,
+                      exit_reason=exit_reason,
+                      cycle_ts=plan.plan_ts.isoformat(),
+                      entry_price=entry_price,
+                      pattern_id=pos.get("pattern_id") if pos else None
+                  )
+                  print(f"[EXECUTOR] Audit verified via fills. Net PnL: {fill_summary.net_pnl:.2f}")
+
+             else:
+                 # Fallback Estimated
+                 ctx.persistence.mark_position_closed(
+                     symbol=plan.symbol,
+                     close_ts=plan.plan_ts,
+                     exit_price=avg_price,
+                     entry_price=entry_price,
+                     qty=pos_qty,
+                     pnl_usdt=pnl,
+                     pnl_is_estimated=pnl_is_estimated,
+                     exit_reason=exit_reason,
+                     cycle_ts=plan.plan_ts
+                 )
              
              if self._config.protective_cancel_on_close:
                  try:

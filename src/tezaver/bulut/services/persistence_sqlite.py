@@ -154,6 +154,38 @@ class SqlitePersistence:
             )
         """)
 
+        # Schema updates for v0.17 (Fill-Based TradeAudit)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS order_fills (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                symbol TEXT,
+                order_id INTEGER,
+                trade_id TEXT,
+                price REAL,
+                qty REAL,
+                realized_pnl REAL,
+                commission REAL,
+                commission_asset TEXT,
+                ts TEXT,
+                raw_json TEXT
+            )
+        """)
+        
+        # Alter trade_audit
+        cols_v17 = [
+            ("gross_pnl_usdt", "REAL"),
+            ("fee_usdt", "REAL"),
+            ("net_pnl_usdt", "REAL"),
+            ("pnl_source", "TEXT"),
+            ("close_order_id", "INTEGER"),
+            ("open_order_id", "INTEGER"),
+            ("pattern_id", "TEXT")
+        ]
+        for col, dtype in cols_v17:
+             try:
+                 cursor.execute(f"ALTER TABLE trade_audit ADD COLUMN {col} {dtype}")
+             except: pass
+
         conn.commit()
         conn.close()
 
@@ -192,6 +224,26 @@ class SqlitePersistence:
         conn.commit()
         conn.close()
 
+    def update_position_closed_state(self, symbol: str, close_ts: datetime, exit_reason: str, cycle_ts: Optional[datetime] = None):
+        """Update position to CLOSED state without auditing."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        
+        ts_str = close_ts.isoformat()
+        cycle_ts_str = cycle_ts.isoformat() if cycle_ts else ts_str
+        
+        cursor.execute("""
+            UPDATE positions SET 
+                status='CLOSED', 
+                update_ts=?, 
+                last_exit_reason=?,
+                last_exit_cycle_ts=?
+            WHERE symbol=?
+        """, (ts_str, exit_reason, cycle_ts_str, symbol))
+        
+        conn.commit()
+        conn.close()
+
     def mark_position_closed(
         self, 
         symbol: str, 
@@ -204,7 +256,7 @@ class SqlitePersistence:
         exit_reason: str = "MANUAL",
         cycle_ts: Optional[datetime] = None
     ):
-        """Mark position CLOSED and audit."""
+        """Mark position CLOSED and audit (ESTIMATED fallback)."""
         conn = self._get_conn()
         cursor = conn.cursor()
         
@@ -306,27 +358,7 @@ class SqlitePersistence:
         conn.close()
         return total if total else 0.0
 
-    def get_today_net_pnl_utc(self, date_str: Optional[str] = None) -> float:
-        """
-        Get net PnL for a specific date (YYYY-MM-DD) in UTC.
-        Defaults to today.
-        """
-        if not date_str:
-            date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-            
-        conn = self._get_conn()
-        cursor = conn.cursor()
-        
-        # pnl_usdt sum
-        query = "SELECT COALESCE(SUM(pnl_usdt), 0) FROM trade_audit WHERE substr(close_ts, 1, 10) = ?"
-        cursor.execute(query, (date_str,))
-        
-        total = cursor.fetchone()[0]
-        conn.close()
-        return total
-    
-    # Alias for compatibility if needed
-    get_today_net_pnl = get_today_net_pnl_utc
+
 
     # --- Trade Plans ---
 
@@ -480,3 +512,155 @@ class SqlitePersistence:
                 
         conn.close()
         return alerts
+
+    # --- Fill Sync (v0.17) ---
+
+    def insert_order_fills(self, fills: List[dict]):
+        """Batch insert order fills."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        
+        data = []
+        for f in fills:
+            data.append((
+                f.get("symbol"),
+                f.get("orderId"),
+                str(f.get("id")), # trade_id
+                float(f.get("price", 0)),
+                float(f.get("qty", 0)),
+                float(f.get("realizedPnl", 0)),
+                float(f.get("commission", 0)),
+                f.get("commissionAsset"),
+                str(f.get("time")), # usually timestamp ms
+                json.dumps(f)
+            ))
+            
+        cursor.executemany("""
+            INSERT INTO order_fills (
+                symbol, order_id, trade_id, price, qty, 
+                realized_pnl, commission, commission_asset, ts, raw_json
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, data)
+        
+        conn.commit()
+        conn.close()
+
+    def upsert_trade_audit_from_fills(
+        self,
+        symbol: str,
+        close_order_id: int,
+        summary: dict,
+        exit_reason: str,
+        cycle_ts: str,
+        entry_price: float,
+        # Optional pattern/open info if known
+        pattern_id: str = None
+    ):
+        """
+        Create/Update trade_audit record based on verified fills.
+        """
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        
+        now_ts = datetime.now(timezone.utc).isoformat()
+        
+        # summary: {qty, vwap, realized_pnl, commission, net_pnl, ts_last}
+        
+        # We insert a new record for this "Closed Position Event"
+        # Source=USER_TRADES
+        
+        cursor.execute("""
+            INSERT INTO trade_audit (
+                symbol, close_ts, exit_reason, 
+                entry_price, exit_price, qty,
+                pnl_usdt, pnl_is_estimated, cycle_ts,
+                gross_pnl_usdt, fee_usdt, net_pnl_usdt, 
+                pnl_source, close_order_id, pattern_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, 'USER_TRADES', ?, ?)
+        """, (
+            symbol, 
+            datetime.fromtimestamp(summary["ts_last"]/1000.0, timezone.utc).isoformat(),
+            exit_reason,
+            entry_price,
+            summary["vwap"],
+            summary["qty"],
+            summary["net_pnl"], # pnl_usdt = net for compat? Or gross? Let's use NET as authoritative pnl_usdt 
+            cycle_ts,
+            summary["realized_pnl"],
+            summary["commission"],
+            summary["net_pnl"],
+            close_order_id,
+            pattern_id
+        ))
+        
+        conn.commit()
+        conn.close()
+
+    def get_today_net_pnl_utc(self, date_str: Optional[str] = None) -> float:
+        """
+        Get TOTAL NET PnL for a specific date (YYYY-MM-DD) in UTC.
+        Uses net_pnl_usdt if available, else pnl_usdt (compat).
+        """
+        if not date_str:
+            date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        
+        # Logic: COALESCE(net_pnl_usdt, pnl_usdt, 0)
+        query = """
+            SELECT COALESCE(SUM(COALESCE(net_pnl_usdt, pnl_usdt, 0)), 0) 
+            FROM trade_audit 
+            WHERE substr(close_ts, 1, 10) = ?
+        """
+        cursor.execute(query, (date_str,))
+        
+        total = cursor.fetchone()[0]
+        conn.close()
+        return total
+
+    def get_today_pnl_stats_utc(self, date_str: Optional[str] = None) -> dict:
+        """
+        Get breakdown of PnL for a date (Net, Gross, Fees).
+        """
+        if not date_str:
+            date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        
+        # Net: COALESCE(net_pnl_usdt, pnl_usdt, 0)
+        # Gross: COALESCE(gross_pnl_usdt, pnl_usdt, 0)
+        # Fee: COALESCE(fee_usdt, 0)
+        
+        query = """
+            SELECT 
+                SUM(COALESCE(net_pnl_usdt, pnl_usdt, 0)),
+                SUM(COALESCE(gross_pnl_usdt, pnl_usdt, 0)),
+                SUM(COALESCE(fee_usdt, 0))
+            FROM trade_audit 
+            WHERE substr(close_ts, 1, 10) = ?
+        """
+        cursor.execute(query, (date_str,))
+        row = cursor.fetchone()
+        
+        conn.close()
+        
+        return {
+            "net_pnl": row[0] if row and row[0] else 0.0,
+            "gross_pnl": row[1] if row and row[1] else 0.0,
+            "fees": row[2] if row and row[2] else 0.0
+        }
+
+    def get_latest_audit(self, limit: int = 20) -> List[dict]:
+        """Get latest trade audit records."""
+        conn = self._get_conn()
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT * FROM trade_audit ORDER BY id DESC LIMIT ?", (limit,))
+        rows = cursor.fetchall()
+        
+        audit = [dict(row) for row in rows]
+        conn.close()
+        return audit

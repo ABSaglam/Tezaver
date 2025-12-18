@@ -67,6 +67,7 @@ class BulutContext:
         self._time_sync = None
         self._status_service = None
         self._incident_bundle = None
+        self._fill_sync = None
         
         # V0.12 Risk Bootstrap
         from tezaver.bulut.services.risk_rules_bootstrap import RiskRulesBootstrap
@@ -247,6 +248,25 @@ class BulutContext:
             # We use 'data/bulut_incidents' as default export dir
             self._incident_bundle = IncidentBundleService("data/bulut_incidents")
         return self._incident_bundle
+
+    @property
+    def fill_sync(self) -> Any:
+        if getattr(self, "_fill_sync", None) is None:
+            from tezaver.bulut.services.binance_futures_signed import BinanceFuturesSigned
+            from tezaver.bulut.services.fill_sync import FillSyncService
+            
+            # Create dedicated client for fill sync
+            # Note: Ideally share session, but separate instance is safer for lazy load
+            client = BinanceFuturesSigned(self.config, self.rate_limit_governor, self.time_sync)
+            
+            self._fill_sync = FillSyncService(
+                self.config,
+                client,
+                self.telemetry,
+                self.persistence, 
+                self.time_sync
+            )
+        return self._fill_sync
 
     def check_trade_lock(self) -> tuple[bool, Optional[str]]:
         """
