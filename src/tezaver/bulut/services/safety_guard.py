@@ -48,5 +48,14 @@ class SafetyGuard:
         # Check explicitly just to be safe if other reasons exist.
         if state.trade_locked:
              return False, f"SYSTEM_LOCKED_{state.trade_lock_reason}"
+             
+        # 6. Time Sync Check (v0.13)
+        if config.block_execution_if_time_sync_fail:
+            # Need to access time_sync from ctx.
+            # ctx has it as lazy property.
+            if hasattr(ctx, "time_sync") and ctx.time_sync:
+                healthy, _ = ctx.time_sync.is_healthy()
+                if not healthy:
+                    return False, "TIME_SYNC_UNHEALTHY"
         
         return True, None

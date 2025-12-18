@@ -109,6 +109,13 @@ class BulutConfig:
     group_caps_path: str = "data/bulut_rules/group_caps.json"
     default_group_cap_max_open: int = 1
     symbol_groups_path: str = "data/bulut_rules/symbol_groups.json"
+    
+    # v0.13 Time Sync
+    time_sync_enabled: bool = True
+    time_sync_refresh_seconds: int = 300
+    time_sync_max_skew_ms: int = 1000
+    recv_window_ms: int = 5000
+    block_execution_if_time_sync_fail: bool = True
 
     # Binance Credentials
     binance_api_key: Optional[str] = field(default_factory=lambda: os.getenv("BINANCE_API_KEY"))

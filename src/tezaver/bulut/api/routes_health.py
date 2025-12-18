@@ -37,6 +37,9 @@ async def health_detailed():
     ctx = get_context()
     state = ctx.state
     
+    # Time Sync Status
+    ts_healthy, ts_details = ctx.time_sync.is_healthy()
+    
     return {
         "status": "ok",
         "service": "tezaver-bulut",
@@ -46,4 +49,8 @@ async def health_detailed():
         "pattern_pack": ctx.pattern_loader.get_pack_summary(),
         "trade_locked": state.trade_locked,
         "trade_lock_reason": state.trade_lock_reason,
+        "time_sync": {
+            "healthy": ts_healthy,
+            "details": ts_details
+        }
     }

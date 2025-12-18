@@ -40,6 +40,11 @@ async def lifespan(app: FastAPI):
     _ = ctx.universe_source.load()
     _ = ctx.bars_store
     
+    # v0.13 Time Sync Init
+    if ctx.config.time_sync_enabled:
+        print("[BULUT] Initializing Time Sync...")
+        await ctx.time_sync.refresh()
+    
     # ExchangeInfo Refresh (v0.10)
     if ctx.config.exchangeinfo_refresh_on_start:
          print("[BULUT] Refreshing ExchangeInfo Filters...")
@@ -87,6 +92,9 @@ app.include_router(exchangeinfo_router)
 
 from tezaver.bulut.api.routes_risk import router as risk_router
 app.include_router(risk_router)
+
+from tezaver.bulut.api.routes_time_sync import router as time_sync_router
+app.include_router(time_sync_router)
 
 
 @app.get("/")

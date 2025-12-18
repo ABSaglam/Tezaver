@@ -64,10 +64,12 @@ class BulutContext:
         self._group_caps = None
         self._risk = None
         self._decider = None
+        self._time_sync = None
         
         # V0.12 Risk Bootstrap
         from tezaver.bulut.services.risk_rules_bootstrap import RiskRulesBootstrap
         RiskRulesBootstrap(self.config, self.telemetry).ensure_risk_rules()
+
     
     @property
     def config(self) -> BulutConfig:
@@ -152,7 +154,7 @@ class BulutContext:
         """Get execution engine (lazy-loaded)."""
         if getattr(self, "_executor", None) is None:
             from tezaver.bulut.engine.executor import Executor
-            self._executor = Executor(self.config, governor=self.rate_limit_governor)
+            self._executor = Executor(self.config, governor=self.rate_limit_governor, time_sync=self.time_sync)
         return self._executor
 
     @property
@@ -177,6 +179,13 @@ class BulutContext:
             from tezaver.bulut.services.group_caps_loader import GroupCapsLoader
             self._group_caps = GroupCapsLoader(self.config)
         return self._group_caps
+        
+    @property
+    def time_sync(self) -> Any:
+        if self._time_sync is None:
+            from tezaver.bulut.services.time_sync import TimeSyncService
+            self._time_sync = TimeSyncService(self.config, self.telemetry)
+        return self._time_sync
 
     @property
     def portfolio_risk(self) -> Any:

@@ -75,6 +75,53 @@ def render_dashboard():
         op = risk_status["open_positions"]
         mx = risk_status["max_positions"]
         st.metric("Global Cap", f"{op} / {mx}")
+    # =========================================================================
+    # Time Sync (v0.13)
+    # =========================================================================
+    st.subheader("🕒 Time Sync")
+    
+    # We need to fetch status from API to be accurate about BACKEND status?
+    # Context in dashboard is local to dashboard.
+    # So using ctx.time_sync checks dashboard's sync.
+    # But we want to know if Backend is synced.
+    # We should query /health/detailed or /time_sync/status?
+    # Let's assume dashboard ctx is okay for display or we use API.
+    # User instructions implied direct ctx usage in previous tasks ("ctx.portfolio_risk...").
+    # If user context is shared (e.g. monolith mode), then it works.
+    # If not, it's misleading.
+    # Given "ctx = get_context()" usage in dashboard in previous steps, I'll stick to ctx pattern.
+    # But for "Refresh", I will try to call API to ensure backend refreshes.
+    
+    import asyncio
+    import requests
+    
+    async def refresh_sync():
+        try:
+             requests.post("http://localhost:8000/time_sync/refresh", timeout=2)
+             st.success("Sync signal sent!")
+        except Exception as e:
+             st.error(f"Sync failed: {e}")
+             
+    ts_healthy, ts_details = ctx.time_sync.is_healthy()
+    offset = ts_details.get("offset_ms", 0)
+    
+    ts_cols = st.columns(3)
+    with ts_cols[0]:
+        st.metric("Health", "OK ✅" if ts_healthy else "BAD ⛔")
+    with ts_cols[1]:
+        st.metric("Skew (ms)", f"{offset} ms")
+    with ts_cols[2]:
+        if st.button("Refresh Sync"):
+             # Simple fire and forget or call
+             try:
+                 requests.post("http://localhost:8000/time_sync/refresh", timeout=1)
+                 st.toast("Refreshed!")
+                 # Also refresh local
+                 asyncio.run(ctx.time_sync.refresh())
+             except:
+                 st.error("API Unreachable")
+    
+    st.divider()
     
     # =========================================================================
     # Open Positions

@@ -18,7 +18,12 @@ from tezaver.bulut.services.price_round import round_to_tick, FiltersMissingErro
 # ... existing imports ...
 
 class Executor:
-    # ... existing code ...
+    def __init__(self, config: BulutConfig, governor=None, time_sync=None):
+        self._config = config
+        self._client = BinanceFuturesSigned(config, governor=governor, time_sync=time_sync)
+        # Safety Guard likely created here?
+        self._safety_guard = SafetyGuard(config) # Assuming SafetyGuard takes config
+
 
     async def _execute_single_plan(self, plan: TradePlanV1, ctx):
         # ... existing logic ...

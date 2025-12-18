@@ -18,13 +18,15 @@ class BinanceFuturesSigned:
     Authenticated Binance Client using HMAC-SHA256.
     """
     
-    def __init__(self, config: BulutConfig):
+    def __init__(self, config: BulutConfig, governor=None, time_sync=None):
         self._config = config
-        self._base_url = (
         self._governor = governor
+        self._time_sync = time_sync
+        
         self._base_url = "https://fapi.binance.com"
-        if config.use_testnet: # Assuming config.use_testnet is the flag for testnet
+        if config.use_testnet:
              self._base_url = "https://testnet.binancefuture.com"
+             
         self._session: Optional[aiohttp.ClientSession] = None
         self._api_key = config.binance_api_key
         self._api_secret = config.binance_api_secret
@@ -68,8 +70,16 @@ class BinanceFuturesSigned:
 
         # Add timestamp
         if signed:
-            params["timestamp"] = int(time.time() * 1000)
-            params["recvWindow"] = 5000 # Default recvWindow
+            # v0.13 Time Sync
+            ts = int(time.time() * 1000)
+            if self._time_sync:
+                await self._time_sync.reload_if_due()
+                ts = self._time_sync.now_ms()
+                
+            params["timestamp"] = ts
+            # Default recvWindow from config if available, else 5000
+            recv_win = getattr(self._config, "recv_window_ms", 5000)
+            params["recvWindow"] = recv_win
 
             # Sign
             query_string = urlencode(params)
@@ -85,12 +95,6 @@ class BinanceFuturesSigned:
             url = f"{self._base_url}{endpoint}?{query_string}"
         
         headers = {"X-MBX-APIKEY": self._api_key}
-        # For POST, Binance typically expects form-data or urlencoded body?
-        # Actually Binance supports query-string style parameters even for POST usually, or mixed.
-        # But safest is passing everything as params in URL for GET/DELETE,
-        # and as query params for POST too according to some docs, OR body.
-        # Binance fapi docs say parameters can be sent in query string or request body.
-        # Let's settle on query string for simplicity as signature is on query string easily.
         
         try:
             async with self._session.request(method, url, params=params, headers=headers) as resp:
