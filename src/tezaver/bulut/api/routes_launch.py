@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Query
-from tezaver.bulut.app_backend import get_context
+from tezaver.bulut.core.context import get_context
 
 router = APIRouter()
 

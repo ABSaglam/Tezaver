@@ -137,7 +137,17 @@ class StatusService:
         result.reducer = reducer_stats
         
         # Heartbeats (v0.23)
-        if ctx.persistence:
+        if hasattr(ctx, "persistence"):
              result.heartbeats = ctx.persistence.get_heartbeats()
              
+        # v0.28 Constitution
+        if hasattr(ctx, "constitution_guard"):
+             c = ctx.constitution_guard.get_current()
+             result.constitution = {
+                 "version": c["version"],
+                 "sha256_short": c["sha256_short"],
+                 "ts": c["ts"]
+             }
+
         return result
+```

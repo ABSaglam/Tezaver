@@ -26,16 +26,7 @@ def get_execution_status():
         
     return status
     
-    # Check guard status (simulation)
-        "enabled": ctx.config.execution_enabled,
-        "mode": ctx.config.mode,
-        "require_arm": ctx.config.require_arm,
-        "armed": bool(ctx.config.arm_token),
-        "safety_check": {
-            "allowed": allowed,
-            "block_reason": reason
-        }
-    }
+
 
 @router.post("/run_once")
 async def run_execution_cycle():

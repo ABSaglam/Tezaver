@@ -407,6 +407,13 @@ class BulutContext:
             self._migration_runner = MigrationRunner(self.persistence)
         return self._migration_runner
 
+    @property
+    def constitution_guard(self) -> Any:
+        if getattr(self, "_constitution_guard", None) is None:
+            from tezaver.bulut.services.constitution_guard import ConstitutionGuard
+            self._constitution_guard = ConstitutionGuard(self)
+        return self._constitution_guard
+
     def check_trade_lock(self) -> tuple[bool, Optional[str]]:
         """
         Checks if trading should be locked based on various conditions.

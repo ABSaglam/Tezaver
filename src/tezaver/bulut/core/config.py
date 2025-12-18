@@ -132,8 +132,15 @@ class BulutConfig:
     user_data_ws_enabled: bool = True
     user_data_keepalive_seconds: int = 1800 # 30 mins
     user_data_reconnect_backoff_ms: int = 500
-    user_data_max_backoff_ms: int = 8000
-    user_data_ws_base_url: str = field(default_factory=lambda: _env_str("USER_DATA_WS_BASE_URL", "wss://fstream.binance.com/ws"))
+    user_data_max_backoff_ms: int = 60000 
+    user_data_ws_base_url: str = "wss://fstream.binance.com/ws"
+
+    # v0.28 Constitution Lock
+    constitution_path: str = "docs/bulut_constitution_v1.md"
+    constitution_version: str = "bulut_constitution_v1"
+    constitution_checksum_enforce: bool = True
+    mainnet_pilot_max_total_notional_usdt: float = 50.0
+    mainnet_pilot_hours: int = 24
 
     # Endpoint Weights (approximate)
     endpoint_weights: Dict[str, int] = field(default_factory=lambda: {

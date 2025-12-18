@@ -14,18 +14,32 @@ def render_dashboard(ctx: BulutContext):
     """Render main dashboard."""
     st.title("Tezaver Bulut - Dashboard")
     
-    # v0.24 Mainnet Banner
+    # v0.24 Top Banner
     mode = ctx.config.mode
-    armed = ctx.executor.is_armed()
+    armed = ctx.execution_service.is_armed()
+    
+    # v0.28 Status
+    c_guard = ctx.constitution_guard.get_current()
+    c_ver = c_guard.get('version', '?')
+    c_hash = c_guard.get('sha256_short', '?')
+    
+    b_col1, b_col2, b_col3 = st.columns([1, 1, 2])
     
     if mode == "REAL_MAINNET":
-        if armed:
-             st.error(f"⚠️ MODE: {mode} | ARMED: YES (LIVE TRADING ENABLED)")
-        else:
-             st.warning(f"🛡️ MODE: {mode} | ARMED: NO")
+        b_col1.error(f"🚨 MODE: {mode}")
+    elif mode == "PAPER":
+        b_col1.warning(f"📝 MODE: {mode}")
     else:
-        st.success(f"🧪 MODE: {mode} | ARMED: {armed}")
+        b_col1.info(f"🧪 MODE: {mode}")
 
+    if armed:
+         b_col2.error("🔫 ARMED: YES")
+    else:
+         b_col2.success("🛡️ ARMED: NO")
+         
+    b_col3.caption(f"📜 {c_ver} ({c_hash})")
+
+    st.divider()
     # v0.24 Launch Checklist Panel
     with st.expander("🚀 Launch Checklist", expanded=(mode=="REAL_MAINNET")):
         c_col1, c_col2 = st.columns([3, 1])

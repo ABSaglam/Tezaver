@@ -434,13 +434,44 @@ def render_coin_detail_page(symbol: str):
 
 
 def render_cloud_mode():
-    # Title removed
-    st.sidebar.markdown("### Navigasyon")
-    if st.sidebar.button("🏠 Ana Sayfa", use_container_width=True):
-        st.rerun()
+    st.sidebar.markdown("### ☁️ Bulut Panel")
+    
+    # Sub-navigation for Cloud Mode
+    if 'cloud_nav' not in st.session_state:
+        st.session_state['cloud_nav'] = "Command Center"
         
-    st.sidebar.header("Sunucu Kontrol")
-    st.info("Bulut modu geliştirme aşamasında.")
+    menu_options = ["Command Center", "Live Charts", "Explorer", "Journal"]
+    
+    for opt in menu_options:
+         is_active = (st.session_state['cloud_nav'] == opt)
+         if st.sidebar.button(opt, key=f"cloud_btn_{opt}", use_container_width=True, type="primary" if is_active else "secondary"):
+             st.session_state['cloud_nav'] = opt
+             st.rerun()
+             
+    st.sidebar.markdown("---")
+    
+    # Mode Banner / Info
+    # Ideally should fetch status from backend if possible or just show static info
+    # ...
+    
+    # Main Content
+    import os
+    api_base = os.getenv("BULUT_BACKEND_URL", "http://localhost:8000")
+    
+    page = st.session_state['cloud_nav']
+    
+    if page == "Command Center":
+        from tezaver.bulut.ui.pages.command_center import render_command_center
+        render_command_center(api_base)
+    elif page == "Live Charts":
+        from tezaver.bulut.ui.pages.live_charts import render_live_charts
+        render_live_charts(api_base)
+    elif page == "Explorer":
+         from tezaver.bulut.ui.pages.explorer import render_explorer
+         render_explorer(api_base)
+    elif page == "Journal":
+         from tezaver.bulut.ui.pages.journal import render_journal
+         render_journal(api_base)
 
 def render_matrix_mode():
     from tezaver.ui.matrix_operator_tab import render_matrix_operator_tab

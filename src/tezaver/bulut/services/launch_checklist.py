@@ -154,6 +154,24 @@ class LaunchChecklist:
         checks.append({"name": "Config Drift", "pass": not has_drift, "detail": d_detail})
         if has_drift: all_passed = False
 
+        # 10. Constitution Checksum (v0.28)
+        # Check if checksum matches expected/recorded.
+        # check_and_alert() updates DB if changed, but returns "drift" if it was diff from DB.
+        # If enforce=True, drift = fail.
+        c_res = ctx.constitution_guard.check_and_alert()
+        c_pass = True
+        c_detail = "Verified"
+        
+        if c_res.get("drift"):
+            c_detail = f"Drift: {c_res.get('old_hash', '?')[:6]}->{c_res.get('new_hash', '?')[:6]}"
+            if ctx.config.constitution_checksum_enforce and ctx.config.mode == "REAL_MAINNET":
+                c_pass = False
+            else:
+                c_detail += " (Allowed)"
+                
+        checks.append({"name": "Constitution Lock", "pass": c_pass, "detail": c_detail})
+        if not c_pass: all_passed = False
+
         # Result
         self._last_run_ts = time.time()
         self._last_result = {

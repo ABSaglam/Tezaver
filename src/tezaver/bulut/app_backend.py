@@ -11,17 +11,13 @@ from contextlib import asynccontextmanager
 import asyncio
 
 from tezaver.bulut.core.context import bootstrap_context
-from tezaver.bulut.api.routes_health import router as health_router
-from tezaver.bulut.api.routes_ranking import router as ranking_router
-from tezaver.bulut.api.routes_trade import router as trade_router
-from tezaver.bulut.api.routes_bars import router as bars_router
-from tezaver.bulut.api.routes_daemon import router as daemon_router
-from tezaver.bulut.api.routes_plans import router as plans_router
-from tezaver.bulut.api.routes_execution import router as execution_router
-from tezaver.bulut.api.routes_reconcile import router as reconcile_router
-from tezaver.bulut.api.routes_positions import router as positions_router
-from tezaver.bulut.api.routes_exit_profiles import router as exit_profiles_router
-from tezaver.bulut.api.routes_exchangeinfo import router as exchangeinfo_router
+from tezaver.bulut.api import (
+    routes_health, routes_ranking, routes_trade, routes_bars, routes_daemon,
+    routes_plans, routes_execution, routes_reconcile, routes_positions,
+    routes_exit_profiles, routes_exchangeinfo, routes_time_sync, routes_ops,
+    routes_income, routes_fx, routes_env, routes_launch, routes_config,
+    routes_migrations, routes_ui
+)
 
 
 @asynccontextmanager
@@ -126,6 +122,9 @@ async def lifespan(app: FastAPI):
                 # We can't easily exit here without crashing uvicorn, but we can try
                 raise e
 
+    # v0.28 Constitution Check (Startup)
+    ctx.constitution_guard.check_and_alert()
+
     # Start all via Supervisor
     await ctx.task_supervisor.start_all()
 
@@ -177,6 +176,7 @@ app.include_router(routes_launch.router, prefix="/launch", tags=["Launch"])
 app.include_router(routes_plans.router, prefix="/plans", tags=["Plans"])
 app.include_router(routes_config.router, prefix="/config", tags=["Config"])
 app.include_router(routes_migrations.router, prefix="/migrations", tags=["Migrations"])
+app.include_router(routes_ui.router, prefix="/ui", tags=["UI"])
 
 
 @app.get("/")

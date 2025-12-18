@@ -297,12 +297,17 @@ class SqlitePersistence:
         conn.commit()
         conn.close()
 
-    def get_latest_config_snapshot(self) -> Optional[dict]:
-        """Get the most recent config snapshot."""
+    def get_latest_config_snapshot(self, source: Optional[str] = None) -> Optional[dict]:
+        """Get the most recent config snapshot, optionally filtered by source."""
         conn = self._get_conn()
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM config_snapshots ORDER BY id DESC LIMIT 1")
+        
+        if source:
+            cursor.execute("SELECT * FROM config_snapshots WHERE source = ? ORDER BY id DESC LIMIT 1", (source,))
+        else:
+            cursor.execute("SELECT * FROM config_snapshots ORDER BY id DESC LIMIT 1")
+            
         row = cursor.fetchone()
         conn.close()
         return dict(row) if row else None
