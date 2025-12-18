@@ -45,7 +45,7 @@ class BinanceFuturesRest:
         
         # Rate Limit
         if self._governor:
-            await self._governor.acquire(weight=2, endpoint="klines")
+            await self._governor.acquire("MARKET", "GET:/fapi/v1/klines")
             
         # Ensure session
         if not self._session:
@@ -67,7 +67,7 @@ class BinanceFuturesRest:
         url = f"{self._base_url}/fapi/v1/exchangeInfo"
         
         if self._governor:
-            await self._governor.acquire(weight=1, endpoint="exchangeInfo")
+            await self._governor.acquire("MARKET", "GET:/fapi/v1/exchangeInfo")
             
         # Ensure session
         if not self._session:

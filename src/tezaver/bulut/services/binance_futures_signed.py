@@ -48,20 +48,23 @@ class BinanceFuturesSigned:
         ).hexdigest()
         return signature
 
-    async def _request(self, method: str, endpoint: str, params: Dict = None, signed: bool = True, weight: int = 1) -> Dict:
-        """Make signed request."""
+    async def _request(self, method: str, endpoint: str, params: Dict = None, signed: bool = True) -> Dict:
+        """Internal helper for signed requests."""
         if params is None:
             params = {}
 
         if not self._session:
             await self.create_session()
             
-        if not self._api_key or not self._api_secret:
-            raise ValueError("API Key/Secret missing")
+        if not self._api_key:
+            raise ValueError("API Key missing")
 
         # Governor
         if self._governor:
-             await self._governor.acquire(weight, endpoint.split("/")[-1]) # coarse endpoint name
+             # Construct config key e.g. "POST:/fapi/v1/order"
+             key = f"{method}:{endpoint}"
+             # Default to TRADE channel for signed ops
+             await self._governor.acquire("TRADE", key)
 
         # Add timestamp
         if signed:
@@ -184,7 +187,7 @@ class BinanceFuturesSigned:
         params = {}
         if symbol:
             params["symbol"] = symbol
-        return await self._request("GET", "/fapi/v2/positionRisk", params, weight=5)
+        return await self._request("GET", "/fapi/v2/positionRisk", params)
 
     async def get_open_orders(self, symbol: Optional[str] = None) -> Any:
         """Get open orders."""

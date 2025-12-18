@@ -85,9 +85,10 @@ class NdjsonTelemetry:
         """Emit filters violation event."""
         self.emit("FILTERS_VIOLATION", {"symbol": symbol, "reason": reason})
 
-    def emit_request_budget(self, used: int, budget: int, window_age: float):
+    def emit_request_budget(self, used: int, budget: int, window_age: float, channel: str = "GLOBAL"):
         """Emit rate limit budget stats."""
         self.emit("REQUEST_BUDGET", {
+            "channel": channel,
             "used": used,
             "budget": budget,
             "pct": round((used / budget) * 100, 1) if budget > 0 else 0,

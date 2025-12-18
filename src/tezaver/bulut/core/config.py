@@ -8,7 +8,7 @@ NO MATRIX IMPORTS - Bulut is standalone.
 
 import os
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 
 def _env_str(key: str, default: str) -> str:
@@ -83,12 +83,27 @@ class BulutConfig:
     exchangeinfo_symbols_mode: str = "ALL"
     block_if_filters_missing: bool = True
 
-    # Rate Limit Governor (v0.11)
+    # Rate Limit Governor (v0.11/v0.11.1)
     rate_limit_enabled: bool = True
-    rate_limit_budget_per_min: int = 2000
+    rate_limit_budget_market_per_min: int = 1800
+    rate_limit_budget_trade_per_min: int = 200
     rate_limit_safety_pct: float = 0.85
     backoff_base_ms: int = 250
     backoff_max_ms: int = 8000
+    
+    # Endpoint Weights (v0.11.1)
+    endpoint_weights: Dict[str, int] = field(default_factory=lambda: {
+        "GET:/fapi/v1/klines": 1, 
+        # Note: klines weight depends on limit. default limit=99 is weight 1.
+        # If limit > 100, weight increases. We usually use small limit.
+        "GET:/fapi/v1/exchangeInfo": 1,
+        "GET:/fapi/v1/openOrders": 1,
+        "GET:/fapi/v2/positionRisk": 5,
+        "POST:/fapi/v1/order": 1,     # Limit order is 0, Market is 1? Docs say Order is 0. 
+        # But let's be conservative with 1 for now.
+        "DELETE:/fapi/v1/order": 1,
+        "DELETE:/fapi/v1/allOpenOrders": 1
+    })
 
     # Binance Credentials
     binance_api_key: Optional[str] = field(default_factory=lambda: os.getenv("BINANCE_API_KEY"))
