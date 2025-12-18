@@ -14,6 +14,7 @@ from pathlib import Path
 from tezaver.bulut.core.config import BulutConfig
 from tezaver.bulut.core.paths import get_project_root  # We might need project root for relative paths if needed, but config usually has full/relative path
 
+class ExchangeInfoCache:
     def __init__(self, config: BulutConfig, telemetry_service=None):
         self._config = config
         self._telemetry = telemetry_service

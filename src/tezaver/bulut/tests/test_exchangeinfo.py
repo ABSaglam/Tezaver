@@ -44,7 +44,7 @@ def mock_context():
     # We can patch `tezaver.bulut.core.context.get_context`.
     return ctx
 
-@patch("tezaver.bulut.core.context.get_context")
+@patch("tezaver.bulut.services.price_round.get_context")
 def test_round_to_tick(mock_get_ctx, mock_context):
     mock_get_ctx.return_value = mock_context
     mock_context.exchangeinfo_cache.get_filters.side_effect = lambda s: MOCK_FILTERS.get(s)
@@ -66,9 +66,12 @@ def test_round_to_tick(mock_get_ctx, mock_context):
     assert round_to_tick("ETHUSDT", 2000.001, "DOWN") == 2000.00
     assert round_to_tick("ETHUSDT", 2000.001, "UP") == 2000.01
 
-@patch("tezaver.bulut.core.context.get_context")
-def test_filters_missing_block(mock_get_ctx, mock_context):
-    mock_get_ctx.return_value = mock_context
+@patch("tezaver.bulut.services.qty_calc.get_context")
+@patch("tezaver.bulut.services.price_round.get_context")
+def test_filters_missing_block(mock_get_ctx_round, mock_get_ctx_qty, mock_context):
+    # Both mocks return same context
+    mock_get_ctx_round.return_value = mock_context
+    mock_get_ctx_qty.return_value = mock_context
     mock_context.exchangeinfo_cache.get_filters.return_value = None # No filters
     
     with pytest.raises(FiltersMissingError):
@@ -78,7 +81,7 @@ def test_filters_missing_block(mock_get_ctx, mock_context):
     qty = QuantityCalculator.calculate_qty("UNKNOWN", 100.0, 1000.0)
     assert qty == 0.0
 
-@patch("tezaver.bulut.core.context.get_context")
+@patch("tezaver.bulut.services.qty_calc.get_context")
 def test_qty_calc(mock_get_ctx, mock_context):
     mock_get_ctx.return_value = mock_context
     mock_context.exchangeinfo_cache.get_filters.side_effect = lambda s: MOCK_FILTERS.get(s)
