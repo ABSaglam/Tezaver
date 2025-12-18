@@ -440,7 +440,7 @@ def render_cloud_mode():
     if 'cloud_nav' not in st.session_state:
         st.session_state['cloud_nav'] = "Command Center"
         
-    menu_options = ["Command Center", "Live Charts", "Explorer", "Journal"]
+    menu_options = ["Command Center", "Live Charts", "Explorer", "Journal", "Rules Editor"]
     
     for opt in menu_options:
          is_active = (st.session_state['cloud_nav'] == opt)
@@ -449,10 +449,6 @@ def render_cloud_mode():
              st.rerun()
              
     st.sidebar.markdown("---")
-    
-    # Mode Banner / Info
-    # Ideally should fetch status from backend if possible or just show static info
-    # ...
     
     # Main Content
     import os
@@ -472,6 +468,9 @@ def render_cloud_mode():
     elif page == "Journal":
          from tezaver.bulut.ui.pages.journal import render_journal
          render_journal(api_base)
+    elif page == "Rules Editor":
+         from tezaver.bulut.ui.pages.rules_editor import render_rules_editor
+         render_rules_editor(api_base)
 
 def render_matrix_mode():
     from tezaver.ui.matrix_operator_tab import render_matrix_operator_tab

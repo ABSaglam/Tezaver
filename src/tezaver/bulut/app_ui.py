@@ -13,56 +13,23 @@ from tezaver.bulut.ui.pages.dashboard import render_dashboard
 from tezaver.bulut.ui.pages.command_center import render_command_center
 from tezaver.bulut.ui.pages.live_charts import render_live_charts
 from tezaver.bulut.ui.pages.explorer import render_explorer
-from tezaver.bulut.ui.pages.journal import render_journal
+from tezaver.bulut.ui.pages.rules_editor import render_rules_editor
 
 def main():
     """Main Streamlit application."""
-    st.set_page_config(
-        page_title="Tezaver Bulut",
-        page_icon="🌩️",
-        layout="wide",
-    )
-    
-    # Bootstrap context on first run (needed for shared config/state if local mode)
-    if "bulut_initialized" not in st.session_state:
-        ctx = bootstrap_context()
-        ctx.load_pattern_pack()
-        st.session_state.bulut_initialized = True
-    
-    # Sidebar
-    with st.sidebar:
-        st.title("🌩️ Tezaver Bulut")
-        st.caption("Cloud Trading System v0.29")
-        
-        st.divider()
-        
-        # Quick status from LOCAL context (might differ from backend if not synced DB)
-        ctx = get_context()
-        if hasattr(ctx, "state") and ctx.state.trade_locked:
-            st.error(f"🔒 Locked: {ctx.state.trade_lock_reason}")
-        
-        st.divider()
-        
-        # Navigation
+    # ...
+    # Navigation
         page = st.radio(
             "Navigation",
-            ["Dashboard", "Command Center", "Live Charts", "Explorer", "Journal"],
+            ["Dashboard", "Command Center", "Live Charts", "Explorer", "Journal", "Rules Editor"],
             label_visibility="collapsed",
         )
-        
-        st.divider()
-        if st.button("🔄 Reload Pattern Pack"):
-             ctx.load_pattern_pack()
-             st.rerun()
-
+    # ...
     # Main content
-    api_base = "http://localhost:8000" # Standalone default
+    api_base = "http://localhost:8000"
     
     if page == "Dashboard":
-        render_dashboard() # Dashboard might not be refactored yet? Let's check. 
-        # I did not refactor dashboard.py in previous steps BUT user prompt asked for it in list?
-        # "Ensure ui/pages/dashboard.py (Bulut Dashboard) follows a similar pattern or is wrapped."
-        # I skipped it in refactor step! I should check dashboard.py.
+        render_dashboard() 
     elif page == "Command Center":
         render_command_center(api_base)
     elif page == "Live Charts":
@@ -71,6 +38,8 @@ def main():
         render_explorer(api_base)
     elif page == "Journal":
         render_journal(api_base)
+    elif page == "Rules Editor":
+        render_rules_editor(api_base)
 
 
 if __name__ == "__main__":
