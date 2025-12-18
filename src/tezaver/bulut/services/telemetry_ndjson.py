@@ -5,9 +5,10 @@ Each line is a standalone JSON event.
 """
 
 import json
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 
 class NdjsonTelemetry:

@@ -167,6 +167,38 @@ def render_dashboard():
             st.write(f"- Scan Min Score: `{config['scan_min_score']}`")
     
     # =========================================================================
+    # Exchange Info / Filters
+    # =========================================================================
+    with st.expander("🛠️ Exchange Info Cache"):
+        status = ctx.exchangeinfo_cache.get_status()
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.write(f"**Symbols**: {status.get('symbols_count')}")
+            st.write(f"**Age**: {status.get('age_seconds'):.1f}s")
+            st.write(f"**Fresh**: {'✅' if status.get('is_fresh') else '⚠️'}")
+            
+        with col2:
+            if st.button("Refresh Filters"):
+                with st.spinner("Fetching from Binance..."):
+                    import asyncio
+                    # Hack for streaming runner? async?
+                    # Streamlit handles async by default in 1.2+?
+                    # Or we need asyncio.run if sync.
+                    # ctx.exchangeinfo_cache.refresh() is async.
+                    # streamlit usually runs in a loop.
+                    # We can use ctx.exchangeinfo_cache.refresh() direct if `render_dashboard` is async?
+                    # It is not.
+                    # asyncio.run() might hit loop issues if already loop.
+                    # Streamlit runs in a separate thread.
+                    try:
+                        asyncio.run(ctx.exchangeinfo_cache.refresh())
+                        st.success("Refreshed!")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Failed: {e}")
+
+    # =========================================================================
     # Pattern Pack Info
     # =========================================================================
     with st.expander("📦 Pattern Pack"):

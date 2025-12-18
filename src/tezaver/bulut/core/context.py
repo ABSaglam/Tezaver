@@ -59,6 +59,7 @@ class BulutContext:
         self._pattern_loader = None
         self._universe_source = None
         self._bars_store = None
+        self._exchange_cache = None
     
     @property
     def config(self) -> BulutConfig:
@@ -147,6 +148,14 @@ class BulutContext:
         return self._executor
 
     @property
+    def exchangeinfo_cache(self) -> Any:
+        """Get exchange info cache (lazy-loaded)."""
+        if self._exchange_cache is None:
+            from tezaver.bulut.services.exchangeinfo_cache import ExchangeInfoCache
+            self._exchange_cache = ExchangeInfoCache(self.config, self.telemetry)
+        return self._exchange_cache
+
+    @property
     def reconciliation_service(self) -> Any:
         """Get reconciliation service (lazy-loaded)."""
         if getattr(self, "_reconciler", None) is None:
@@ -171,7 +180,9 @@ class BulutContext:
         return self._exit_engine
 
     def check_trade_lock(self) -> tuple[bool, Optional[str]]:
-            (is_locked, reason)
+        """
+        Checks if trading should be locked based on various conditions.
+        Returns a tuple: (is_locked, reason_if_locked)
         """
         # Rule 1: Pattern pack must be loaded
         if not self._state.pattern_pack_loaded:

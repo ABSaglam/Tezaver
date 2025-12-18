@@ -4,54 +4,57 @@ Calculates order quantity with precision rules.
 """
 
 from typing import Optional
-from decimal import Decimal, ROUND_DOWN
-
-# We will need exchange info filters later.
-# For now simple logic.
+from decimal import Decimal, ROUND_FLOOR
+from tezaver.bulut.core.context import get_context
 
 class QuantityCalculator:
+    """
+    Calculates trade quantities respecting exchange filters.
+    """
     
     @staticmethod
-    def calculate_qty(
-        symbol: str, 
-        price: float, 
-        notional: float,
-        step_size: float = 0.001, # Fallback
-        min_qty: float = 0.001    # Fallback
-    ) -> float:
+    def calculate_qty(symbol: str, price: float, notional_usdt: float) -> float:
         """
-        Calculate quantity based on notional and price.
-        Applies step_size rounding (DOWN) and min_qty check.
+        Calculate quantity from notional, rounding down to stepSize.
+        Checks minQty.
+        Returns 0.0 if blocked or invalid.
         """
         if price <= 0:
             return 0.0
             
-        raw_qty = notional / price
+        ctx = get_context()
+        filters = ctx.exchangeinfo_cache.get_filters(symbol)
         
-        if raw_qty < min_qty:
-            return 0.0
+        step_size = 0.0
+        min_qty = 0.0
+        
+        if filters:
+            step_size = filters.get("stepSize", 0.0)
+            min_qty = filters.get("minQty", 0.0)
             
-        # Round down to step_size
-        # qty - (qty % step_size) generally works
-        # or use decimal
+        if step_size <= 0:
+            if ctx.config.block_if_filters_missing:
+                ctx.telemetry.emit_filters_missing(symbol, "qty_calc")
+                return 0.0
+            else:
+                # Fallback: assume 3 decimals
+                raw_qty = notional_usdt / price
+                return round(raw_qty, 3)
+                
+        # Calculate raw qty
+        raw_qty = notional_usdt / price
         
-        # Decimal approach for precision
+        # Round DOWN to stepSize (using Decimal to avoid float errors)
         d_qty = Decimal(str(raw_qty))
         d_step = Decimal(str(step_size))
         
-        # Quantize equivalent involves dividing, floor, multiplying
-        # (qty // step) * step
+        # qty / step -> floor -> * step
+        rounded_qty = (d_qty / d_step).to_integral_value(rounding=ROUND_FLOOR) * d_step
+        final_qty = float(rounded_qty)
         
-        # Simple math with float tolerance
-        steps = int(raw_qty / step_size)
-        final_qty = steps * step_size
-        
-        # Round to avoid 0.00100000001 issues
-        # guess precision from step size string length?
-        # 0.001 -> 3 decimals
-        decimals = 0
-        s_step = str(float(step_size))
-        if "." in s_step:
-            decimals = len(s_step.split(".")[1])
+        # MinQty Check
+        if final_qty < min_qty:
+            ctx.telemetry.emit_filters_violation(symbol, f"QTY_BELOW_MIN: {final_qty} < {min_qty}")
+            return 0.0
             
-        return round(final_qty, decimals)
+        return final_qty
