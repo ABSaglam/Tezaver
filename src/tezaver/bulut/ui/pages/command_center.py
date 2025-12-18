@@ -2,7 +2,13 @@ import streamlit as st
 from tezaver.bulut.ui.http_client import call_api
 from tezaver.bulut.ui.components.ops_token_box import render_ops_token_box
 
+from tezaver.bulut.core.config import get_config
+
 def render_command_center(api_base: str = "http://localhost:8000"):
+    cfg = get_config()
+    if cfg.deploy_env == "PROD" and not st.session_state.get("ops_token"):
+         st.error("⚠️ PRODUCTION MODE: OPS TOKEN MISSING! MUTATIONS LOCKED.")
+
     st.header("🎮 Command Center")
     
     # Auth Box in Sidebar

@@ -243,6 +243,35 @@ async def ops_auth_middleware(request: Request, call_next):
     response = await call_next(request)
     return response
 
+# v0.33 Deploy Hardening Middlewares
+# Starlette: LAST added = OUTERMOST (executed first on request, last on response)
+# Desired order (outer -> inner): SecureHeaders -> TrustedHost -> CORS -> RateLimit
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.middleware.cors import CORSMiddleware
+from tezaver.bulut.core.middleware_security import SecureHeadersMiddleware, BasicRateLimitMiddleware
+
+security_cfg = get_config()
+
+# 1. Rate Limit (Innermost for security middleware)
+app.add_middleware(BasicRateLimitMiddleware, config=security_cfg)
+
+# 2. CORS (if enabled)
+if security_cfg.cors_allowed_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=security_cfg.cors_allowed_origins,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+# 3. Trusted Host
+if security_cfg.allowed_hosts:
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=security_cfg.allowed_hosts)
+
+# 4. Secure Headers (OUTERMOST - headers on ALL responses including 429/400)
+app.add_middleware(SecureHeadersMiddleware, config=security_cfg)
+
+
 # Include routers
 # Note: Routers define their own prefix usually, but here we enforce it or double it?
 # routes_health defines prefix="/health". app.include... prefix="/health" => /health/health.

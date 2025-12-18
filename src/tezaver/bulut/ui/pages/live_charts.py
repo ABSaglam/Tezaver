@@ -343,3 +343,6 @@ def render_live_charts_page():
 
 if __name__ == "__main__":
     render_live_charts_page()
+
+# Backward-compat alias
+render_live_charts = render_live_charts_page

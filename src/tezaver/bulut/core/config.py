@@ -159,11 +159,23 @@ class BulutConfig:
     proof_ladder_stages_path: str = field(default_factory=lambda: _env_str("PROOF_LADDER_STAGES_PATH", "data/bulut_rules/proof_ladder_stages.json"))
     proof_ladder_allow_advance_when_armed: bool = field(default_factory=lambda: str(_env_str("PROOF_LADDER_ALLOW_ADVANCE_WHEN_ARMED", "false")).lower() == "true")
 
+
     # Ops Auth Gate (v0.32)
     ops_auth_enabled: bool = field(default_factory=lambda: str(_env_str("OPS_AUTH_ENABLED", "true")).lower() == "true")
     ops_auth_token_env: str = field(default_factory=lambda: _env_str("TEZAVER_OPS_TOKEN", ""))
     ops_auth_header: str = field(default_factory=lambda: _env_str("OPS_AUTH_HEADER", "X-TEZAVER-OPS-TOKEN"))
     ops_auth_readonly_allow: bool = field(default_factory=lambda: str(_env_str("OPS_AUTH_READONLY_ALLOW", "true")).lower() == "true")
+
+    # Deploy Hardening (v0.33)
+    deploy_env: str = field(default_factory=lambda: _env_str("DEPLOY_ENV", "DEV")) # DEV | PROD
+    allowed_hosts: List[str] = field(default_factory=lambda: _env_list("ALLOWED_HOSTS", "localhost,127.0.0.1"))
+    cors_allowed_origins: List[str] = field(default_factory=lambda: _env_list("CORS_ALLOWED_ORIGINS", "")) # Empty means CORS off or extremely restricted default? Usually empty means "same origin" in strict. Here we'll toggle middleware.
+    trust_proxy_headers: bool = field(default_factory=lambda: str(_env_str("TRUST_PROXY_HEADERS", "true")).lower() == "true")
+    secure_headers_enabled: bool = field(default_factory=lambda: str(_env_str("SECURE_HEADERS_ENABLED", "true")).lower() == "true")
+    basic_rate_limit_enabled: bool = field(default_factory=lambda: str(_env_str("BASIC_RATE_LIMIT_ENABLED", "true")).lower() == "true")
+    basic_rate_limit_rps: int = field(default_factory=lambda: _env_int("BASIC_RATE_LIMIT_RPS", 5))
+    basic_rate_limit_burst: int = field(default_factory=lambda: _env_int("BASIC_RATE_LIMIT_BURST", 20))
+
 
 
     # Endpoint Weights (approximate)
