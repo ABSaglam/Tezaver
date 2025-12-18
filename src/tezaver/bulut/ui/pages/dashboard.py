@@ -97,8 +97,27 @@ def render_dashboard():
                 df_audit["Net PnL"] = df_audit["net_pnl_usdt"].fillna(df_audit["pnl_usdt"])
             else:
                 df_audit["Net PnL"] = df_audit["pnl_usdt"]
+            
+            # Upgraded Indicator
+            def _fmt_source(row):
+                src = row.get("pnl_source", "UNKNOWN")
+                upg = row.get("audit_upgraded", 0)
+                if upg:
+                    return f"{src} 🛠️"
+                return src
                 
-            cols_audit = ["close_ts", "symbol", "Net PnL", "pnl_source", "exit_reason", "pattern_id"]
+            df_audit["Source"] = df_audit.apply(_fmt_source, axis=1)
+            
+            # Fee Display
+            def _fmt_fee(row):
+                native = row.get("fee_native", 0)
+                asset = row.get("fee_asset", "USDT")
+                if native == 0: return "0"
+                return f"{native:.4f} {asset}"
+                
+            df_audit["Fee (Native)"] = df_audit.apply(_fmt_fee, axis=1)
+                
+            cols_audit = ["close_ts", "symbol", "Net PnL", "Source", "Fee (Native)", "exit_reason", "pattern_id"]
             # Available cols
             cols_audit = [c for c in cols_audit if c in df_audit.columns]
             

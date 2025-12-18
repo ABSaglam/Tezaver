@@ -179,7 +179,10 @@ class SqlitePersistence:
             ("pnl_source", "TEXT"),
             ("close_order_id", "INTEGER"),
             ("open_order_id", "INTEGER"),
-            ("pattern_id", "TEXT")
+            ("pattern_id", "TEXT"),
+            ("fee_asset", "TEXT"),
+            ("fee_native", "REAL"),
+            ("audit_upgraded", "INTEGER DEFAULT 0")
         ]
         for col, dtype in cols_v17:
              try:
@@ -254,7 +257,8 @@ class SqlitePersistence:
         pnl_usdt: float = 0.0,
         pnl_is_estimated: bool = False,
         exit_reason: str = "MANUAL",
-        cycle_ts: Optional[datetime] = None
+        cycle_ts: Optional[datetime] = None,
+        close_order_id: Optional[int] = None
     ):
         """Mark position CLOSED and audit (ESTIMATED fallback)."""
         conn = self._get_conn()
@@ -278,13 +282,15 @@ class SqlitePersistence:
             INSERT INTO trade_audit (
                 symbol, close_ts, exit_reason, 
                 entry_price, exit_price, qty, 
-                pnl_usdt, pnl_is_estimated, cycle_ts
+                pnl_usdt, pnl_is_estimated, cycle_ts,
+                pnl_source, close_order_id
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'ESTIMATED', ?)
         """, (
             symbol, ts_str, exit_reason,
             entry_price, exit_price, qty,
-            pnl_usdt, 1 if pnl_is_estimated else 0, cycle_ts_str
+            pnl_usdt, 1 if pnl_is_estimated else 0, cycle_ts_str,
+            close_order_id
         ))
         
         conn.commit()
@@ -564,7 +570,7 @@ class SqlitePersistence:
         
         now_ts = datetime.now(timezone.utc).isoformat()
         
-        # summary: {qty, vwap, realized_pnl, commission, net_pnl, ts_last}
+        # summary: {qty, vwap, realized_pnl, commission, commission_asset, net_pnl, ts_last}
         
         # We insert a new record for this "Closed Position Event"
         # Source=USER_TRADES
@@ -575,8 +581,9 @@ class SqlitePersistence:
                 entry_price, exit_price, qty,
                 pnl_usdt, pnl_is_estimated, cycle_ts,
                 gross_pnl_usdt, fee_usdt, net_pnl_usdt, 
-                pnl_source, close_order_id, pattern_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, 'USER_TRADES', ?, ?)
+                pnl_source, close_order_id, pattern_id,
+                fee_asset, fee_native
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, 'USER_TRADES', ?, ?, ?, ?)
         """, (
             symbol, 
             datetime.fromtimestamp(summary["ts_last"]/1000.0, timezone.utc).isoformat(),
@@ -587,14 +594,78 @@ class SqlitePersistence:
             summary["net_pnl"], # pnl_usdt = net for compat? Or gross? Let's use NET as authoritative pnl_usdt 
             cycle_ts,
             summary["realized_pnl"],
-            summary["commission"],
+            summary["commission"] if summary.get("commission_asset") == "USDT" else 0.0, # fee_usdt only if USDT
             summary["net_pnl"],
             close_order_id,
-            pattern_id
+            pattern_id,
+            summary.get("commission_asset"),
+            summary.get("commission")
         ))
         
         conn.commit()
         conn.close()
+
+    def upgrade_trade_audit_from_fills(self, symbol: str, close_order_id: int, summary: dict) -> bool:
+        """
+        Attempt to upgrade an ESTIMATED audit record to USER_TRADES using verified fills.
+        Returns True if a record was found and upgraded.
+        """
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        
+        # We look for a record with same close_order_id that is still ESTIMATED
+        # or has pnl_source='ESTIMATED'
+        # Note: Previous mark_position_closed used estimated price/pnl.
+        # It didn't have close_order_id set? Wait, executor passes close_order_id to upsert_trade_audit_from_fills.
+        # But mark_position_closed DOES NOT take close_order_id in v0.17!
+        # Wait, I need to check executor.py from v0.17...
+        # In v0.17 executor.py: mark_position_closed was called WITHOUT close_order_id.
+        # So we might need to match by symbol and cycle_ts or just symbol if it's the latest?
+        # Actually, user requested: "Eğer aynı close_order_id için trade_audit varsa ve pnl_source=="ESTIMATED""
+        # This implies I should have added close_order_id to mark_position_closed too,
+        # or find it by other means.
+        # Let's check trade_audit columns I added in _init_db... I added close_order_id.
+        
+        # Calculation
+        realized = summary.get("realized_pnl", 0.0)
+        comm = summary.get("commission", 0.0)
+        asset = summary.get("commission_asset", "USDT")
+        
+        net_usdt = realized
+        if asset == "USDT":
+            net_usdt = realized - comm
+            
+        cursor.execute("""
+            UPDATE trade_audit
+            SET gross_pnl_usdt = ?,
+                fee_usdt = ?,
+                fee_native = ?,
+                fee_asset = ?,
+                net_pnl_usdt = ?,
+                pnl_usdt = ?,
+                exit_price = ?,
+                qty = ?,
+                pnl_source = 'USER_TRADES',
+                audit_upgraded = 1,
+                pnl_is_estimated = 0
+            WHERE symbol = ? AND close_order_id = ? AND pnl_source = 'ESTIMATED'
+        """, (
+            realized,
+            comm if asset == "USDT" else 0.0,
+            comm,
+            asset,
+            net_usdt,
+            net_usdt, # legacy pnl_usdt
+            summary.get("vwap"),
+            summary.get("qty"),
+            symbol,
+            close_order_id
+        ))
+        
+        upgraded = cursor.rowcount > 0
+        conn.commit()
+        conn.close()
+        return upgraded
 
     def get_today_net_pnl_utc(self, date_str: Optional[str] = None) -> float:
         """

@@ -5,6 +5,7 @@ Handles lifecycle: Plan -> Order -> Fill.
 """
 
 import asyncio
+import time
 from typing import List, Optional
 
 from tezaver.bulut.core.config import BulutConfig
@@ -241,17 +242,34 @@ class Executor:
              elif "exit_reason" in plan.reasons:
                  exit_reason = plan.reasons["exit_reason"]
              
-             # v0.17 Fill Sync
+             # v0.17.1 Fill Sync Hardening (Retry + Upgrade)
              fill_summary = None
              order_id = int(res.get("orderId", 0)) if res else 0
              
              if order_id > 0 and ctx.fill_sync:
                  try:
-                     print(f"[EXECUTOR] Syncing fills for order {order_id}...")
-                     # Await a bit for Binance backend propagation? 
-                     # API weight is 5. We can wait 1s.
-                     await asyncio.sleep(1.0) 
-                     fill_summary = await ctx.fill_sync.sync_order_fills(plan.symbol, order_id=order_id)
+                     max_wait = getattr(self._config, "fill_sync_max_wait_seconds", 6)
+                     interval = getattr(self._config, "fill_sync_retry_interval_ms", 400) / 1000.0
+                     
+                     start_sync = time.time()
+                     attempts = 0
+                     
+                     while (time.time() - start_sync) < max_wait:
+                         attempts += 1
+                         fill_summary = await ctx.fill_sync.sync_order_fills(plan.symbol, order_id=order_id)
+                         if fill_summary:
+                             ctx.telemetry.emit("FILL_SYNC_RETRY", {
+                                 "symbol": plan.symbol,
+                                 "order_id": order_id,
+                                 "attempts": attempts,
+                                 "waited_ms": int((time.time() - start_sync) * 1000)
+                             })
+                             break
+                         await asyncio.sleep(interval)
+                         
+                     if not fill_summary:
+                          print(f"[EXECUTOR] Fill Sync Timeout after {attempts} attempts")
+                          
                  except Exception as e:
                      print(f"[EXECUTOR] Fill Sync Error: {e}")
              
@@ -264,16 +282,38 @@ class Executor:
                       cycle_ts=plan.plan_ts
                   )
                   
-                  ctx.persistence.upsert_trade_audit_from_fills(
-                      symbol=plan.symbol,
-                      close_order_id=order_id,
-                      summary=fill_summary.__dict__,
-                      exit_reason=exit_reason,
-                      cycle_ts=plan.plan_ts.isoformat(),
-                      entry_price=entry_price,
-                      pattern_id=pos.get("pattern_id") if pos else None
+                  # Fee Alert
+                  asset = fill_summary.commission_asset
+                  if asset != "USDT" and getattr(self._config, "alert_on_non_usdt_fee", True):
+                      ctx.persistence.insert_alert(
+                          level="WARN",
+                          code="NON_USDT_FEE_UNACCOUNTED",
+                          message=f"Trade {plan.symbol} closed with non-USDT fee ({asset}). Net PnL calculation may be slightly off.",
+                          details={"asset": asset, "commission": fill_summary.commission}
+                      )
+                  
+                  # Attempt Upgrade first
+                  upgraded = ctx.persistence.upgrade_trade_audit_from_fills(
+                      symbol=plan.symbol, 
+                      close_order_id=order_id, 
+                      summary=fill_summary.__dict__
                   )
-                  print(f"[EXECUTOR] Audit verified via fills. Net PnL: {fill_summary.net_pnl:.2f}")
+                  
+                  if upgraded:
+                      ctx.telemetry.emit("AUDIT_UPGRADED", {"symbol": plan.symbol, "order_id": order_id})
+                      print(f"[EXECUTOR] Audit record UPGRADED via fills. Net PnL: {fill_summary.net_pnl:.2f}")
+                  else:
+                      # Not found (maybe not written yet or written with another ID), just upsert new
+                      ctx.persistence.upsert_trade_audit_from_fills(
+                          symbol=plan.symbol,
+                          close_order_id=order_id,
+                          summary=fill_summary.__dict__,
+                          exit_reason=exit_reason,
+                          cycle_ts=plan.plan_ts.isoformat(),
+                          entry_price=entry_price,
+                          pattern_id=pos.get("pattern_id") if pos else None
+                      )
+                      print(f"[EXECUTOR] Audit record INSERTED via fills. Net PnL: {fill_summary.net_pnl:.2f}")
 
              else:
                  # Fallback Estimated
@@ -286,8 +326,23 @@ class Executor:
                      pnl_usdt=pnl,
                      pnl_is_estimated=pnl_is_estimated,
                      exit_reason=exit_reason,
-                     cycle_ts=plan.plan_ts
+                     cycle_ts=plan.plan_ts,
+                     close_order_id=order_id
                  )
+                 # Ensure we set the order_id in estimated record for future upgrade attempts?
+                 # Wait, mark_position_closed doesn't take order_id.
+                 # I should probably update mark_position_closed to store close_order_id if known.
+                 # But v0.17.1 prompt didn't ask to change mark_position_closed signature.
+                 # However, upgrade_trade_audit_from_fills NEEDS close_order_id to match.
+                 # So I SHOULD update mark_position_closed or do a manual UPDATE right after.
+                 
+                 # Let's check trade_audit table in _init_db... yes it has close_order_id.
+                 # I will do a quick update to set close_order_id for the estimated record.
+                 if order_id > 0:
+                      # This is a bit hacky but works since it's the latest record for symbol
+                      # or we can pass it to mark_position_closed.
+                      # I'll update mark_position_closed in persistence_sqlite.py to be safe.
+                      pass
              
              if self._config.protective_cancel_on_close:
                  try:

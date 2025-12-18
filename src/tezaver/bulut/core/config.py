@@ -118,6 +118,12 @@ class BulutConfig:
     recv_window_ms: int = 5000
     block_execution_if_time_sync_fail: bool = True
 
+    # Fill Sync Hardening (v0.17.1)
+    fill_sync_max_wait_seconds: int = 6
+    fill_sync_retry_interval_ms: int = 400
+    fill_sync_window_ms: int = 10 * 60 * 1000
+    alert_on_non_usdt_fee: bool = True
+
     # Binance Credentials
     binance_api_key: Optional[str] = field(default_factory=lambda: os.getenv("BINANCE_API_KEY"))
     binance_api_secret: str = field(default_factory=lambda: _env_str("BINANCE_API_SECRET", ""))

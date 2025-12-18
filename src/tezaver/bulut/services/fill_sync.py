@@ -17,6 +17,7 @@ class FillSummary:
     vwap: float
     realized_pnl: float
     commission: float
+    commission_asset: str
     net_pnl: float
     ts_first: int
     ts_last: int
@@ -38,12 +39,15 @@ class FillSyncService:
         symbol: str, 
         order_id: Optional[int] = None, 
         client_order_id: Optional[str] = None, 
-        window_ms: int = 600000 # 10 minutes default lookback
+        window_ms: Optional[int] = None
     ) -> Optional[FillSummary]:
         """
         Fetch user trades and aggregate for specific order.
         Returns FillSummary if found, None otherwise.
         """
+        if window_ms is None:
+            window_ms = getattr(self._config, "fill_sync_window_ms", 600000)
+
         # Time Window
         now_ms = int(time.time() * 1000)
         if self._time_sync:
@@ -59,26 +63,23 @@ class FillSyncService:
                 end_time=end_time
             )
             
-            if not trades or isinstance(trades, dict) and trades.get("error"):
+            if not trades or (isinstance(trades, dict) and trades.get("error")):
                  err = trades.get("msg") if isinstance(trades, dict) else "Empty"
                  self._telemetry.emit("FILL_SYNC_FAIL", {"symbol": symbol, "error": err})
                  return None
                  
             # Filter matches
-            # Trade schema: { "orderId": 123, ... }
             matches = []
             for t in trades:
                 match = False
                 if order_id and int(t.get("orderId", 0)) == order_id:
                     match = True
-                # Fallback: check client oid if present? Fills usually don't have client oid in lite endpoints?
-                # userTrades endpoint HAS orderId.
                 
                 if match:
                     matches.append(t)
                     
             if not matches:
-                self._telemetry.emit("FILL_SYNC_EMPTY", {"symbol": symbol, "order_id": order_id})
+                # We don't emit EMPTY here because Executor might be retrying
                 return None
                 
             # Aggregate
@@ -86,6 +87,7 @@ class FillSyncService:
             total_cost = 0.0 # qty * price
             total_pnl = 0.0
             total_comm = 0.0
+            comm_assets = set()
             ts_list = []
             
             for m in matches:
@@ -93,15 +95,28 @@ class FillSyncService:
                 p = float(m.get("price", 0))
                 pnl = float(m.get("realizedPnl", 0))
                 comm = float(m.get("commission", 0))
+                asset = m.get("commissionAsset", "USDT")
                 
                 total_qty += q
                 total_cost += (q * p)
                 total_pnl += pnl
                 total_comm += comm
+                comm_assets.add(asset)
                 ts_list.append(int(m.get("time", 0)))
                 
             vwap = total_cost / total_qty if total_qty > 0 else 0.0
-            net = total_pnl - total_comm
+            
+            main_asset = "USDT"
+            if comm_assets:
+                # If multiple assets (rare but possible), prioritize USDT
+                if "USDT" in comm_assets:
+                    main_asset = "USDT"
+                else:
+                    main_asset = list(comm_assets)[0]
+
+            net = total_pnl
+            if main_asset == "USDT":
+                net = total_pnl - total_comm
             
             summary = FillSummary(
                 symbol=symbol,
@@ -110,6 +125,7 @@ class FillSyncService:
                 vwap=vwap,
                 realized_pnl=total_pnl,
                 commission=total_comm,
+                commission_asset=main_asset,
                 net_pnl=net,
                 ts_first=min(ts_list) if ts_list else 0,
                 ts_last=max(ts_list) if ts_list else 0
@@ -122,7 +138,8 @@ class FillSyncService:
                 "symbol": symbol, 
                 "order_id": order_id, 
                 "fills": len(matches),
-                "net_pnl": net
+                "net_pnl": net,
+                "fee_asset": main_asset
             })
             
             return summary
