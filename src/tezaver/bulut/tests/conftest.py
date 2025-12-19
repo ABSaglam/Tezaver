@@ -14,6 +14,16 @@ from tezaver.bulut.services.persistence_sqlite import SqlitePersistence
 
 # --- Config Fixtures ---
 
+@pytest.fixture(scope="session", autouse=True)
+def set_test_env():
+    """Ensure standard test environment variables."""
+    # TrustedHostMiddleware requires these to match base_url
+    os.environ["ALLOWED_HOSTS"] = "localhost,127.0.0.1,testserver"
+    os.environ["API_HOST"] = "127.0.0.1"
+    os.environ["API_PORT"] = "8000"
+    yield
+
+
 def make_config(**overrides) -> BulutConfig:
     """
     Create a BulutConfig with optional overrides.

@@ -62,6 +62,7 @@ def test_app_middleware_integration(tmp_path):
     """Test integration with TestClient (Mock Config via env var)."""
     import os
     from unittest.mock import patch
+    from tezaver.bulut.tests.test_utils import make_test_client
 
     # Safety: Use a fresh DB file for this test
     db_path = tmp_path / "test_tezaver_ops.db"
@@ -75,8 +76,9 @@ def test_app_middleware_integration(tmp_path):
         # Disable heavy startup checks if possible or let them run on empty DB
         "STARTUP_SELFTEST_ENABLED": "false", 
         "PROOF_LADDER_AUTO_EVALUATE_ENABLED": "false",
-        "ALLOWED_HOSTS": "*",
-        "API_HOST": "0.0.0.0"
+        # ALLOWED_HOSTS is now handled by conftest.py, but explicit override is fine too if needed.
+        # But we remove it here to rely on conftest + make_test_client correctness
+        # "ALLOWED_HOSTS": "*", 
     }
     
     with patch.dict(os.environ, env_patch):
@@ -85,9 +87,8 @@ def test_app_middleware_integration(tmp_path):
         reload_config()
         
         # TestClient triggers lifespan
-        # TestClient triggers lifespan
-        # Use localhost to satisfy default ALLOWED_HOSTS (since app is global and middleware already set)
-        with TestClient(app, base_url="http://localhost") as client:
+        # Use make_test_client to ensure standard base_url
+        with make_test_client(app) as client:
             # 1. Health (Public)
             resp = client.get("/health")
             assert resp.status_code == 200

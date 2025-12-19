@@ -40,7 +40,7 @@ def safe_pct(value, decimals: int = 1) -> str:
         return "-"
 
 
-@st.cache_data(ttl=600)
+@st.cache_data(ttl=600, max_entries=20)
 def load_time_labs_rallies(symbol: str, timeframe: str) -> Optional[pd.DataFrame]:
     """Load Time-Labs events parquet."""
     try:
@@ -66,7 +66,7 @@ def load_time_labs_rallies(symbol: str, timeframe: str) -> Optional[pd.DataFrame
         return None
 
 
-@st.cache_data(ttl=600)
+@st.cache_data(ttl=600, max_entries=20)
 def load_time_labs_summary(symbol: str, timeframe: str) -> Optional[Dict]:
     """Load Time-Labs summary JSON."""
     try:

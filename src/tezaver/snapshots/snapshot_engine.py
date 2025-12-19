@@ -100,7 +100,7 @@ def build_default_triggers(df: pd.DataFrame) -> Dict[str, pd.Series]:
 
 # --- Core Snapshot Functions ---
 
-def load_features(symbol: str, timeframe: str) -> pd.DataFrame:
+def load_features(symbol: str, timeframe: str, tail: Optional[int] = None) -> pd.DataFrame:
     """
     Loads feature DataFrame for a symbol and timeframe.
     """
@@ -109,6 +109,12 @@ def load_features(symbol: str, timeframe: str) -> pd.DataFrame:
     
     if not feature_file.exists():
         raise FileNotFoundError(f"Features not found for {symbol} {timeframe}. Run M3 feature build first.")
+    
+    if tail:
+        df = pd.read_parquet(feature_file)
+        if len(df) > tail:
+            return df.iloc[-tail:].copy()
+        return df
         
     return pd.read_parquet(feature_file)
 

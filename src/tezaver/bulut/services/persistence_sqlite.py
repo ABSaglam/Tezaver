@@ -27,21 +27,11 @@ class SqlitePersistence:
         return sqlite3.connect(self._db_path)
     
     def _init_db(self):
-        """Initialize database schema."""
+        """Initialize database schema (Single Source of Truth)."""
         conn = self._get_conn()
         cursor = conn.cursor()
         
-        # Positions table
-        # We need to drop table if schema changed or just alter? Or ensure fields?
-        # Since v0.05 only had minimal columns, we might need to recreate or alter.
-        # SQLite simplistic approach: CREATE IF NOT EXISTS usually works, but schema change requires migration.
-        # For dev speed v0.08: DROP positions if it exists but lacks columns?
-        # Or just use safe CREATE and fail/warn if columns missing?
-        # Let's try to add columns or recreate.
-        # Assuming dev environment, we can DROP for v0.08 update to be clean.
-        # cursor.execute("DROP TABLE IF EXISTS positions") # Only for dev, risky for prod.
-        # But we want to preserve data from v0.07? Probably none in positions table was populated fully.
-        
+        # 1. POSITIONS
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS positions (
                 symbol TEXT PRIMARY KEY,
@@ -55,14 +45,14 @@ class SqlitePersistence:
                 pattern_id TEXT,
                 exit_profile_id TEXT,
                 exit_params_json TEXT,
-                open_ts TEXT,  -- Deprecated/Same as entry_ts
+                open_ts TEXT,
                 update_ts TEXT,
-                side TEXT, -- 'LONG'
+                side TEXT,
                 sl_order_id TEXT,
                 tp_order_id TEXT,
                 sl_client_order_id TEXT,
                 tp_client_order_id TEXT,
-                protective_status TEXT, -- NONE|PLACED|CANCELLED|FAILED
+                protective_status TEXT,
                 last_update_ts_ms INTEGER,
                 sizing_profile_id TEXT,
                 entry_notional_usdt REAL,
@@ -70,24 +60,29 @@ class SqlitePersistence:
                 last_exit_cycle_ts TEXT
             )
         """)
-        
-        # Check if columns exit (migration hack for dev)
-        # If we just add them to create if not exists, it won't add to existing table.
-        # We can try ALTER TABLE safely.
-        try:
-            cursor.execute("ALTER TABLE positions ADD COLUMN sl_order_id TEXT")
-            cursor.execute("ALTER TABLE positions ADD COLUMN tp_order_id TEXT")
-            cursor.execute("ALTER TABLE positions ADD COLUMN sl_client_order_id TEXT")
-            cursor.execute("ALTER TABLE positions ADD COLUMN tp_client_order_id TEXT")
-            cursor.execute("ALTER TABLE positions ADD COLUMN protective_status TEXT")
-        except:
-            pass # Already exists or table created new with full schema?
-            # Actually standard Create if not exists with new schema won't update exist.
-            # But the Create statement above DOES NOT HAVE the new columns if I'm editing it.
-            # I must ensure the CREATE statement has them for new tables.
-            # And ALTER for existing.
-        
-        # ... Trade Plans table unchanged ...
+        # Backward compatibility Alters
+        try: cursor.execute("ALTER TABLE positions ADD COLUMN sl_order_id TEXT"); 
+        except: pass
+        try: cursor.execute("ALTER TABLE positions ADD COLUMN tp_order_id TEXT"); 
+        except: pass
+        try: cursor.execute("ALTER TABLE positions ADD COLUMN sl_client_order_id TEXT"); 
+        except: pass
+        try: cursor.execute("ALTER TABLE positions ADD COLUMN tp_client_order_id TEXT"); 
+        except: pass
+        try: cursor.execute("ALTER TABLE positions ADD COLUMN protective_status TEXT"); 
+        except: pass
+        try: cursor.execute("ALTER TABLE positions ADD COLUMN sizing_profile_id TEXT"); 
+        except: pass
+        try: cursor.execute("ALTER TABLE positions ADD COLUMN entry_notional_usdt REAL"); 
+        except: pass
+        try: cursor.execute("ALTER TABLE positions ADD COLUMN last_exit_reason TEXT"); 
+        except: pass
+        try: cursor.execute("ALTER TABLE positions ADD COLUMN last_exit_cycle_ts TEXT"); 
+        except: pass
+        try: cursor.execute("ALTER TABLE positions ADD COLUMN last_update_ts_ms INTEGER"); 
+        except: pass
+
+        # 2. TRADE PLANS
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS trade_plans (
                 plan_ts TEXT,
@@ -98,78 +93,58 @@ class SqlitePersistence:
                 tp_json TEXT,
                 idempotency_key TEXT PRIMARY KEY,
                 reasons_json TEXT,
-                status TEXT
+                status TEXT,
+                exec_state TEXT,
+                exec_started_ts TEXT,
+                exec_finished_ts TEXT,
+                exec_error TEXT
             )
         """)
-        
-        # Schema updates for v1 Sizing
-        try:
-             cursor.execute("ALTER TABLE positions ADD COLUMN sizing_profile_id TEXT")
-             cursor.execute("ALTER TABLE positions ADD COLUMN entry_notional_usdt REAL")
+        try: cursor.execute("ALTER TABLE trade_plans ADD COLUMN exec_state TEXT"); 
         except: pass
-        
-        # Schema updates for v0.12 (Risk)
-        try:
-            # Re-create trade_audit with full schema (v0.22+)
-            cursor.execute("DROP TABLE IF EXISTS trade_audit")
-            cursor.execute("""
-                CREATE TABLE trade_audit (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    symbol TEXT,
-                    entry_price REAL, 
-                    exit_price REAL, 
-                    qty REAL, 
-                    pnl_usdt REAL, 
-                    pnl_is_estimated INTEGER, 
-                    close_ts TEXT, 
-                    exit_reason TEXT, 
-                    cycle_ts TEXT,
-                    gross_pnl_usdt REAL,
-                    fee_usdt REAL,
-                    net_pnl_usdt REAL,
-                    pnl_source TEXT,
-                    close_order_id INTEGER,
-                    open_order_id INTEGER,
-                    pattern_id TEXT,
-                    fee_asset TEXT,
-                    fee_native REAL,
-                    audit_upgraded INTEGER DEFAULT 0,
-                    sizing_profile_id TEXT,
-                    entry_notional_usdt REAL,
-                    fee_fx_rate REAL,
-                    fee_fx_source TEXT
-                )
-            """)
-            
-            # Add columns to positions if missing
-            try:
-                cursor.execute("ALTER TABLE positions ADD COLUMN last_exit_reason TEXT")
-            except: pass
-            
-            try:
-                cursor.execute("ALTER TABLE positions ADD COLUMN last_exit_cycle_ts TEXT")
-            except: pass
-            
-        except Exception as e:
-             print(f"[DB] Schema update error: {e}")
-
-        # Schema updates for v0.14 (Execution v1)
-        try:
-             cursor.execute("ALTER TABLE trade_plans ADD COLUMN exec_state TEXT")
+        try: cursor.execute("ALTER TABLE trade_plans ADD COLUMN exec_started_ts TEXT"); 
         except: pass
-        try:
-             cursor.execute("ALTER TABLE trade_plans ADD COLUMN exec_started_ts TEXT")
+        try: cursor.execute("ALTER TABLE trade_plans ADD COLUMN exec_finished_ts TEXT"); 
         except: pass
-        try:
-             cursor.execute("ALTER TABLE trade_plans ADD COLUMN exec_finished_ts TEXT")
-        except: pass
-        try:
-             cursor.execute("ALTER TABLE trade_plans ADD COLUMN exec_error TEXT")
+        try: cursor.execute("ALTER TABLE trade_plans ADD COLUMN exec_error TEXT"); 
         except: pass
 
-        # ===== Missing tables (moved from dead code) =====
-        
-        # Alerts table
+        # 3. TRADE AUDIT
+        # V22+ Schema
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS trade_audit (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                symbol TEXT,
+                entry_price REAL, 
+                exit_price REAL, 
+                qty REAL, 
+                pnl_usdt REAL, 
+                pnl_is_estimated INTEGER, 
+                close_ts TEXT, 
+                exit_reason TEXT, 
+                cycle_ts TEXT,
+                gross_pnl_usdt REAL,
+                fee_usdt REAL,
+                net_pnl_usdt REAL,
+                pnl_source TEXT,
+                close_order_id INTEGER,
+                open_order_id INTEGER,
+                pattern_id TEXT,
+                fee_asset TEXT,
+                fee_native REAL,
+                audit_upgraded INTEGER DEFAULT 0,
+                sizing_profile_id TEXT,
+                entry_notional_usdt REAL,
+                fee_fx_rate REAL,
+                fee_fx_source TEXT
+            )
+        """)
+        try: cursor.execute("ALTER TABLE trade_audit ADD COLUMN fee_fx_rate REAL"); 
+        except: pass
+        try: cursor.execute("ALTER TABLE trade_audit ADD COLUMN fee_fx_source TEXT"); 
+        except: pass
+
+        # 4. ALERTS
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS alerts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -180,8 +155,8 @@ class SqlitePersistence:
                 details_json TEXT
             )
         """)
-        
-        # System State (key-value store)
+
+        # 5. SYSTEM STATE
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS system_state (
                 key TEXT PRIMARY KEY,
@@ -189,18 +164,19 @@ class SqlitePersistence:
                 updated_ts TEXT
             )
         """)
-        
-        # Heartbeats (Task Supervisor)
+
+        # 6. HEARTBEATS
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS heartbeats (
                 name TEXT PRIMARY KEY,
-                ts TEXT,
+                last_ts TEXT,
+                last_ms INTEGER,
                 status TEXT,
                 detail TEXT
             )
         """)
-        
-        # Income Events (v0.18+)
+
+        # 7. INCOME EVENTS
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS income_events (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -218,8 +194,14 @@ class SqlitePersistence:
                 fx_source TEXT
             )
         """)
-        
-        # FX Rates (v0.19)
+        try: cursor.execute("ALTER TABLE income_events ADD COLUMN income_usdt REAL"); 
+        except: pass
+        try: cursor.execute("ALTER TABLE income_events ADD COLUMN fx_rate REAL"); 
+        except: pass
+        try: cursor.execute("ALTER TABLE income_events ADD COLUMN fx_source TEXT"); 
+        except: pass
+
+        # 8. FX RATES
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS fx_rates (
                 asset TEXT PRIMARY KEY,
@@ -229,8 +211,8 @@ class SqlitePersistence:
                 updated_ts TEXT
             )
         """)
-        
-        # Policy States (v1 FSM)
+
+        # 9. POLICY STATES
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS policy_states (
                 symbol TEXT PRIMARY KEY,
@@ -241,10 +223,10 @@ class SqlitePersistence:
                 hold_bars_remaining INTEGER,
                 last_reason TEXT,
                 last_update_ms INTEGER DEFAULT 0
-            )
+            ) 
         """)
-        
-        # Cycle Timelines (Forensics v1)
+
+        # 10. CYCLE TIMELINES
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS cycle_timelines (
                 cycle_index INTEGER PRIMARY KEY,
@@ -253,8 +235,8 @@ class SqlitePersistence:
                 created_ts TEXT
             )
         """)
-        
-        # Proof Ladder State (v1.1)
+
+        # 11. PROOF LADDER STATE
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS proof_ladder_state (
                 id INTEGER PRIMARY KEY DEFAULT 1,
@@ -266,10 +248,8 @@ class SqlitePersistence:
                 updated_ts TEXT
             )
         """)
-        
-        # Config Snapshots (Drift Guard) - Removed duplicate definition (use v0.25 block below)
-        
-        # Order Fills (v0.17+)
+
+        # 12. ORDER FILLS
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS order_fills (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -287,183 +267,8 @@ class SqlitePersistence:
                 created_ts TEXT
             )
         """)
-        
-        conn.commit()
-        conn.close()
 
-# -------------------------------------------------------------------------------------
-
-    def upsert_position_open(self, symbol: str, entry_ts: datetime, entry_price: float, qty: float, 
-                             notional: float, sl_pct: float, tp_pct: float, 
-                             pattern_id: str = None, exit_profile_id: str = None, 
-                             exit_params: dict = None, last_update_ts_ms: int = 0,
-                             # v1 Sizing
-                             sizing_profile_id: str = None,
-                             entry_notional_usdt: float = 0.0):
-        """Insert or Update OPEN position with OOO protection."""
-        conn = self._get_conn()
-        cursor = conn.cursor()
-        
-        # We need to respect OOO (Out of Order).
-        # We only update if last_update_ts_ms > existing.last_update_ts_ms
-        
-        cursor.execute("""
-            INSERT INTO positions (
-                symbol, entry_ts, entry_price, qty, notional_usdt, 
-                sl_pct, tp_pct, status, pattern_id, exit_profile_id, exit_params_json,
-                update_ts, side, protective_status, last_update_ts_ms,
-                sizing_profile_id, entry_notional_usdt
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, ?, ?, ?, 'LONG', 'NONE', ?, ?, ?)
-            ON CONFLICT(symbol) DO UPDATE SET
-                entry_ts=excluded.entry_ts,
-                entry_price=excluded.entry_price,
-                qty=excluded.qty,
-                notional_usdt=excluded.notional_usdt,
-                status='OPEN',
-                update_ts=excluded.update_ts,
-                protective_status='NONE',
-                last_update_ts_ms=excluded.last_update_ts_ms,
-                sizing_profile_id=excluded.sizing_profile_id,
-                entry_notional_usdt=excluded.entry_notional_usdt
-            WHERE excluded.last_update_ts_ms > coalesce(positions.last_update_ts_ms, 0)
-        """, (
-            symbol, entry_ts.isoformat(), entry_price, qty, notional,
-            sl_pct, tp_pct, pattern_id, exit_profile_id, 
-            json.dumps(exit_params) if exit_params else "{}",
-            datetime.now(timezone.utc).isoformat(),
-            last_update_ts_ms,
-            sizing_profile_id,
-            entry_notional_usdt
-        ))
-        
-        conn.commit()
-        conn.close()
-
-        # Schema updates for v0.15 (Ops Pack)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS alerts (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                ts TEXT,
-                level TEXT,
-                code TEXT,
-                message TEXT,
-                details_json TEXT
-            )
-        """)
-
-        # Schema updates for v0.17 (Fill-Based TradeAudit)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS order_fills (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                symbol TEXT,
-                order_id INTEGER,
-                trade_id TEXT,
-                price REAL,
-                qty REAL,
-                realized_pnl REAL,
-                commission REAL,
-                commission_asset TEXT,
-                ts TEXT,
-                raw_json TEXT
-            )
-        """)
-        
-        # Alter trade_audit
-        cols_v17 = [
-            ("gross_pnl_usdt", "REAL"),
-            ("fee_usdt", "REAL"),
-            ("net_pnl_usdt", "REAL"),
-            ("pnl_source", "TEXT"),
-            ("close_order_id", "INTEGER"),
-            ("open_order_id", "INTEGER"),
-            ("pattern_id", "TEXT"),
-            ("fee_asset", "TEXT"),
-            ("fee_native", "REAL"),
-            ("audit_upgraded", "INTEGER DEFAULT 0")
-        ]
-        for col, dtype in cols_v17:
-             try:
-                 cursor.execute(f"ALTER TABLE trade_audit ADD COLUMN {col} {dtype}")
-             except: pass
-
-        # Schema updates for v0.18 (Income Sync)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS income_events (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                tran_id TEXT UNIQUE,
-                symbol TEXT,
-                income_type TEXT,
-                asset TEXT,
-                income REAL,
-                time_ms INTEGER,
-                time_ts TEXT,
-                info TEXT,
-                raw_json TEXT
-            )
-        """)
-        
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS system_state (
-                key TEXT PRIMARY KEY,
-                value TEXT,
-                updated_ts TEXT
-            )
-        """)
-
-        # v0.19 FX Conversion
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS fx_rates (
-                asset TEXT PRIMARY KEY,
-                quote TEXT,
-                rate REAL,
-                source TEXT,
-                updated_ts TEXT
-            )
-        """)
-
-        try:
-             cursor.execute("ALTER TABLE income_events ADD COLUMN income_usdt REAL")
-             cursor.execute("ALTER TABLE income_events ADD COLUMN fx_rate REAL")
-             cursor.execute("ALTER TABLE income_events ADD COLUMN fx_source TEXT")
-        except: pass
-
-        try:
-             cursor.execute("ALTER TABLE trade_audit ADD COLUMN fee_fx_rate REAL")
-             cursor.execute("ALTER TABLE trade_audit ADD COLUMN fee_fx_source TEXT")
-        except: pass
-        
-        try:
-             cursor.execute("ALTER TABLE trade_audit ADD COLUMN fee_usdt REAL")
-        except: pass
-
-        # v0.22 State Reducer
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS applied_events (
-                event_id TEXT PRIMARY KEY,
-                event_ts_ms INTEGER,
-                source TEXT,
-                kind TEXT,
-                symbol TEXT,
-                inserted_ts TEXT
-            )
-        """)
-        
-        try:
-             cursor.execute("ALTER TABLE positions ADD COLUMN last_update_ts_ms INTEGER")
-        except: pass
-
-        # v0.23 Task Supervisor / Heartbeats
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS heartbeats (
-                name TEXT PRIMARY KEY,
-                last_ts TEXT,
-                last_ms INTEGER,
-                status TEXT,
-                detail TEXT
-            )
-        """)
-        
-        # v0.25 Config Snapshots
+        # 13. CONFIG SNAPSHOTS (Missing in previous _init_db)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS config_snapshots (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -474,73 +279,38 @@ class SqlitePersistence:
                 source TEXT
             )
         """)
-        
-        try:
-             cursor.execute("ALTER TABLE config_snapshots ADD COLUMN mode TEXT")
+        try: cursor.execute("ALTER TABLE config_snapshots ADD COLUMN mode TEXT"); 
         except: pass
-        try:
-             cursor.execute("ALTER TABLE config_snapshots ADD COLUMN content_json TEXT")
+        try: cursor.execute("ALTER TABLE config_snapshots ADD COLUMN content_json TEXT"); 
         except: pass
-        try:
-             cursor.execute("ALTER TABLE config_snapshots ADD COLUMN source TEXT")
+        try: cursor.execute("ALTER TABLE config_snapshots ADD COLUMN source TEXT"); 
         except: pass
 
-        # v0.29 Policy State Machine
+        # 14. APPLIED EVENTS (Missing in previous _init_db)
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS policy_states (
-                symbol TEXT PRIMARY KEY,
-                phase TEXT,
-                opened_cycle_ts TEXT,
-                effective_cycle_ts TEXT,
-                last_action_ts TEXT,
-                hold_bars_remaining INTEGER,
-                last_reason TEXT,
-                last_update_ms INTEGER DEFAULT 0
-            ) 
-        """)
-
-        # v1.0 Cycle Forensics Timelines
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS cycle_timelines (
-                cycle_index INTEGER PRIMARY KEY,
-                cycle_ts TEXT,
-                timeline_json TEXT,
-                created_ts TEXT
-            )
-        """)
-        
-        # Ensure Alerts table (Critical for Proof Ladder)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS alerts (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                ts TEXT,
-                level TEXT,
-                code TEXT,
-                message TEXT,
-                details_json TEXT
+            CREATE TABLE IF NOT EXISTS applied_events (
+                event_id TEXT PRIMARY KEY,
+                event_ts_ms INTEGER,
+                source TEXT,
+                kind TEXT,
+                symbol TEXT,
+                inserted_ts TEXT
             )
         """)
 
-        # v1.1 Proof Ladder (Mainnet Cap Evidence)
+        # 15. SCHEMA META (Bootstrap)
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS proof_ladder_state (
-                id INTEGER PRIMARY KEY DEFAULT 1,
-                stage_id TEXT,
-                cap_usdt REAL,
-                last_evaluated_ts TEXT,
-                clean_hours REAL,
-                last_result_json TEXT,
-                updated_ts TEXT
+            CREATE TABLE IF NOT EXISTS schema_meta (
+                key TEXT PRIMARY KEY,
+                value TEXT
             )
         """)
-        
-        # Drift Guard (Config Snapshots) - Handled above or via migration
-        # Ensure single row constraint via ID=1 logic on insert, or just code enforce
-        # Ensure single row constraint via ID=1 logic on insert, or just code enforce
-
 
         conn.commit()
         conn.close()
+
+# -------------------------------------------------------------------------------------
+
         
     # --- Policy State Machine (v1) ---
     

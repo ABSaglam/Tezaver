@@ -60,7 +60,14 @@ def test_trusted_host_rejects_unknown(tmp_path):
         cfg = get_config()
         app = create_test_app(cfg)
         
-        with TestClient(app, raise_server_exceptions=False) as client:
+        from tezaver.bulut.tests.test_utils import make_test_client
+        # Explicit base_url not needed as make_test_client defaults to localhost,
+        # but here we test malicious host so we just need a client that DOESN'T auto-inject valid Host if we override headers.
+        # However, TrustedHostMiddleware checks Host header.
+        # TestClient uses base_url to set Host header if not provided.
+        # We want to force a malicious Host header.
+        
+        with make_test_client(app) as client:
             # Unknown host should fail
             resp = client.get("/health", headers={"Host": "malicious.com"})
             assert resp.status_code == 400
@@ -86,8 +93,9 @@ def test_trusted_host_allows_valid(tmp_path):
         cfg = get_config()
         app = create_test_app(cfg)
         
-        with TestClient(app) as client:
-            resp = client.get("/health", headers={"Host": "localhost"})
+        from tezaver.bulut.tests.test_utils import make_test_client
+        with make_test_client(app) as client:
+            resp = client.get("/health")
             assert resp.status_code == 200
 
 
@@ -108,8 +116,9 @@ def test_secure_headers_present_on_200(tmp_path):
         cfg = get_config()
         app = create_test_app(cfg)
         
-        with TestClient(app) as client:
-            resp = client.get("/health", headers={"Host": "localhost"})
+        from tezaver.bulut.tests.test_utils import make_test_client
+        with make_test_client(app) as client:
+            resp = client.get("/health")
             assert resp.status_code == 200
             
             # Check security headers
@@ -135,8 +144,9 @@ def test_secure_headers_cache_control_on_ops(tmp_path):
         cfg = get_config()
         app = create_test_app(cfg)
         
-        with TestClient(app) as client:
-            resp = client.get("/ops/secret", headers={"Host": "localhost"})
+        from tezaver.bulut.tests.test_utils import make_test_client
+        with make_test_client(app) as client:
+            resp = client.get("/ops/secret")
             assert resp.status_code == 200
             assert "no-store" in resp.headers.get("Cache-Control", "")
 
@@ -160,11 +170,12 @@ def test_rate_limit_triggers_429(tmp_path):
         cfg = get_config()
         app = create_test_app(cfg)
         
-        with TestClient(app) as client:
+        from tezaver.bulut.tests.test_utils import make_test_client
+        with make_test_client(app) as client:
             # Burst requests
             responses = []
             for _ in range(10):
-                resp = client.post("/ops/ping", headers={"Host": "localhost"})
+                resp = client.post("/ops/ping")
                 responses.append(resp.status_code)
             
             # At least one should be 429
@@ -172,7 +183,7 @@ def test_rate_limit_triggers_429(tmp_path):
             
             # Find a 429 response and check headers
             for _ in range(5):
-                resp = client.post("/ops/ping", headers={"Host": "localhost"})
+                resp = client.post("/ops/ping")
                 if resp.status_code == 429:
                     # Secure headers should be present even on 429
                     assert resp.headers.get("X-Content-Type-Options") == "nosniff"
