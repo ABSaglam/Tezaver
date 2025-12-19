@@ -95,6 +95,110 @@ def render_command_center(api_base: str = "http://localhost:8000"):
     else:
         st.error(f"Proof Ladder Status Failed: {pl_data}")
 
+
+
+    st.divider()
+
+    # 1.6 Strict Timing (P3)
+    st.subheader("⏱ Strict Timing")
+    
+    ok_st, st_status = call_api("GET", "/strict_timing/status")
+    if ok_st:
+        # KPI Cards
+        # last_run: {bar_close_ts, run_ts, ran_at_ms, last_cycle_id}
+        last = st_status.get("last_run") or {}
+        mode = st_status.get("mode", "UNKNOWN")
+        drift_limit = st_status.get("max_drift_ms", 5000)
+        
+        k1, k2, k3, k4 = st.columns(4)
+        k1.metric("Mode", mode)
+        
+        last_ts = last.get("bar_close_ts", "N/A")
+        if last_ts != "N/A":
+             # Extract time part
+             try: last_ts_disp = last_ts.split("T")[1][:5] # HH:MM
+             except: last_ts_disp = last_ts
+        else:
+             last_ts_disp = "NONE"
+             
+        k2.metric("Last Close", last_ts_disp)
+        
+        # We don't have global stats in status endpoint yet (stubbed), but we can query timeline for recent drift
+        k3.metric("Limit", f"{drift_limit}ms")
+        
+        # Table
+        with st.expander("Timing History", expanded=False):
+            ok_hist, hist = call_api("GET", "/strict_timing/timeline?limit=50")
+            if ok_hist and hist:
+                # Table: Close TS | Drift | Status
+                rows = []
+                for h in hist:
+                    drift = h.get("drift_ms", 0)
+                    status = "OK"
+                    if drift > drift_limit: status = "DRIFT_WARN"
+                    
+                    rows.append({
+                        "Close TS": h.get("cycle_ts"),
+                        "Drift (ms)": drift,
+                        "Status": status,
+                        "Deduped": h.get("deduped", False)
+                    })
+                st.dataframe(rows, use_container_width=True)
+            else:
+                st.info("No timeline data.")
+    else:
+        st.error("Strict Timing Service Unreachable")
+
+    st.divider()
+
+    # 1.7 Mainnet Dry-Run (P4)
+    st.subheader("🧪 Mainnet Dry-Run")
+    
+    with st.expander("Control Panel", expanded=False):
+        # Config & Start
+        dr_col1, dr_col2, dr_col3 = st.columns(3)
+        with dr_col1:
+            cycles_count = st.number_input("Simulator Cycles (History)", min_value=5, max_value=100, value=20)
+        
+        with dr_col2:
+            if st.button("▶️ Start Dry-Run Simulation", use_container_width=True):
+                 ok_start, res_start = call_api("POST", "/dry_run/start", {"cycles": cycles_count})
+                 if ok_start: st.success(f"Started: {res_start.get('run_id')}")
+                 else: st.error(f"Failed: {res_start}")
+                 
+        with dr_col3:
+             # Refresh Status Button
+             if st.button("🔄 Refresh Dry-Run Status"):
+                 st.rerun()
+
+        st.divider()
+        
+        # Status & History
+        ok_dr, dr_status = call_api("GET", "/dry_run/status")
+        if ok_dr:
+            is_running = dr_status.get("running", False)
+            st.metric("Running", "YES" if is_running else "NO")
+            if is_running:
+                 st.info("Simulation in progress... check logs.")
+        
+        st.caption("Latest Runs")
+        ok_runs, runs = call_api("GET", "/dry_run/runs/latest?limit=5")
+        if ok_runs and runs:
+             dr_rows = []
+             for r in runs:
+                 s = r.get("summary", {})
+                 created = r.get("created_at", "").replace("T", " ")[:16]
+                 dr_rows.append({
+                     "ID": r.get("run_id"),
+                     "Time": created,
+                     "Status": r.get("status"),
+                     "Cycles": s.get("cycles_processed"),
+                     "Opens": s.get("open_positions")
+                 })
+             st.dataframe(dr_rows, use_container_width=True)
+        else:
+             st.info("No runs found.")
+             
     st.divider()
     
     # 2. Maintenance

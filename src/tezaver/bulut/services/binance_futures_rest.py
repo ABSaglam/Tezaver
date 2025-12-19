@@ -26,6 +26,7 @@ class BinanceFuturesRest:
             else config.rest_base_url
         )
         self._session: Optional[aiohttp.ClientSession] = None
+        self._governor = None
     
     async def create_session(self):
         """Create aiohttp session if needed."""

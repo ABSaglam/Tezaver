@@ -306,6 +306,108 @@ class SqlitePersistence:
             )
         """)
 
+        # 16. FAULT RUNS (Fault Injection)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS fault_runs (
+                id TEXT PRIMARY KEY,
+                profile_id TEXT,
+                started_ts TEXT,
+                result TEXT, -- 'RUNNING', 'SUCCESS', 'FAILED'
+                notes TEXT,
+                scenario_name TEXT
+            )
+        """)
+
+        # 17. REPLAY BUNDLES (Trade Replay)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS replay_bundles (
+                bundle_id TEXT PRIMARY KEY,
+                cycle_ts TEXT,
+                created_ts TEXT,
+                payload_json TEXT,  -- Large JSON blob or path (using JSON for now)
+                result_json TEXT,   -- Last run result
+                status TEXT,        -- 'CREATED', 'MATCH', 'DRIFT'
+                notes TEXT
+            )
+        """)
+
+        # 18. CYCLE DEDUPE (Strict Timing P3)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS cycle_dedupe (
+                bar_close_ts TEXT PRIMARY KEY,
+                last_cycle_id INTEGER,
+                ran_at_ms INTEGER,
+                run_ts TEXT
+            )
+        """)
+
+        # 19. DRY RUN TESTS (P4)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS dry_run_tests (
+                run_id TEXT PRIMARY KEY,
+                status TEXT,
+                summary_json TEXT,
+                created_at TEXT
+            )
+        """)
+
+        # 20. PILOT STATE (P5 Autopilot)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS pilot_state (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                start_ts TEXT,
+                committed_usdt REAL DEFAULT 0,
+                last_commit_ts TEXT
+            )
+        """)
+        # Ensure single row exists
+        cursor.execute("INSERT OR IGNORE INTO pilot_state (id) VALUES (1)")
+
+        # 21. EXPANSION STATE (P6 Safe Expansion)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS expansion_state (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                current_tier INTEGER DEFAULT 0,
+                tier_changed_ts TEXT,
+                tier_history_json TEXT
+            )
+        """)
+
+        # 22. ALLOCATION STATE (P7 Capital Allocation)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS allocation_state (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                symbol_usage_json TEXT,
+                pattern_usage_json TEXT,
+                last_updated TEXT
+            )
+        """)
+
+        conn.commit()
+        conn.close()
+
+    def check_dedupe_run(self, bar_close_ts: str) -> Optional[dict]:
+        """Check if a cycle has already run for this bar closure."""
+        conn = self._get_conn()
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM cycle_dedupe WHERE bar_close_ts = ?", (bar_close_ts,))
+        row = cursor.fetchone()
+        conn.close()
+        return dict(row) if row else None
+
+    def register_dedupe_run(self, bar_close_ts: str, cycle_id: int, run_ts: str, ran_at_ms: int):
+        """Register a completed cycle run to prevent duplicates."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO cycle_dedupe (bar_close_ts, last_cycle_id, ran_at_ms, run_ts)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(bar_close_ts) DO UPDATE SET
+                last_cycle_id=excluded.last_cycle_id,
+                ran_at_ms=excluded.ran_at_ms,
+                run_ts=excluded.run_ts
+        """, (bar_close_ts, cycle_id, ran_at_ms, run_ts))
         conn.commit()
         conn.close()
 
@@ -1559,3 +1661,116 @@ class SqlitePersistence:
         
         conn.close()
         return metrics
+        return metrics
+
+    # --- P4: Dry Run ---
+    def insert_dry_run(self, run_id: str, status: str, summary: Dict):
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO dry_run_tests (run_id, status, summary_json, created_at) VALUES (?, ?, ?, ?)",
+            (run_id, status, json.dumps(summary), datetime.now(timezone.utc).isoformat())
+        )
+        conn.commit()
+        conn.close()
+
+    def get_latest_dry_runs(self, limit: int = 10) -> List[Dict]:
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT run_id, status, summary_json, created_at FROM dry_run_tests ORDER BY created_at DESC LIMIT ?", (limit,))
+        rows = cursor.fetchall()
+        conn.close()
+        return [
+            {
+                "run_id": r[0],
+                "status": r[1],
+                "summary": json.loads(r[2]),
+                "created_at": r[3]
+            }
+            for r in rows
+        ]
+
+    # --- P5: Pilot Autopilot ---
+    def get_pilot_state(self) -> Optional[Dict]:
+        """Get pilot state for autopilot tracking."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT start_ts, committed_usdt, last_commit_ts FROM pilot_state WHERE id=1")
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return {
+                "start_ts": row[0],
+                "committed_usdt": row[1] or 0.0,
+                "last_commit_ts": row[2]
+            }
+        return None
+
+    def update_pilot_state(self, state: Dict):
+        """Update pilot state."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE pilot_state SET start_ts=?, committed_usdt=?, last_commit_ts=? WHERE id=1",
+            (state.get("start_ts"), state.get("committed_usdt", 0.0), state.get("last_commit_ts"))
+        )
+        conn.commit()
+        conn.close()
+
+    # --- P6: Safe Expansion ---
+    def get_expansion_state(self) -> Optional[Dict]:
+        """Get expansion state for tier tracking."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT current_tier, tier_changed_ts, tier_history_json FROM expansion_state WHERE id=1")
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            import json
+            return {
+                "current_tier": row[0] or 0,
+                "tier_changed_ts": row[1],
+                "tier_history": json.loads(row[2]) if row[2] else []
+            }
+        return None
+
+    def update_expansion_state(self, state: Dict):
+        """Update expansion state."""
+        import json
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT OR REPLACE INTO expansion_state (id, current_tier, tier_changed_ts, tier_history_json) VALUES (1, ?, ?, ?)",
+            (state.get("current_tier", 0), state.get("tier_changed_ts"), json.dumps(state.get("tier_history", [])))
+        )
+        conn.commit()
+        conn.close()
+
+    # --- P7: Allocation Engine ---
+    def get_allocation_state(self) -> Optional[Dict]:
+        """Get allocation state for budget tracking."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT symbol_usage_json, pattern_usage_json, last_updated FROM allocation_state WHERE id=1")
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            import json
+            return {
+                "symbol_usage": json.loads(row[0]) if row[0] else {},
+                "pattern_usage": json.loads(row[1]) if row[1] else {},
+                "last_updated": row[2]
+            }
+        return None
+
+    def update_allocation_state(self, state: Dict):
+        """Update allocation state."""
+        import json
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT OR REPLACE INTO allocation_state (id, symbol_usage_json, pattern_usage_json, last_updated) VALUES (1, ?, ?, ?)",
+            (json.dumps(state.get("symbol_usage", {})), json.dumps(state.get("pattern_usage", {})), state.get("last_updated"))
+        )
+        conn.commit()
+        conn.close()

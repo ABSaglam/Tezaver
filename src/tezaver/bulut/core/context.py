@@ -192,8 +192,14 @@ class BulutContext:
     def executor(self) -> Any:
         """Get execution engine (lazy-loaded)."""
         if getattr(self, "_executor", None) is None:
-            from tezaver.bulut.engine.executor import Executor
-            self._executor = Executor(self.config, governor=self.rate_limit_governor, time_sync=self.time_sync)
+            # P4: Dry Run Mode Switching
+            if self._config.dry_run_enabled:
+                from tezaver.bulut.core.executor_sim import SimulatedExecutor
+                self._executor = SimulatedExecutor(self.config, self.persistence, self.telemetry)
+                print("[CONTEXT] Loaded SIMULATED EXECUTOR (Dry Run Enabled)")
+            else:
+                from tezaver.bulut.engine.executor import Executor
+                self._executor = Executor(self.config, governor=self.rate_limit_governor, time_sync=self.time_sync)
         return self._executor
 
     @property
@@ -464,6 +470,55 @@ class BulutContext:
             from tezaver.bulut.services.proof_ladder import ProofLadderService
             self._proof_ladder = ProofLadderService(self)
         return self._proof_ladder
+
+    @property
+    def strict_timing(self) -> Any:
+        """Get strict timing service (lazy-loaded)."""
+        if getattr(self, "_strict_timing", None) is None:
+            from tezaver.bulut.core.strict_timing_service import StrictTimingService
+            self._strict_timing = StrictTimingService(self.persistence, self.config, self.telemetry)
+        return self._strict_timing
+        
+    @property
+    def dry_run_service(self) -> Any:
+        """Get dry run service (lazy-loaded)."""
+        if getattr(self, "_dry_run_service", None) is None:
+            from tezaver.bulut.core.dry_run_service import DryRunService
+            self._dry_run_service = DryRunService(self)
+        return self._dry_run_service
+
+    @property
+    def pilot_meter(self) -> Any:
+        """Get pilot meter service (lazy-loaded)."""
+        if getattr(self, "_pilot_meter", None) is None:
+            from tezaver.bulut.core.pilot_meter import PilotMeter
+            # P6: Inject expansion policy for dynamic tier limits
+            self._pilot_meter = PilotMeter(self.persistence, self.expansion_policy)
+        return self._pilot_meter
+
+    @property
+    def expansion_policy(self) -> Any:
+        """Get expansion policy service (lazy-loaded)."""
+        if getattr(self, "_expansion_policy", None) is None:
+            from tezaver.bulut.core.expansion_policy import ExpansionPolicyService
+            self._expansion_policy = ExpansionPolicyService(self)
+        return self._expansion_policy
+
+    @property
+    def autopilot_service(self) -> Any:
+        """Get autopilot service (lazy-loaded)."""
+        if getattr(self, "_autopilot_service", None) is None:
+            from tezaver.bulut.core.autopilot_service import AutopilotService
+            self._autopilot_service = AutopilotService(self)
+        return self._autopilot_service
+
+    @property
+    def allocation_engine(self) -> Any:
+        """Get allocation engine (lazy-loaded)."""
+        if getattr(self, "_allocation_engine", None) is None:
+            from tezaver.bulut.core.allocation_engine import AllocationEngine
+            self._allocation_engine = AllocationEngine(self)
+        return self._allocation_engine
 
     def check_trade_lock(self) -> tuple[bool, Optional[str]]:
         """

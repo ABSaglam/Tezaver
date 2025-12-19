@@ -144,19 +144,41 @@ class AsyncScheduler:
                 ref_bar = await self._rest_client.get_latest_closed_bar("BTCUSDT", interval=self._config.base_tf)
                 
                 if ref_bar:
-                    # Check if this is a new closed bar we haven't processed
-                    if (self._last_processed_close_ts is None) or (ref_bar.close_ts > self._last_processed_close_ts):
-                        print(f"[SCHEDULER] New 15m close detected: {ref_bar.close_ts}")
+                    # Strict Timing Check (Dedupe + Drift)
+                    should_check = (self._last_processed_close_ts is None) or (ref_bar.close_ts > self._last_processed_close_ts)
+                    
+                    if should_check:
+                        print(f"[SCHEDULER] Detected candidate 15m close: {ref_bar.close_ts}")
+                        curr_ts = datetime.now(timezone.utc)
                         
-                        # UPDATE STATE: Mark this as processed *before* or *after*?
-                        # If we mark before, failures might skip. If after, we might retry.
-                        # Let's mark after successful ingest start.
-                        current_close_ts = ref_bar.close_ts
+                        # Convert to datetime for service
+                        ts_val = ref_bar.close_ts
+                        if isinstance(ts_val, (int, float)):
+                            ts_dt = datetime.fromtimestamp(ts_val / 1000.0, timezone.utc)
+                        else:
+                            ts_dt = ts_val
+                            
+                        # Call Service
+                        decision = ctx.strict_timing.on_cycle_attempt(ts_dt, curr_ts)
                         
-                        await self._run_cycle_logic(ctx, current_close_ts)
-
+                        if decision["status"] == "BLOCK":
+                            print(f"[SCHEDULER] StrictTiming BLOCKED: {decision['reason']} (Drift: {decision['drift_ms']}ms)")
+                            # Assume processed logic if deduped
+                            self._last_processed_close_ts = ref_bar.close_ts
+                        
+                        elif decision["status"] == "ALLOW":
+                            print(f"[SCHEDULER] StrictTiming ALLOW (Drift: {decision['drift_ms']}ms)")
+                            try:
+                                await self._run_cycle_logic(ctx, ref_bar.close_ts)
+                                self._last_processed_close_ts = ref_bar.close_ts
+                            except Exception as e:
+                                print(f"[SCHEDULER] Cycle Run Failed: {e}")
+                                # Retry allowed next loop? Or log error and mark processed?
+                                # Safer: Don't mark processed so we retry.
+                                pass
+                        
                     else:
-                        # Already processed this bar
+                        # Waiting for next bar
                         pass
                         
             except Exception as e:
@@ -396,5 +418,9 @@ class AsyncScheduler:
                 ctx, s_cycle, ts,
                 sched_stats, scan_stats, decider_stats, exec_stats, risk_stats
             )
+            
+            # 8. Strict Timing: Mark Completed
+            ctx.strict_timing.record_success(ts, s_cycle)
+            
         except Exception as e:
             print(f"[SCHEDULER] Forensics failed: {e}")

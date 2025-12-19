@@ -24,6 +24,13 @@ class CycleTimelineV1:
     
     stages: List[CycleStageV1] = field(default_factory=list)
     
+    # P3: Strict Timing
+    drift_ms: int = 0
+    deduped: bool = False
+    dedupe_reason: Optional[str] = None
+    expected_close_ts: Optional[datetime] = None
+    run_started_ts: Optional[datetime] = None
+    
     # Source References (e.g. decision IDs, event IDs)
     source_refs: Dict[str, str] = field(default_factory=dict)
     
@@ -34,6 +41,11 @@ class CycleTimelineV1:
         return {
             "cycle_index": self.cycle_index,
             "cycle_ts": self.cycle_ts.isoformat(),
+            "drift_ms": self.drift_ms,
+            "deduped": self.deduped,
+            "dedupe_reason": self.dedupe_reason,
+            "expected_close_ts": self.expected_close_ts.isoformat() if self.expected_close_ts else None,
+            "run_started_ts": self.run_started_ts.isoformat() if self.run_started_ts else None,
             "stages": [
                 {
                     "name": s.name,
@@ -53,6 +65,12 @@ class CycleTimelineV1:
             cycle_index=data["cycle_index"],
             cycle_ts=datetime.fromisoformat(data["cycle_ts"])
         )
+        inst.drift_ms = data.get("drift_ms", 0)
+        inst.deduped = data.get("deduped", False)
+        inst.dedupe_reason = data.get("dedupe_reason")
+        inst.expected_close_ts = datetime.fromisoformat(data["expected_close_ts"]) if data.get("expected_close_ts") else None
+        inst.run_started_ts = datetime.fromisoformat(data["run_started_ts"]) if data.get("run_started_ts") else None
+        
         inst.source_refs = data.get("source_refs", {})
         inst.created_at = datetime.fromisoformat(data.get("created_at", datetime.now().isoformat()))
         

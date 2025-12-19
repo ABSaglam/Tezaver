@@ -1,0 +1,1029 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="4" failures="0" skipped="0" tests="181" time="5.162" timestamp="2025-12-19T07:51:45.843135+03:00" hostname="ALS.local"><testcase classname="src.tezaver.bulut.tests.test_bootstrap" name="test_bootstrap_context_without_ui" time="0.011" /><testcase classname="src.tezaver.bulut.tests.test_bootstrap" name="test_config_defaults" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_bootstrap" name="test_config_env_override" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_bootstrap" name="test_no_matrix_imports" time="0.149" /><testcase classname="src.tezaver.bulut.tests.test_config_drift_v1" name="test_config_redaction" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_config_drift_v1" name="test_drift_detection_flow" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_constitution_guard_v1" name="test_checksum_and_drift" time="0.003" /><testcase classname="src.tezaver.bulut.tests.test_contracts_v1.TestBulutHardPowerContractsV1" name="test_c1_closed_bar_only_enforcement" time="0.007" /><testcase classname="src.tezaver.bulut.tests.test_contracts_v1.TestBulutHardPowerContractsV1" name="test_c2_exactly_once_lock" time="0.004" /><testcase classname="src.tezaver.bulut.tests.test_contracts_v1.TestBulutHardPowerContractsV1" name="test_c3_state_reducer_dedup" time="0.003" /><testcase classname="src.tezaver.bulut.tests.test_contracts_v1.TestBulutHardPowerContractsV1" name="test_c4_out_of_order_protection" time="0.003" /><testcase classname="src.tezaver.bulut.tests.test_contracts_v1.TestBulutHardPowerContractsV1" name="test_c5_time_sync_unhealthy_blocks_execution" time="0.005" /><testcase classname="src.tezaver.bulut.tests.test_contracts_v1.TestBulutHardPowerContractsV1" name="test_c6_exchange_info_missing_blocks" time="0.003" /><testcase classname="src.tezaver.bulut.tests.test_contracts_v1.TestBulutHardPowerContractsV1" name="test_c7_mainnet_launch_gate_fail_closed" time="0.004" /><testcase classname="src.tezaver.bulut.tests.test_contracts_v1.TestBulutHardPowerContractsV1" name="test_c8_portfolio_risk_hard_stops" time="0.003" /><testcase classname="src.tezaver.bulut.tests.test_contracts_v1.TestBulutHardPowerContractsV1" name="test_c9_rate_limit_governor_basic" time="0.003" /><testcase classname="src.tezaver.bulut.tests.test_cycle_forensics_v1.TestCycleForensicsV1" name="test_collector_service" time="0.016" /><testcase classname="src.tezaver.bulut.tests.test_cycle_forensics_v1.TestCycleForensicsV1" name="test_incident_bundle_integration" time="0.016" /><testcase classname="src.tezaver.bulut.tests.test_cycle_forensics_v1.TestCycleForensicsV1" name="test_persistence_upsert_and_get" time="0.011" /><testcase classname="src.tezaver.bulut.tests.test_cycle_forensics_v1.TestCycleForensicsV1" name="test_schema_serialization" time="0.009" /><testcase classname="src.tezaver.bulut.tests.test_decider_pipeline" name="test_decider_blocked_if_pattern_pack_missing" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_decider_pipeline" name="test_decider_allowlist_block" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_decider_pipeline" name="test_decider_max_new_entries_per_cycle" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_decider_pipeline" name="test_decider_global_max_positions" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_deploy_hardening_v1" name="test_trusted_host_rejects_unknown" time="0.007" /><testcase classname="src.tezaver.bulut.tests.test_deploy_hardening_v1" name="test_trusted_host_allows_valid" time="0.003" /><testcase classname="src.tezaver.bulut.tests.test_deploy_hardening_v1" name="test_secure_headers_present_on_200" time="0.003" /><testcase classname="src.tezaver.bulut.tests.test_deploy_hardening_v1" name="test_secure_headers_cache_control_on_ops" time="0.003" /><testcase classname="src.tezaver.bulut.tests.test_deploy_hardening_v1" name="test_rate_limit_triggers_429" time="0.008" /><testcase classname="src.tezaver.bulut.tests.test_determinism_bridge_v1.TestDeterminismBridgeV1" name="test_plan_exec_transition_deduped_by_reducer" time="0.002" /><testcase classname="src.tezaver.bulut.tests.test_determinism_bridge_v1.TestDeterminismBridgeV1" name="test_policy_repair_when_position_open_but_state_idle" time="0.003" /><testcase classname="src.tezaver.bulut.tests.test_determinism_bridge_v1.TestDeterminismBridgeV1" name="test_same_inputs_same_policy_decision_id" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_determinism_bridge_v1.TestDeterminismBridgeV1" name="test_start_recovery_resolves_and_finalizes_once" time="0.002" /><testcase classname="src.tezaver.bulut.tests.test_entry_sizing_v1" name="test_loader_basic" time="0.002" /><testcase classname="src.tezaver.bulut.tests.test_entry_sizing_v1" name="test_resolver_global_fallback" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_entry_sizing_v1" name="test_resolver_precedence" time="0.002" /><testcase classname="src.tezaver.bulut.tests.test_entry_sizing_v1" name="test_resolver_calculation_pct" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_entry_sizing_v1" name="test_safety_clamping" time="0.002" /><testcase classname="src.tezaver.bulut.tests.test_entry_sizing_v1" name="test_mainnet_edit_safety" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_env_doctor_v1" name="test_env_doctor_check_success" time="0.017" /><testcase classname="src.tezaver.bulut.tests.test_env_doctor_v1" name="test_startup_degraded_logic" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_env_doctor_v1" name="test_sqlite_write_check" time="0.003" /><testcase classname="src.tezaver.bulut.tests.test_env_doctor_v1" name="test_sqlite_readonly_check" time="0.002" /><testcase classname="src.tezaver.bulut.tests.test_exchangeinfo" name="test_round_to_tick" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_exchangeinfo" name="test_filters_missing_block" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_exchangeinfo" name="test_qty_calc" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_execution_v1" name="test_atomic_lock" time="0.010" /><testcase classname="src.tezaver.bulut.tests.test_execution_v1" name="test_executor_skips_locked" time="0.011" /><testcase classname="src.tezaver.bulut.tests.test_execution_v1" name="test_ambiguous_resolution_found" time="0.015" /><testcase classname="src.tezaver.bulut.tests.test_execution_v1" name="test_ambiguous_resolution_not_found" time="0.012" /><testcase classname="src.tezaver.bulut.tests.test_exit_engine" name="test_exit_fixed_pct" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_exit_engine" name="test_exit_time_stop" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_exit_profiles_bootstrap" name="test_bootstrap_empty_dir" time="0.003" /><testcase classname="src.tezaver.bulut.tests.test_exit_profiles_bootstrap" name="test_bootstrap_existing_no_force" time="0.003" /><testcase classname="src.tezaver.bulut.tests.test_exit_profiles_bootstrap" name="test_bootstrap_force_backup" time="0.003" /><testcase classname="src.tezaver.bulut.tests.test_exit_profiles_bootstrap" name="test_validation_failure" time="0.002" /><testcase classname="src.tezaver.bulut.tests.test_fair_scheduler_v1.TestFairSchedulerV1" name="test_priority_cap_enforcement" time="0.008" /><testcase classname="src.tezaver.bulut.tests.test_fair_scheduler_v1.TestFairSchedulerV1" name="test_priority_lane_backpressure" time="0.005" /><testcase classname="src.tezaver.bulut.tests.test_fair_scheduler_v1.TestFairSchedulerV1" name="test_round_robin_no_starvation" time="0.006" /><testcase classname="src.tezaver.bulut.tests.test_fault_injection_v1" name="test_scenario_timeout_ambiguous" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_fault_injection_v1" name="test_scenario_reject" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_fault_injection_v1" name="test_scenario_429_rate_limit" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_fault_injection_v1" name="test_scenario_partial_fill" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_fault_lab_ui_endpoints_v1" name="test_list_profiles" time="0.004" /><testcase classname="src.tezaver.bulut.tests.test_fault_lab_ui_endpoints_v1" name="test_activate_profile" time="0.003" /><testcase classname="src.tezaver.bulut.tests.test_fault_lab_ui_endpoints_v1" name="test_activate_profile_not_found" time="0.004" /><testcase classname="src.tezaver.bulut.tests.test_fault_lab_ui_endpoints_v1" name="test_deactivate_profile" time="0.003" /><testcase classname="src.tezaver.bulut.tests.test_fault_lab_ui_endpoints_v1" name="test_list_runs" time="0.004" /><testcase classname="src.tezaver.bulut.tests.test_fault_lab_ui_endpoints_v1" name="test_get_active" time="0.003" /><testcase classname="src.tezaver.bulut.tests.test_fill_sync_hardening" name="test_fill_sync_retry_eventually_finds_fills" time="0.025" /><testcase classname="src.tezaver.bulut.tests.test_fill_sync_hardening" name="test_upgrade_estimated_to_user_trades" time="0.013" /><testcase classname="src.tezaver.bulut.tests.test_fill_sync_hardening" name="test_non_usdt_fee_alert" time="0.004" /><testcase classname="src.tezaver.bulut.tests.test_fill_sync_v2" name="test_fill_sync_filters_by_order_id" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_fill_sync_v2" name="test_fill_sync_empty_trades" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_fill_sync_v2" name="test_fill_sync_fail_api" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_fx_conversion_v1" name="test_fx_rate_cache_logic" time="1.123" /><testcase classname="src.tezaver.bulut.tests.test_fx_conversion_v1" name="test_fill_sync_conversion" time="0.025" /><testcase classname="src.tezaver.bulut.tests.test_fx_conversion_v1" name="test_recompute_logic" time="0.020" /><testcase classname="src.tezaver.bulut.tests.test_idempotency" name="test_idempotency_format" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_income_sync_v1" name="test_upsert_income_events" time="0.012" /><testcase classname="src.tezaver.bulut.tests.test_income_sync_v1" name="test_non_usdt_aggregation" time="0.011" /><testcase classname="src.tezaver.bulut.tests.test_income_sync_v1" name="test_income_sync_service_flow" time="0.012" /><testcase classname="src.tezaver.bulut.tests.test_income_sync_v1" name="test_portfolio_risk_integration" time="0.011" /><testcase classname="src.tezaver.bulut.tests.test_intel_registry_v1.TestIntelRegistryV1" name="test_lifecycle_publish_activate" time="0.004" /><testcase classname="src.tezaver.bulut.tests.test_intel_registry_v1.TestIntelRegistryV1" name="test_mainnet_safety_lock" time="0.003" /><testcase classname="src.tezaver.bulut.tests.test_intel_registry_v1.TestIntelRegistryV1" name="test_pattern_pack_loader_integration" time="0.004" /><testcase classname="src.tezaver.bulut.tests.test_live_charts_indicators_v1" name="test_sma" time="0.002" /><testcase classname="src.tezaver.bulut.tests.test_live_charts_indicators_v1" name="test_ema" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_live_charts_indicators_v1" name="test_rsi" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_live_charts_indicators_v1" name="test_macd" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_live_charts_indicators_v1" name="test_atr" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_mainnet_launch_gate_v1" name="test_mainnet_blocks_without_allowlist" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_mainnet_launch_gate_v1" name="test_mainnet_checklist_gate" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_migration_runner_v1" name="test_migration_runner_applies_in_order" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_migration_runner_v1" name="test_dry_run_lists_sql" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_migration_runner_v1" name="test_idempotent_no_run_if_updated" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_ops_auth_v1" name="test_check_ops_auth_logic" time="0.002" /><testcase classname="src.tezaver.bulut.tests.test_ops_auth_v1" name="test_app_middleware_integration" time="0.539" /><testcase classname="src.tezaver.bulut.tests.test_ops_v1" name="test_status_service_shape" time="0.012" /><testcase classname="src.tezaver.bulut.tests.test_ops_v1" name="test_alert_persistence" time="0.009" /><testcase classname="src.tezaver.bulut.tests.test_ops_v1" name="test_incident_bundle_export" time="0.004" /><testcase classname="src.tezaver.bulut.tests.test_pattern_v2" name="test_loader_deterministic_match" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_pattern_v2" name="test_scanner_populates_matches" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_pattern_v2" name="test_decider_propagates_to_plan" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_policy_state_machine_v1.TestPolicyStateMachineV1" name="test_closed_bar_only_blocks_open" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_policy_state_machine_v1.TestPolicyStateMachineV1" name="test_hold_next_closed_logic_deterministic" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_policy_state_machine_v1.TestPolicyStateMachineV1" name="test_htf_veto_blocks_open" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_policy_state_machine_v1.TestPolicyStateMachineV1" name="test_open_allowed_and_transition" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_policy_state_machine_v1.TestPolicyStateMachineV1" name="test_reconcile_resets_to_idle" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_policy_state_machine_v1.TestPolicyStateMachineV1" name="test_save_state_includes_ooo_timestamp" time="0.003" /><testcase classname="src.tezaver.bulut.tests.test_portfolio_risk_v1" name="test_daily_loss_guard" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_portfolio_risk_v1" name="test_cooldown_after_sl" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_portfolio_risk_v1" name="test_group_caps" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_proof_ladder_v1" name="test_load_and_seed" time="0.011" /><testcase classname="src.tezaver.bulut.tests.test_proof_ladder_v1" name="test_compute_effective_cap" time="0.012" /><testcase classname="src.tezaver.bulut.tests.test_proof_ladder_v1" name="test_eval_fails_on_critical_alert" time="0.012" /><testcase classname="src.tezaver.bulut.tests.test_proof_ladder_v1" name="test_advance_stage_logic" time="0.013" /><testcase classname="src.tezaver.bulut.tests.test_proof_ladder_v1" name="test_mainnet_armed_blocks_advance" time="0.013" /><testcase classname="src.tezaver.bulut.tests.test_protective_orders" name="test_client_order_id_length" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_protective_orders" name="test_protective_order_payload_structure" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_qty_calc" name="test_qty_calc_basic" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_qty_calc" name="test_qty_calc_rounding_down" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_qty_calc" name="test_qty_calc_min_qty" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_ranking_stabilizer" name="test_stabilize_bonus" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_ranking_stabilizer" name="test_stabilize_threshold_filter" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_ranking_threshold_topk" name="test_shortlist_empty_when_all_below_threshold" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_ranking_threshold_topk" name="test_shortlist_respects_threshold" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_ranking_threshold_topk" name="test_shortlist_respects_topk_limit" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_ranking_threshold_topk" name="test_shortlist_sorted_by_score" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_ranking_threshold_topk" name="test_scanner_produces_ranking_without_pattern_pack" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_rate_limit" name="test_governor_budget_acquire" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_rate_limit" name="test_backoff_logic" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_rate_limit" name="test_window_reset_telemetry" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_rate_limit_dual" name="test_dual_budget_separation" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_rate_limit_dual" name="test_unknown_weight" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_replay_ui_endpoints_v1" name="test_create_bundle" time="0.006"><error message="failed on setup with &quot;TypeError: object MagicMock can't be used in 'await' expression&quot;">@pytest.fixture
+    def app_client():
+        # Setup mock context on app state
+        ctx = MagicMock(spec=BulutContext)
+    
+        conn = MagicMock()
+        cursor = MagicMock()
+        conn.cursor.return_value = cursor
+        cursor.fetchall.return_value = [
+            {"bundle_id": "b1", "cycle_ts": "t1", "created_ts": "t2", "notes": "n1", "status": "CREATED"}
+        ]
+        cursor.fetchone.return_value = {"result_json": '{"status": "MATCH"}'}
+    
+        ctx.persistence._get_conn.return_value = conn
+        ctx.config.to_dict.return_value = {"mock": "config"}
+        ctx.persistence.get_open_position_count.return_value = 0
+        ctx.persistence.get_total_notional.return_value = 0.0
+    
+        # Patch bootstrap_context to return our mock
+        with patch("tezaver.bulut.app_backend.bootstrap_context", return_value=ctx):
+            # Disable Ops Auth via Env
+            import os
+            os.environ["OPS_AUTH_ENABLED"] = "false"
+            from tezaver.bulut.core.config import reload_config
+            reload_config()
+    
+&gt;           with TestClient(app) as client:
+                 ^^^^^^^^^^^^^^^
+
+src/tezaver/bulut/tests/test_replay_ui_endpoints_v1.py:36: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+venv/lib/python3.13/site-packages/starlette/testclient.py:688: in __enter__
+    portal.call(self.wait_startup)
+venv/lib/python3.13/site-packages/anyio/from_thread.py:326: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+venv/lib/python3.13/site-packages/anyio/from_thread.py:257: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/starlette/testclient.py:723: in wait_startup
+    await receive()
+venv/lib/python3.13/site-packages/starlette/testclient.py:714: in receive
+    self.task.result()
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py:449: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+venv/lib/python3.13/site-packages/anyio/from_thread.py:257: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/starlette/testclient.py:704: in lifespan
+    await self.app(scope, self.stream_receive.receive, self.stream_send.send)
+venv/lib/python3.13/site-packages/fastapi/applications.py:1135: in __call__
+    await super().__call__(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/applications.py:107: in __call__
+    await self.middleware_stack(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/middleware/errors.py:151: in __call__
+    await self.app(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/middleware/base.py:103: in __call__
+    await self.app(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/middleware/trustedhost.py:36: in __call__
+    await self.app(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/middleware/base.py:103: in __call__
+    await self.app(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/middleware/base.py:103: in __call__
+    await self.app(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py:49: in __call__
+    await self.app(scope, receive, send)
+venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/routing.py:716: in __call__
+    await self.middleware_stack(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/routing.py:725: in app
+    await self.lifespan(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/routing.py:694: in lifespan
+    async with self.lifespan_context(app) as maybe_state:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+app = &lt;fastapi.applications.FastAPI object at 0x10dca1940&gt;
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        """Application lifespan handler."""
+        # Startup
+        print("[BULUT] Starting Tezaver Bulut v0.10...")
+        ctx = bootstrap_context()
+    
+        # Try to load pattern pack
+        if ctx.load_pattern_pack():
+            print(f"[BULUT] Pattern pack loaded: {ctx.state.pattern_pack_id}")
+        else:
+            print("[BULUT] No pattern pack found - trade locked")
+    
+        # Init lazy services
+        _ = ctx.universe_source.load()
+        _ = ctx.bars_store
+    
+        # v0.13 Time Sync Init
+        if ctx.config.time_sync_enabled:
+            print("[BULUT] Initializing Time Sync...")
+&gt;           await ctx.time_sync.refresh()
+E           TypeError: object MagicMock can't be used in 'await' expression
+
+src/tezaver/bulut/app_backend.py:70: TypeError</error></testcase><testcase classname="src.tezaver.bulut.tests.test_replay_ui_endpoints_v1" name="test_list_bundles" time="0.005"><error message="failed on setup with &quot;TypeError: object MagicMock can't be used in 'await' expression&quot;">@pytest.fixture
+    def app_client():
+        # Setup mock context on app state
+        ctx = MagicMock(spec=BulutContext)
+    
+        conn = MagicMock()
+        cursor = MagicMock()
+        conn.cursor.return_value = cursor
+        cursor.fetchall.return_value = [
+            {"bundle_id": "b1", "cycle_ts": "t1", "created_ts": "t2", "notes": "n1", "status": "CREATED"}
+        ]
+        cursor.fetchone.return_value = {"result_json": '{"status": "MATCH"}'}
+    
+        ctx.persistence._get_conn.return_value = conn
+        ctx.config.to_dict.return_value = {"mock": "config"}
+        ctx.persistence.get_open_position_count.return_value = 0
+        ctx.persistence.get_total_notional.return_value = 0.0
+    
+        # Patch bootstrap_context to return our mock
+        with patch("tezaver.bulut.app_backend.bootstrap_context", return_value=ctx):
+            # Disable Ops Auth via Env
+            import os
+            os.environ["OPS_AUTH_ENABLED"] = "false"
+            from tezaver.bulut.core.config import reload_config
+            reload_config()
+    
+&gt;           with TestClient(app) as client:
+                 ^^^^^^^^^^^^^^^
+
+src/tezaver/bulut/tests/test_replay_ui_endpoints_v1.py:36: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+venv/lib/python3.13/site-packages/starlette/testclient.py:688: in __enter__
+    portal.call(self.wait_startup)
+venv/lib/python3.13/site-packages/anyio/from_thread.py:326: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+venv/lib/python3.13/site-packages/anyio/from_thread.py:257: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/starlette/testclient.py:723: in wait_startup
+    await receive()
+venv/lib/python3.13/site-packages/starlette/testclient.py:714: in receive
+    self.task.result()
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py:449: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+venv/lib/python3.13/site-packages/anyio/from_thread.py:257: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/starlette/testclient.py:704: in lifespan
+    await self.app(scope, self.stream_receive.receive, self.stream_send.send)
+venv/lib/python3.13/site-packages/fastapi/applications.py:1135: in __call__
+    await super().__call__(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/applications.py:107: in __call__
+    await self.middleware_stack(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/middleware/errors.py:151: in __call__
+    await self.app(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/middleware/base.py:103: in __call__
+    await self.app(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/middleware/trustedhost.py:36: in __call__
+    await self.app(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/middleware/base.py:103: in __call__
+    await self.app(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/middleware/base.py:103: in __call__
+    await self.app(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py:49: in __call__
+    await self.app(scope, receive, send)
+venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/routing.py:716: in __call__
+    await self.middleware_stack(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/routing.py:725: in app
+    await self.lifespan(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/routing.py:694: in lifespan
+    async with self.lifespan_context(app) as maybe_state:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+app = &lt;fastapi.applications.FastAPI object at 0x10dca1940&gt;
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        """Application lifespan handler."""
+        # Startup
+        print("[BULUT] Starting Tezaver Bulut v0.10...")
+        ctx = bootstrap_context()
+    
+        # Try to load pattern pack
+        if ctx.load_pattern_pack():
+            print(f"[BULUT] Pattern pack loaded: {ctx.state.pattern_pack_id}")
+        else:
+            print("[BULUT] No pattern pack found - trade locked")
+    
+        # Init lazy services
+        _ = ctx.universe_source.load()
+        _ = ctx.bars_store
+    
+        # v0.13 Time Sync Init
+        if ctx.config.time_sync_enabled:
+            print("[BULUT] Initializing Time Sync...")
+&gt;           await ctx.time_sync.refresh()
+E           TypeError: object MagicMock can't be used in 'await' expression
+
+src/tezaver/bulut/app_backend.py:70: TypeError</error></testcase><testcase classname="src.tezaver.bulut.tests.test_replay_ui_endpoints_v1" name="test_run_replay" time="0.005"><error message="failed on setup with &quot;TypeError: object MagicMock can't be used in 'await' expression&quot;">@pytest.fixture
+    def app_client():
+        # Setup mock context on app state
+        ctx = MagicMock(spec=BulutContext)
+    
+        conn = MagicMock()
+        cursor = MagicMock()
+        conn.cursor.return_value = cursor
+        cursor.fetchall.return_value = [
+            {"bundle_id": "b1", "cycle_ts": "t1", "created_ts": "t2", "notes": "n1", "status": "CREATED"}
+        ]
+        cursor.fetchone.return_value = {"result_json": '{"status": "MATCH"}'}
+    
+        ctx.persistence._get_conn.return_value = conn
+        ctx.config.to_dict.return_value = {"mock": "config"}
+        ctx.persistence.get_open_position_count.return_value = 0
+        ctx.persistence.get_total_notional.return_value = 0.0
+    
+        # Patch bootstrap_context to return our mock
+        with patch("tezaver.bulut.app_backend.bootstrap_context", return_value=ctx):
+            # Disable Ops Auth via Env
+            import os
+            os.environ["OPS_AUTH_ENABLED"] = "false"
+            from tezaver.bulut.core.config import reload_config
+            reload_config()
+    
+&gt;           with TestClient(app) as client:
+                 ^^^^^^^^^^^^^^^
+
+src/tezaver/bulut/tests/test_replay_ui_endpoints_v1.py:36: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+venv/lib/python3.13/site-packages/starlette/testclient.py:688: in __enter__
+    portal.call(self.wait_startup)
+venv/lib/python3.13/site-packages/anyio/from_thread.py:326: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+venv/lib/python3.13/site-packages/anyio/from_thread.py:257: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/starlette/testclient.py:723: in wait_startup
+    await receive()
+venv/lib/python3.13/site-packages/starlette/testclient.py:714: in receive
+    self.task.result()
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py:449: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+venv/lib/python3.13/site-packages/anyio/from_thread.py:257: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/starlette/testclient.py:704: in lifespan
+    await self.app(scope, self.stream_receive.receive, self.stream_send.send)
+venv/lib/python3.13/site-packages/fastapi/applications.py:1135: in __call__
+    await super().__call__(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/applications.py:107: in __call__
+    await self.middleware_stack(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/middleware/errors.py:151: in __call__
+    await self.app(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/middleware/base.py:103: in __call__
+    await self.app(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/middleware/trustedhost.py:36: in __call__
+    await self.app(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/middleware/base.py:103: in __call__
+    await self.app(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/middleware/base.py:103: in __call__
+    await self.app(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py:49: in __call__
+    await self.app(scope, receive, send)
+venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/routing.py:716: in __call__
+    await self.middleware_stack(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/routing.py:725: in app
+    await self.lifespan(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/routing.py:694: in lifespan
+    async with self.lifespan_context(app) as maybe_state:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+app = &lt;fastapi.applications.FastAPI object at 0x10dca1940&gt;
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        """Application lifespan handler."""
+        # Startup
+        print("[BULUT] Starting Tezaver Bulut v0.10...")
+        ctx = bootstrap_context()
+    
+        # Try to load pattern pack
+        if ctx.load_pattern_pack():
+            print(f"[BULUT] Pattern pack loaded: {ctx.state.pattern_pack_id}")
+        else:
+            print("[BULUT] No pattern pack found - trade locked")
+    
+        # Init lazy services
+        _ = ctx.universe_source.load()
+        _ = ctx.bars_store
+    
+        # v0.13 Time Sync Init
+        if ctx.config.time_sync_enabled:
+            print("[BULUT] Initializing Time Sync...")
+&gt;           await ctx.time_sync.refresh()
+E           TypeError: object MagicMock can't be used in 'await' expression
+
+src/tezaver/bulut/app_backend.py:70: TypeError</error></testcase><testcase classname="src.tezaver.bulut.tests.test_replay_ui_endpoints_v1" name="test_get_result" time="0.005"><error message="failed on setup with &quot;TypeError: object MagicMock can't be used in 'await' expression&quot;">@pytest.fixture
+    def app_client():
+        # Setup mock context on app state
+        ctx = MagicMock(spec=BulutContext)
+    
+        conn = MagicMock()
+        cursor = MagicMock()
+        conn.cursor.return_value = cursor
+        cursor.fetchall.return_value = [
+            {"bundle_id": "b1", "cycle_ts": "t1", "created_ts": "t2", "notes": "n1", "status": "CREATED"}
+        ]
+        cursor.fetchone.return_value = {"result_json": '{"status": "MATCH"}'}
+    
+        ctx.persistence._get_conn.return_value = conn
+        ctx.config.to_dict.return_value = {"mock": "config"}
+        ctx.persistence.get_open_position_count.return_value = 0
+        ctx.persistence.get_total_notional.return_value = 0.0
+    
+        # Patch bootstrap_context to return our mock
+        with patch("tezaver.bulut.app_backend.bootstrap_context", return_value=ctx):
+            # Disable Ops Auth via Env
+            import os
+            os.environ["OPS_AUTH_ENABLED"] = "false"
+            from tezaver.bulut.core.config import reload_config
+            reload_config()
+    
+&gt;           with TestClient(app) as client:
+                 ^^^^^^^^^^^^^^^
+
+src/tezaver/bulut/tests/test_replay_ui_endpoints_v1.py:36: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+venv/lib/python3.13/site-packages/starlette/testclient.py:688: in __enter__
+    portal.call(self.wait_startup)
+venv/lib/python3.13/site-packages/anyio/from_thread.py:326: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+venv/lib/python3.13/site-packages/anyio/from_thread.py:257: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/starlette/testclient.py:723: in wait_startup
+    await receive()
+venv/lib/python3.13/site-packages/starlette/testclient.py:714: in receive
+    self.task.result()
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py:449: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+venv/lib/python3.13/site-packages/anyio/from_thread.py:257: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/starlette/testclient.py:704: in lifespan
+    await self.app(scope, self.stream_receive.receive, self.stream_send.send)
+venv/lib/python3.13/site-packages/fastapi/applications.py:1135: in __call__
+    await super().__call__(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/applications.py:107: in __call__
+    await self.middleware_stack(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/middleware/errors.py:151: in __call__
+    await self.app(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/middleware/base.py:103: in __call__
+    await self.app(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/middleware/trustedhost.py:36: in __call__
+    await self.app(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/middleware/base.py:103: in __call__
+    await self.app(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/middleware/base.py:103: in __call__
+    await self.app(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py:49: in __call__
+    await self.app(scope, receive, send)
+venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/routing.py:716: in __call__
+    await self.middleware_stack(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/routing.py:725: in app
+    await self.lifespan(scope, receive, send)
+venv/lib/python3.13/site-packages/starlette/routing.py:694: in lifespan
+    async with self.lifespan_context(app) as maybe_state:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+venv/lib/python3.13/site-packages/fastapi/routing.py:204: in merged_lifespan
+    async with original_context(app) as maybe_original_state:
+               ^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.13/3.13.5/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py:214: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+app = &lt;fastapi.applications.FastAPI object at 0x10dca1940&gt;
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        """Application lifespan handler."""
+        # Startup
+        print("[BULUT] Starting Tezaver Bulut v0.10...")
+        ctx = bootstrap_context()
+    
+        # Try to load pattern pack
+        if ctx.load_pattern_pack():
+            print(f"[BULUT] Pattern pack loaded: {ctx.state.pattern_pack_id}")
+        else:
+            print("[BULUT] No pattern pack found - trade locked")
+    
+        # Init lazy services
+        _ = ctx.universe_source.load()
+        _ = ctx.bars_store
+    
+        # v0.13 Time Sync Init
+        if ctx.config.time_sync_enabled:
+            print("[BULUT] Initializing Time Sync...")
+&gt;           await ctx.time_sync.refresh()
+E           TypeError: object MagicMock can't be used in 'await' expression
+
+src/tezaver/bulut/app_backend.py:70: TypeError</error></testcase><testcase classname="src.tezaver.bulut.tests.test_replay_v1" name="test_collector_create_bundle" time="0.002" /><testcase classname="src.tezaver.bulut.tests.test_replay_v1" name="test_replay_engine_determinism" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_rest_kline_to_bar" name="test_parse_kline" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_risk_v1" name="test_daily_loss_guard" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_risk_v1" name="test_cooldown_after_sl" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_risk_v1" name="test_group_caps" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_rules_editor_v0_31" name="test_validator_allowlist" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_rules_editor_v0_31" name="test_validator_group_caps" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_rules_editor_v0_31" name="test_api_block_mainnet_armed" time="0.003" /><testcase classname="src.tezaver.bulut.tests.test_safety_guard" name="test_guard_blocks_if_execution_disabled" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_safety_guard" name="test_guard_blocks_if_arm_token_missing" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_safety_guard" name="test_guard_allowed_if_all_ok" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_scheduler_dedup_cycle" name="test_scheduler_skips_same_close_ts" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_state_reducer_v1" name="test_apply_order_dedup" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_state_reducer_v1" name="test_apply_account_ooo" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_task_supervisor_v1" name="test_supervisor_restarts_crashing_task" time="0.602" /><testcase classname="src.tezaver.bulut.tests.test_task_supervisor_v1" name="test_heartbeat_updates" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_time_sync" name="test_time_sync_logic" time="0.002" /><testcase classname="src.tezaver.bulut.tests.test_time_sync" name="test_skew_fail" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_time_sync" name="test_safety_guard_block" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_timeframe_aggregator" name="test_derive_1h_basic" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_timeframe_aggregator" name="test_derive_insufficient" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_timeframe_aggregator" name="test_derive_gap" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_trade_lock_pattern_missing" name="test_trade_locked_when_pattern_pack_missing" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_trade_lock_pattern_missing" name="test_decider_blocks_open_when_locked" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_trade_lock_pattern_missing" name="test_trade_unlocked_when_pattern_pack_loaded" time="0.002" /><testcase classname="src.tezaver.bulut.tests.test_ui_endpoints_v0_29" name="test_ui_summary_endpoint" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_ui_endpoints_v0_29" name="test_audit_endpoint" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_ui_endpoints_v0_29" name="test_bars_series_missing_store" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_ui_endpoints_v0_29" name="test_bars_series_success" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_ui_integration_v0_30" name="test_ui_functions_importable" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_ui_integration_v0_30" name="test_signature_accepts_api_base" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_ui_test_report_v1" name="test_parse_junit_xml_basic" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_ui_test_report_v1" name="test_get_test_report_not_available" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_ui_test_report_v1" name="test_parse_junit_xml_testsuites_format" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_universe_source" name="test_universe_fallback_when_file_missing" time="0.000" /><testcase classname="src.tezaver.bulut.tests.test_universe_source" name="test_universe_from_file_with_comments_and_empty_lines" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_universe_source" name="test_universe_env_override" time="0.001" /><testcase classname="src.tezaver.bulut.tests.test_user_data_stream_v1" name="test_start_creates_listen_key" time="0.002" /><testcase classname="src.tezaver.bulut.tests.test_user_data_stream_v1" name="test_process_order_update" time="0.002" /><testcase classname="src.tezaver.bulut.tests.test_user_data_stream_v1" name="test_process_account_update" time="0.002" /><testcase classname="src.tezaver.bulut.tests.test_user_data_stream_v1" name="test_stop_closes_stream" time="0.002" /></testsuite></testsuites>

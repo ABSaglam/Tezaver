@@ -98,6 +98,11 @@ class BulutConfig:
     
     # v0.18 Income Sync
     income_sync_enabled: bool = True
+
+    # v0.4 Strict Timing (Contract P3)
+    strict_timing_enabled: bool = field(default_factory=lambda: str(_env_str("STRICT_TIMING_ENABLED", "true")).lower() == "true")
+    max_drift_ms: int = field(default_factory=lambda: _env_int("MAX_DRIFT_MS", 5000))
+    dedupe_window_bars: int = field(default_factory=lambda: _env_int("DEDUPE_WINDOW_BARS", 2))
     income_sync_types: str = "FUNDING_FEE" # Comma separated
     income_sync_refresh_seconds: int = 900
     income_sync_lookback_hours: int = 48
@@ -132,6 +137,10 @@ class BulutConfig:
     migrations_enabled: bool = True
     migrations_fail_fast: bool = True
     migrations_dry_run_on_start: bool = False
+
+    # P4 Mainnet Dry-Run
+    dry_run_enabled: bool = field(default_factory=lambda: str(_env_str("DRY_RUN_ENABLED", "false")).lower() == "true")
+    dry_run_cycles_default: int = field(default_factory=lambda: _env_int("DRY_RUN_CYCLES_DEFAULT", 20))
 
     # v0.21 USER_DATA Websocket
     user_data_ws_enabled: bool = True

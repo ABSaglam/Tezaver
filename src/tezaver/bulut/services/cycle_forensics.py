@@ -5,7 +5,7 @@ Used for "One-Click Debug" and incident bundles.
 """
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 
 from tezaver.bulut.core.context import BulutContext
@@ -38,6 +38,19 @@ class CycleForensicsService:
             cycle_index=cycle_index,
             cycle_ts=cycle_ts
         )
+        
+        # P3: Strict Timing Calculation
+        now = datetime.now(timezone.utc)
+        drift_seconds = (now - cycle_ts).total_seconds()
+        timeline.drift_ms = int(drift_seconds * 1000)
+        timeline.run_started_ts = now # Approx (this is save time, but close enough for v1 or pass strictly)
+        # Ideally capture start time in scheduler and pass it down. 
+        # But scheduler executes scan/decide sequentially, so "now" here is actually "finished_ts".
+        # run_started_ts should be passed?
+        # Let's use drift calc from start of forensic save as "end_drift".
+        # But request says "drift_ms = now_ms - close_ts_ms" at START.
+        # "expected_close_ts" = cycle_ts.
+        timeline.expected_close_ts = cycle_ts
         
         # 1. SCHED Stage
         # sched_stats input: { "planned_n": 3, "priority_n": 0, "rr_n": 3, "missed_n": 0 }

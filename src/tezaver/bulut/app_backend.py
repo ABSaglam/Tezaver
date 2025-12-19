@@ -10,8 +10,7 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 import asyncio
 
-from tezaver.bulut.core.context import bootstrap_context
-from tezaver.bulut.core.context import bootstrap_context
+from tezaver.bulut.core.context import bootstrap_context, BulutContext
 # Import routers explicitly to avoid __init__ issues
 from tezaver.bulut.api import routes_health
 from tezaver.bulut.api import routes_ranking
@@ -43,7 +42,16 @@ from tezaver.bulut.api import routes_intel
 # from tezaver.bulut.api import routes_reports # Assuming exists
 from tezaver.bulut.api import routes_sizing
 from tezaver.bulut.api import routes_proof_ladder
+from tezaver.bulut.api import routes_fault_lab
+from tezaver.bulut.api import routes_replay
+from tezaver.bulut.api import routes_strict_timing
+from tezaver.bulut.api import routes_dry_run # P4
+from tezaver.bulut.api import routes_autopilot # P5
+from tezaver.bulut.api import routes_expansion # P6
 
+
+from tezaver.bulut.core.fault_lab_service import FaultLabService
+from tezaver.bulut.core.fault_injector import FaultInjector
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -52,6 +60,13 @@ async def lifespan(app: FastAPI):
     print("[BULUT] Starting Tezaver Bulut v0.10...")
     ctx = bootstrap_context()
     
+    # Expose context on app state (Critical for routes)
+    app.state.context = ctx
+
+    # Initialize Fault Lab Service and expose
+    injector = FaultInjector()
+    app.state.fault_lab_service = FaultLabService(ctx.persistence, injector)
+
     # Try to load pattern pack
     if ctx.load_pattern_pack():
         print(f"[BULUT] Pattern pack loaded: {ctx.state.pattern_pack_id}")
@@ -197,11 +212,6 @@ async def lifespan(app: FastAPI):
     await ctx.task_supervisor.stop_all()
     
     # Cleanup components
-    # ctx.scheduler.stop() handled by supervisor stop?
-    # run_forever logic has finally: running=False.
-    # explicit stop() call might be redundant but safe?
-    # Supervisor cancels tasks.
-    
     if getattr(ctx, "_executor", None):
         await ctx.executor.cleanup()
     ctx.telemetry.emit_system_event("SHUTDOWN")
@@ -298,6 +308,12 @@ app.include_router(routes_forensics.router, prefix="/cycles", tags=["Forensics"]
 app.include_router(routes_intel.router, prefix="/intel", tags=["Intel"])
 app.include_router(routes_ui.router, prefix="/ui", tags=["UI"])
 app.include_router(routes_proof_ladder.router, prefix="/mainnet/ladder", tags=["Proof Ladder"])
+app.include_router(routes_fault_lab.router, tags=["Fault Lab"])
+app.include_router(routes_replay.router, tags=["Replay Lab"])
+app.include_router(routes_strict_timing.router)
+app.include_router(routes_dry_run.router) # P4
+app.include_router(routes_autopilot.router) # P5
+app.include_router(routes_expansion.router) # P6
 
 
 @app.get("/")

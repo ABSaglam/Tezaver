@@ -47,3 +47,4 @@ build/
 # Backups & Archives
 backups/
 *.zip
+!data/bulut_rules/
