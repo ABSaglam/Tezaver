@@ -75,7 +75,7 @@ def test_app_middleware_integration(tmp_path):
         # Disable heavy startup checks if possible or let them run on empty DB
         "STARTUP_SELFTEST_ENABLED": "false", 
         "PROOF_LADDER_AUTO_EVALUATE_ENABLED": "false",
-        "ALLOWED_HOSTS": "[\"*\"]",
+        "ALLOWED_HOSTS": "*",
         "API_HOST": "0.0.0.0"
     }
     
@@ -85,7 +85,9 @@ def test_app_middleware_integration(tmp_path):
         reload_config()
         
         # TestClient triggers lifespan
-        with TestClient(app) as client:
+        # TestClient triggers lifespan
+        # Use localhost to satisfy default ALLOWED_HOSTS (since app is global and middleware already set)
+        with TestClient(app, base_url="http://localhost") as client:
             # 1. Health (Public)
             resp = client.get("/health")
             assert resp.status_code == 200
