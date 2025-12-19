@@ -517,8 +517,9 @@ class BulutContext:
             return False
         
         self._state.pattern_pack_loaded = True
-        self._state.pattern_pack_id = pack.get("pack_id")
-        self._state.pattern_pack_hash = pack.get("hash")
+        # pack is PatternPackV1 object, so access attributes directly
+        self._state.pattern_pack_id = getattr(pack, "pack_id", None)
+        self._state.pattern_pack_hash = getattr(pack, "hash", None)
         self.update_trade_lock()
         return True
 

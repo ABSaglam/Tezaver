@@ -44,7 +44,8 @@ def test_incident_bundle_export(tmp_path, cfg):
     
     # Create mock context with required attributes
     ctx = MagicMock()
-    ctx.config = cfg  # Real config (has to_dict)
+    del ctx.config_snapshot # Prevent hasattr=True logic
+    ctx.config = BulutConfig() # Ensure fresh, clean config for serialization
     
     # Status service mock
     status_svc = MagicMock()
@@ -64,6 +65,8 @@ def test_incident_bundle_export(tmp_path, cfg):
     db_path.touch()
     ctx.persistence = MagicMock()
     ctx.persistence._db_path = str(db_path)
+    # Critical: Mock this to return list, not MagicMock, to avoid json.dump error
+    ctx.persistence.get_latest_timelines.return_value = []
     
     zip_path = svc.create_bundle(ctx, "test_reason")
     

@@ -74,7 +74,9 @@ def test_app_middleware_integration(tmp_path):
         "SQLITE_PATH": str(db_path),
         # Disable heavy startup checks if possible or let them run on empty DB
         "STARTUP_SELFTEST_ENABLED": "false", 
-        "PROOF_LADDER_AUTO_EVALUATE_ENABLED": "false"
+        "PROOF_LADDER_AUTO_EVALUATE_ENABLED": "false",
+        "ALLOWED_HOSTS": "[\"*\"]",
+        "API_HOST": "0.0.0.0"
     }
     
     with patch.dict(os.environ, env_patch):

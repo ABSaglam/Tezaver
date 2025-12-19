@@ -86,12 +86,25 @@ def test_decider_propagates_to_plan(tmp_path, v2_pack_file):
     
     # Run scan to get candidate with matches
     config = BulutConfig(scan_min_score=0, trade_min_score=0)
-    # config.trade_min_score = 0 # Frozen error fix
     scanner = Scanner(config, pattern_loader=loader, universe=["BTCUSDT"])
-    snapshot = scanner.scan() # Returns candidates (filtered by min_score=0)
+    snapshot = scanner.scan()
+    
+    # Create mock ctx for Decider (v0.22 API)
+    ctx = MagicMock()
+    ctx.config = config
+    ctx.policy = MagicMock()
+    ctx.entry_sizing_resolver = MagicMock()
+    ctx.entry_sizing_resolver.resolve.return_value = MagicMock(
+        blocked=False,
+        notional_usdt=100,
+        profile_id="test",
+        explain="test",
+        leverage=None,
+        block_reason=None
+    )
     
     # Run Decider
-    decider = Decider(config)
+    decider = Decider(ctx)
     plans = decider.decide(snapshot, 0, 0.0, True, allowlist=None)
     
     assert len(plans) == 1

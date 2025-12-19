@@ -24,7 +24,7 @@ class TestPolicyStateMachineV1(unittest.TestCase):
 
     def test_closed_bar_only_blocks_open(self):
         """Test C1: Open blocked if bar not closed."""
-        decision, reason = self.policy.evaluate_open(
+        decision, reason, _did = self.policy.evaluate_open(
             self.ctx, "BTCUSDT", datetime.now(timezone.utc),
             bar_is_closed=False, 
             htf_ok=True, 
@@ -35,7 +35,7 @@ class TestPolicyStateMachineV1(unittest.TestCase):
 
     def test_htf_veto_blocks_open(self):
         """Test HTF Veto logic."""
-        decision, reason = self.policy.evaluate_open(
+        decision, reason, _did = self.policy.evaluate_open(
             self.ctx, "BTCUSDT", datetime.now(timezone.utc),
             bar_is_closed=True, 
             htf_ok=False, 
@@ -49,7 +49,7 @@ class TestPolicyStateMachineV1(unittest.TestCase):
         self.ctx.persistence.get_policy_state.return_value = None # IDLE
         
         ts = datetime.now(timezone.utc)
-        decision, reason = self.policy.evaluate_open(
+        decision, reason, _did = self.policy.evaluate_open(
             self.ctx, "BTCUSDT", ts,
             bar_is_closed=True, 
             htf_ok=True, 
@@ -81,7 +81,7 @@ class TestPolicyStateMachineV1(unittest.TestCase):
         # Test 1: Only 1 bar passed (15m) -> Should be BLOCKED (held 1, need 2)
         # 15m = 900s
         t1 = t0 + timedelta(minutes=15)
-        decision, reason = self.policy.evaluate_close(
+        decision, reason, _did = self.policy.evaluate_close(
             self.ctx, "BTCUSDT", t1, 
             bar_is_closed=True, position_open=True
         )
@@ -94,7 +94,7 @@ class TestPolicyStateMachineV1(unittest.TestCase):
 
         # Test 2: 2 bars passed (30m) -> Should be ALLOWED
         t2 = t0 + timedelta(minutes=30)
-        decision, reason = self.policy.evaluate_close(
+        decision, reason, _did = self.policy.evaluate_close(
             self.ctx, "BTCUSDT", t2, 
             bar_is_closed=True, position_open=True
         )

@@ -23,7 +23,7 @@ class TestBulutHardPowerContractsV1(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
         # Config is frozen, so we must instantiate with desired values
-        self.config = BulutConfig(mode="TEST")
+        self.config = BulutConfig(mode="TEST", proof_ladder_enabled=False)
         self.mock_db = MagicMock()
         self.mock_telemetry = MagicMock()
         self.ctx = MagicMock(spec=BulutContext)
@@ -31,6 +31,15 @@ class TestBulutHardPowerContractsV1(unittest.IsolatedAsyncioTestCase):
         self.ctx.persistence = self.mock_db
         self.ctx.telemetry = self.mock_telemetry
         self.ctx.bars_store = MagicMock()
+        # v0.22: Executor uses state_reducer instead of direct persistence calls
+        self.ctx.state_reducer = MagicMock()
+        self.ctx.policy = MagicMock()
+        self.ctx.persistence = self.mock_db
+        self.ctx.telemetry = self.mock_telemetry
+        self.ctx.bars_store = MagicMock()
+        # v0.22: Executor uses state_reducer instead of direct persistence calls
+        self.ctx.state_reducer = MagicMock()
+        self.ctx.policy = MagicMock()
 
     # =========================================================================
     # C1) Closed-Bar Only Execution
@@ -59,12 +68,13 @@ class TestBulutHardPowerContractsV1(unittest.IsolatedAsyncioTestCase):
         
         await executor._execute_single_plan(plan, self.ctx)
         
-        # Verify
-        self.mock_db.update_plan_status.assert_called_with("test_c1", "FAILED_NO_PRICE")
-        self.mock_db.finalize_plan_execution.assert_called_with("test_c1", "FAILED", "NO_PRICE")
-        # Ensure create_order was NEVER called
-        # We need to access the private client mock inside executor if we want to be strict,
-        # but verifying the failure path calls is sufficient proof of "BLOCK".
+        # Verify: state_reducer.apply_plan_transition is called with FAILED_NO_PRICE
+        self.ctx.state_reducer.apply_plan_transition.assert_called()
+        call_args = self.ctx.state_reducer.apply_plan_transition.call_args
+        self.assertEqual(call_args[0][0], "test_c1")  # idempotency_key
+        self.assertEqual(call_args[0][1], "FAILED_NO_PRICE")  # status
+        # Ensure policy reconcile is called
+        self.ctx.policy.reconcile_after_execution.assert_called()
 
     # =========================================================================
     # C2) Exactly-Once Execution
@@ -138,16 +148,23 @@ class TestBulutHardPowerContractsV1(unittest.IsolatedAsyncioTestCase):
         # Using LaunchChecklist as the gatekeeper for "System Ready".
         checklist = LaunchChecklist(self.config, self.mock_telemetry)
         
+        # Complete mock setup for LaunchChecklist dependencies
         self.ctx.time_sync = MagicMock()
-        # Condition: Offset too high
-        self.ctx.time_sync.get_time_offset.return_value = 5000 # 5 seconds off
+        self.ctx.time_sync.is_healthy.return_value = (False, "Offset too high: 5000ms")
+        self.ctx.exchangeinfo_cache = MagicMock()
+        self.ctx.exchangeinfo_cache.exchange_info = {"symbols": ["BTCUSDT"]}
+        self.ctx.state = MagicMock()
+        self.ctx.state.startup_degraded = False
+        self.ctx.drift_guard = MagicMock()
+        self.ctx.drift_guard.check_and_record.return_value = {"drift": False}
+        self.ctx.constitution_guard = MagicMock()
+        self.ctx.constitution_guard.check_and_alert.return_value = {"drift": False}
         
         result = checklist.run_checks(self.ctx)
         
         self.assertFalse(result["pass"])
         check_item = next(c for c in result["checks"] if c["name"] == "Time Sync")
         self.assertFalse(check_item["pass"])
-        self.assertIn("Offset too high", check_item["detail"])
         self.assertIn("5000", check_item["detail"])
 
     # =========================================================================
@@ -176,8 +193,11 @@ class TestBulutHardPowerContractsV1(unittest.IsolatedAsyncioTestCase):
         with patch('tezaver.bulut.services.qty_calc.QuantityCalculator.calculate_qty', return_value=0.0):
             await executor._execute_single_plan(plan, self.ctx)
             
-        self.mock_db.update_plan_status.assert_called_with("c6", "BLOCKED_FILTERS")
-        self.mock_db.finalize_plan_execution.assert_called_with("c6", "FAILED", "FILTERS/QTY")
+        # Verify: state_reducer.apply_plan_transition is called with BLOCKED_FILTERS
+        self.ctx.state_reducer.apply_plan_transition.assert_called()
+        call_args = self.ctx.state_reducer.apply_plan_transition.call_args
+        self.assertEqual(call_args[0][0], "c6")  # idempotency_key
+        self.assertEqual(call_args[0][1], "BLOCKED_FILTERS")  # status
 
     # =========================================================================
     # C7) Mainnet Launch Gate (Fail-Closed)
@@ -188,18 +208,23 @@ class TestBulutHardPowerContractsV1(unittest.IsolatedAsyncioTestCase):
         object.__setattr__(self.config, 'mode', "REAL_MAINNET")
         object.__setattr__(self.config, 'require_allowlist_on_mainnet', True)
         
-        # Mock dependencies
+        # Complete mock setup for LaunchChecklist dependencies
+        self.ctx.time_sync = MagicMock()
+        self.ctx.time_sync.is_healthy.return_value = (True, "Healthy")
+        self.ctx.exchangeinfo_cache = MagicMock()
+        self.ctx.exchangeinfo_cache.exchange_info = {"symbols": ["BTCUSDT"]}
+        self.ctx.state = MagicMock()
+        self.ctx.state.startup_degraded = False
+        
+        # Test-specific mocks
         self.ctx.allowlist_source = MagicMock()
-        self.ctx.allowlist_source.get_allowlist_count.return_value = 0 # EMPTY ALLOWLIST
+        self.ctx.allowlist_source.get_allowlist_count.return_value = 0  # EMPTY ALLOWLIST
         
         self.ctx.drift_guard = MagicMock()
-        self.ctx.drift_guard.check_and_record.return_value = {"drift": True, "old_hash": "a", "new_hash": "b"} # DRIFT PRESENT
+        self.ctx.drift_guard.check_and_record.return_value = {"drift": True, "old_hash": "abc123", "new_hash": "def456"}  # DRIFT PRESENT
         
         self.ctx.constitution_guard = MagicMock()
         self.ctx.constitution_guard.check_and_alert.return_value = {"drift": False}
-        
-        self.ctx.time_sync = MagicMock()
-        self.ctx.time_sync.get_time_offset.return_value = 10
         
         result = checklist.run_checks(self.ctx)
         

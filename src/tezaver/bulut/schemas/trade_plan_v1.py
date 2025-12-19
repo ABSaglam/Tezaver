@@ -88,6 +88,9 @@ class TradePlanV1:
     cycle_index: int = 0
     input_fingerprint: str = ""
     
+    # Leverage (v0.22 - optional, used by sizing resolver)
+    leverage: Optional[int] = None
+    
     @property
     def schema(self) -> str:
         return SCHEMA_VERSION

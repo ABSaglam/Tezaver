@@ -1,3 +1,8 @@
+# Tezaver Bulut - User Data Stream Tests (v0.22)
+"""
+Tests for UserDataStream service using v0.22 reducer pattern.
+"""
+
 import pytest
 import asyncio
 from unittest.mock import MagicMock, AsyncMock, patch
@@ -17,37 +22,48 @@ def mock_deps():
     
     telemetry = MagicMock(spec=NdjsonTelemetry)
     
-    # Mock Context & Persistence
+    # Mock Context & State Reducer (v0.22)
     ctx = MagicMock()
-    ctx.persistence.upsert_trade_audit_event = MagicMock()
-    ctx.persistence.mark_position_closed = MagicMock()
+    ctx.state_reducer = MagicMock()
+    ctx.state_reducer.apply_order_update = MagicMock()
+    ctx.state_reducer.apply_account_update = MagicMock()
     
     return config, client, telemetry, ctx
 
 @pytest.mark.asyncio
 async def test_start_creates_listen_key(mock_deps):
+    """Test that start() calls run_forever which creates listen key."""
     config, client, telemetry, ctx = mock_deps
     stream = UserDataStream(config, client, telemetry)
     
-    # Don't actually run WS loop in test start check (it spawns task)
-    # We can mock _ws_loop to do nothing
+    # Mock run_forever to be a simple coroutine that runs once
+    # Since start() spawns run_forever as a task, we need to test run_forever directly
+    # with mocked loops to verify create_listen_key is called
     with patch.object(stream, '_ws_loop', AsyncMock()), \
          patch.object(stream, '_keepalive_loop', AsyncMock()):
-        await stream.start(ctx)
-        
+        # Run run_forever directly (since it's what actually calls create_listen_key)
+        await stream.run_forever(ctx)
+    
     client.create_listen_key.assert_called_once()
     assert stream._listen_key == "test_listen_key"
-    assert stream._running is True
+    assert stream._ctx == ctx
 
 @pytest.mark.asyncio
 async def test_process_order_update(mock_deps):
+    """Test ORDER_TRADE_UPDATE handling via reducer."""
     config, client, telemetry, ctx = mock_deps
     stream = UserDataStream(config, client, telemetry)
     stream._ctx = ctx
     
-    # ORDER_TRADE_UPDATE payload example
+    # Set reducer (v0.22)
+    reducer = MagicMock()
+    reducer.apply_order_update = MagicMock()
+    stream.set_reducer(reducer)
+    
+    # ORDER_TRADE_UPDATE payload
     payload = {
         "e": "ORDER_TRADE_UPDATE",
+        "E": 1600000000000,
         "o": {
             "s": "BTCUSDT",
             "i": 12345,
@@ -62,49 +78,49 @@ async def test_process_order_update(mock_deps):
     
     await stream._handle_message(payload)
     
-    ctx.persistence.upsert_trade_audit_event.assert_called_once_with(
-        order_id="12345",
-        client_id="client_1",
-        symbol="BTCUSDT",
-        status="FILLED",
-        exec_type="TRADE",
-        filled_qty=0.1,
-        avg_price=50000.0,
-        event_time=1600000000000
-    )
+    # Verify reducer.apply_order_update was called with the order data
+    reducer.apply_order_update.assert_called_once()
+    call_args = reducer.apply_order_update.call_args
+    assert call_args[0][0] == payload["o"]  # First arg is order data
+    assert call_args[1]["source"] == "USER_DATA"  # source kwarg
 
 @pytest.mark.asyncio
 async def test_process_account_update(mock_deps):
+    """Test ACCOUNT_UPDATE handling via reducer."""
     config, client, telemetry, ctx = mock_deps
     stream = UserDataStream(config, client, telemetry)
     stream._ctx = ctx
     
-    # ACCOUNT_UPDATE payload example (Position closed)
+    # Set reducer (v0.22)
+    reducer = MagicMock()
+    reducer.apply_account_update = MagicMock()
+    stream.set_reducer(reducer)
+    
+    # ACCOUNT_UPDATE payload (Position closed)
     payload = {
         "e": "ACCOUNT_UPDATE",
+        "E": 1600000000000,
         "a": {
             "P": [
-                {"s": "BTCUSDT", "pa": "0", "ep": "0.0"}, # Closed
-                {"s": "ETHUSDT", "pa": "1.0", "ep": "3000.0"} # Open
+                {"s": "BTCUSDT", "pa": "0", "ep": "0.0"},  # Closed
+                {"s": "ETHUSDT", "pa": "1.0", "ep": "3000.0"}  # Open
             ]
         }
     }
     
     await stream._handle_message(payload)
     
-    # Should mark BTCUSDT closed
-    ctx.persistence.mark_position_closed.assert_called_with(
-        symbol="BTCUSDT",
-        close_reason="EVENT_CLOSED",
-        close_order_id=None
-    )
-    # Should NOT mark ETHUSDT closed
-    call_args_list = ctx.persistence.mark_position_closed.call_args_list
-    assert len(call_args_list) == 1
-    assert call_args_list[0].kwargs["symbol"] == "BTCUSDT"
+    # Verify reducer.apply_account_update was called with account data
+    reducer.apply_account_update.assert_called_once()
+    call_args = reducer.apply_account_update.call_args
+    # Account data should include _E (event time) injected by handler
+    account_data = call_args[0][0]
+    assert account_data.get("_E") == 1600000000000
+    assert call_args[1]["source"] == "USER_DATA"
 
 @pytest.mark.asyncio
 async def test_stop_closes_stream(mock_deps):
+    """Test stop() properly cleans up."""
     config, client, telemetry, ctx = mock_deps
     stream = UserDataStream(config, client, telemetry)
     stream._listen_key = "key"

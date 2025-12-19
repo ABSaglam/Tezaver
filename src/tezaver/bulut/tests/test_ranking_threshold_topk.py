@@ -131,11 +131,10 @@ def test_scanner_produces_ranking_without_pattern_pack():
     from tezaver.bulut.core.config import BulutConfig
     from tezaver.bulut.engine.scanner import Scanner
     
-    config = BulutConfig()
-    scanner = Scanner(config, pattern_pack=None)
+    config = BulutConfig(scan_min_score=0) # Lower threshold for test with 0 scores
+    scanner = Scanner(config, pattern_loader=None, universe=["BTCUSDT", "ETHUSDT", "SOLUSDT"])
     
-    # Set small universe for test
-    scanner.set_symbols(["BTCUSDT", "ETHUSDT", "SOLUSDT"])
+    # scanner.set_symbols(["BTCUSDT", "ETHUSDT", "SOLUSDT"]) # Removed in v0.03
     
     ranking = scanner.scan()
     

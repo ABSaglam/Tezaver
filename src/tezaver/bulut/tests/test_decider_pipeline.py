@@ -5,6 +5,7 @@ Tests for decider logic including allowlists and limits.
 
 import pytest
 from datetime import datetime, timezone
+from unittest.mock import MagicMock
 from tezaver.bulut.core.config import BulutConfig
 from tezaver.bulut.engine.decider import Decider
 from tezaver.bulut.schemas.ranking_snapshot_v1 import RankingSnapshotV1, CandidateScore
@@ -17,10 +18,29 @@ def _create_ranking(candidates):
         datetime.now(timezone.utc), "15m", [], len(candidates), 70, 20, candidates
     )
 
+def _make_mock_ctx(config):
+    """Create mock context for Decider with required attributes."""
+    ctx = MagicMock()
+    ctx.config = config
+    ctx.policy = MagicMock()
+    ctx.policy.transition_on_open_submit = MagicMock()
+    ctx.entry_sizing_resolver = MagicMock()
+    # Default sizing: not blocked, 100 USDT notional
+    ctx.entry_sizing_resolver.resolve.return_value = MagicMock(
+        blocked=False, 
+        notional_usdt=100, 
+        profile_id="test", 
+        explain="test",
+        leverage=None,
+        block_reason=None
+    )
+    return ctx
+
 def test_decider_blocked_if_pattern_pack_missing():
     """Should return empty list if pattern pack not loaded."""
     config = BulutConfig()
-    decider = Decider(config)
+    ctx = _make_mock_ctx(config)
+    decider = Decider(ctx)
     
     ranking = _create_ranking([_create_candidate("BTCUSDT", 90)])
     
@@ -30,7 +50,8 @@ def test_decider_blocked_if_pattern_pack_missing():
 def test_decider_allowlist_block():
     """Should block symbols not in allowlist."""
     config = BulutConfig(trade_min_score=50)
-    decider = Decider(config)
+    ctx = _make_mock_ctx(config)
+    decider = Decider(ctx)
     
     ranking = _create_ranking([
         _create_candidate("BTCUSDT", 80), # Allowed
@@ -53,7 +74,8 @@ def test_decider_allowlist_block():
 def test_decider_max_new_entries_per_cycle():
     """Should respect max new entries limit per cycle."""
     config = BulutConfig(max_new_entries_per_cycle=1, trade_min_score=50)
-    decider = Decider(config)
+    ctx = _make_mock_ctx(config)
+    decider = Decider(ctx)
     
     ranking = _create_ranking([
         _create_candidate("A", 90),
@@ -78,7 +100,8 @@ def test_decider_max_new_entries_per_cycle():
 def test_decider_global_max_positions():
     """Should block if max open positions reached."""
     config = BulutConfig(max_open_positions=2)
-    decider = Decider(config)
+    ctx = _make_mock_ctx(config)
+    decider = Decider(ctx)
     
     ranking = _create_ranking([_create_candidate("A", 90)])
     

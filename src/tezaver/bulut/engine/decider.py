@@ -88,9 +88,7 @@ class Decider:
             if sizing_res.blocked:
                  plans.append(self._create_plan(
                     cand, ranking.cycle_ts, TradeDecision.SKIP,
-                    reasons={"skip_reason": f"SIZING_BLOCK: {sizing_res.block_reason}"},
-                    policy_decision_id=p_did,
-                    input_fingerprint=fingerprint
+                    reasons={"skip_reason": f"SIZING_BLOCK: {sizing_res.block_reason}"}
                  ))
                  continue
                  
@@ -107,9 +105,7 @@ class Decider:
                 if not allowed:
                     plans.append(self._create_plan(
                         cand, ranking.cycle_ts, TradeDecision.SKIP,
-                        reasons={"skip_reason": code, "risk_details": meta},
-                        policy_decision_id=p_did,
-                        input_fingerprint=fingerprint
+                        reasons={"skip_reason": code, "risk_details": meta}
                     ))
                     continue
             else:
@@ -117,9 +113,7 @@ class Decider:
                 if open_positions_count >= self._config.max_open_positions:
                     plans.append(self._create_plan(
                         cand, ranking.cycle_ts, TradeDecision.SKIP,
-                        reasons={"skip_reason": "MAX_POSITIONS_REACHED"},
-                        policy_decision_id=p_did,
-                        input_fingerprint=fingerprint
+                        reasons={"skip_reason": "MAX_POSITIONS_REACHED"}
                     ))
                     continue
                 
@@ -127,9 +121,7 @@ class Decider:
             if new_entries_count >= self._config.max_new_entries_per_cycle:
                 plans.append(self._create_plan(
                     cand, ranking.cycle_ts, TradeDecision.SKIP,
-                    reasons={"skip_reason": "CYCLE_ENTRY_LIMIT_REACHED"},
-                    policy_decision_id=p_did,
-                    input_fingerprint=fingerprint
+                    reasons={"skip_reason": "CYCLE_ENTRY_LIMIT_REACHED"}
                 ))
                 continue
             
@@ -158,9 +150,7 @@ class Decider:
             plan = self._create_plan(
                 cand, ranking.cycle_ts, TradeDecision.OPEN,
                 notional=notional,
-                reasons=reasons,
-                policy_decision_id=p_did,
-                input_fingerprint=fingerprint
+                reasons=reasons
             )
             
             # Inject Leverage into Plan Metadata if present

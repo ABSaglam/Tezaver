@@ -77,12 +77,20 @@ async def test_upgrade_estimated_to_user_trades(mock_ctx):
     
     # 1. Insert an ESTIMATED audit record with order_id
     ts = datetime.now(timezone.utc)
+    p.upsert_position_open(
+        symbol="BTCUSDT",
+        entry_ts=ts,
+        entry_price=40000.0, qty=0.1, notional=4000.0,
+        sl_pct=0.01, tp_pct=0.02,
+        last_update_ts_ms=1
+    )
     p.mark_position_closed(
         symbol="BTCUSDT", close_ts=ts, exit_price=50000.0,
         entry_price=40000.0, qty=0.1, pnl_usdt=1000.0,
         pnl_is_estimated=True, exit_reason="MANUAL",
         cycle_ts=ts,
-        close_order_id=555
+        close_order_id=555,
+        last_update_ts_ms=10 # > 1
     )
     
     # 2. Upgrade it

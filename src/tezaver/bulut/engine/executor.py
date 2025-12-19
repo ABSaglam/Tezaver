@@ -32,7 +32,7 @@ class Executor:
         
         try:
             order = await self._client.get_order_by_client_id(symbol, client_order_id)
-            if order and not order.get("error"):
+            if order and "status" in order:
                 status = order.get("status")
                 print(f"[EXECUTOR] Ambiguous resolved: Order found status={status}")
                 return order

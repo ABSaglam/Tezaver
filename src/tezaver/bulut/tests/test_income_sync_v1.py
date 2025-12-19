@@ -102,7 +102,8 @@ async def test_non_usdt_aggregation(clean_db):
     # BNB value is -0.001 but asset is BNB.
     # TOTAL (USDT only) should be 0.0
     assert stats["TOTAL"] == 0.0
-    assert stats["COMMISSION"] == pytest.approx(-0.001) # Still aggregates raw value per type
+    # v0.22+: Aggregation is strictly USDT-based. Unconverted income = 0.0 USDT.
+    assert stats["COMMISSION"] == 0.0 
     assert stats["non_usdt_count"] == 1
 
 @pytest.mark.asyncio
@@ -163,11 +164,21 @@ async def test_portfolio_risk_integration(clean_db, mock_telemetry):
     # We need trade_audit records for get_today_net_pnl_utc
     # Let's mock get_today_net_pnl_utc manually or insert audit?
     # Inserting audit is cleaner.
+    # Inserting audit is cleaner.
+    # But mark_position_closed requires the position to exist first (rowcount check).
+    clean_db.upsert_position_open(
+        symbol="ETHUSDT",
+        entry_ts=datetime.now(timezone.utc),
+        entry_price=100.0, qty=1.0, notional=100.0,
+        sl_pct=0.01, tp_pct=0.02,
+        last_update_ts_ms=1
+    )
     clean_db.mark_position_closed(
         symbol="ETHUSDT",
         close_ts=datetime.now(timezone.utc),
         exit_price=100, entry_price=100, qty=1,
-        pnl_usdt=2.0 # +2 profit
+        pnl_usdt=2.0, # +2 profit
+        last_update_ts_ms=10 # > 1
     )
     # Total PnL = +2 (Trade) - 15 (Income) = -13. Limit is -10. Should BLOCK.
     

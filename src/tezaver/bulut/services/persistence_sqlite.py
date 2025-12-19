@@ -62,7 +62,12 @@ class SqlitePersistence:
                 tp_order_id TEXT,
                 sl_client_order_id TEXT,
                 tp_client_order_id TEXT,
-                protective_status TEXT -- NONE|PLACED|CANCELLED|FAILED
+                protective_status TEXT, -- NONE|PLACED|CANCELLED|FAILED
+                last_update_ts_ms INTEGER,
+                sizing_profile_id TEXT,
+                entry_notional_usdt REAL,
+                last_exit_reason TEXT,
+                last_exit_cycle_ts TEXT
             )
         """)
         
@@ -105,7 +110,7 @@ class SqlitePersistence:
         
         # Schema updates for v0.12 (Risk)
         try:
-            # Re-create trade_audit with full schema
+            # Re-create trade_audit with full schema (v0.22+)
             cursor.execute("DROP TABLE IF EXISTS trade_audit")
             cursor.execute("""
                 CREATE TABLE trade_audit (
@@ -118,7 +123,21 @@ class SqlitePersistence:
                     pnl_is_estimated INTEGER, 
                     close_ts TEXT, 
                     exit_reason TEXT, 
-                    cycle_ts TEXT
+                    cycle_ts TEXT,
+                    gross_pnl_usdt REAL,
+                    fee_usdt REAL,
+                    net_pnl_usdt REAL,
+                    pnl_source TEXT,
+                    close_order_id INTEGER,
+                    open_order_id INTEGER,
+                    pattern_id TEXT,
+                    fee_asset TEXT,
+                    fee_native REAL,
+                    audit_upgraded INTEGER DEFAULT 0,
+                    sizing_profile_id TEXT,
+                    entry_notional_usdt REAL,
+                    fee_fx_rate REAL,
+                    fee_fx_source TEXT
                 )
             """)
             
@@ -133,13 +152,6 @@ class SqlitePersistence:
             
         except Exception as e:
              print(f"[DB] Schema update error: {e}")
-             
-        # Re-add sizing columns in trade_audit as well? 
-        # Requirement says: "trade_audit insert'e de ekle: sizing_profile_id, entry_notional_usdt"
-        try:
-             cursor.execute("ALTER TABLE trade_audit ADD COLUMN sizing_profile_id TEXT")
-             cursor.execute("ALTER TABLE trade_audit ADD COLUMN entry_notional_usdt REAL")
-        except: pass
 
         # Schema updates for v0.14 (Execution v1)
         try:
@@ -188,11 +200,11 @@ class SqlitePersistence:
             )
         """)
         
-        # Income Events (v0.17)
+        # Income Events (v0.18+)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS income_events (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                tran_id INTEGER UNIQUE,
+                tran_id TEXT UNIQUE,
                 symbol TEXT,
                 income_type TEXT,
                 asset TEXT,
@@ -200,7 +212,10 @@ class SqlitePersistence:
                 time_ms INTEGER,
                 time_ts TEXT,
                 info TEXT,
-                raw_json TEXT
+                raw_json TEXT,
+                income_usdt REAL,
+                fx_rate REAL,
+                fx_source TEXT
             )
         """)
         
@@ -252,28 +267,22 @@ class SqlitePersistence:
             )
         """)
         
-        # Config Snapshots (Drift Guard)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS config_snapshots (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                source TEXT,
-                config_json TEXT,
-                hash TEXT,
-                ts TEXT
-            )
-        """)
+        # Config Snapshots (Drift Guard) - Removed duplicate definition (use v0.25 block below)
         
         # Order Fills (v0.17+)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS order_fills (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                order_id TEXT,
-                client_order_id TEXT,
                 symbol TEXT,
-                status TEXT,
-                exec_type TEXT,
-                filled_qty REAL,
-                avg_price REAL,
+                order_id TEXT,
+                trade_id TEXT,
+                price REAL,
+                qty REAL,
+                realized_pnl REAL,
+                commission REAL,
+                commission_asset TEXT,
+                ts TEXT,
+                raw_json TEXT,
                 event_time_ms INTEGER,
                 created_ts TEXT
             )
@@ -465,6 +474,16 @@ class SqlitePersistence:
                 source TEXT
             )
         """)
+        
+        try:
+             cursor.execute("ALTER TABLE config_snapshots ADD COLUMN mode TEXT")
+        except: pass
+        try:
+             cursor.execute("ALTER TABLE config_snapshots ADD COLUMN content_json TEXT")
+        except: pass
+        try:
+             cursor.execute("ALTER TABLE config_snapshots ADD COLUMN source TEXT")
+        except: pass
 
         # v0.29 Policy State Machine
         cursor.execute("""
@@ -515,16 +534,8 @@ class SqlitePersistence:
             )
         """)
         
-        # Drift Guard (Config Snapshots)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS config_snapshots (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                source TEXT,
-                config_json TEXT,
-                hash TEXT,
-                ts TEXT
-            )
-        """)
+        # Drift Guard (Config Snapshots) - Handled above or via migration
+        # Ensure single row constraint via ID=1 logic on insert, or just code enforce
         # Ensure single row constraint via ID=1 logic on insert, or just code enforce
 
 
@@ -584,6 +595,7 @@ class SqlitePersistence:
         cursor.execute("""
             INSERT INTO config_snapshots (ts, hash, mode, content_json, source)
             VALUES (?, ?, ?, ?, ?)
+
         """, (now_ts, hash_val, mode, content_json, source))
         
         conn.commit()
@@ -845,14 +857,16 @@ class SqlitePersistence:
                     symbol, close_ts, exit_reason, 
                     entry_price, exit_price, qty, 
                     pnl_usdt, pnl_is_estimated, cycle_ts,
-                    pnl_source, close_order_id
+                    pnl_source, close_order_id,
+                    net_pnl_usdt, gross_pnl_usdt
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'ESTIMATED', ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'ESTIMATED', ?, ?, ?)
             """, (
                 symbol, ts_str, exit_reason,
                 entry_price, exit_price, qty,
                 pnl_usdt, 1 if pnl_is_estimated else 0, cycle_ts_str,
-                close_order_id
+                close_order_id,
+                pnl_usdt, pnl_usdt # Assume net/gross same for estimated/manual mark
             ))
         
         conn.commit()

@@ -86,7 +86,11 @@ async def test_fill_sync_conversion(clean_persistence, mock_client, config):
     # Pre-seed BNB rate in DB to avoid async call inside sync (if we implemented sync correctly)
     clean_persistence.upsert_fx_rate("BNB", "USDT", 600.0, "TEST")
     
-    svc = FillSyncService(config, mock_client, MagicMock(), clean_persistence, MagicMock(), fx_cache=cache)
+    # Mock time_sync
+    mock_time_sync = MagicMock()
+    mock_time_sync.now_ms.return_value = int(time.time() * 1000)
+    
+    svc = FillSyncService(config, mock_client, MagicMock(), clean_persistence, mock_time_sync, fx_cache=cache)
     
     # Mock trades: 1 BNB as fee
     mock_client.get_user_trades.return_value = [{
@@ -123,7 +127,7 @@ async def test_recompute_logic(clean_persistence, mock_client, config):
     
     now_ms = int(time.time()*1000)
     ts_str = datetime.now(timezone.utc).isoformat()
-    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    # today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     # 1. Insert Unconverted Income
     conn = clean_persistence._get_conn()
@@ -133,6 +137,7 @@ async def test_recompute_logic(clean_persistence, mock_client, config):
     """, (now_ms, ts_str))
     
     # 2. Insert Unconverted Audit
+    # Ensure cycle_ts is provided
     conn.execute("""
         INSERT INTO trade_audit (symbol, close_ts, exit_reason, entry_price, exit_price, qty, pnl_usdt, gross_pnl_usdt, fee_asset, fee_native, cycle_ts)
         VALUES ('BTCUSDT', ?, 'TP', 50000, 51000, 1.0, 1000, 1000, 'BNB', 0.1, ?)
@@ -163,4 +168,3 @@ async def test_recompute_logic(clean_persistence, mock_client, config):
     assert row2[0] == 60.0
     assert row2[1] == 940.0
     conn.close()
-
