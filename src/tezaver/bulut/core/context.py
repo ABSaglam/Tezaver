@@ -520,6 +520,62 @@ class BulutContext:
             self._allocation_engine = AllocationEngine(self)
         return self._allocation_engine
 
+    @property
+    def exit_intel_engine(self) -> Any:
+        """Get exit intelligence engine (lazy-loaded)."""
+        if getattr(self, "_exit_intel_engine", None) is None:
+            from tezaver.bulut.core.exit_intel_engine import ExitIntelEngine
+            self._exit_intel_engine = ExitIntelEngine(self)
+        return self._exit_intel_engine
+
+    @property
+    def kill_switch(self) -> Any:
+        """Get kill switch service (lazy-loaded)."""
+        if getattr(self, "_kill_switch", None) is None:
+            from tezaver.bulut.core.kill_switch import KillSwitchService
+            self._kill_switch = KillSwitchService(self)
+        return self._kill_switch
+
+    @property
+    def restart_recovery(self) -> Any:
+        """Get restart recovery service (lazy-loaded)."""
+        if getattr(self, "_restart_recovery", None) is None:
+            from tezaver.bulut.core.restart_recovery import RestartRecoveryService
+            self._restart_recovery = RestartRecoveryService(self)
+        return self._restart_recovery
+
+    @property
+    def daily_ops_report(self) -> Any:
+        """Get daily ops report service (lazy-loaded)."""
+        if getattr(self, "_daily_ops_report", None) is None:
+            from tezaver.bulut.core.daily_ops_report import DailyOpsReportService
+            self._daily_ops_report = DailyOpsReportService(self)
+        return self._daily_ops_report
+
+    @property
+    def health_check_scheduler(self) -> Any:
+        """Get health check scheduler (lazy-loaded)."""
+        if getattr(self, "_health_check_scheduler", None) is None:
+            from tezaver.bulut.core.health_check_scheduler import HealthCheckScheduler
+            self._health_check_scheduler = HealthCheckScheduler(self)
+        return self._health_check_scheduler
+
+    @property
+    def alert_router(self) -> Any:
+        """Get alert router (lazy-loaded)."""
+        if getattr(self, "_alert_router", None) is None:
+            from tezaver.bulut.core.alert_router import AlertRouter
+            self._alert_router = AlertRouter(self)
+        return self._alert_router
+
+    @property
+    def perf_cost_guard(self) -> Any:
+        """Get performance cost guard (lazy-loaded)."""
+        if getattr(self, "_perf_cost_guard", None) is None:
+            from tezaver.bulut.core.perf_cost_guard import PerfCostGuardService
+            self._perf_cost_guard = PerfCostGuardService(self)
+        return self._perf_cost_guard
+
     def check_trade_lock(self) -> tuple[bool, Optional[str]]:
         """
         Checks if trading should be locked based on various conditions.

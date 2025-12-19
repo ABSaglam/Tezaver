@@ -48,6 +48,13 @@ from tezaver.bulut.api import routes_strict_timing
 from tezaver.bulut.api import routes_dry_run # P4
 from tezaver.bulut.api import routes_autopilot # P5
 from tezaver.bulut.api import routes_expansion # P6
+from tezaver.bulut.api import routes_allocation # P7
+from tezaver.bulut.api import routes_exits_intel # P8
+from tezaver.bulut.api import routes_kill_switch # P9
+from tezaver.bulut.api import routes_recovery # P10
+from tezaver.bulut.api import routes_runbook # P11
+from tezaver.bulut.api import routes_daily_ops # P12
+from tezaver.bulut.api import routes_perf_cost # P13
 
 
 from tezaver.bulut.core.fault_lab_service import FaultLabService
@@ -314,6 +321,13 @@ app.include_router(routes_strict_timing.router)
 app.include_router(routes_dry_run.router) # P4
 app.include_router(routes_autopilot.router) # P5
 app.include_router(routes_expansion.router) # P6
+app.include_router(routes_allocation.router) # P7
+app.include_router(routes_exits_intel.router) # P8
+app.include_router(routes_kill_switch.router) # P9
+app.include_router(routes_recovery.router) # P10
+app.include_router(routes_runbook.router) # P11
+app.include_router(routes_daily_ops.router) # P12
+app.include_router(routes_perf_cost.router) # P13
 
 
 @app.get("/")

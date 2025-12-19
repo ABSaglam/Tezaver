@@ -18,6 +18,7 @@ def smoke_client():
         ctx.config.strict_timing_enabled = True
         ctx.config.max_drift_ms = 5000
         ctx.config.mode = "TESTNET"
+        ctx.config.rate_limiter_enabled = False  # Disable rate limiter in tests
         
         # Mock Lifespan dependencies
         ctx.time_sync.refresh = AsyncMock()

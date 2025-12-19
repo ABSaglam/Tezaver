@@ -383,6 +383,72 @@ class SqlitePersistence:
             )
         """)
 
+        # 23. KILL SWITCH STATE (P9 Kill Switch)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS kill_switch_state (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                state TEXT DEFAULT 'NORMAL',
+                reason TEXT,
+                actor TEXT,
+                changed_at TEXT
+            )
+        """)
+
+        # 24. RECOVERY REPORTS (P10 Disaster Recovery)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS recovery_reports (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                run_id TEXT UNIQUE,
+                ts TEXT,
+                mode TEXT,
+                status TEXT,
+                blockers_json TEXT,
+                stats_json TEXT,
+                duration_ms INTEGER
+            )
+        """)
+
+        # 25. DAILY REPORTS (P12 Day-2 Ops)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS daily_reports (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                date TEXT UNIQUE,
+                net_pnl REAL,
+                gross_pnl REAL,
+                fees REAL,
+                funding_income REAL,
+                trades_count INTEGER,
+                autopilot_minutes INTEGER,
+                kill_switch_events INTEGER,
+                recovery_runs INTEGER,
+                allocation_peak REAL,
+                exit_decisions INTEGER,
+                alerts_count INTEGER,
+                created_at TEXT
+            )
+        """)
+
+        # 26. HEALTH CHECKS (P12 Day-2 Ops)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS health_checks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ts TEXT,
+                snapshot_hash TEXT,
+                anomalies_json TEXT,
+                healthy INTEGER
+            )
+        """)
+
+        # 27. PERF COST SNAPSHOTS (P13 Performance Guard)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS perf_cost_snapshots (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ts TEXT,
+                mode TEXT,
+                metrics_json TEXT
+            )
+        """)
+
         conn.commit()
         conn.close()
 
@@ -1771,6 +1837,206 @@ class SqlitePersistence:
         cursor.execute(
             "INSERT OR REPLACE INTO allocation_state (id, symbol_usage_json, pattern_usage_json, last_updated) VALUES (1, ?, ?, ?)",
             (json.dumps(state.get("symbol_usage", {})), json.dumps(state.get("pattern_usage", {})), state.get("last_updated"))
+        )
+        conn.commit()
+        conn.close()
+
+    # --- P9: Kill Switch ---
+    def get_kill_switch_state(self) -> Optional[Dict]:
+        """Get kill switch state."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT state, reason, actor, changed_at FROM kill_switch_state WHERE id=1")
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return {
+                "state": row[0] or "NORMAL",
+                "reason": row[1],
+                "actor": row[2],
+                "changed_at": row[3]
+            }
+        return None
+
+    def update_kill_switch_state(self, state: Dict):
+        """Update kill switch state."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT OR REPLACE INTO kill_switch_state (id, state, reason, actor, changed_at) VALUES (1, ?, ?, ?, ?)",
+            (state.get("state", "NORMAL"), state.get("reason"), state.get("actor"), state.get("changed_at"))
+        )
+        conn.commit()
+        conn.close()
+
+    # --- P10: Recovery Reports ---
+    def get_latest_recovery_report(self) -> Optional[Dict]:
+        """Get latest recovery report."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT run_id, ts, mode, status, blockers_json, stats_json, duration_ms FROM recovery_reports ORDER BY id DESC LIMIT 1"
+        )
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            import json
+            return {
+                "run_id": row[0],
+                "ts": row[1],
+                "mode": row[2],
+                "status": row[3],
+                "blockers": json.loads(row[4]) if row[4] else [],
+                "stats": json.loads(row[5]) if row[5] else {},
+                "duration_ms": row[6]
+            }
+        return None
+
+    def save_recovery_report(self, report: Dict):
+        """Save recovery report."""
+        import json
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT OR REPLACE INTO recovery_reports (run_id, ts, mode, status, blockers_json, stats_json, duration_ms) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (
+                report.get("run_id"),
+                report.get("ts"),
+                report.get("mode"),
+                report.get("status"),
+                json.dumps(report.get("blockers", [])),
+                json.dumps(report.get("stats", {})),
+                report.get("duration_ms", 0)
+            )
+        )
+        conn.commit()
+        conn.close()
+
+    # --- P12: Daily Reports ---
+    def save_daily_report(self, report: Dict):
+        """Save daily report."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT OR REPLACE INTO daily_reports 
+            (date, net_pnl, gross_pnl, fees, funding_income, trades_count, 
+             autopilot_minutes, kill_switch_events, recovery_runs, 
+             allocation_peak, exit_decisions, alerts_count, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            report.get("date"),
+            report.get("net_pnl", 0),
+            report.get("gross_pnl", 0),
+            report.get("fees", 0),
+            report.get("funding_income", 0),
+            report.get("trades_count", 0),
+            report.get("autopilot_minutes", 0),
+            report.get("kill_switch_events", 0),
+            report.get("recovery_runs", 0),
+            report.get("allocation_peak", 0),
+            report.get("exit_decisions", 0),
+            report.get("alerts_count", 0),
+            report.get("created_at")
+        ))
+        conn.commit()
+        conn.close()
+
+    def get_daily_report(self, date: str) -> Optional[Dict]:
+        """Get daily report for date."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM daily_reports WHERE date = ?", (date,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return {
+                "date": row[1], "net_pnl": row[2], "gross_pnl": row[3],
+                "fees": row[4], "funding_income": row[5], "trades_count": row[6],
+                "autopilot_minutes": row[7], "kill_switch_events": row[8],
+                "recovery_runs": row[9], "allocation_peak": row[10],
+                "exit_decisions": row[11], "alerts_count": row[12], "created_at": row[13]
+            }
+        return None
+
+    def save_health_check(self, check: Dict):
+        """Save health check result."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO health_checks (ts, snapshot_hash, anomalies_json, healthy) VALUES (?, ?, ?, ?)",
+            (check.get("ts"), check.get("snapshot_hash"), check.get("anomalies_json"), 1 if check.get("healthy") else 0)
+        )
+        conn.commit()
+        conn.close()
+
+    def get_income_events_for_date(self, date: str) -> List[Dict]:
+        """Get income events for a specific date."""
+        try:
+            conn = self._get_conn()
+            cursor = conn.cursor()
+            cursor.execute("SELECT income_type, income FROM income_events WHERE ts LIKE ?", (f"{date}%",))
+            rows = cursor.fetchall()
+            conn.close()
+            return [{"income_type": r[0], "income": r[1]} for r in rows] if rows else []
+        except Exception:
+            return []
+
+    def get_order_fills_for_date(self, date: str) -> List[Dict]:
+        """Get order fills for a specific date."""
+        try:
+            conn = self._get_conn()
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM order_fills WHERE fill_ts LIKE ?", (f"{date}%",))
+            rows = cursor.fetchall()
+            conn.close()
+            return [{"id": r[0]} for r in rows] if rows else []
+        except Exception:
+            return []
+
+    def get_recovery_reports_for_date(self, date: str) -> List[Dict]:
+        """Get recovery reports for a specific date."""
+        try:
+            conn = self._get_conn()
+            cursor = conn.cursor()
+            cursor.execute("SELECT run_id FROM recovery_reports WHERE ts LIKE ?", (f"{date}%",))
+            rows = cursor.fetchall()
+            conn.close()
+            return [{"run_id": r[0]} for r in rows] if rows else []
+        except Exception:
+            return []
+
+    def get_alerts_for_date(self, date: str) -> List[Dict]:
+        """Get alerts for a specific date."""
+        try:
+            conn = self._get_conn()
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM alerts WHERE ts LIKE ?", (f"{date}%",))
+            rows = cursor.fetchall()
+            conn.close()
+            return [{"id": r[0]} for r in rows] if rows else []
+        except Exception:
+            return []
+
+    def get_recent_alerts(self, limit: int = 20) -> List[Dict]:
+        """Get recent alerts."""
+        try:
+            conn = self._get_conn()
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, level, source, message, context_json, ts FROM alerts ORDER BY id DESC LIMIT ?", (limit,))
+            rows = cursor.fetchall()
+            conn.close()
+            return [{"id": r[0], "level": r[1], "source": r[2], "message": r[3], "context_json": r[4], "ts": r[5]} for r in rows]
+        except Exception:
+            return []
+
+    # --- P13: Perf Cost Snapshots ---
+    def save_perf_cost_snapshot(self, snapshot: Dict):
+        """Save performance cost snapshot."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO perf_cost_snapshots (ts, mode, metrics_json) VALUES (?, ?, ?)",
+            (snapshot.get("ts"), snapshot.get("mode"), snapshot.get("metrics_json"))
         )
         conn.commit()
         conn.close()

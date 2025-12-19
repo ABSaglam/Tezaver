@@ -36,6 +36,7 @@ def smoke_client():
     mock_ctx.config.proof_ladder_auto_evaluate_enabled = False
     mock_ctx.config.allowed_hosts = ["testserver"] # Matches TestClient default
     mock_ctx.config.ops_auth_enabled = False # Disable auth for smoke test
+    mock_ctx.config.rate_limiter_enabled = False  # Disable rate limiter in tests
     
     # Needs config.to_dict for Replay Logic potentially?
     mock_ctx.config.to_dict.return_value = {}
