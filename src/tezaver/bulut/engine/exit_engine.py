@@ -103,6 +103,8 @@ class ExitEngine:
                     side=TradeSide.LONG, # Closing Long
                     decision=TradeDecision.CLOSE,
                     notional_usdt=0, # Full Close
+                    sl=0.0,  # Not applicable for exit plans
+                    tp=0.0,  # Not applicable for exit plans
                     idempotency_key=key,
                     reasons={
                         "exit_trigger": True,

@@ -155,7 +155,132 @@ class SqlitePersistence:
              cursor.execute("ALTER TABLE trade_plans ADD COLUMN exec_error TEXT")
         except: pass
 
-        # ... (Rest of schema updates ignored for brevity, keeping original flow) ...
+        # ===== Missing tables (moved from dead code) =====
+        
+        # Alerts table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS alerts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ts TEXT,
+                level TEXT,
+                code TEXT,
+                message TEXT,
+                details_json TEXT
+            )
+        """)
+        
+        # System State (key-value store)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS system_state (
+                key TEXT PRIMARY KEY,
+                value TEXT,
+                updated_ts TEXT
+            )
+        """)
+        
+        # Heartbeats (Task Supervisor)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS heartbeats (
+                name TEXT PRIMARY KEY,
+                ts TEXT,
+                status TEXT,
+                detail TEXT
+            )
+        """)
+        
+        # Income Events (v0.17)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS income_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tran_id INTEGER UNIQUE,
+                symbol TEXT,
+                income_type TEXT,
+                asset TEXT,
+                income REAL,
+                time_ms INTEGER,
+                time_ts TEXT,
+                info TEXT,
+                raw_json TEXT
+            )
+        """)
+        
+        # FX Rates (v0.19)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS fx_rates (
+                asset TEXT PRIMARY KEY,
+                quote TEXT,
+                rate REAL,
+                source TEXT,
+                updated_ts TEXT
+            )
+        """)
+        
+        # Policy States (v1 FSM)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS policy_states (
+                symbol TEXT PRIMARY KEY,
+                phase TEXT,
+                opened_cycle_ts TEXT,
+                effective_cycle_ts TEXT,
+                last_action_ts TEXT,
+                hold_bars_remaining INTEGER,
+                last_reason TEXT,
+                last_update_ms INTEGER DEFAULT 0
+            )
+        """)
+        
+        # Cycle Timelines (Forensics v1)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS cycle_timelines (
+                cycle_index INTEGER PRIMARY KEY,
+                cycle_ts TEXT,
+                timeline_json TEXT,
+                created_ts TEXT
+            )
+        """)
+        
+        # Proof Ladder State (v1.1)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS proof_ladder_state (
+                id INTEGER PRIMARY KEY DEFAULT 1,
+                stage_id TEXT,
+                cap_usdt REAL,
+                last_evaluated_ts TEXT,
+                clean_hours REAL,
+                last_result_json TEXT,
+                updated_ts TEXT
+            )
+        """)
+        
+        # Config Snapshots (Drift Guard)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS config_snapshots (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                source TEXT,
+                config_json TEXT,
+                hash TEXT,
+                ts TEXT
+            )
+        """)
+        
+        # Order Fills (v0.17+)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS order_fills (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                order_id TEXT,
+                client_order_id TEXT,
+                symbol TEXT,
+                status TEXT,
+                exec_type TEXT,
+                filled_qty REAL,
+                avg_price REAL,
+                event_time_ms INTEGER,
+                created_ts TEXT
+            )
+        """)
+        
+        conn.commit()
+        conn.close()
 
 # -------------------------------------------------------------------------------------
 

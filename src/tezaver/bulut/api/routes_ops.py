@@ -50,3 +50,14 @@ async def export_incident_bundle(req: IncidentExportRequest, background_tasks: B
         return {"status": "ok", "path": zip_path}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/tests/report")
+async def get_test_report():
+    """
+    Get test report summary from latest JUnit XML.
+    READ-ONLY, no auth required.
+    """
+    from tezaver.bulut.ui.pages.test_report import get_test_report as _get_report
+    return _get_report()
+
