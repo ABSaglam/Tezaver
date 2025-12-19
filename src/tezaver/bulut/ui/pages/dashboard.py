@@ -61,8 +61,6 @@ def render_dashboard(ctx: BulutContext):
         else:
             st.info("Checklist not run yet.")
 
-        else:
-            st.info("Checklist not run yet.")
 
     # v0.25 Config Drift
     with st.expander("🧬 Config Drift"):
@@ -497,9 +495,7 @@ def render_dashboard(ctx: BulutContext):
                  st.session_state["env_report"] = ctx.env_doctor.run_checks(ctx)
             st.rerun()
 
-            with st.spinner("Checking system..."):
-                 st.session_state["env_report"] = ctx.env_doctor.run_checks(ctx)
-            st.rerun()
+
 
     st.divider()
 
@@ -526,8 +522,7 @@ def render_dashboard(ctx: BulutContext):
     else:
         st.caption("No ListenKey")
 
-    else:
-        st.caption("No ListenKey")
+
 
     # =========================================================================
     # State Reducer (v0.22)
@@ -543,8 +538,7 @@ def render_dashboard(ctx: BulutContext):
     ago_r = int(time.time()*1000 - last_r_event)/1000.0 if last_r_event > 0 else "Never"
     r3.metric("Last Event", f"{ago_r:.1f}s ago" if isinstance(ago_r, float) else ago_r)
     
-    ago_r = int(time.time()*1000 - last_r_event)/1000.0 if last_r_event > 0 else "Never"
-    r3.metric("Last Event", f"{ago_r:.1f}s ago" if isinstance(ago_r, float) else ago_r)
+
     
     st.divider()
 

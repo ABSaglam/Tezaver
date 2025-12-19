@@ -440,7 +440,7 @@ def render_cloud_mode():
     if 'cloud_nav' not in st.session_state:
         st.session_state['cloud_nav'] = "Command Center"
         
-    menu_options = ["Command Center", "Live Charts", "Explorer", "Journal", "Rules Editor", "🧠 Intel"]
+    menu_options = ["Command Center", "📅 Daily Ops", "Live Charts", "Explorer", "Journal", "Rules Editor", "🧠 Intel"]
     
     for opt in menu_options:
          is_active = (st.session_state['cloud_nav'] == opt)
@@ -471,6 +471,9 @@ def render_cloud_mode():
     elif page == "Rules Editor":
          from tezaver.ui.subpages.rules_editor import render_rules_editor
          render_rules_editor()
+    elif page == "📅 Daily Ops":
+         from tezaver.bulut.ui.pages.daily_ops import render_daily_ops_page
+         render_daily_ops_page()
     elif page == "🧠 Intel":
          from tezaver.bulut.ui.pages.intel_manager import render_intel_manager
          render_intel_manager(api_base)
