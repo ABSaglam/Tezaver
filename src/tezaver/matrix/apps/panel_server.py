@@ -96,6 +96,56 @@ class PanelHandler(BaseHTTPRequestHandler):
                 self.wfile.write(f"Error: {e}".encode("utf-8"))
             return
 
+        # UI-H: Data Diagnostics
+        if path == "/data":
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            
+            home = os.environ.get("TEZAVER_MATRIX_HOME", ".tezaver_matrix")
+            latest_path = os.path.join(home, "data_reports", "latest.json")
+            
+            content = "<h3>No diagnostics yet. Run 'data_doctor' CLI.</h3>"
+            
+            if os.path.exists(latest_path):
+                try:
+                    with open(latest_path, "r", encoding="utf-8") as f:
+                        rep = json.load(f)
+                    
+                    status_color = "green" if rep.get("ok") else "red"
+                    issues_html = "".join([f"<li>{i}</li>" for i in rep.get("issues", [])]) or "<li>None</li>"
+                    
+                    content = f"""
+                    <h2>Data Quality Report: <span style="color:{status_color}">{ "OK" if rep.get("ok") else "FAIL" }</span></h2>
+                    <p>Report ID: {rep.get("report_id")}</p>
+                    <table border="1">
+                        <tr><td>Timeframe</td><td>{rep.get("timeframe")}</td></tr>
+                        <tr><td>Count</td><td>{rep.get("count")}</td></tr>
+                        <tr><td>Range</td><td>{rep.get("first_ts")} - {rep.get("last_ts")}</td></tr>
+                        <tr><td>Fingerprint</td><td><small>{rep.get("fingerprint")}</small></td></tr>
+                    </table>
+                    <h3>Stats</h3>
+                    <pre>{json.dumps(rep.get("stats"), indent=2)}</pre>
+                    <h3>Issues</h3>
+                    <ul>{issues_html}</ul>
+                    """
+                except Exception as e:
+                    content = f"<h3>Error loading report: {e}</h3>"
+            
+            html = f"""
+            <html>
+                <head><title>UI-H: Data</title></head>
+                <body>
+                    <h1>Data Diagnostics (UI-H)</h1>
+                    <p><a href="/">Back to Home</a></p>
+                    <hr/>
+                    {content}
+                </body>
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+
         if path in ROUTES:
             self.send_response(200)
             self.send_header("Content-type", "text/html")
