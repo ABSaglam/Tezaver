@@ -608,7 +608,82 @@ class PanelHandler(BaseHTTPRequestHandler):
             """
             self.wfile.write(html.encode("utf-8"))
             return
+
+        # UI-NEW: Orchestrator
+        if path.startswith("/orchestrator"):
+            from tezaver.matrix.core.orchestrator import OrchestratorStore, enqueue_job, run_ticks
             
+            # Actions
+            if path.startswith("/orchestrator/run"):
+                # Run ticks
+                run_ticks(self.home, ticks=5)
+                self.wfile.write(b"HTTP/1.1 302 Found\r\nLocation: /orchestrator\r\n\r\n")
+                return
+                
+            if path.startswith("/orchestrator/enqueue/sniper/"):
+                cid = path.split("/")[-1]
+                bars = os.path.join(self.home, "sample_bars.json") # Demo
+                if not os.path.exists(bars):
+                     with open(bars, "w") as f: json.dump([{"ts":1000,"close":10,"closed":True}], f)
+                     
+                enqueue_job(self.home, "SNIPER", {"candidate_id": cid, "bars_path": bars}, priority=60)
+                self.wfile.write(b"HTTP/1.1 302 Found\r\nLocation: /orchestrator\r\n\r\n")
+                return
+
+            if path.startswith("/orchestrator/enqueue/live_step/"):
+                rid = path.split("/")[-1].split("?")[0]
+                bars = os.path.join(self.home, "sample_bars.json")
+                enqueue_job(self.home, "LIVE_STEP", {"run_id": rid, "bars_path": bars, "steps": 5}, priority=100)
+                self.wfile.write(b"HTTP/1.1 302 Found\r\nLocation: /orchestrator\r\n\r\n")
+                return
+
+            # Dashboard
+            store = OrchestratorStore(self.home)
+            queue = store.load_queue()
+            locks = store.load_locks()
+            history = store.load_history()
+            
+            q_rows = ""
+            for j in queue:
+                q_rows += f"<tr><td>{j.job_id}</td><td>{j.type}</td><td>{j.priority}</td><td>{j.status}</td></tr>"
+                
+            h_rows = ""
+            for j in history:
+                res_sum = str(j.get('result', {}))[:50]
+                h_rows += f"<tr><td>{j.get('job_id')}</td><td>{j.get('type')}</td><td>{j.get('status')}</td><td>{res_sum}</td></tr>"
+                
+            html = f"""
+            <html>
+                <h1>Orchestrator</h1>
+                <p>
+                    <a href="/reports">Reports</a> | 
+                    <a href="/orchestrator/run"><button>RUN TICKS (5)</button></a>
+                </p>
+                
+                <div style="display:flex; gap:20px">
+                    <div style="flex:1">
+                        <h3>Job Queue ({len(queue)})</h3>
+                        <table border="1">
+                            <tr><th>ID</th><th>Type</th><th>Pri</th><th>Status</th></tr>
+                            {q_rows}
+                        </table>
+                    </div>
+                    <div style="flex:1">
+                        <h3>Locks</h3>
+                        <pre>{json.dumps(locks, indent=2)}</pre>
+                    </div>
+                </div>
+                
+                <h3>History</h3>
+                <table border="1">
+                    <tr><th>ID</th><th>Type</th><th>Status</th><th>Result</th></tr>
+                    {h_rows}
+                </table>
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+
         # UI-C: Live Runner (Demo)
         if path.startswith("/runs/live/"):
             parts = path.split("/")
