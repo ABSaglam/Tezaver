@@ -434,93 +434,13 @@ def render_coin_detail_page(symbol: str):
 
 
 def render_cloud_mode():
-    st.sidebar.markdown("### ☁️ Bulut Panel")
-    
-    # Sub-navigation for Cloud Mode
-    from tezaver.bulut.ui.contracts.page_registry import Registry
-    from tezaver.bulut.ui.register_pages import register_all_pages
-    from tezaver.bulut.core.context import get_context
-    
-    # Ensure pages registered once
-    if not Registry.list_pages():
-        try:
-             register_all_pages()
-        except Exception as e:
-             st.error(f"Page Registration Failed: {e}")
-
-    # Use first page as default
-    all_pages = Registry.list_pages()
-    default_page = all_pages[0].title_tr if all_pages else "Ana Sayfa"
-
-    if 'cloud_nav' not in st.session_state:
-        st.session_state['cloud_nav'] = default_page
+    # Title removed
+    st.sidebar.markdown("### Navigasyon")
+    if st.sidebar.button("🏠 Ana Sayfa", use_container_width=True):
+        st.rerun()
         
-    # Render Sidebar Menu by Category
-    categories = Registry.get_categories()
-    
-    # Special sort order is handled by Registry.get_categories()
-    
-    selected_page_obj = None
-    
-    # Build Menu
-    for cat in categories:
-        pag_in_cat = Registry.list_pages(category=cat)
-        if not pag_in_cat: continue
-        
-        st.sidebar.markdown(f"**{cat}**")
-        for p in pag_in_cat:
-            label = p.title_tr
-            is_active = (st.session_state['cloud_nav'] == label)
-            if st.sidebar.button(label, key=f"cloud_btn_{p.id}", use_container_width=True, type="primary" if is_active else "secondary"):
-                st.session_state['cloud_nav'] = label
-                st.rerun()
-             
-            if is_active:
-                selected_page_obj = p
-                
-    st.sidebar.markdown("---")
-    
-    # Resolve Page Object if not clicked (load from state)
-    if not selected_page_obj:
-         # Find by title
-         found = [p for p in all_pages if p.title_tr == st.session_state['cloud_nav']]
-         if found: selected_page_obj = found[0]
-    
-    # Main Content Render
-    if selected_page_obj:
-        # Context building
-        ctx = get_context() 
-        
-        # --- Ops Token Security Guard ---
-        if getattr(selected_page_obj, 'requires_ops_token', False):
-            # Check 1: Session State
-            has_token = bool(st.session_state.get('ops_token'))
-            
-            # Check 2: Config/Env (if not in session)
-            if not has_token and hasattr(ctx, 'config') and getattr(ctx.config, 'ops_token', None):
-                has_token = True
-                
-            if not has_token:
-                with st.container(border=True):
-                    st.error("🔒 Erişim Engellendi (Access Denied)")
-                    st.warning("Bu sayfa **Ops Token** yetkisi gerektirir.")
-                    st.info("Lütfen sistem yöneticisi ile iletişime geçin veya token girin.")
-                    
-                    # Simple Token Input (Optional enhancement)
-                    t_in = st.text_input("Ops Token", type="password", key=f"ops_tok_in_{selected_page_obj.id}")
-                    if st.button("🔓 Token Doğrula", key=f"ops_tok_btn_{selected_page_obj.id}"):
-                        if t_in: # In real scenario, validate against backend
-                            st.session_state['ops_token'] = t_in
-                            st.rerun()
-                return # Stop rendering
-
-        # Inject context into render function
-        try:
-            selected_page_obj.render_fn(ctx)
-        except Exception as e:
-            st.error(f"Render Error ({selected_page_obj.id}): {e}")
-    else:
-        st.warning("Sayfa bulunamadı.")
+    st.sidebar.header("Sunucu Kontrol")
+    st.info("Bulut modu geliştirme aşamasında.")
 
 def render_matrix_mode():
     from tezaver.ui.matrix_operator_tab import render_matrix_operator_tab

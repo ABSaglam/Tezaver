@@ -125,7 +125,7 @@ class SilverEventSummary:
 
 import streamlit as st
 
-@st.cache_data(ttl=120, max_entries=20)
+@st.cache_data(ttl=120)
 def load_silver_events(symbol: str, timeframe: str = "15m") -> List[SilverEventSummary]:
     """
     Load silver rally events as summary objects for Sniper Lab UI.

@@ -87,13 +87,10 @@ DEFAULT_INDICATOR_SETTINGS = {
 
 
 
-from tezaver.data import history_service
-
-@st.cache_data(ttl=60, max_entries=3)
+@st.cache_data(ttl=60)
 def load_history_data(symbol: str, timeframe: str) -> Optional[pd.DataFrame]:
     """
     coin_cells/{SYMBOL}/data/history_{TF}.parquet dosyasını yükler.
-    Uses centralized history service.
     
     Args:
         symbol: Coin sembolü
@@ -102,21 +99,21 @@ def load_history_data(symbol: str, timeframe: str) -> Optional[pd.DataFrame]:
     Returns:
         DataFrame with OHLCV data or None if not found
     """
-    # Load recent history (tail=50000 bars ~ 1 year for 15m, 1 month for 1m) to save RAM
-    # Adjust tail as needed. 50k is safe for chart panning.
-    df = history_service.load_existing_history(symbol, timeframe, tail=50000)
+    history_file = coin_cell_paths.get_history_file(symbol, timeframe)
     
-    if df is None:
+    if not history_file.exists():
         return None
-        
+    
     try:
-        # history_service already ensures 'datetime' column exists and is UTC
-        # helper to match chart_area expectations
-        if 'open_time' not in df.columns:
-            if 'datetime' in df.columns:
-                df['open_time'] = df['datetime']
-            elif 'timestamp' in df.columns:
-                df['open_time'] = pd.to_datetime(df['timestamp'], unit='ms')
+        df = pd.read_parquet(history_file)
+        
+        # Ensure open_time is datetime
+        if 'open_time' in df.columns:
+            df['open_time'] = pd.to_datetime(df['open_time'], unit='ms')
+        elif 'datetime' in df.columns:
+            df['open_time'] = pd.to_datetime(df['datetime'])
+        elif 'timestamp' in df.columns:
+            df['open_time'] = pd.to_datetime(df['timestamp'], unit='ms')
         
         return df
     except Exception as e:
@@ -124,12 +121,12 @@ def load_history_data(symbol: str, timeframe: str) -> Optional[pd.DataFrame]:
         return None
 
 
-@st.cache_data(ttl=60, max_entries=3)
+@st.cache_data(ttl=60)
 def load_features_data(symbol: str, timeframe: str) -> Optional[pd.DataFrame]:
     """Load features parquet for RSI/MACD indicators."""
     from tezaver.snapshots.snapshot_engine import load_features
     try:
-        df = load_features(symbol, timeframe, tail=50000)
+        df = load_features(symbol, timeframe)
         if 'timestamp' in df.columns:
             df['open_time'] = pd.to_datetime(df['timestamp'])
         elif 'open_time' not in df.columns:

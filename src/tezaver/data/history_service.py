@@ -58,11 +58,10 @@ def fetch_ohlcv_df(symbol: str, timeframe: str, limit: int = 1000) -> pd.DataFra
         
     return df
 
-def load_existing_history(symbol: str, timeframe: str, tail: Optional[int] = None) -> Optional[pd.DataFrame]:
+def load_existing_history(symbol: str, timeframe: str) -> Optional[pd.DataFrame]:
     """
     Loads existing history from Parquet file.
     Returns None if file does not exist.
-    If tail is set, returns only the last N rows.
     """
     file_path = coin_cell_paths.get_history_file(symbol, timeframe)
     
@@ -70,17 +69,8 @@ def load_existing_history(symbol: str, timeframe: str, tail: Optional[int] = Non
         return None
         
     try:
-        if tail:
-            # Optimization: Parquet doesn't support "tail" directly without reading metadata or full file.
-            # But reading full file and slicing is better than keeping full file in memory for caller.
-            # We can use PyArrow to read efficient chunks if files are huge, but for now:
-            df = pd.read_parquet(file_path)
-            if len(df) > tail:
-                return df.iloc[-tail:].copy()
-            return df
-        else:
-            df = pd.read_parquet(file_path)
-            return df
+        df = pd.read_parquet(file_path)
+        return df
     except Exception as e:
         logger.error(f"Error loading history for {symbol} {timeframe}: {e}", exc_info=True)
         return None
