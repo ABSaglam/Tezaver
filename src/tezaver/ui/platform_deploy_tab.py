@@ -1,7 +1,7 @@
 """
-MX-23003: Approved → Cloud Deploy Wizard
+MX-23003+23004: Approved → Cloud Deploy Wizard
 
-3-4 step flow: Import Strategy → Activate → Tick
+Deploy flow with Release Gate and Rehearsal checks.
 """
 
 import streamlit as st
@@ -32,6 +32,22 @@ def list_exports(bus: FsBusAdapter, prefix: str = "artifacts/matrix/exports/") -
         return [item for item in items if item.endswith(".json")]
     except:
         return []
+
+
+def extract_candidate_id_from_export(bus: FsBusAdapter, export_path: str) -> Optional[str]:
+    """Extract candidate_id from export artifact."""
+    # First try from data
+    try:
+        export_data = bus.get_json(export_path)
+        if export_data and export_data.get("candidate_id"):
+            return export_data.get("candidate_id")
+    except:
+        pass
+    # Fallback: parse from filename
+    basename = os.path.basename(export_path)
+    if basename.endswith(".json"):
+        return basename[:-5]
+    return None
 
 
 def enqueue_job(bus: FsBusAdapter, target: str, job_type: str, payload: Dict) -> str:
@@ -75,6 +91,66 @@ def get_outbox_result(bus: FsBusAdapter, target: str, job_id: str, timeout: floa
     return None
 
 
+def run_release_rehearsal_checks(
+    bus: FsBusAdapter,
+    candidate_id: str,
+    matrix_url: str,
+    matrix_token: str,
+    mode: str = "PAPER",
+) -> Dict[str, Any]:
+    """
+    Run release gate and rehearsal checks via MatrixAgent.
+    
+    Returns dict with release_status, rehearsal, fail_codes, details_tr, etc.
+    """
+    release_result = {"release_status": "N/A", "fail_codes": [], "details_tr": []}
+    rehearsal_result = {"rehearsal": "N/A", "fail_codes": [], "details_tr": []}
+    
+    # Release Check
+    try:
+        job_id = enqueue_job(bus, "matrix", "MATRIX_RELEASE_CHECK", {
+            "candidate_id": candidate_id,
+        })
+        scan_agent(matrix_url, matrix_token)
+        result = get_outbox_result(bus, "matrix", job_id)
+        
+        if result and result.get("result", {}).get("ok"):
+            release_result = {
+                "release_status": result["result"].get("release_status", "N/A"),
+                "fail_codes": result["result"].get("fail_codes", []),
+                "details_tr": result["result"].get("details_tr", []),
+            }
+    except:
+        pass
+        
+    # Rehearsal Check
+    try:
+        job_id = enqueue_job(bus, "matrix", "MATRIX_REHEARSAL_CHECK", {
+            "candidate_id": candidate_id,
+            "mode": mode,
+        })
+        scan_agent(matrix_url, matrix_token)
+        result = get_outbox_result(bus, "matrix", job_id)
+        
+        if result and result.get("result", {}).get("ok"):
+            rehearsal_result = {
+                "rehearsal": result["result"].get("rehearsal", "N/A"),
+                "fail_codes": result["result"].get("fail_codes", []),
+                "details_tr": result["result"].get("details_tr", []),
+            }
+    except:
+        pass
+        
+    return {
+        "release_status": release_result["release_status"],
+        "release_fail_codes": release_result["fail_codes"],
+        "release_details_tr": release_result["details_tr"],
+        "rehearsal": rehearsal_result["rehearsal"],
+        "rehearsal_fail_codes": rehearsal_result["fail_codes"],
+        "rehearsal_details_tr": rehearsal_result["details_tr"],
+    }
+
+
 def run_approved_deploy_flow(
     bus_root: str,
     export_path: str,
@@ -83,11 +159,7 @@ def run_approved_deploy_flow(
     activate: bool = True,
     ticks: int = 2,
 ) -> List[StepResult]:
-    """
-    Run Approved → Cloud Deploy flow (3-4 steps).
-    
-    Returns list of StepResult.
-    """
+    """Run Approved → Cloud Deploy flow (3-4 steps)."""
     bus = FsBusAdapter(bus_root)
     results = []
     
@@ -172,6 +244,8 @@ def render_platform_deploy():
     
     # Get config from session
     bus_root = st.session_state.get("platform_bus_root", ".tezaver_bus")
+    matrix_url = st.session_state.get("matrix_url", "http://127.0.0.1:9002")
+    matrix_token = st.session_state.get("matrix_token", "MATRIX_TOKEN")
     cloud_url = st.session_state.get("cloud_url", "http://127.0.0.1:9003")
     cloud_token = st.session_state.get("cloud_token", "CLOUD_TOKEN")
     
@@ -195,12 +269,76 @@ def render_platform_deploy():
         
     st.divider()
     
+    # Release Gate / Rehearsal Check
+    st.subheader("🚦 Release Gate / Rehearsal Check")
+    
+    candidate_id = None
+    gate_info = None
+    
+    if export_path:
+        candidate_id = extract_candidate_id_from_export(bus, export_path)
+        
+        if candidate_id:
+            st.text(f"Candidate ID: {candidate_id}")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                mode = st.selectbox("Rehearsal Mode", ["PAPER", "REAL"])
+                
+            if st.button("🔍 Gate/Rehearsal Kontrol Et"):
+                with st.spinner("Kontrol ediliyor..."):
+                    gate_info = run_release_rehearsal_checks(
+                        bus, candidate_id, matrix_url, matrix_token, mode
+                    )
+                    st.session_state["gate_info"] = gate_info
+                    
+    # Display gate info
+    if "gate_info" in st.session_state:
+        gate_info = st.session_state["gate_info"]
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            release_status = gate_info.get("release_status", "N/A")
+            if release_status == "PASS":
+                st.success(f"✅ Release Gate: **PASS**")
+            elif release_status == "FAIL":
+                st.error(f"❌ Release Gate: **FAIL**")
+                for detail in gate_info.get("release_details_tr", []):
+                    st.text(f"  • {detail}")
+            else:
+                st.info(f"Release Gate: {release_status}")
+                
+        with col2:
+            rehearsal = gate_info.get("rehearsal", "N/A")
+            if rehearsal == "GO":
+                st.success(f"✅ Rehearsal: **GO**")
+            elif rehearsal == "NO_GO":
+                st.error(f"❌ Rehearsal: **NO_GO**")
+                for detail in gate_info.get("rehearsal_details_tr", []):
+                    st.text(f"  • {detail}")
+            else:
+                st.info(f"Rehearsal: {rehearsal}")
+                
+    st.divider()
+    
     # Options
     st.subheader("⚙️ Deploy Ayarları")
     
+    # Block activation if gate fails
+    gate_allows_activation = True
+    if "gate_info" in st.session_state:
+        gate_info = st.session_state["gate_info"]
+        if gate_info.get("release_status") == "FAIL" or gate_info.get("rehearsal") == "NO_GO":
+            gate_allows_activation = False
+    
     col1, col2 = st.columns(2)
     with col1:
-        activate = st.checkbox("Aktifleştir (ACTIVE)", value=True)
+        if gate_allows_activation:
+            activate = st.checkbox("Aktifleştir (ACTIVE)", value=True)
+        else:
+            st.warning("⚠️ Gate FAIL/NO_GO - Aktivasyon engellendi")
+            activate = False
     with col2:
         ticks = st.number_input("Tick Sayısı", min_value=0, max_value=100, value=2)
         
@@ -250,16 +388,6 @@ def render_platform_deploy():
                 if "ticks_done" in r.data:
                     st.text(f"Ticks Done: {r.data['ticks_done']}")
                     
-    st.divider()
-    
-    # Release Gate / Rehearsal info (if available)
-    st.subheader("🚦 Release Gate / Rehearsal")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.info("Release Gate: N/A (ileride)")
-    with col2:
-        st.info("Rehearsal: N/A (ileride)")
-    
     st.divider()
     
     # Events tail

@@ -48,6 +48,8 @@ class MatrixAgent(BaseAgent):
         self.register_handler("MATRIX_RUN_WAR", self._handle_run_war)
         self.register_handler("MATRIX_RUN_LIVE_STEP", self._handle_run_live_step)
         self.register_handler("MATRIX_APPROVE_EXPORT", self._handle_approve_export)
+        self.register_handler("MATRIX_RELEASE_CHECK", self._handle_release_check)
+        self.register_handler("MATRIX_REHEARSAL_CHECK", self._handle_rehearsal_check)
         
     def _get_home(self, job: Job) -> str:
         """Get matrix home, allowing payload override."""
@@ -314,6 +316,73 @@ class MatrixAgent(BaseAgent):
             if self.allow_stubs:
                 return {"ok": True, "approved_id": cid, "stub": True}
             raise MissingBindingError("BINDING_MISSING", str(e))
+        except Exception as e:
+            self._log_job_event("JOB_FAIL", job, {"error_code": "EXCEPTION", "detail": str(e)})
+            return {"ok": False, "error_code": "EXCEPTION", "error_detail_tr": str(e), "trace": self._build_trace(job)}
+            
+    def _handle_release_check(self, job: Job) -> Dict[str, Any]:
+        """Check release gate for candidate."""
+        self._log_job_event("JOB_START", job)
+        
+        candidate_id = job.payload.get("candidate_id")
+        context = job.payload.get("context", {})
+        
+        if not candidate_id:
+            return {"ok": False, "error_code": "MISSING_CANDIDATE_ID", "trace": self._build_trace(job)}
+            
+        try:
+            home = self._get_home(job)
+            
+            from tezaver.matrix.apps.platform_bindings import release_check
+            result = release_check(home, candidate_id, context)
+            
+            self._log_job_event("JOB_OK", job, {
+                "release_status": result.get("release_status"),
+                "candidate_id": candidate_id,
+            })
+            
+            return {
+                "ok": True,
+                "release_status": result.get("release_status"),
+                "fail_codes": result.get("fail_codes", []),
+                "details_tr": result.get("details_tr", []),
+                "candidate_id": candidate_id,
+                "trace": self._build_trace(job),
+            }
+        except Exception as e:
+            self._log_job_event("JOB_FAIL", job, {"error_code": "EXCEPTION", "detail": str(e)})
+            return {"ok": False, "error_code": "EXCEPTION", "error_detail_tr": str(e), "trace": self._build_trace(job)}
+            
+    def _handle_rehearsal_check(self, job: Job) -> Dict[str, Any]:
+        """Check rehearsal (go/no-go) for candidate."""
+        self._log_job_event("JOB_START", job)
+        
+        candidate_id = job.payload.get("candidate_id")
+        mode = job.payload.get("mode", "PAPER")
+        
+        if not candidate_id:
+            return {"ok": False, "error_code": "MISSING_CANDIDATE_ID", "trace": self._build_trace(job)}
+            
+        try:
+            home = self._get_home(job)
+            
+            from tezaver.matrix.apps.platform_bindings import rehearsal_check
+            result = rehearsal_check(home, candidate_id, mode)
+            
+            self._log_job_event("JOB_OK", job, {
+                "rehearsal": result.get("rehearsal"),
+                "candidate_id": candidate_id,
+            })
+            
+            return {
+                "ok": True,
+                "rehearsal": result.get("rehearsal"),
+                "fail_codes": result.get("fail_codes", []),
+                "details_tr": result.get("details_tr", []),
+                "candidate_id": candidate_id,
+                "mode": mode,
+                "trace": self._build_trace(job),
+            }
         except Exception as e:
             self._log_job_event("JOB_FAIL", job, {"error_code": "EXCEPTION", "detail": str(e)})
             return {"ok": False, "error_code": "EXCEPTION", "error_detail_tr": str(e), "trace": self._build_trace(job)}

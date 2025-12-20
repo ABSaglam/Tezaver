@@ -241,3 +241,112 @@ def approve_export(home: str, candidate_id: str, do_export: bool = True) -> Dict
             json.dump(export_pkg, f, indent=2)
             
     return {"approved_id": candidate_id, "export_path": export_path}
+
+
+def release_check(home: str, candidate_id: str, context: Dict = None) -> Dict[str, Any]:
+    """
+    Check release gate for candidate.
+    
+    Args:
+        home: Matrix home directory
+        candidate_id: ID of candidate to check
+        context: Optional context (mode, export_path, etc.)
+        
+    Returns:
+        Dict with release_status (PASS/FAIL), fail_codes, details_tr
+    """
+    # Check candidate/approved exists
+    approved_dir = os.path.join(home, "approved", candidate_id)
+    cand_dir = os.path.join(home, "candidates", candidate_id)
+    
+    fail_codes = []
+    details_tr = []
+    
+    # Check 1: Candidate exists
+    if not os.path.exists(cand_dir):
+        fail_codes.append("CANDIDATE_NOT_FOUND")
+        details_tr.append("Candidate bulunamadı")
+        
+    # Check 2: Approved exists
+    if not os.path.exists(approved_dir):
+        fail_codes.append("NOT_APPROVED")
+        details_tr.append("Candidate henüz onaylanmamış")
+        
+    # Check 3: Has sniper run with PASS verdict
+    runs_dir = os.path.join(home, "runs")
+    sniper_pass = False
+    if os.path.exists(runs_dir):
+        for run_name in os.listdir(runs_dir):
+            if run_name.startswith(f"sniper_{candidate_id}"):
+                scorecard_path = os.path.join(runs_dir, run_name, "scorecard.json")
+                if os.path.exists(scorecard_path):
+                    with open(scorecard_path) as f:
+                        scorecard = json.load(f)
+                    if scorecard.get("verdict") == "PASS":
+                        sniper_pass = True
+                        break
+                        
+    if not sniper_pass:
+        fail_codes.append("NO_SNIPER_PASS")
+        details_tr.append("Sniper testi PASS değil")
+        
+    # Determine overall status
+    release_status = "FAIL" if fail_codes else "PASS"
+    
+    return {
+        "release_status": release_status,
+        "fail_codes": fail_codes,
+        "details_tr": details_tr,
+        "candidate_id": candidate_id,
+    }
+
+
+def rehearsal_check(home: str, candidate_id: str, mode: str = "PAPER") -> Dict[str, Any]:
+    """
+    Check rehearsal (go/no-go) for candidate.
+    
+    Args:
+        home: Matrix home directory
+        candidate_id: ID of candidate to check
+        mode: PAPER or REAL
+        
+    Returns:
+        Dict with rehearsal (GO/NO_GO), fail_codes, details_tr
+    """
+    fail_codes = []
+    details_tr = []
+    
+    # Check 1: Export exists
+    exports_dir = os.path.join(home, "exports", candidate_id)
+    if not os.path.exists(exports_dir):
+        fail_codes.append("NO_EXPORT")
+        details_tr.append("Export paketi bulunamadı")
+        
+    # Check 2: For REAL mode, additional checks
+    if mode == "REAL":
+        # Check global risk config
+        gr_path = os.path.join(home, "cloud_runtime", "global_risk.json")
+        if os.path.exists(gr_path):
+            with open(gr_path) as f:
+                gr = json.load(f)
+            if gr.get("paused"):
+                fail_codes.append("RUNTIME_PAUSED")
+                details_tr.append("Cloud runtime duraklatılmış")
+                
+    # Check 3: Has approved manifest
+    approved_manifest = os.path.join(home, "approved", candidate_id, "manifest.json")
+    if not os.path.exists(approved_manifest):
+        fail_codes.append("NOT_APPROVED")
+        details_tr.append("Candidate onaylanmamış")
+        
+    # Determine overall status
+    rehearsal = "NO_GO" if fail_codes else "GO"
+    
+    return {
+        "rehearsal": rehearsal,
+        "fail_codes": fail_codes,
+        "details_tr": details_tr,
+        "candidate_id": candidate_id,
+        "mode": mode,
+    }
+
