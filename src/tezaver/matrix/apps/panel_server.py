@@ -1746,6 +1746,62 @@ class PanelHandler(BaseHTTPRequestHandler):
             self.wfile.write(b"HTTP/1.1 302 Found\r\nLocation: /cloud/loop\r\n\r\n")
             return
 
+        # UI-R: Rehearsal Checklist (Phase-17B)
+        if path == "/rehearsal":
+            rep_path = os.path.join(self.home, "ops", "rehearsal", "latest.json")
+            report = {}
+            if os.path.exists(rep_path):
+                with open(rep_path) as f: report = json.load(f)
+                
+            rows = ""
+            for c in report.get("checks", []):
+                col = "green" if c["status"] == "PASS" else "red"
+                rows += f"<tr><td>{c['code']}</td><td>{c['name']}</td><td style='color:{col}'><b>{c['status']}</b></td><td>{c['detail']}</td></tr>"
+                
+            go_col = "green" if report.get("go") else "red"
+            fail_html = ""
+            if report.get("fail_codes"):
+                fail_html = f"<div style='background:#fdd; padding:10px; margin:10px 0; border:2px solid red;'><b>Fail Codes:</b> {', '.join(report.get('fail_codes', []))}</div>"
+            
+            html = f"""
+            <html>
+                <h1>Production Rehearsal Checklist</h1>
+                <p><a href="/">Back</a> | <a href="/ops">Ops</a></p>
+                
+                <div style="padding:20px; border:4px solid {go_col}; background:#fff; margin-bottom:20px;">
+                    <h1 style="color:{go_col}; margin:0;">{report.get('overall', 'UNKNOWN')}</h1>
+                    <p>{report.get('summary', '')}</p>
+                </div>
+                
+                {fail_html}
+                
+                <form action="/rehearsal/run" method="get">
+                    Candidate ID: <input type="text" name="candidate_id" placeholder="Optional">
+                    <input type="submit" value="Run Rehearsal">
+                </form>
+                
+                <h3>Checks</h3>
+                <table border="1" style="width:100%; border-collapse:collapse;">
+                    <tr style="background:#ddd"><th>Code</th><th>Name</th><th>Status</th><th>Detail</th></tr>
+                    {rows}
+                </table>
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+            
+        if path.startswith("/rehearsal/run"):
+            from urllib.parse import urlparse, parse_qs
+            query = parse_qs(urlparse(path).query)
+            cid = query.get("candidate_id", [None])[0]
+            
+            from tezaver.matrix.core.rehearsal import run_rehearsal, write_latest
+            report = run_rehearsal(self.home, cid)
+            write_latest(self.home, report)
+            
+            self.wfile.write(b"HTTP/1.1 302 Found\r\nLocation: /rehearsal\r\n\r\n")
+            return
+
         if path == "/cloud/userstream":
             status_p = os.path.join(self.home, "cloud_runtime", "userstream", "status.json")
             status = {}
