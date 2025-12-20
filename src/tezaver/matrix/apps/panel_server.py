@@ -1054,12 +1054,50 @@ class PanelHandler(BaseHTTPRequestHandler):
              self.wfile.write(html.encode("utf-8"))
              return
              
+        # UI-NEW: Pause/Resume
+        if path.startswith("/cloud/runtime/pause"):
+             from tezaver.matrix.core.global_risk import load_global_risk, save_global_risk
+             cfg = load_global_risk(self.home)
+             cfg["paused"] = True
+             save_global_risk(self.home, cfg)
+             self.wfile.write(b"HTTP/1.1 302 Found\r\nLocation: /cloud/runtime\r\n\r\n")
+             return
+             
+        if path.startswith("/cloud/runtime/resume"):
+             from tezaver.matrix.core.global_risk import load_global_risk, save_global_risk
+             cfg = load_global_risk(self.home)
+             cfg["paused"] = False
+             save_global_risk(self.home, cfg)
+             self.wfile.write(b"HTTP/1.1 302 Found\r\nLocation: /cloud/runtime\r\n\r\n")
+             return
+
         if path.startswith("/cloud/runtime"):
             from tezaver.matrix.core.cloud_runtime import list_active_strategies, start_or_load_runtime_state, load_strategy_state
             from tezaver.matrix.core.paper_broker import load_portfolio
+            from tezaver.matrix.core.global_risk import load_global_risk, compute_totals, evaluate_risk_status
             
             active = list_active_strategies(self.home)
             state = start_or_load_runtime_state(self.home) # ensure structure exists
+            
+            # Global Risk
+            risk_cfg = load_global_risk(self.home)
+            risk_totals = compute_totals(self.home, active)
+            risk_status = evaluate_risk_status(risk_cfg, risk_totals)
+            
+            risk_color = "red" if risk_status or risk_cfg["paused"] else "green"
+            pause_btn = '<a href="/cloud/runtime/resume"><button style="background:green;color:white">RESUME</button></a>' if risk_cfg["paused"] else '<a href="/cloud/runtime/pause"><button style="background:red;color:white">PAUSE (Kill Switch)</button></a>'
+            
+            risk_html = f"""
+            <div style="border:2px solid {risk_color}; padding: 10px; margin-bottom: 20px;">
+                <h3>Global Risk & Control</h3>
+                <p>Status: <b>{'PAUSED' if risk_cfg['paused'] else 'RUNNING'}</b> {pause_btn}</p>
+                <p>
+                  Open Pos: {risk_totals['open_positions']} / {risk_cfg['max_open_positions']} <br/>
+                  Notional: {risk_totals['total_notional']:.2f} / {risk_cfg['max_total_notional']:.2f}
+                </p>
+                <p style="color:red">{'<br/>'.join(risk_status)}</p>
+            </div>
+            """
             
             crid = state.get("cloud_run_id")
             
@@ -1111,6 +1149,9 @@ class PanelHandler(BaseHTTPRequestHandler):
             html = f"""
             <html>
                 <h1>Cloud Runtime</h1>
+                
+                {risk_html}
+                
                 <p>
                     <b>Run ID:</b> {crid} <br/>
                     <b>Total Ticks:</b> {state.get('total_ticks')} <br/>

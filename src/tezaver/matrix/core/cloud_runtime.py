@@ -85,7 +85,25 @@ def parse_tf_ms(tf: str) -> int:
     if tf == "1M": return 30 * 24 * 60 * 60 * 1000 # Approx
     return 15 * 60 * 1000 # Default fallback
 
-def strategy_step(home: str, cloud_run_id: str, strategy_id: str, strategy_json: dict, steps: int) -> Dict[str, Any]:
+    # Import Paper Broker & Risk
+    from tezaver.matrix.core.paper_broker import execute_paper_order, load_portfolio
+    from tezaver.matrix.core.global_risk import should_block_decision, load_global_risk, compute_totals
+    
+    # We need risk config passed in or load it?
+    # Better pass it in args or load once per tick in caller.
+    # Let's assume passed in `runtime_context` dict?
+    # Or just load it again? It's cheap file read.
+    # But for consistency across strategies in same tick, caller should pass it.
+    # Updating signature is invasive.
+    # Let's load it here for now or update signature. 
+    # Actually, `cloud_runtime_tick` loads it. We can pass it if we change signature.
+    # Let's change `strategy_step` signature to accept `risk_config` and `risk_totals`.
+    
+    # See below for signature update.
+    pass 
+
+def strategy_step(home: str, cloud_run_id: str, strategy_id: str, strategy_json: dict, steps: int, 
+                  risk_config: dict = None, risk_totals: dict = None) -> Dict[str, Any]:
     # 1. Check Bars Source
     bs = strategy_json.get("bars_source")
     if not bs or bs.get("type") != "JSON_FILE" or not bs.get("path"):
@@ -135,8 +153,9 @@ def strategy_step(home: str, cloud_run_id: str, strategy_id: str, strategy_json:
     advanced = 0
     final_ts = int(time.time() * 1000)
     
-    # Import Paper Broker
+    # Import Paper Broker logic access
     from tezaver.matrix.core.paper_broker import execute_paper_order, load_portfolio
+    from tezaver.matrix.core.global_risk import should_block_decision
     
     for _ in range(steps):
         if cursor >= len(bars): break
@@ -183,17 +202,40 @@ def strategy_step(home: str, cloud_run_id: str, strategy_id: str, strategy_json:
         elif close_p < open_p and qty > 0:
             action = "SELL"
             
+        # Risk Check
+        blocked_reason = None
+        if action == "BUY" and risk_config and risk_totals:
+            if should_block_decision(risk_config, risk_totals, action):
+                blocked_reason = "GLOBAL_RISK_LIMIT"
+                action = "HOLD" # Force Hold
+                
         # Execute
         if action == "BUY":
             execute_paper_order(home, strategy_id, "BUY", 1.0, close_p, bar_ts)
+            # Update totals for next iteration within same tick?
+            # Ideally yes, simplistic: increment count.
+            if risk_totals: risk_totals["open_positions"] += 1
+            
         elif action == "SELL":
             execute_paper_order(home, strategy_id, "SELL", 1.0, close_p, bar_ts)
+            if risk_totals: risk_totals["open_positions"] = max(0, risk_totals["open_positions"] - 1)
             
         # Decision Event
+        payload = {"action": action, "bar_ts": bar_ts, "trigger_price": close_p}
+        if blocked_reason:
+            payload["blocked"] = True
+            payload["reason"] = blocked_reason
+            # Also emit dedicated BLOCK event
+            evt_blk = {
+                "ts": int(time.time() * 1000), "type": "GLOBAL_RISK_BLOCK",
+                "strategy_id": strategy_id, "payload": {"decision": "BUY", "reason": blocked_reason, "totals": risk_totals}
+            }
+            append_runtime_event(home, cloud_run_id, evt_blk)
+            
         evt_dec = {
             "ts": int(time.time() * 1000), "type": "STRATEGY_DECISION",
             "strategy_id": strategy_id,
-            "payload": {"action": action, "bar_ts": bar_ts, "trigger_price": close_p}
+            "payload": payload
         }
         append_runtime_event(home, cloud_run_id, evt_dec)
         
@@ -206,9 +248,6 @@ def strategy_step(home: str, cloud_run_id: str, strategy_id: str, strategy_json:
     state["last_ts"] = last_ts
     save_strategy_state(home, strategy_id, state)
     
-    # Portfolio Snapshot in Heartbeat?
-    # Or just keep it separate. User said "strategy heartbeat to portfolio snapshot ekle" in request.
-    # Let's add simple portfolio summary to heartbeat for observability.
     pf_final = load_portfolio(home, strategy_id)
     
     evt_hb = {
@@ -226,16 +265,39 @@ def strategy_step(home: str, cloud_run_id: str, strategy_id: str, strategy_json:
     return {"skipped": False, "advanced": advanced, "cursor": cursor, "total": len(bars)}
 
 def cloud_runtime_tick(home: str, ticks: int = 1, steps_per_strategy: int = 10) -> Dict[str, Any]:
+    from tezaver.matrix.core.global_risk import load_global_risk, compute_totals
+    
     state = start_or_load_runtime_state(home)
     crid = state["cloud_run_id"]
     
     active_strats = list_active_strategies(home)
     
-    events_written = 0
     strategy_results = {}
     
     for t in range(ticks):
         tick_ts = int(time.time() * 1000)
+        
+        # 1. Global Risk Check (Kill Switch)
+        risk_cfg = load_global_risk(home)
+        if risk_cfg["paused"]:
+            append_runtime_event(home, crid, {"ts": tick_ts, "type": "GLOBAL_PAUSED", "tick_seq": state["total_ticks"] + 1})
+            # Heartbeat for paused state
+            hb = {
+                "ts": tick_ts,
+                "type": "RUNTIME_HEARTBEAT_PAUSED",
+                "active_count": len(active_strats),
+                "strategies": active_strats,
+                "paused": True
+            }
+            # Skip strategies
+            continue
+            
+        # 2. Compute Totals
+        risk_totals = compute_totals(home, active_strats)
+        append_runtime_event(home, crid, {
+            "ts": tick_ts, "type": "GLOBAL_RISK_SNAPSHOT", 
+            "payload": {"totals": risk_totals, "limits": risk_cfg}
+        })
         
         # General Tick Event
         append_runtime_event(home, crid, {"ts": tick_ts, "type": "CLOUD_TICK", "tick_seq": state["total_ticks"] + 1})
@@ -250,7 +312,7 @@ def cloud_runtime_tick(home: str, ticks: int = 1, steps_per_strategy: int = 10) 
                  
             with open(s_path) as f: s_json = json.load(f)
             
-            res = strategy_step(home, crid, sid, s_json, steps_per_strategy)
+            res = strategy_step(home, crid, sid, s_json, steps_per_strategy, risk_config=risk_cfg, risk_totals=risk_totals)
             strategy_results[sid] = res
             
         # Runtime Heartbeat
@@ -279,5 +341,6 @@ def cloud_runtime_tick(home: str, ticks: int = 1, steps_per_strategy: int = 10) 
         "ticks_processed": ticks,
         "active_strategies": len(active_strats),
         "state": state,
-        "latest_strategy_results": strategy_results
+        "latest_strategy_results": strategy_results,
+        "risk_paused": risk_cfg.get("paused", False)
     }
