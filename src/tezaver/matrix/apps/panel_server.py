@@ -47,26 +47,20 @@ def build_info(home: str) -> dict:
         "ts": int(time.time()),
     }
 
+# V4 Routes - Clean panel navigation
 ROUTES = {
-    "/": "UI-A: Home",
-    "/candidates": "UI-B: Candidates",
-    "/runs": "UI-C: Runs",
-    "/engine": "UI-D: Engine",
-    "/gates": "UI-E: Gates",
-    "/reports": "UI-F: Reports",
-    "/evidence": "UI-G: Evidence",
-    "/data": "UI-H: Data",
-    "/story": "UI-I: Story",
-    "/lessons": "UI-J: Lessons",
-    "/ai": "UI-K: AI",
-    "/ops": "UI-L: Ops",
-    "/tests": "UI-M: Tests",
-    "/maintenance": "UI-N: Maintenance",
-    "/registry": "UI-O: Registry",
-    "/alerts": "UI-P: Alerts",
-    "/cloud/userstream": "UI-D: User Stream",
-    "/migration": "UI-E: Migration",
-    "/release": "UI-F: Release Gate",
+    "/": "Ana Sayfa",
+    "/ops": "Operasyon Merkezi",
+    "/alerts": "Alarmlar",
+    "/cloud/runtime": "Cloud Runtime",
+    "/cloud/userstream": "UserStream",
+    "/cloud/loop": "Cloud Loop",
+    "/migration": "Migration",
+    "/release": "Release Gate",
+    "/rehearsal": "Rehearsal Checklist",
+    "/candidates": "Candidates",
+    "/runs": "Runs",
+    "/registry": "Cloud Registry",
 }
 
 class PanelHandler(BaseHTTPRequestHandler):
@@ -2097,6 +2091,8 @@ class PanelHandler(BaseHTTPRequestHandler):
             # Build banner
             info = build_info(self.home)
             counts = info.get("counts", {})
+            total_data = sum(counts.values())
+            
             banner = f"""
             <div style="background:#333; color:#fff; padding:8px 12px; font-size:0.85em; font-family:monospace;">
                 Build: <b>{info['commit']}</b> | Branch: <b>{info['branch']}</b> | Home: <b>{info['home']}</b>
@@ -2108,16 +2104,36 @@ class PanelHandler(BaseHTTPRequestHandler):
             </div>
             """
             
+            # Empty state for home page
+            empty_state = ""
+            if path == "/" and total_data == 0:
+                empty_state = """
+                <div style="background:#ffc; padding:20px; border:2px solid #fa0; margin:20px 0;">
+                    <h2>⚠️ Sistem Boş</h2>
+                    <p>Henüz veri bulunamadı. Başlamak için:</p>
+                    <ul>
+                        <li><a href="/candidates">📁 Candidates</a> - Strateji adaylarını görüntüle</li>
+                        <li><a href="/ops">🏠 Operasyon Merkezi</a> - Sistem durumunu kontrol et</li>
+                        <li><a href="/cloud/runtime">☁️ Cloud Runtime</a> - Cloud stratejilerini yönet</li>
+                        <li><a href="/rehearsal">✅ Rehearsal</a> - Go/No-Go kontrolü</li>
+                    </ul>
+                    <p><small>CLI ile demo data: <code>python -m tezaver.matrix.apps.candidate_importer --home .tezaver_matrix</code></small></p>
+                </div>
+                """
+            
             html = f"""
             <html>
-                <head><title>{title}</title></head>
-                <body>
+                <head><title>Tezaver Matrix V4 - {title}</title></head>
+                <body style="font-family: sans-serif; margin: 0; padding: 0;">
                     {banner}
-                    <h1>{title}</h1>
-                    <p>Status: <b>ok</b></p>
-                    <hr/>
-                    <ul>{links}</ul>
-                    <p><small><a href="/_debug/build">Debug Build Info (JSON)</a></small></p>
+                    <div style="padding: 20px;">
+                        <h1>🎛️ {title}</h1>
+                        {empty_state}
+                        <hr/>
+                        <h3>📋 Navigasyon</h3>
+                        <ul>{links}</ul>
+                        <p><small><a href="/_debug/build">🔧 Debug Build Info (JSON)</a></small></p>
+                    </div>
                 </body>
             </html>
             """
