@@ -280,8 +280,92 @@ def strategy_step(home: str, cloud_run_id: str, strategy_id: str, strategy_json:
                     execute_paper_order(home, strategy_id, action, 1.0, close_p, bar_ts)
                     if action == "BUY" and risk_totals: risk_totals["open_positions"] += 1
                     if action == "SELL" and risk_totals: risk_totals["open_positions"] = max(0, risk_totals["open_positions"] - 1)
-            
-        # Decision Event
+                    if action == "BUY" and risk_totals: risk_totals["open_positions"] += 1
+                    if action == "SELL" and risk_totals: risk_totals["open_positions"] = max(0, risk_totals["open_positions"] - 1)
+
+            elif broker_mode == "REAL_BINANCE":
+                # 1. Secrets Gate
+                from tezaver.matrix.core.secrets import load_binance_secrets
+                secrets = load_binance_secrets(home)
+                
+                if not secrets["present"]:
+                    evt_mis = {
+                        "ts": int(time.time() * 1000), "type": "BROKER_MISCONFIG",
+                        "strategy_id": strategy_id,
+                        "payload": {"reason": "SECRETS_MISSING", "mode": broker_mode}
+                    }
+                    append_runtime_event(home, cloud_run_id, evt_mis)
+                    
+                    if action == "BUY":
+                         action = "HOLD"
+                         blocked_reason = "SECRETS_MISSING"
+                else:
+                    # 2. Real Execution
+                    from tezaver.matrix.adapters.binance_rest_client import BinanceRestClient
+                    from tezaver.matrix.adapters.broker_binance_real import RealBinanceBroker
+                    
+                    # Init Client (Ideally cached or reused per tick, but for now init per step or tick)
+                    # To avoid creating new session every step, we should move this up to tick scope or cache.
+                    # But for now, ensuring correctness first.
+                    base_url = broker_config.get("binance_base_url")
+                    
+                    client = BinanceRestClient(secrets["api_key"], secrets["api_secret"], secrets["testnet"], base_url)
+                    # Sync time? Ideally once per tick if needed at start. For now client handles request signing.
+                    # If drift is high, it might fail. Phase-14C.1 requirement says handle it.
+                    # Let's simple sync on init here for safety, though slow.
+                    # Optimized: Check if we have drift in state or shared dict?
+                    # Sticking to safe simple impl: sync on instantiation if needed logic is inside client.
+                    # Client.sync_time() needs valid network.
+                    # Auto-sync logic is inside client (manual call required).
+                    client.sync_time() 
+                    
+                    # Dry Run Override within REAL_BINANCE?
+                    # User requirement says: "REAL_BINANCE only if config active".
+                    # We assume if mode is REAL_BINANCE, we really send (unless strategy specific flag? No global config).
+                    # Actually RealBinanceBroker supports dry_run arg.
+                    # We should probably pass dry_run=False here since the mode IS REAL_BINANCE.
+                    # If we want dry run we use REAL_DRYRUN or REAL_BINANCE_STUB.
+                    
+                    broker = RealBinanceBroker(client, dry_run=False, reduce_only=broker_config.get("reduce_only", True))
+                    symbol = strategy_json.get("symbol", "UNKNOWN")
+                    
+                    res = broker.place_order(strategy_id, symbol, action, 1.0, close_p, bar_ts)
+                    
+                    evt_real = {
+                        "ts": int(time.time() * 1000), "type": "REAL_ORDER_SENT", # Changed from WOULD_SEND to SENT
+                        "strategy_id": strategy_id,
+                        "payload": res
+                    }
+                    append_runtime_event(home, cloud_run_id, evt_real)
+                    
+                    if not res.get("accepted"):
+                         # ERROR from Broker
+                         evt_err = {
+                             "ts": int(time.time() * 1000), "type": "BROKER_ERROR",
+                             "strategy_id": strategy_id, "payload": res
+                         }
+                         append_runtime_event(home, cloud_run_id, evt_err)
+                         
+                    # Telemetry
+                    meta = client.last_call_meta
+                    meta["time_offset"] = client.time_offset_ms
+                    evt_tel = {
+                         "ts": int(time.time() * 1000), "type": "BROKER_TELEMETRY",
+                         "payload": meta
+                    }
+                    append_runtime_event(home, cloud_run_id, evt_tel)
+                    
+                    # 3. State Consistency?
+                    # If REAL, we should load position from Exchange?
+                    # Phase-14C.1 is just Broker Adapter. Portfolio syncing is next.
+                    # For now, we still mimic fill to keep Panel happy?
+                    # "Emniyet (Safety) kuralları: 2) Yeni pozisyon açmayı gerektiren BUY ... Gate'ten geçmeden görme"
+                    # We passed Gate (Secrets).
+                    # We assume it fills? If real, it might fill later.
+                    # For this phase, let's keep execute_paper_order as a "Shadow Tracking".
+                    execute_paper_order(home, strategy_id, action, 1.0, close_p, bar_ts)
+                    if action == "BUY" and risk_totals: risk_totals["open_positions"] += 1
+                    if action == "SELL" and risk_totals: risk_totals["open_positions"] = max(0, risk_totals["open_positions"] - 1)
         payload = {"action": action, "bar_ts": bar_ts, "trigger_price": close_p}
         if blocked_reason:
             payload["blocked"] = True

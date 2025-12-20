@@ -1121,16 +1121,52 @@ class PanelHandler(BaseHTTPRequestHandler):
             broker_color = "blue"
             if broker_mode == "REAL_DRYRUN": broker_color = "orange"
             if broker_mode == "REAL_BINANCE_STUB": broker_color = "purple"
+            if broker_mode == "REAL_BINANCE": broker_color = "red"
             
             secrets = load_binance_secrets(self.home)
             rsec = redact_secrets(secrets)
             sec_html = f"<span style='color:green'>SECRETS OK ({rsec['source']})</span>" if secrets['present'] else "<span style='color:red'>SECRETS MISSING</span>"
             
+            # Load Telemetry (Scan last few events? Or dedicated file?)
+            # Parsing events.ndjson here is slow.
+            # But we have `state.json`? No.
+            # Let's peek at `heartbeat.json`? No.
+            # We implemented `BROKER_TELEMETRY` event.
+            # For this UI requirement, let's hack a quick read of the last telemetry event from events.ndjson if mode is REAL_BINANCE
+            telemetry_html = ""
+            if broker_mode == "REAL_BINANCE":
+                telem = {}
+                # Try to find last telemetry
+                # This is inefficient but functional for small logs
+                crid = state.get("cloud_run_id")
+                if crid:
+                     ep = os.path.join(self.home, "cloud_runtime", "runs", crid, "events.ndjson")
+                     if os.path.exists(ep):
+                         try:
+                            # Read tail
+                             with open(ep) as f: lines = f.readlines()
+                             for l in reversed(lines):
+                                 if "BROKER_TELEMETRY" in l:
+                                     telem = json.loads(l).get("payload", {})
+                                     break
+                         except: pass
+                
+                if telem:
+                    telemetry_html = f"""
+                    <div style="font-size:0.8em; margin-top:5px; border-top:1px solid #ccc">
+                        <p>Offset: {telem.get('time_offset')}ms</p>
+                        <p>Last Call: {telem.get('method')} {telem.get('path')} = {telem.get('status')}</p>
+                    </div>
+                    """
+                else:
+                    telemetry_html = "<small>No telemetry yet</small>"
+
             broker_html = f"""
             <div style="border:2px solid {broker_color}; padding: 10px; margin-bottom: 20px;">
                 <h3>Broker Adapter</h3>
                 <p>Mode: <b>{broker_mode}</b></p>
                 <p>Secrets Health: {sec_html}</p>
+                {telemetry_html}
                 <p>
                     <a href="/cloud/runtime/broker/paper"><button>PAPER</button></a>
                     <a href="/cloud/runtime/broker/real_dryrun"><button>REAL_DRYRUN</button></a>
