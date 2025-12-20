@@ -24,6 +24,7 @@ ROUTES = {
     "/maintenance": "UI-N: Maintenance",
     "/registry": "UI-O: Registry",
     "/alerts": "UI-P: Alerts",
+    "/cloud/userstream": "UI-D: User Stream",
 }
 
 class PanelHandler(BaseHTTPRequestHandler):
@@ -1552,6 +1553,44 @@ class PanelHandler(BaseHTTPRequestHandler):
             """
             self.wfile.write(html.encode("utf-8"))
             return
+
+        # UI-D: UserStream (Phase-14C.2)
+        if path == "/cloud/userstream":
+            status_p = os.path.join(self.home, "cloud_runtime", "userstream", "status.json")
+            status = {}
+            if os.path.exists(status_p):
+                with open(status_p) as f: status = json.load(f)
+                
+            raw_p = os.path.join(self.home, "cloud_runtime", "userstream", "raw.ndjson")
+            last_lines = []
+            if os.path.exists(raw_p):
+                with open(raw_p) as f: 
+                    all_lines = f.readlines()
+                    last_lines = all_lines[-20:] # Last 20
+                    
+            raw_html = "".join([f"<li>{l}</li>" for l in last_lines])
+            
+            status_color = "green" if status.get("status") == "CONNECTED" else "red"
+            
+            html = f"""
+            <html>
+                <h1>User Stream Manager</h1>
+                <p><a href="/">Back to Home</a> | <a href="/cloud/runtime">Runtime</a></p>
+                <div style="border:2px solid {status_color}; padding:10px;">
+                    <h3>Status: {status.get("status", "UNKNOWN")}</h3>
+                    <p>Updated: {status.get("updated_ts")}</p>
+                    <p>Keepalive Due: {status.get("keepalive_due_ts")}</p>
+                    <p>Last Error: {status.get("last_error")}</p>
+                </div>
+                <h3>Raw Message Tail (Last 20)</h3>
+                <ul style="font-family:monospace; font-size:0.8em; background:#f0f0f0;">
+                    {raw_html}
+                </ul>
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+
 
             
         # UI-I: Story Timeline
