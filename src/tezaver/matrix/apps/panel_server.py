@@ -855,32 +855,67 @@ class PanelHandler(BaseHTTPRequestHandler):
             self.wfile.write(b"HTTP/1.1 302 Found\r\nLocation: /ops\r\n\r\n")
             return
 
+            self.wfile.write(html.encode("utf-8"))
+            return
+            
+        # Recovery Action
+        if path.startswith("/maintenance/recover"):
+            from tezaver.matrix.apps.recover import run_recovery
+            run_recovery(self.home)
+            self.wfile.write(b"HTTP/1.1 302 Found\r\nLocation: /ops\r\n\r\n")
+            return
+
         if path.startswith("/ops") or path.startswith("/maintenance"):
             # Load Preflight
-            rp = os.path.join(self.home, "ops", "preflight", "latest.json")
-            rep_html = "<p>No preflight report.</p>"
+            pp = os.path.join(self.home, "ops", "preflight", "latest.json")
+            p_html = "<p>No preflight report.</p>"
+            if os.path.exists(pp):
+                with open(pp) as f: r = json.load(f)
+                color = "green" if r.get("ok") else "red"
+                p_html = f"<h3 style='color:{color}'>Preflight Status: {'PASS' if r.get('ok') else 'FAIL'}</h3>"
+                p_html += "<ul>"
+                for c in r.get("checks", []):
+                    p_html += f"<li>[{c['status']}] {c['name']}: {c['detail']}</li>"
+                p_html += "</ul>"
+                if r.get("warnings"):
+                    p_html += "<h4>Warnings</h4><ul>"
+                    for w in r.get("warnings"): p_html += f"<li>{w}</li>"
+                    p_html += "</ul>"
+            
+            # Load Recovery
+            rec_html = "<p>No recovery report.</p>"
+            rp = os.path.join(self.home, "ops", "recovery", "latest.json")
             if os.path.exists(rp):
                 with open(rp) as f: r = json.load(f)
-                color = "green" if r.get("ok") else "red"
-                rep_html = f"<h3 style='color:{color}'>Preflight Status: {'PASS' if r.get('ok') else 'FAIL'}</h3>"
-                rep_html += "<ul>"
-                for c in r.get("checks", []):
-                    rep_html += f"<li>[{c['status']}] {c['name']}: {c['detail']}</li>"
-                rep_html += "</ul>"
-                if r.get("warnings"):
-                    rep_html += "<h4>Warnings</h4><ul>"
-                    for w in r.get("warnings"): rep_html += f"<li>{w}</li>"
-                    rep_html += "</ul>"
+                rec_html = f"""
+                <h3>Last Recovery</h3>
+                <ul>
+                    <li>Requeued: {r['orchestrator']['requeued']}</li>
+                    <li>Stale Locks Removed: {r['orchestrator']['stale_locks_removed']}</li>
+                    <li>Live Runs: {r['live']['runs_scanned']}</li>
+                </ul>
+                """
+                if r['live']['warnings']:
+                    rec_html += "<h4>Live Warnings</h4><ul>"
+                    for w in r['live']['warnings']: rec_html += f"<li>{w}</li>"
+                    rec_html += "</ul>"
                     
             html = f"""
             <html>
                 <h1>Ops & Maintenance</h1>
                 <p>
                     <a href="/maintenance/run_preflight"><button>RUN PREFLIGHT CHECKS</button></a>
+                    <a href="/maintenance/recover"><button style="background:orange">RUN RECOVERY</button></a>
                 </p>
-                <div style="border:1px solid #ccc; padding:10px">
-                    <h2>Latest Report</h2>
-                    {rep_html}
+                <div style="display:flex; gap:20px">
+                    <div style="flex:1; border:1px solid #ccc; padding:10px">
+                        <h2>Preflight Report</h2>
+                        {p_html}
+                    </div>
+                    <div style="flex:1; border:1px solid #ccc; padding:10px">
+                        <h2>Recovery Report</h2>
+                        {rec_html}
+                    </div>
                 </div>
             </html>
             """
