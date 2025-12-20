@@ -1,11 +1,51 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import sys
+import subprocess
+import time
 
 PORT = 8085
 
 import os
 import json
 from tezaver.matrix.adapters.candidate_store_fs import FileCandidateStore
+
+# Global home path (set via CLI or env)
+_PANEL_HOME = os.environ.get("TEZAVER_MATRIX_HOME", ".tezaver_matrix")
+
+def build_info(home: str) -> dict:
+    """Get build identity info."""
+    # Git info (best-effort)
+    commit = "unknown"
+    branch = "unknown"
+    try:
+        commit = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], stderr=subprocess.DEVNULL).decode().strip()
+        branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"], stderr=subprocess.DEVNULL).decode().strip()
+    except:
+        pass
+        
+    # Data counts (best-effort)
+    counts = {}
+    try:
+        counts["candidates"] = len(os.listdir(os.path.join(home, "candidates"))) if os.path.exists(os.path.join(home, "candidates")) else 0
+        counts["runs"] = len(os.listdir(os.path.join(home, "runs"))) if os.path.exists(os.path.join(home, "runs")) else 0
+        counts["alerts_active"] = len(os.listdir(os.path.join(home, "alerts", "active"))) if os.path.exists(os.path.join(home, "alerts", "active")) else 0
+        counts["approved"] = len(os.listdir(os.path.join(home, "approved"))) if os.path.exists(os.path.join(home, "approved")) else 0
+        counts["exports"] = len(os.listdir(os.path.join(home, "exports"))) if os.path.exists(os.path.join(home, "exports")) else 0
+        strat_dir = os.path.join(home, "cloud_registry", "strategies")
+        counts["strategies"] = len(os.listdir(strat_dir)) if os.path.exists(strat_dir) else 0
+    except:
+        pass
+        
+    return {
+        "commit": commit,
+        "branch": branch,
+        "panel_file": __file__,
+        "home": os.path.abspath(home),
+        "python": sys.version,
+        "cwd": os.getcwd(),
+        "counts": counts,
+        "ts": int(time.time()),
+    }
 
 ROUTES = {
     "/": "UI-A: Home",
@@ -30,9 +70,21 @@ ROUTES = {
 }
 
 class PanelHandler(BaseHTTPRequestHandler):
+    home = _PANEL_HOME  # Class attribute, updated by run_server
+    
     def do_GET(self):
         path = self.path.rstrip("/")
         if path == "": path = "/"
+        
+        # DEBUG: Build Info Endpoint
+        if path == "/_debug/build":
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            info = build_info(self.home)
+            self.wfile.write(json.dumps(info, indent=2).encode("utf-8"))
+            return
+
         
         # UI-B: Candidates List
         if path == "/candidates":
@@ -2042,14 +2094,30 @@ class PanelHandler(BaseHTTPRequestHandler):
             title = ROUTES[path]
             links = "".join([f'<li><a href="{r}">{n}</a></li>' for r, n in ROUTES.items()])
             
+            # Build banner
+            info = build_info(self.home)
+            counts = info.get("counts", {})
+            banner = f"""
+            <div style="background:#333; color:#fff; padding:8px 12px; font-size:0.85em; font-family:monospace;">
+                Build: <b>{info['commit']}</b> | Branch: <b>{info['branch']}</b> | Home: <b>{info['home']}</b>
+                <br/>
+                Panel: {info['panel_file']}
+                <br/>
+                Data: candidates={counts.get('candidates',0)} runs={counts.get('runs',0)} alerts={counts.get('alerts_active',0)} 
+                approved={counts.get('approved',0)} exports={counts.get('exports',0)} strategies={counts.get('strategies',0)}
+            </div>
+            """
+            
             html = f"""
             <html>
                 <head><title>{title}</title></head>
                 <body>
+                    {banner}
                     <h1>{title}</h1>
                     <p>Status: <b>ok</b></p>
                     <hr/>
                     <ul>{links}</ul>
+                    <p><small><a href="/_debug/build">Debug Build Info (JSON)</a></small></p>
                 </body>
             </html>
             """
@@ -2059,7 +2127,14 @@ class PanelHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(b"Not Found")
 
-def run_server():
+def run_server(home: str = None):
+    global _PANEL_HOME
+    if home:
+        _PANEL_HOME = home
+        PanelHandler.home = home
+    
+    print(f"Panel Home: {os.path.abspath(PanelHandler.home)}")
+    
     server_address = ('', PORT)
     httpd = HTTPServer(server_address, PanelHandler)
     print(f"Panel Server running at http://localhost:{PORT}")
@@ -2073,7 +2148,16 @@ def run_server():
         httpd.server_close()
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Tezaver Matrix Panel Server")
+    parser.add_argument("--home", default=os.environ.get("TEZAVER_MATRIX_HOME", ".tezaver_matrix"), 
+                        help="Data home directory")
+    parser.add_argument("--port", type=int, default=PORT, help="Server port")
+    args = parser.parse_args()
+    
+    PORT = args.port
+    
     try:
-         run_server()
+        run_server(args.home)
     except KeyboardInterrupt:
         sys.exit(0)
