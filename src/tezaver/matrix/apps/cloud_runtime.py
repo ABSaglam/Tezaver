@@ -8,11 +8,12 @@ def main():
     parser = argparse.ArgumentParser(description="Matrix Cloud Runtime (MX-12001)")
     parser.add_argument("--home", default=os.environ.get("TEZAVER_MATRIX_HOME", ".tezaver_matrix"))
     parser.add_argument("--ticks", type=int, default=1, help="Number of ticks to process")
+    parser.add_argument("--steps", type=int, default=10, help="Max bars per strategy per tick")
     
     args = parser.parse_args()
     
     try:
-        res = cloud_runtime_tick(args.home, ticks=args.ticks)
+        res = cloud_runtime_tick(args.home, ticks=args.ticks, steps_per_strategy=args.steps)
         print("CLOUD RUNTIME TICK COMPLETE")
         print(json.dumps(res, indent=2))
     except Exception as e:

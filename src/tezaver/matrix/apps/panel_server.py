@@ -1012,7 +1012,7 @@ class PanelHandler(BaseHTTPRequestHandler):
              return
 
         if path.startswith("/cloud/runtime"):
-            from tezaver.matrix.core.cloud_runtime import list_active_strategies, start_or_load_runtime_state
+            from tezaver.matrix.core.cloud_runtime import list_active_strategies, start_or_load_runtime_state, load_strategy_state
             
             active = list_active_strategies(self.home)
             state = start_or_load_runtime_state(self.home) # ensure structure exists
@@ -1026,9 +1026,42 @@ class PanelHandler(BaseHTTPRequestHandler):
                 with open(hb_path) as f: hb = json.load(f)
                 hb_html = f"<pre>{json.dumps(hb, indent=2)}</pre>"
                 
-            active_html = "<ul>"
-            for s in active: active_html += f"<li><a href='/cloud/{s}'>{s}</a></li>"
-            active_html += "</ul>"
+            # Table Logic
+            # Read state for each active strategy
+            rows = ""
+            for sid in active:
+                s_state = load_strategy_state(self.home, sid)
+                
+                # Default values if no state yet
+                cursor = "-"
+                last_ts = "-"
+                
+                if s_state:
+                     cursor = s_state.get("cursor", 0)
+                     last_ts = s_state.get("last_ts", 0)
+                     
+                # Check for skipped? 
+                # We interpret this from last event? 
+                # Or just show cursor.
+                
+                rows += f"""
+                <tr>
+                    <td><a href='/cloud/{sid}'>{sid}</a></td>
+                    <td>{cursor}</td>
+                    <td>{last_ts}</td>
+                </tr>
+                """
+            
+            active_html = f"""
+            <table border="1" cellpadding="5" style="border-collapse:collapse; width:100%">
+                <tr>
+                    <th>Strategy ID</th>
+                    <th>Cursor</th>
+                    <th>Last TS</th>
+                </tr>
+                {rows}
+            </table>
+            """
             
             html = f"""
             <html>
@@ -1039,11 +1072,11 @@ class PanelHandler(BaseHTTPRequestHandler):
                     <b>Last Tick:</b> {state.get('last_tick_ts')}
                 </p>
                 <p>
-                    <a href="/cloud/runtime/run?ticks=1"><button>Run 1 Tick</button></a>
-                    <a href="/cloud/runtime/run?ticks=5"><button>Run 5 Ticks</button></a>
+                    <a href="/cloud/runtime/run?ticks=1&steps=10"><button>Tick (1)</button></a>
+                    <a href="/cloud/runtime/run?ticks=5&steps=20"><button>Tick (5)</button></a>
                 </p>
                 <div style="display:flex; gap:20px">
-                    <div style="flex:1; border:1px solid #ccc; padding:10px">
+                    <div style="flex:2; border:1px solid #ccc; padding:10px">
                         <h2>Active Strategies ({len(active)})</h2>
                         {active_html}
                     </div>
