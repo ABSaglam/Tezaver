@@ -229,7 +229,7 @@ def render_platform_tab():
     
     page = st.sidebar.radio(
         "Platform Sayfa",
-        ["Connectors", "Jobs", "Ops", "Golden"],
+        ["Connectors", "Jobs", "Ops", "Golden", "Candidate→Sniper", "Approved→Deploy"],
         label_visibility="collapsed"
     )
     
@@ -242,3 +242,9 @@ def render_platform_tab():
     elif page == "Golden":
         from tezaver.ui.platform_golden_tab import render_platform_golden
         render_platform_golden()
+    elif page == "Candidate→Sniper":
+        from tezaver.ui.platform_sniper_tab import render_platform_sniper
+        render_platform_sniper()
+    elif page == "Approved→Deploy":
+        from tezaver.ui.platform_deploy_tab import render_platform_deploy
+        render_platform_deploy()
