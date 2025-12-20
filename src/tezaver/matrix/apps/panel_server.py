@@ -991,6 +991,72 @@ class PanelHandler(BaseHTTPRequestHandler):
             self.wfile.write(html.encode("utf-8"))
             return
 
+            self.wfile.write(html.encode("utf-8"))
+            return
+            
+        # UI-NEW: Cloud Runtime
+        if path.startswith("/cloud/runtime/run"):
+             # Parse ticks from query? Simple parsing
+             ticks = 1
+             if "ticks=" in path:
+                 try:
+                     ticks = int(path.split("ticks=")[1].split("&")[0])
+                 except: pass
+                 
+             from tezaver.matrix.core.cloud_runtime import cloud_runtime_tick
+             try:
+                 cloud_runtime_tick(self.home, ticks=ticks)
+                 self.wfile.write(b"HTTP/1.1 302 Found\r\nLocation: /cloud/runtime\r\n\r\n")
+             except Exception as e:
+                 self.wfile.write(f"Runtime Failed: {e}".encode("utf-8"))
+             return
+
+        if path.startswith("/cloud/runtime"):
+            from tezaver.matrix.core.cloud_runtime import list_active_strategies, start_or_load_runtime_state
+            
+            active = list_active_strategies(self.home)
+            state = start_or_load_runtime_state(self.home) # ensure structure exists
+            
+            crid = state.get("cloud_run_id")
+            
+            # Load last heartbeat
+            hb_html = "<p>No heartbeat</p>"
+            hb_path = os.path.join(self.home, "cloud_runtime", "runs", crid, "heartbeat.json")
+            if os.path.exists(hb_path):
+                with open(hb_path) as f: hb = json.load(f)
+                hb_html = f"<pre>{json.dumps(hb, indent=2)}</pre>"
+                
+            active_html = "<ul>"
+            for s in active: active_html += f"<li><a href='/cloud/{s}'>{s}</a></li>"
+            active_html += "</ul>"
+            
+            html = f"""
+            <html>
+                <h1>Cloud Runtime</h1>
+                <p>
+                    <b>Run ID:</b> {crid} <br/>
+                    <b>Total Ticks:</b> {state.get('total_ticks')} <br/>
+                    <b>Last Tick:</b> {state.get('last_tick_ts')}
+                </p>
+                <p>
+                    <a href="/cloud/runtime/run?ticks=1"><button>Run 1 Tick</button></a>
+                    <a href="/cloud/runtime/run?ticks=5"><button>Run 5 Ticks</button></a>
+                </p>
+                <div style="display:flex; gap:20px">
+                    <div style="flex:1; border:1px solid #ccc; padding:10px">
+                        <h2>Active Strategies ({len(active)})</h2>
+                        {active_html}
+                    </div>
+                    <div style="flex:1; border:1px solid #ccc; padding:10px">
+                        <h2>Last Heartbeat</h2>
+                        {hb_html}
+                    </div>
+                </div>
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+
         # UI-C: Live Runner (Demo)
         if path.startswith("/runs/live/"):
             parts = path.split("/")
