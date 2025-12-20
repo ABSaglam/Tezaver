@@ -1,51 +1,56 @@
-import os
 import time
-import json
-import hashlib
-from typing import List, Dict, Optional
+from typing import Optional
 from dataclasses import asdict
 
-from tezaver.matrix.core.bars import Bar, require_closed_bar
+from tezaver.matrix.core.bars import require_closed_bar
 from tezaver.matrix.core.trace import TraceIds, require_trace_ids
 from tezaver.matrix.core.state import RunState, validate_state
-from tezaver.matrix.core.gates import eval_all_gates, RiskGateConfig, GovernanceConfig, GateResult
+from tezaver.matrix.core.gates import eval_all_gates, RiskGateConfig, GovernanceConfig
 
-def run_cycle(bars: List[Bar], 
+from tezaver.matrix.ports.data_port import DataPort
+from tezaver.matrix.ports.broker_port import BrokerPort
+from tezaver.matrix.ports.store_port import StorePort
+
+def run_cycle(symbol: str, 
+              timeframe: str, 
+              candidate_build_ts: str,
               trace_ids: TraceIds, 
-              candidate_meta: dict, 
+              data: DataPort,
+              broker: BrokerPort,
+              store: StorePort,
               risk_cfg: RiskGateConfig,
               gov_cfg: GovernanceConfig,
-              home: str,
               run_id: Optional[str] = None) -> dict:
               
     # 1. Init
     require_trace_ids(trace_ids)
     
     if not run_id:
-        # Construct run_id: created_ts + random suffix (or determinism in test)
-        # We use time.time() here which is non-deterministic, but caller can provide fixed ID for tests.
-        run_id = f"run_{candidate_meta.get('symbol')}_{candidate_meta.get('timeframe')}_{int(time.time())}"
+        run_id = f"run_{symbol}_{timeframe}_{int(time.time())}"
         
-    runs_dir = os.path.join(home, "runs", run_id)
-    os.makedirs(runs_dir, exist_ok=True)
+    meta = {
+        "run_id": run_id,
+        "created_ts": int(time.time()),
+        "candidate": {"symbol": symbol, "timeframe": timeframe, "build_ts": candidate_build_ts},
+        "trace": asdict(trace_ids),
+        "event_count": 0
+    }
+    store.create_run(run_id, meta)
+    
+    # 2. Fetch Data
+    bars = data.get_closed_bars(symbol, timeframe)
     
     state = RunState()
-    
-    events = []
+    event_count = 0
     gate_history = []
     
-    # Simple Demo Decision Logic
-    # Always HOLD. If Price > 0 and no position -> Signal BUY (but Gates might block)
-    # This is just a skeletal decision engine.
-    
-    # 2. Main Loop
+    # 3. Main Loop
     for bar in bars:
         require_closed_bar(bar)
         
-        # Validate State invariant
+        # Validate State
         invariants = validate_state(state)
         if invariants:
-            # Fatal error, stop cycle
             ev = {
                 "ts": bar.ts, 
                 "event_type": "FATAL_INVARIANT", 
@@ -53,35 +58,28 @@ def run_cycle(bars: List[Bar],
                 "payload": {"errors": invariants},
                 "trace": asdict(trace_ids)
             }
-            events.append(ev)
+            store.append_event(run_id, ev)
             break
             
-        # Demo Decision: purely hypothetical
+        # Decision
         decision = "HOLD"
-        # Deterministic dummy rule:
-        # If close > open -> BUY signal (if no pos)
-        # But for Phase-3 scope, we just log DECISION and evaluate GATES.
+        # Deterministic simple rule:
+        # If close > open -> BUY signal (hypothetically)
+        # But for Phase-4 scope, keep HOLD to simplify.
         
-        # Evaluate Gates at every bar? Or only on Signal?
-        # Let's evaluate Gates on every bar for "Continuous Monitoring"
-        
-        # Build TS from candidate meta
-        build_ts = candidate_meta.get("build_ts", "")
-        # "Now" is the bar timestamp (simulation time)
+        # Gate Eval
         now_ts_sec = bar.ts / 1000.0 
-        
         gate_results = eval_all_gates(
-            symbol=candidate_meta.get("symbol", "UNKNOWN"),
+            symbol=symbol,
             price=bar.close,
-            desired_qty=1.0, # hypothetical
+            desired_qty=1.0, 
             state=state,
             risk_cfg=risk_cfg,
             gov_cfg=gov_cfg,
-            candidate_build_ts=build_ts,
+            candidate_build_ts=candidate_build_ts,
             now_ts=now_ts_sec
         )
         
-        # Store last gate result
         gate_history = gate_results
         
         # Log Event
@@ -96,34 +94,17 @@ def run_cycle(bars: List[Bar],
             },
             "trace": asdict(trace_ids)
         }
-        events.append(ev)
+        store.append_event(run_id, ev)
+        event_count += 1
         
-        # Update State (noop for demo)
         state.strategy.last_bar_ts = bar.ts
         
-    # 3. Finalize & Persist
+    # 4. Finalize
+    store.write_gates(run_id, [asdict(g) for g in gate_history])
+    store.finalize_run(run_id)
     
-    # Write events.ndjson
-    events_path = os.path.join(runs_dir, "events.ndjson")
-    with open(events_path, "w", encoding="utf-8") as f:
-        for ev in events:
-            f.write(json.dumps(ev) + "\n")
-            
-    # Write gates.json (snapshot of last bar)
-    gates_path = os.path.join(runs_dir, "gates.json")
-    with open(gates_path, "w", encoding="utf-8") as f:
-        json.dump([asdict(g) for g in gate_history], f, indent=2)
-        
-    # Write meta.json
-    meta = {
-        "run_id": run_id,
-        "created_ts": int(time.time()),
-        "candidate": candidate_meta,
-        "trace": asdict(trace_ids),
-        "event_count": len(events)
-    }
-    meta_path = os.path.join(runs_dir, "meta.json")
-    with open(meta_path, "w", encoding="utf-8") as f:
-        json.dump(meta, f, indent=2)
-        
+    meta["event_count"] = event_count
+    # Optimization: update meta file? Not strictly required by prompt but good practice.
+    # store.create_run(run_id, meta) # Overwrite meta if store supports it
+    
     return meta

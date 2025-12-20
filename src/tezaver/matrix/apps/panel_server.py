@@ -222,10 +222,14 @@ class PanelHandler(BaseHTTPRequestHandler):
         # Run Demo Logic
         if path == "/runs/demo":
             from tezaver.matrix.core.cycle_engine import run_cycle
-            from tezaver.matrix.core.bars import Bar
             from tezaver.matrix.core.trace import TraceIds
             from tezaver.matrix.core.gates import RiskGateConfig, GovernanceConfig
             from tezaver.matrix.adapters.candidate_store_fs import FileCandidateStore
+            
+            # Adapters
+            from tezaver.matrix.adapters.data_port_json import JsonFileDataPort
+            from tezaver.matrix.adapters.broker_sim import SimBroker
+            from tezaver.matrix.adapters.store_run_fs import FileRunStore
             
             # 1. Load a candidate
             c_store = FileCandidateStore()
@@ -236,92 +240,49 @@ class PanelHandler(BaseHTTPRequestHandler):
             
             cid = c_ids[0]
             c_data = c_store.load(cid)
+            symbol = c_data.get('symbol', 'UNKNOWN')
+            timeframe = c_data.get('timeframe', '1h')
+            build_ts = c_data.get('build_ts', '')
             
-            # 2. Load bars (mock or sample)
+            # 2. Setup Ports
             home = os.environ.get("TEZAVER_MATRIX_HOME", ".tezaver_matrix")
-            sample_bars_path = "sample_bars.json" # try CWD
-            bars = []
             
-            if os.path.exists(sample_bars_path):
-                with open(sample_bars_path, "r") as f:
-                    # Convert sec->ms manually as done in data_doctor
-                    raw = json.load(f)
-                    for b in raw:
-                        if 'is_closed' in b:
-                           bc = b.copy()
-                           bc['ts'] = int(b['ts']*1000)
-                           bars.append(Bar(**bc))
+            # Data: Check sample_bars.json or fallback
+            sample_bars_path = "sample_bars.json"
+            if not os.path.exists(sample_bars_path):
+                 # Create minimal sample if missing
+                 with open(sample_bars_path, "w") as f:
+                     # Create sample 5 bars
+                     json.dump([
+                        {"ts": i*900, "open": 100, "high": 105, "low": 95, "close": 102, "is_closed": True} 
+                        for i in range(5)
+                     ], f)
             
-            if not bars:
-                # Mock bars
-                bars = [Bar(i*900000, 100+i, 105+i, 95+i, 102+i, True) for i in range(5)]
+            data_port = JsonFileDataPort(sample_bars_path)
+            broker_port = SimBroker()
+            store_port = FileRunStore(home)
             
             # 3. Run Cycle
-            trace = TraceIds("v4-demo", "demo-data", "demo-cfg")
+            trace = TraceIds("v4-demo-ports", "demo-data", "demo-cfg")
             risk_cfg = RiskGateConfig(max_notional=10000)
-            gov_cfg = GovernanceConfig(allowlist=[c_data['symbol']]) # auto-allow
+            gov_cfg = GovernanceConfig(allowlist=[symbol])
             
-            meta = run_cycle(bars, trace, c_data, risk_cfg, gov_cfg, home)
+            meta = run_cycle(
+                symbol=symbol,
+                timeframe=timeframe,
+                candidate_build_ts=build_ts,
+                trace_ids=trace,
+                data=data_port,
+                broker=broker_port,
+                store=store_port,
+                risk_cfg=risk_cfg,
+                gov_cfg=gov_cfg
+            )
             
             # Redirect
             self.send_response(302)
             self.send_header("Location", f"/runs/{meta['run_id']}")
             self.end_headers()
-            return
-
-        # UI-C: Run Detail
-        if path.startswith("/runs/") and not path.endswith("demo"):
-            rid = path.split("/")[-1]
-            from tezaver.matrix.adapters.run_store_fs import RunStoreFS
-            store = RunStoreFS()
-            meta = store.load_meta(rid)
-            
-            html = f"""
-            <html>
-                <h1>Run: {rid}</h1>
-                <p><a href="/runs">Back to Runs</a></p>
-                <ul>
-                  <li><a href="/gates/{rid}">Gates Result (UI-E)</a></li>
-                  <li><a href="/evidence/{rid}">Evidence Events (UI-G)</a></li>
-                </ul>
-                <pre>{json.dumps(meta, indent=2)}</pre>
-            </html>
-            """
-            self.wfile.write(html.encode("utf-8"))
-            return
-
-        # UI-E: Gates
-        if path.startswith("/gates/"):
-            rid = path.split("/")[-1]
-            from tezaver.matrix.adapters.run_store_fs import RunStoreFS
-            store = RunStoreFS()
-            gates = store.read_gates(rid)
-            
-            html = f"""
-            <html>
-                <h1>Gates: {rid}</h1>
-                <p><a href="/runs/{rid}">Back to Run</a></p>
-                <pre>{json.dumps(gates, indent=2)}</pre>
-            </html>
-            """
-            self.wfile.write(html.encode("utf-8"))
-            return
-
-        # UI-G: Evidence
-        if path.startswith("/evidence/"):
-            rid = path.split("/")[-1]
-            from tezaver.matrix.adapters.run_store_fs import RunStoreFS
-            store = RunStoreFS()
-            txt = store.read_events_head_tail(rid)
-            
-            html = f"""
-            <html>
-                <h1>Evidence: {rid}</h1>
-                <p><a href="/runs/{rid}">Back to Run</a></p>
-                <pre>{txt}</pre>
-            </html>
-            """
-            self.wfile.write(html.encode("utf-8"))
             return
             
         # UI-D: Engine
@@ -332,8 +293,10 @@ class PanelHandler(BaseHTTPRequestHandler):
                 <p><a href="/">Back to Home</a></p>
                 <ul>
                     <li>Version: Matrix v4-dev</li>
-                    <li>Cycle: Determinist Loop Enabled</li>
-                    <li>State: Position/Strategy/Run Validated</li>
+                    <li>Architecture: Ports & Adapters (Hexagonal)</li>
+                    <li><b>DataPort:</b> JsonFileDataPort</li>
+                    <li><b>BrokerPort:</b> SimBroker (Simulation)</li>
+                    <li><b>StorePort:</b> FileRunStore (FileSystem)</li>
                 </ul>
             </html>
             """
