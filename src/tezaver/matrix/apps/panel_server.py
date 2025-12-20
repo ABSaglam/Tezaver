@@ -468,6 +468,83 @@ class PanelHandler(BaseHTTPRequestHandler):
             self.wfile.write(html.encode("utf-8"))
             return
 
+        # UI-C: War War Runner (Demo)
+        if path == "/runs/war":
+            # Just run a demo session with embedded logic or subprocess?
+            # Let's use subprocess to `run_war.py` for full fidelity (and args handling).
+            # We'll use local candidates dir and sample bars.
+            
+            # Setup Inputs
+            # 1. Candidates: use home/candidates
+            c_dir = os.path.join(self.home, "candidates")
+            if not os.path.exists(c_dir):
+                self.wfile.write(b"No candidates found")
+                return
+                
+            # 2. Bars: use sample_bars.json for all by copying to temp structure?
+            # Or run_war logic allows mapping. "f{sym}.json".
+            # Let's verify we have bars.
+            # For DEMO: create a "bars" dir in home and populate it with sample data for found candidates.
+            b_dir = os.path.join(self.home, "bars_demo")
+            os.makedirs(b_dir, exist_ok=True)
+            
+            # Create sample data
+            sample_data = [
+                {"ts": 1000, "open":10, "high":12, "low":9, "close":11, "volume":100, "closed": True},
+                {"ts": 2000, "open":11, "high":13, "low":10, "close":12, "volume":100, "closed": True},
+                {"ts": 3000, "open":12, "high":14, "low":11, "close":13, "volume":100, "closed": True}
+            ]
+            
+            import shutil
+            candidates = [f for f in os.listdir(c_dir) if f.endswith(".json")]
+            for c in candidates:
+                sym = c.split("_")[0] # approximate symbol extraction
+                # Write sym.json
+                with open(os.path.join(b_dir, f"{sym}.json"), "w") as f:
+                    json.dump(sample_data, f)
+            
+            # Run Subprocess
+            import subprocess
+            import sys
+            
+            cmd = [
+                sys.executable, "-m", "tezaver.matrix.apps.run_war",
+                "--candidates-dir", c_dir,
+                "--bars-dir", b_dir,
+                "--home", self.home,
+                "--limit", "3"
+            ]
+            env = os.environ.copy()
+            env["PYTHONPATH"] = os.path.join(os.getcwd(), "src")
+            
+            # We want to capture the session ID from stdout?
+            # Or just find the latest session dir.
+            
+            try:
+                proc = subprocess.run(cmd, env=env, capture_output=True, text=True)
+                if proc.returncode not in (0, 1, 2): # 2 is FAIL which is okay for demo result
+                     self.wfile.write(f"Error running war: {proc.stderr}".encode("utf-8"))
+                     return
+                
+                # Find latest session
+                s_dir = os.path.join(self.home, "war_sessions")
+                sessions = sorted(os.listdir(s_dir), reverse=True)
+                if not sessions:
+                    self.wfile.write(b"No session created")
+                    return
+                    
+                latest = sessions[0]
+                
+                # Redirect
+                self.wfile.write(b"HTTP/1.1 302 Found\r\n")
+                self.wfile.write(f"Location: /reports/war/{latest}\r\n".encode("utf-8"))
+                self.wfile.write(b"\r\n")
+                return
+
+            except Exception as e:
+                self.wfile.write(f"Exception: {e}".encode("utf-8"))
+                return
+
         # UI-F: Reports List
         if path == "/reports":
             runs_dir = os.path.join(self.home, "runs")
@@ -476,7 +553,59 @@ class PanelHandler(BaseHTTPRequestHandler):
                 return
             runs = sorted(os.listdir(runs_dir), reverse=True)
             links = "".join([f'<li><a href="/reports/{r}">{r}</a></li>' for r in runs])
-            html = f"<html><h1>Run Reports</h1><ul>{links}</ul></html>"
+            
+            html = f"""
+            <html>
+                <h1>Run Reports</h1>
+                <p><a href="/runs/war">Start War Run (Demo)</a></p>
+                <h3>Individual Runs</h3>
+                <ul>{links}</ul>
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+
+        # UI-F: War Report
+        if path.startswith("/reports/war/"):
+            sid = path.split("/")[-1]
+            s_dir = os.path.join(self.home, "war_sessions", sid)
+            idx_path = os.path.join(s_dir, "index.json")
+            
+            if not os.path.exists(idx_path):
+                self.wfile.write(b"Session index not found")
+                return
+                
+            with open(idx_path) as f:
+                rows = json.load(f)
+                
+            table_rows = ""
+            for r in rows:
+                rid = r.get("run_id", "")
+                verdict = r.get("verdict", "N/A")
+                color = "green" if verdict == "PASS" else ("red" if verdict == "FAIL" else "black")
+                
+                link = f'<a href="/reports/{rid}">{rid}</a>' if rid else "No Run"
+                
+                table_rows += f"""
+                <tr>
+                    <td>{r.get('candidate_id', 'Unknown')}</td>
+                    <td><span style="color:{color}">{verdict}</span></td>
+                    <td>{r.get('stage_after', '-')}</td>
+                    <td>{link}</td>
+                    <td>{r.get('error', '')}</td>
+                </tr>
+                """
+                
+            html = f"""
+            <html>
+                <h1>War Session: {sid}</h1>
+                <table border="1" cellpadding="5">
+                    <tr><th>Candidate</th><th>Verdict</th><th>Stage After</th><th>Report</th><th>Error</th></tr>
+                    {table_rows}
+                </table>
+                <p><a href="/reports">Back to Reports</a></p>
+            </html>
+            """
             self.wfile.write(html.encode("utf-8"))
             return
             
