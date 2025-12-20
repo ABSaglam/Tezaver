@@ -276,7 +276,8 @@ class PanelHandler(BaseHTTPRequestHandler):
                 broker=broker_port,
                 store=store_port,
                 risk_cfg=risk_cfg,
-                gov_cfg=gov_cfg
+                gov_cfg=gov_cfg,
+                home=home
             )
             
             # Redirect
@@ -284,7 +285,128 @@ class PanelHandler(BaseHTTPRequestHandler):
             self.send_header("Location", f"/runs/{meta['run_id']}")
             self.end_headers()
             return
+
+        # UI-C: Run Detail
+        if path.startswith("/runs/") and not path.endswith("demo"):
+            rid = path.split("/")[-1]
+            from tezaver.matrix.adapters.run_store_fs import RunStoreFS
+            store = RunStoreFS()
+            meta = store.load_meta(rid)
             
+            html = f"""
+            <html>
+                <h1>Run: {rid}</h1>
+                <p><a href="/runs">Back to Runs</a></p>
+                <ul>
+                  <li><a href="/gates/{rid}">Gates Result (UI-E)</a></li>
+                  <li><a href="/evidence/{rid}">Evidence & Audit (UI-G)</a></li>
+                </ul>
+                <pre>{json.dumps(meta, indent=2)}</pre>
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+
+        # UI-E: Gates
+        if path.startswith("/gates/"):
+            rid = path.split("/")[-1]
+            from tezaver.matrix.adapters.run_store_fs import RunStoreFS
+            store = RunStoreFS()
+            gates = store.read_gates(rid)
+            
+            html = f"""
+            <html>
+                <h1>Gates: {rid}</h1>
+                <p><a href="/runs/{rid}">Back to Run</a></p>
+                <pre>{json.dumps(gates, indent=2)}</pre>
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+
+        # UI-G: Evidence
+        if path.startswith("/evidence/"):
+            rid = path.split("/")[-1]
+            from tezaver.matrix.adapters.run_store_fs import RunStoreFS
+            store = RunStoreFS()
+            txt = store.read_events_head_tail(rid)
+            
+            # Read audit if available
+            audit = {}
+            a_path = os.path.join(store._run_dir(rid), "audit.json")
+            if os.path.exists(a_path):
+                with open(a_path, "r") as f:
+                    audit = json.load(f)
+            
+            # Check for incidents
+            incidents = store.list_incidents()
+            related_incidents = []
+            for iid in incidents:
+                if rid in iid: # heuristic: INC_runid_ts
+                    related_incidents.append(iid)
+            
+            inc_links = "".join([f'<li><a href="/incidents/{i}">{i}</a></li>' for i in related_incidents])
+            
+            html = f"""
+            <html>
+                <h1>Evidence: {rid}</h1>
+                <p><a href="/runs/{rid}">Back to Run</a></p>
+                
+                <h2>Trade Audit (MX-5002)</h2>
+                <pre>{json.dumps(audit, indent=2)}</pre>
+                
+                <h2>Incidents (MX-5003)</h2>
+                <ul>{inc_links or "<li>None</li>"}</ul>
+
+                <h2>Telemetry Events (MX-5001)</h2>
+                <pre>{txt}</pre>
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+            
+        # UI-G: Incidents List
+        if path == "/incidents":
+            from tezaver.matrix.adapters.run_store_fs import RunStoreFS
+            store = RunStoreFS()
+            incidents = store.list_incidents()
+            list_html = "".join([f'<li><a href="/incidents/{i}">{i}</a></li>' for i in incidents])
+            
+            html = f"""
+            <html>
+                <head><title>UI-G: Incidents</title></head>
+                <body>
+                    <h1>Incidents (UI-G)</h1>
+                    <p><a href="/">Back to Home</a></p>
+                    <hr/>
+                    <ul>{list_html}</ul>
+                </body>
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+
+        # UI-G: Incident Detail
+        if path.startswith("/incidents/"):
+            iid = path.split("/")[-1]
+            from tezaver.matrix.adapters.run_store_fs import RunStoreFS
+            store = RunStoreFS()
+            manifest = store.read_incident_manifest(iid)
+            
+            html = f"""
+            <html>
+                <h1>Incident: {iid}</h1>
+                <p><a href="/incidents">Back to Incidents</a></p>
+                <div style="background:#ffcccc; padding:10px; border:1px solid red">
+                  <b>Reason:</b> {manifest.get('reason')}
+                </div>
+                <h3>Manifest</h3>
+                <pre>{json.dumps(manifest, indent=2)}</pre>
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+
         # UI-D: Engine
         if path == "/engine":
             html = """

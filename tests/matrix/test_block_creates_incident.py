@@ -9,39 +9,40 @@ from tezaver.matrix.adapters.data_port_json import JsonFileDataPort
 from tezaver.matrix.adapters.broker_sim import SimBroker
 from tezaver.matrix.adapters.store_run_fs import FileRunStore
 
-def test_cycle_with_ports(tmp_path):
-    # Setup Data
+def test_cycle_block_incident(tmp_path):
+    # Setup
     bars_file = tmp_path / "bars.json"
-    # Provide milliseconds here to test raw pass-through or sec conversion
-    # JsonAdapter heuristic: ts < 1e11 => sec -> ms. 
-    # Let's use sec (0, 900) to test conversion
-    data_raw = [
-        {"ts": 0, "open": 1, "high": 2, "low": 0.5, "close": 1, "is_closed": True},
-        {"ts": 900, "open": 1, "high": 2, "low": 0.5, "close": 1, "is_closed": True}
-    ]
     with open(bars_file, "w") as f:
-        json.dump(data_raw, f)
-        
-    # Adapters
+        json.dump([
+             {"ts": 0, "open": 10, "high": 10, "low": 10, "close": 10, "is_closed": True}
+        ], f)
+
     data = JsonFileDataPort(str(bars_file))
     broker = SimBroker()
     store = FileRunStore(str(tmp_path))
     
-    # Run
+    # Force Block via Allowlist
+    gov_cfg = GovernanceConfig(allowlist=["BTC"]) # We run "AVAX"
+    
     meta = run_cycle(
-        symbol="TEST",
+        symbol="AVAX",
         timeframe="15m",
-        candidate_build_ts="2025-01-01",
-        trace_ids=TraceIds("v4", "fp", "sig"),
+        candidate_build_ts="",
+        trace_ids=TraceIds("v1", "fp", "sig"),
         data=data,
         broker=broker,
         store=store,
         risk_cfg=RiskGateConfig(),
-        gov_cfg=GovernanceConfig(),
+        gov_cfg=gov_cfg,
         home=str(tmp_path)
     )
     
-    assert meta["event_count"] == 2
-    
+    # Check if blocked and incident created
     run_dir = tmp_path / "runs" / meta["run_id"]
-    assert (run_dir / "events.ndjson").exists()
+    
+    # Audit block logic:
+    # Incident ID should be in meta? (Optional but helpful)
+    assert meta.get("incident_id")
+    iid = meta["incident_id"]
+    
+    assert (tmp_path / "incidents" / iid / "manifest.json").exists()

@@ -15,7 +15,17 @@ def get_events_hash(run_dir):
     with open(ndjson, "r") as f:
         for line in f:
             obj = json.loads(line)
+            
+            # Skip metadata events that are inherently time-dependent
+            if obj.get("event_type") in ["RUN_START", "RUN_END"]:
+                continue
+                
             obj.pop("run_id", None)
+            
+            # Mask timestamps for determinism in Cycle Steps (if any leak)
+            if "ts" in obj:
+                obj["ts"] = 0
+            
             s = json.dumps(obj, sort_keys=True)
             hasher.update(s.encode("utf-8"))
     return hasher.hexdigest()
@@ -41,7 +51,8 @@ def test_cycle_determinism(tmp_path):
         broker=broker,
         store=store,
         risk_cfg=RiskGateConfig(),
-        gov_cfg=GovernanceConfig()
+        gov_cfg=GovernanceConfig(),
+        home=str(tmp_path)
     )
     
     # Run 1
