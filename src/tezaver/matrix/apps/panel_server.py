@@ -25,6 +25,7 @@ ROUTES = {
     "/registry": "UI-O: Registry",
     "/alerts": "UI-P: Alerts",
     "/cloud/userstream": "UI-D: User Stream",
+    "/migration": "UI-E: Migration",
 }
 
 class PanelHandler(BaseHTTPRequestHandler):
@@ -1593,6 +1594,70 @@ class PanelHandler(BaseHTTPRequestHandler):
 
 
             
+        # UI-E: Migration (Phase-15A)
+        if path == "/migration":
+            ops_dir = os.path.join(self.home, "ops", "migration")
+            latest_p = os.path.join(ops_dir, "latest.json")
+            
+            report_html = "<i>No migration report yet.</i>"
+            if os.path.exists(latest_p):
+                with open(latest_p) as f: rep = json.load(f)
+                res_rows = ""
+                for r in rep.get("results", []):
+                    color = "black"
+                    if r.get("status") == "OK": color = "green"
+                    if r.get("status") == "FAIL": color = "red"
+                    if r.get("status") == "SKIPPED": color = "orange"
+                    res_rows += f"<li>{r.get('candidate_id')} -> <b style='color:{color}'>{r.get('status')}</b> {r.get('strategy_id', '')} {r.get('error', '')}</li>"
+                    
+                report_html = f"""
+                <div style="border:1px solid #ccc; padding:10px; margin-top:10px;">
+                    <h3>Last Report ({rep.get('ts')})</h3>
+                    <p>Total: {rep.get('total')} | OK: {rep.get('ok')} | Fail: {rep.get('fail')} | Skip: {rep.get('skipped')}</p>
+                    <ul>{res_rows}</ul>
+                </div>
+                """
+                
+            html = f"""
+            <html>
+                <h1>Migration Pipeline</h1>
+                <p><a href="/">Back to Home</a> | <a href="/cloud/registry">Registry</a></p>
+                
+                <div style="background:#eef; padding:10px;">
+                    <h3>Actions</h3>
+                    <p>
+                        <a href="/migration/run?mode=promote_all&activate=no"><button>Promote ALL (Paused)</button></a>
+                        <a href="/migration/run?mode=promote_all&activate=yes"><button style="color:red">Promote ALL (Active)</button></a>
+                    </p>
+                    <p>
+                        To promote specific candidates, use CLI: <code>python -m tezaver.matrix.apps.migrate ...</code>
+                    </p>
+                </div>
+                
+                {report_html}
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+            
+        if path.startswith("/migration/run"):
+            # Parse params ?mode=...&activate=...
+            from urllib.parse import urlparse, parse_qs
+            query = parse_qs(urlparse(path).query)
+            
+            mode = query.get("mode", ["promote_all"])[0]
+            activate = query.get("activate", ["no"])[0] == "yes"
+            
+            from tezaver.matrix.core.migration_engine import plan_migration, execute_migration
+            policy = {"mode": mode.upper(), "activate": activate}
+            
+            plan = plan_migration(self.home, policy)
+            execute_migration(self.home, plan)
+            
+            # Redirect back
+            self.wfile.write(b"HTTP/1.1 302 Found\r\nLocation: /migration\r\n\r\n")
+            return
+
         # UI-I: Story Timeline
         if path.startswith("/story/"):
             cid = path.split("/")[-1]
