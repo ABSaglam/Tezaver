@@ -38,6 +38,18 @@ class FileRunStore(StorePort):
         with open(path, "w", encoding="utf-8") as f:
             json.dump(audit, f, indent=2)
 
+    def write_scorecard(self, run_id: str, card: Dict) -> None:
+        d = self._run_dir(run_id)
+        path = os.path.join(d, "scorecard.json")
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(card, f, indent=2)
+
+    def write_judge_verdict(self, run_id: str, verdict: Dict) -> None:
+        d = self._run_dir(run_id)
+        path = os.path.join(d, "judge.json")
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(verdict, f, indent=2)
+
     def finalize_run(self, run_id: str) -> None:
         # No-op for FS store currently
         pass

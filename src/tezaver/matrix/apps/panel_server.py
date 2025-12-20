@@ -407,6 +407,79 @@ class PanelHandler(BaseHTTPRequestHandler):
             self.wfile.write(html.encode("utf-8"))
             return
 
+        # UI-F: Reports List
+        if path == "/reports":
+            runs_dir = os.path.join(self.home, "runs")
+            if not os.path.exists(runs_dir):
+                self.wfile.write(b"No runs found")
+                return
+            runs = sorted(os.listdir(runs_dir), reverse=True)
+            links = "".join([f'<li><a href="/reports/{r}">{r}</a></li>' for r in runs])
+            html = f"<html><h1>Run Reports</h1><ul>{links}</ul></html>"
+            self.wfile.write(html.encode("utf-8"))
+            return
+            
+        # UI-F: Report Detail
+        if path.startswith("/reports/"):
+            rid = path.split("/")[-1]
+            from tezaver.matrix.adapters.run_store_fs import RunStoreFS
+            store = RunStoreFS()
+            
+            # Load artifacts
+            run_dir = store._run_dir(rid)
+            judge = {}
+            score = {}
+            meta = {}
+            
+            jp = os.path.join(run_dir, "judge.json")
+            if os.path.exists(jp): with open(jp) as f: judge = json.load(f)
+                
+            sp = os.path.join(run_dir, "scorecard.json")
+            if os.path.exists(sp): with open(sp) as f: score = json.load(f)
+                
+            mp = os.path.join(run_dir, "meta.json")
+            if os.path.exists(mp): with open(mp) as f: meta = json.load(f)
+            
+            verdict = judge.get("overall", "UNKNOWN")
+            color = "green" if verdict == "PASS" else ("red" if verdict == "FAIL" else "orange")
+            
+            cid = meta.get("candidate", {}).get("symbol", "??") # Approximate
+            # Try to get candidate_id if stored? We decided to rely on meta or external.
+            # Links
+            
+            html = f"""
+            <html>
+                <h1>Report: {rid}</h1>
+                <p><a href="/reports">Back</a> | <a href="/runs/{rid}">Raw Run</a></p>
+                
+                <div style="padding:20px; border:2px solid {color}; margin-bottom:20px">
+                    <h2>Verdict: {verdict}</h2>
+                </div>
+                
+                <h3>Jury Scorecard (MX-7001)</h3>
+                <pre>{json.dumps(score, indent=2)}</pre>
+                
+                <h3>Judge Gates (MX-7002)</h3>
+                <pre>{json.dumps(judge, indent=2)}</pre>
+                
+                <h3>Links</h3>
+                <ul>
+                    <li><a href="/evidence/{rid}">Evidence (Audit)</a></li>
+                    <li><a href="/judge/{rid}">Judge View</a></li>
+                </ul>
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+
+        # UI-E: Judge View
+        if path.startswith("/judge/"):
+            rid = path.split("/")[-1]
+            # Same content as report section basically, simplified
+            html = f"<html><h1>Judge: {rid}</h1><p>See <a href='/reports/{rid}'>Report</a></p></html>"
+            self.wfile.write(html.encode(html))
+            return
+            
         # UI-I: Story Timeline
         if path.startswith("/story/"):
             cid = path.split("/")[-1]

@@ -10,9 +10,21 @@ class StorePort(Protocol):
         ...
 
     def write_gates(self, run_id: str, gates: Dict) -> None:
-        """Writes or updates (overwrites) the gates snapshot."""
+        """Writes gates evaluation details."""
         ...
 
     def finalize_run(self, run_id: str) -> None:
-        """Performs any final cleanup or summary generation for the run."""
+        """Marks run as complete (e.g. meta update)."""
+        ...
+
+    def write_audit(self, run_id: str, audit: Dict) -> None:
+        """Writes trade audit (MX-5002)."""
+        ...
+
+    def write_scorecard(self, run_id: str, card: Dict) -> None:
+        """Writes jury scorecard (MX-7001)."""
+        ...
+        
+    def write_judge_verdict(self, run_id: str, verdict: Dict) -> None:
+        """Writes judge verdict (MX-7002)."""
         ...
