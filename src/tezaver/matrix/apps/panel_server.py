@@ -1557,6 +1557,113 @@ class PanelHandler(BaseHTTPRequestHandler):
             return
 
         # UI-D: UserStream (Phase-14C.2)
+        # UI-Q: Ops Dashboard (Phase-16A)
+        if path == "/ops":
+            from tezaver.matrix.core.ops_health import build_health_snapshot
+            health = build_health_snapshot(self.home)
+            
+            # Load SLO & Timeline
+            slo = {}
+            timeline = []
+            try:
+                with open(os.path.join(self.home, "ops", "slo", "latest.json")) as f: slo = json.load(f)
+            except: pass
+            try:
+                with open(os.path.join(self.home, "ops", "timeline", "latest.json")) as f: timeline = json.load(f)
+            except: pass
+            
+            # -- RENDER HEALTH --
+            ov = health.get("overall", "UNKNOWN")
+            ov_col = "green" if ov == "GREEN" else ("orange" if ov == "YELLOW" else "red")
+            
+            # Signals Matrix
+            sigs = health.get("signals", {})
+            sig_html = ""
+            for k, v in sigs.items():
+                icon = "✅" if v else "⚠️" 
+                # Some are non-bool
+                if k == "alerts_active": icon = "🚨" if v > 0 else "✅"
+                if k == "broker_mode": icon = "🛠️"
+                if k == "last_cloud_tick_ts": icon = "⏱️"
+                
+                val_disp = str(v)
+                if k == "last_cloud_tick_ts" and v:
+                     ago = int(time.time()) - int(v/1000)
+                     val_disp = f"{ago}s ago"
+                     
+                sig_html += f"<div style='flex:1; min-width:150px; border:1px solid #eee; padding:5px; margin:2px;'><b>{k}</b><br/>{icon} {val_disp}</div>"
+            
+            health_html = f"""
+            <div style="border:4px solid {ov_col}; padding:20px; background:#fff;">
+                <h1 style="color:{ov_col}; margin:0;">HEALTH: {ov}</h1>
+                <p>{health.get("summary")}</p>
+                <div style="display:flex; flex-wrap:wrap; font-size:0.8em;">{sig_html}</div>
+            </div>
+            """
+            
+            # -- RENDER SLO --
+            counts = slo.get("counts", {})
+            slo_html = f"""
+            <div style="margin-top:20px; border:1px solid #ccc; padding:10px;">
+                <h3>Execution Metrix (24h)</h3>
+                <small>Updated: {slo.get("ts")}</small> | <a href="/ops/run_slo">Refresh</a>
+                <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-top:10px;">
+                     <div style="background:#efefef; padding:10px;"><b>Ticks</b><br/>{counts.get('cloud_ticks',0)}</div>
+                     <div style="background:#efefef; padding:10px;"><b>Risk Blocks</b><br/>{counts.get('risk_blocks',0)}</div>
+                     <div style="background:#efefef; padding:10px;"><b>Gaps</b><br/>{counts.get('gap_detected',0)}</div>
+                     <div style="background:#efefef; padding:10px;"><b>Alerts</b><br/>{counts.get('alerts_created',0)}</div>
+                </div>
+            </div>
+            """
+            
+            # -- RENDER TIMELINE --
+            tl_rows = ""
+            for t in timeline[:30]: # Limit 30
+                time_struct = time.localtime(t['ts']/1000)
+                ts_iso = time.strftime('%H:%M:%S', time_struct)
+                tl_rows += f"<tr><td>{ts_iso}</td><td><span style='padding:2px 5px; background:#ddd; border-radius:3px; font-size:0.7em'>{t['kind']}</span></td><td><b>{t['title']}</b></td><td>{t['detail']}</td></tr>"
+            
+            timeline_html = f"""
+            <div style="margin-top:20px;">
+                <h3>Ops Timeline</h3>
+                <table style="width:100%; border-collapse:collapse; font-size:0.9em;">
+                    <tr style="background:#eee; text-align:left;"><th>Time</th><th>Kind</th><th>Event</th><th>Detail</th></tr>
+                    {tl_rows}
+                </table>
+            </div>
+            """
+            
+            # -- QUICK LINKS --
+            links_html = """
+            <div style="margin-top:20px; padding:10px; background:#eef;">
+                <b>Quick Links:</b> 
+                <a href="/alerts">Alerts</a> | 
+                <a href="/cloud/runtime">Cloud Runtime</a> | 
+                <a href="/cloud/userstream">User Stream</a> | 
+                <a href="/migration">Migration</a> |
+                <a href="/release">Release Gate</a>
+            </div>
+            """
+
+            html = f"""
+            <html>
+                <h1>Tezaver Ops Center</h1>
+                {health_html}
+                {links_html}
+                {slo_html}
+                {timeline_html}
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+            
+        if path.startswith("/ops/run_slo"):
+             # Trigger computation
+             from tezaver.matrix.core.ops_slo import write_ops_reports
+             write_ops_reports(self.home, 24)
+             self.wfile.write(b"HTTP/1.1 302 Found\r\nLocation: /ops\r\n\r\n")
+             return
+
         if path == "/cloud/userstream":
             status_p = os.path.join(self.home, "cloud_runtime", "userstream", "status.json")
             status = {}
