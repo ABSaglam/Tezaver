@@ -48,3 +48,4 @@ build/
 backups/
 *.zip
 !data/bulut_rules/
+.tezaver_matrix/
