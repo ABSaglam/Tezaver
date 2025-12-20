@@ -4,14 +4,27 @@ Streamlit page for Day-2 Operations dashboard.
 """
 import streamlit as st
 import requests
-from datetime import datetime
+from tezaver.bulut.ui.contracts.panel_guard import guarded_render
+from tezaver.bulut.ui.contracts.backend_guard import backend_status, render_backend_offline_banner
 
 # API Base URL
 API_BASE = "http://localhost:8000"
 
+def render_page(ctx=None):
+    """Entrypoint for Registry."""
+    guarded_render("Daily Ops", lambda: _render_content(ctx))
 
-def render_daily_ops_page():
-    """Render the Daily Ops dashboard page."""
+def _render_content(ctx=None):
+    """Actual content logic."""
+    api_base = API_BASE
+    if ctx and hasattr(ctx, 'config') and hasattr(ctx.config, 'bulut_api_base_url'):
+        api_base = ctx.config.bulut_api_base_url
+        
+    ok_be, info, err_be = backend_status(api_base)
+    if not ok_be:
+        render_backend_offline_banner(api_base, err_be)
+        return
+
     st.header("📅 Daily Ops Dashboard")
     
     # Row 1: Today and Yesterday Reports
@@ -20,7 +33,7 @@ def render_daily_ops_page():
     with col1:
         st.subheader("📊 Bugün")
         try:
-            res = requests.get(f"{API_BASE}/ops/daily/today", timeout=5)
+            res = requests.get(f"{api_base}/ops/daily/today", timeout=5)
             if res.status_code == 200:
                 data = res.json()
                 if data.get("date"):
@@ -37,7 +50,7 @@ def render_daily_ops_page():
     with col2:
         st.subheader("📊 Dün")
         try:
-            res = requests.get(f"{API_BASE}/ops/daily/yesterday", timeout=5)
+            res = requests.get(f"{api_base}/ops/daily/yesterday", timeout=5)
             if res.status_code == 200:
                 data = res.json()
                 if data.get("date"):
@@ -57,7 +70,7 @@ def render_daily_ops_page():
     with col1:
         if st.button("🔄 Bugün Raporu Oluştur", use_container_width=True):
             try:
-                res = requests.post(f"{API_BASE}/ops/daily/compute", timeout=10)
+                res = requests.post(f"{api_base}/ops/daily/compute", timeout=10)
                 if res.status_code == 200:
                     st.success("Rapor oluşturuldu!")
                     st.rerun()
@@ -69,7 +82,7 @@ def render_daily_ops_page():
     with col2:
         if st.button("🏥 Health Check Çalıştır", use_container_width=True):
             try:
-                res = requests.post(f"{API_BASE}/ops/daily/health/run", timeout=10)
+                res = requests.post(f"{api_base}/ops/daily/health/run", timeout=10)
                 if res.status_code == 200:
                     result = res.json()
                     if result.get("result", {}).get("healthy"):
@@ -85,7 +98,7 @@ def render_daily_ops_page():
     with col3:
         # Health status
         try:
-            res = requests.get(f"{API_BASE}/ops/daily/health/status", timeout=5)
+            res = requests.get(f"{api_base}/ops/daily/health/status", timeout=5)
             if res.status_code == 200:
                 data = res.json()
                 last_check = data.get("last_check_ts")
@@ -101,7 +114,7 @@ def render_daily_ops_page():
     # Row 3: Health Checks Timeline
     with st.expander("🏥 Health Checks Timeline", expanded=False):
         try:
-            res = requests.get(f"{API_BASE}/ops/daily/health/checks?limit=20", timeout=5)
+            res = requests.get(f"{api_base}/ops/daily/health/checks?limit=20", timeout=5)
             if res.status_code == 200:
                 checks = res.json()
                 if checks:
@@ -121,7 +134,7 @@ def render_daily_ops_page():
     # Row 4: Top Alerts
     with st.expander("🚨 Top Alerts", expanded=False):
         try:
-            res = requests.get(f"{API_BASE}/ops/daily/alerts/top?limit=10", timeout=5)
+            res = requests.get(f"{api_base}/ops/daily/alerts/top?limit=10", timeout=5)
             if res.status_code == 200:
                 alerts = res.json()
                 if alerts:
@@ -140,4 +153,4 @@ def render_daily_ops_page():
 
 
 if __name__ == "__main__":
-    render_daily_ops_page()
+    render_page()

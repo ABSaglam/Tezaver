@@ -8,7 +8,11 @@ import os
 from pathlib import Path
 from datetime import datetime
 import xml.etree.ElementTree as ET
+from tezaver.bulut.ui.contracts.panel_guard import guarded_render
 
+def render_page(ctx=None):
+    """Entrypoint for Registry."""
+    guarded_render("Test Raporu", lambda: _render_content(ctx))
 
 def parse_junit_xml(xml_path: str) -> dict:
     """Parse JUnit XML and return summary."""
@@ -93,9 +97,11 @@ def get_test_report() -> dict:
     return parse_junit_xml(str(xml_path))
 
 
-def render_test_report_page():
+def _render_content(ctx=None):
     """Render the test report page."""
-    st.title("🧪 Test Raporu")
+    
+    # st.title("🧪 Test Raporu") # guard sets header? No, it catches.
+    st.header("🧪 Test Raporu")
     st.caption("Tezaver Bulut test suite durumu")
     
     # Refresh button
@@ -155,4 +161,7 @@ def render_test_report_page():
 
 # For standalone usage
 if __name__ == "__main__":
-    render_test_report_page()
+    render_page()
+
+# Alias
+render_test_report_page = render_page

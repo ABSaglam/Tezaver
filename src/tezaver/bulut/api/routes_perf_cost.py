@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 
-router = APIRouter(prefix="/perf", tags=["perf_cost"])
+router = APIRouter(prefix="/perf", tags=["Perf"])
 
 
 def get_ctx(request: Request):
@@ -21,9 +21,14 @@ class ForceModeRequest(BaseModel):
     reason: Optional[str] = "Operator override"
 
 
-@router.get("/status")
+@router.get("/status", summary="TR Perf Status")
 async def get_perf_status(request: Request):
-    """Get current performance & cost status."""
+    """
+    Get current performance & cost status.
+    
+    TR Açıklama:
+    Performans ve maliyet koruma modülünün anlık durumunu, bütçe kullanımını ve aktif modunu döndürür.
+    """
     ctx = get_ctx(request)
     
     try:
@@ -33,9 +38,14 @@ async def get_perf_status(request: Request):
         return {"error": str(e), "mode": "UNKNOWN"}
 
 
-@router.get("/overrides")
+@router.get("/overrides", summary="TR Active Overrides")
 async def get_overrides(request: Request):
-    """Get current parameter overrides."""
+    """
+    Get current parameter overrides.
+    
+    TR Açıklama:
+    Sistemde aktif olan manuel performans/maliyet parametre geçersiz kılmalarını (override) listeler.
+    """
     ctx = get_ctx(request)
     
     try:
@@ -45,14 +55,17 @@ async def get_overrides(request: Request):
         return {"error": str(e)}
 
 
-@router.post("/force_mode")
+@router.post("/force_mode", summary="TR Force Perf Mode")
 async def force_mode(request: Request, body: ForceModeRequest):
     """
     Force a specific operating mode.
     
-    Requires OpsAuth token.
+    TR Açıklama:
+    Performans modunu manuel olarak zorlar (NORMAL, DEGRADED, EMERGENCY).
+    Otomatik mod geçişlerini devre dışı bırakır.
     
-    Modes: NORMAL, DEGRADED, EMERGENCY
+    Güvenlik:
+    - OpsAuth gerektirir (Mutasyon işlemi).
     """
     ctx = get_ctx(request)
     
@@ -83,12 +96,16 @@ async def force_mode(request: Request, body: ForceModeRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/clear_force")
+@router.post("/clear_force", summary="TR Clear Force Mode")
 async def clear_force(request: Request):
     """
     Clear forced mode, return to automatic.
     
-    Requires OpsAuth token.
+    TR Açıklama:
+    Manuel zorlanmış modu kaldırır ve sistemi otomatik performans yönetimine döndürür.
+    
+    Güvenlik:
+    - OpsAuth gerektirir.
     """
     ctx = get_ctx(request)
     
@@ -104,12 +121,16 @@ async def clear_force(request: Request):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/evaluate")
+@router.post("/evaluate", summary="TR Trigger Evaluation")
 async def evaluate_now(request: Request):
     """
     Manually trigger evaluation.
     
-    Requires OpsAuth token.
+    TR Açıklama:
+    Performans ve maliyet metriklerini anlık olarak değerlendirir ve gerekirse mod değişikliği önerir/yapar.
+    
+    Güvenlik:
+    - OpsAuth gerektirir.
     """
     ctx = get_ctx(request)
     

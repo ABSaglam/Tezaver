@@ -11,7 +11,7 @@ from tezaver.bulut.core.context import get_context
 from tezaver.bulut.schemas.trade_plan_v1 import TradeSide, TradeDecision
 
 
-router = APIRouter(prefix="/trade", tags=["trade"])
+router = APIRouter(prefix="/trade", tags=["Trading"])
 
 
 class TradeCommandRequest(BaseModel):
@@ -35,10 +35,16 @@ class TradeCommandResponse(BaseModel):
 class CloseRequest(BaseModel):
     symbol: str
 
-@router.post("/close")
+@router.post("/close", summary="TR Manual Close Position")
 async def close_position(req: CloseRequest):
     """
     Manually create a CLOSE plan.
+    
+    TR Açıklama:
+    Belirtilen sembol için manuel kapatma (CLOSE) emri oluşturur.
+    
+    Güvenlik:
+    - OpsAuth gerektirir (Trade işlemi).
     """
     ctx = get_context()
     
@@ -84,12 +90,18 @@ async def close_position(req: CloseRequest):
     
     return {"status": "submitted", "plan_id": plan.idempotency_key}
 
-@router.post("/command", response_model=TradeCommandResponse)
+@router.post("/command", response_model=TradeCommandResponse, summary="TR Execute Trade Command")
 async def trade_command(request: TradeCommandRequest):
     """
     Execute a trade command.
     
+    TR Açıklama:
+    Manual trade komutu (OPEN/CLOSE) gönderir. Trade kilidi varsa 409 döner.
+    
     Returns 409 Conflict if trade is locked.
+    
+    Güvenlik:
+    - OpsAuth gerektirir.
     """
     ctx = get_context()
     
@@ -125,10 +137,13 @@ async def trade_command(request: TradeCommandRequest):
     )
 
 
-@router.get("/status")
+@router.get("/status", summary="TR Trade Engine Status")
 async def get_trade_status():
     """
     Get current trade status (locked/unlocked).
+    
+    TR Açıklama:
+    Trade motorunun genel durumunu (kilitli mi, kaç pozisyon açık, notional limiti) döndürür.
     """
     ctx = get_context()
     ctx.update_trade_lock()
@@ -144,10 +159,13 @@ async def get_trade_status():
     }
 
 
-@router.get("/positions")
+@router.get("/positions", summary="TR Open Positions")
 async def get_positions():
     """
     Get open positions.
+    
+    TR Açıklama:
+    Sistemdeki tüm açık spot/margin pozisyonları ve detaylarını listeler.
     """
     ctx = get_context()
     

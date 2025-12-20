@@ -8,11 +8,27 @@ import streamlit as st
 import requests
 import json
 from datetime import datetime
+from tezaver.bulut.ui.contracts.panel_guard import guarded_render
+from tezaver.bulut.ui.contracts.backend_guard import backend_status, render_backend_offline_banner
 
-def render_intel_manager(api_base: str):
+def render_page(ctx=None):
+    """Entrypoint for Registry."""
+    guarded_render("Intel Manager", lambda: _render_content(ctx))
+
+def _render_content(ctx=None):
+    """Actual content logic."""
+    api_base = "http://localhost:8000"
+    if ctx and hasattr(ctx, 'config') and hasattr(ctx.config, 'bulut_api_base_url'):
+        api_base = ctx.config.bulut_api_base_url
+
+    ok_be, info, err_be = backend_status(api_base)
+    if not ok_be:
+        render_backend_offline_banner(api_base, err_be)
+        return
+
     st.header("🧠 Intel Manager")
     
-    # Helper API
+    # helper api
     def api_get(endpoint):
         try:
             r = requests.get(f"{api_base}{endpoint}")
@@ -118,3 +134,9 @@ def render_intel_manager(api_base: str):
                 st.json(p)
     else:
         st.info("No published bundles.")
+
+if __name__ == "__main__":
+    render_page()
+
+# Backward compat
+render_intel_manager = render_page

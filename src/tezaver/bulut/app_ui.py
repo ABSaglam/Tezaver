@@ -21,7 +21,7 @@ from tezaver.bulut.ui.pages.command_center import render_command_center
 from tezaver.bulut.ui.pages.live_charts import render_live_charts
 from tezaver.bulut.ui.pages.explorer import render_explorer
 from tezaver.bulut.ui.pages.rules_editor import render_rules_editor
-from tezaver.bulut.ui.pages.daily_ops import render_daily_ops_page
+from tezaver.bulut.ui.pages.daily_ops import render_page as render_daily_ops_page
 
 
 def main():
@@ -35,29 +35,47 @@ def main():
     st.title("☁️ Tezaver Bulut")
     
     # Navigation
+    # Navigation
+    from tezaver.bulut.ui.contracts.page_registry import Registry
+    from tezaver.bulut.ui.register_pages import register_all_pages
+    from tezaver.bulut.core.context import get_context
+
+    # Register pages if empty
+    if not Registry.list_pages():
+        register_all_pages()
+
+    all_pages = Registry.list_pages()
+    page_titles = [p.title_tr for p in all_pages]
+    
+    # Sidebar
     with st.sidebar:
-        st.header("Navigation")
-        page = st.radio(
-            "Navigation",
-            ["Dashboard", "Command Center", "Daily Ops", "Live Charts", "Explorer", "Rules Editor"],
-            label_visibility="collapsed",
-        )
+        st.header("Menü")
+        # Standard Radio for simple app
+        selected_title = st.radio("Git", page_titles, label_visibility="collapsed")
     
     # Main content
-    api_base = "http://localhost:8000"
+    # Find page object
+    selected_page = next((p for p in all_pages if p.title_tr == selected_title), None)
     
-    if page == "Dashboard":
-        render_dashboard() 
-    elif page == "Command Center":
-        render_command_center(api_base)
-    elif page == "Daily Ops":
-        render_daily_ops_page()
-    elif page == "Live Charts":
-        render_live_charts(api_base)
-    elif page == "Explorer":
-        render_explorer(api_base)
-    elif page == "Rules Editor":
-        render_rules_editor(api_base)
+    if selected_page:
+        ctx = get_context()
+        
+        # --- Ops Token Security Guard ---
+        if getattr(selected_page, 'requires_ops_token', False):
+             # Check 1: Session State
+            has_token = bool(st.session_state.get('ops_token'))
+            
+            # Check 2: Config/Env (if not in session)
+            if not has_token and hasattr(ctx, 'config') and getattr(ctx.config, 'ops_token', None):
+                has_token = True
+
+            if not has_token:
+                st.error("🔒 Erişim Engellendi (Ops Token Required)")
+                st.stop()
+                
+        selected_page.render_fn(ctx)
+    else:
+        st.error("Sayfa Yüklenemedi")
 
 
 if __name__ == "__main__":

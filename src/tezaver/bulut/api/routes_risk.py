@@ -7,12 +7,17 @@ GET /risk/status
 from fastapi import APIRouter
 from tezaver.bulut.core.context import get_context
 
-router = APIRouter(prefix="/risk", tags=["risk"])
+router = APIRouter(prefix="/risk", tags=["Risk"])
 
-@router.get("/status")
+@router.get("/status", summary="TR Risk Status")
 async def get_risk_status():
     """
     Get portfolio risk status.
+    
+    TR Açıklama:
+    Portföy risk durumunu, PnL limitlerini ve açık pozisyon yoğunluğunu döndürür.
+    
+    Returns:
     - Daily PnL vs Limit
     - Entry Halted Status
     - Group Open Counts

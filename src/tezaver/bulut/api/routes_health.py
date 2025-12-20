@@ -8,13 +8,16 @@ from fastapi import APIRouter
 from tezaver.bulut.core.context import get_context
 
 
-router = APIRouter(prefix="/health", tags=["health"])
+router = APIRouter(prefix="/health", tags=["Ops"])
 
 
-@router.get("")
+@router.get("", summary="TR Basic Health Check")
 async def health_check():
     """
     Basic health check.
+    
+    TR Açıklama:
+    Basit 'ayaktayım' sinyali. Load balancer ve k8s health check için kullanılır.
     
     Returns:
         {"status": "ok", "service": "tezaver-bulut"}
@@ -26,10 +29,13 @@ async def health_check():
     }
 
 
-@router.get("/detailed")
+@router.get("/detailed", summary="TR Detailed Health Check")
 async def health_detailed():
     """
     Detailed health check with system state.
+    
+    TR Açıklama:
+    Sistemin detaylı sağlık durumunu, konfigürasyonu ve kritik bileşenlerin (Time Sync, Trade Lock) durumunu döndürür.
     
     Returns:
         Full state including config, pattern pack status, trade lock, etc.

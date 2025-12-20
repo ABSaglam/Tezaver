@@ -7,7 +7,7 @@ from fastapi import APIRouter, Request
 from typing import Dict, Any
 
 
-router = APIRouter(prefix="/runbook", tags=["runbook"])
+router = APIRouter(prefix="/runbook", tags=["Ops"])
 
 
 def get_ctx(request: Request):
@@ -15,12 +15,20 @@ def get_ctx(request: Request):
     return request.app.state.context
 
 
-@router.get("/snapshot")
+@router.get("/snapshot", summary="TR Operator Runbook Snapshot")
 async def get_runbook_snapshot(request: Request) -> Dict[str, Any]:
     """
     Get complete runbook snapshot for operator UI.
     
-    Returns all status data in a single request:
+    TR Açıklama:
+    Operatör arayüzü için gerekli tüm sistem durum verilerini (Mode, Security, Guards, Checklist, vb.) tek bir payload içinde döndürür.
+    UI render performansını artırmak için toplu veri sağlar.
+    
+    Güvenlik:
+    - OpsAuth gerektirmez (Salt okunur durum verisi).
+    - Ancak hassas veriler (API key vb.) içermez.
+    
+    Returns:
     - Mode/security
     - Guards (constitution, drift)
     - Timing (strict, sync, exchangeinfo)
@@ -33,6 +41,7 @@ async def get_runbook_snapshot(request: Request) -> Dict[str, Any]:
     - Recovery
     - Forensics
     - Test reports
+    - Perf & Cost
     """
     ctx = get_ctx(request)
     snapshot = {}
@@ -176,7 +185,18 @@ async def get_runbook_snapshot(request: Request) -> Dict[str, Any]:
         except Exception:
             snapshot["forensics"] = {"recent_cycles": 0}
         
-        # 12. Test Reports
+        try:
+            perf = ctx.perf_manager
+            snapshot["perf_cost"] = {
+                "mode": getattr(perf, 'current_mode', "UNKNOWN"),
+                "budget_usage_pct": getattr(perf, 'budget_usage_pct', 0.0),
+                "cycle_ms": getattr(perf, 'last_cycle_ms', 0),
+                "recommended_overrides": getattr(perf, 'get_recommendations', lambda: [])()
+            }
+        except Exception:
+             snapshot["perf_cost"] = {"mode": "UNKNOWN"}
+
+        # 13. Test Reports
         try:
             import os
             report_path = "data/bulut_ops/test_reports/latest.xml"

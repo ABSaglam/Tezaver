@@ -6,7 +6,7 @@ from fastapi import APIRouter, Request, HTTPException
 from typing import Optional
 
 
-router = APIRouter(prefix="/ops/daily", tags=["daily_ops"])
+router = APIRouter(prefix="/ops/daily", tags=["Ops"])
 
 
 def get_ctx(request: Request):
@@ -14,9 +14,15 @@ def get_ctx(request: Request):
     return request.app.state.context
 
 
-@router.get("/today")
+@router.get("/today", summary="TR Today Ops Report")
 async def get_today_report(request: Request):
-    """Get today's daily operations report."""
+    """
+    Get today's daily operations report.
+    
+    TR Açıklama:
+    Bugüne ait operasyonel özet raporu (PnL, Trade sayıları, Alertler, Anomaliler) döndürür.
+    Cache'den veya canlı hesaplamadan gelebilir.
+    """
     ctx = get_ctx(request)
     
     try:
@@ -26,9 +32,14 @@ async def get_today_report(request: Request):
         return {"error": str(e), "date": None}
 
 
-@router.get("/yesterday")
+@router.get("/yesterday", summary="TR Yesterday Ops Report")
 async def get_yesterday_report(request: Request):
-    """Get yesterday's daily operations report."""
+    """
+    Get yesterday's daily operations report.
+    
+    TR Açıklama:
+    Düne ait tamamlanmış operasyon raporunu döndürür. Arşivlenmiş veridir.
+    """
     ctx = get_ctx(request)
     
     try:
@@ -38,12 +49,16 @@ async def get_yesterday_report(request: Request):
         return {"error": str(e), "date": None}
 
 
-@router.post("/compute")
+@router.post("/compute", summary="TR Compute Ops Report")
 async def compute_and_save(request: Request, date: Optional[str] = None):
     """
     Compute and save daily report.
     
-    Requires OpsAuth token.
+    TR Açıklama:
+    Günlük raporu manuel olarak tetikler ve kaydeder. Eksik raporları tamamlamak veya snaphot almak için kullanılır.
+    
+    Güvenlik:
+    - OpsAuth gerektirir.
     """
     ctx = get_ctx(request)
     
@@ -69,9 +84,14 @@ async def compute_and_save(request: Request, date: Optional[str] = None):
 
 
 # Health check endpoints
-@router.get("/health/checks")
+@router.get("/health/checks", summary="TR Health Check History")
 async def get_health_checks(request: Request, limit: int = 50):
-    """Get recent health checks."""
+    """
+    Get recent health checks.
+    
+    TR Açıklama:
+    Sistem sağlık kontrollerinin tarihçesini listeler. Anomalileri ve alınan aksiyonları gösterir.
+    """
     ctx = get_ctx(request)
     
     try:
@@ -81,9 +101,14 @@ async def get_health_checks(request: Request, limit: int = 50):
         return []
 
 
-@router.get("/health/status")
+@router.get("/health/status", summary="TR Health Scheduler Status")
 async def get_health_status(request: Request):
-    """Get health check scheduler status."""
+    """
+    Get health check scheduler status.
+    
+    TR Açıklama:
+    Sağlık kontrolcüsünün (Scheduler) çalışma durumunu ve son çalışma zamanını döndürür.
+    """
     ctx = get_ctx(request)
     
     try:
@@ -93,12 +118,16 @@ async def get_health_status(request: Request):
         return {"error": str(e)}
 
 
-@router.post("/health/run")
+@router.post("/health/run", summary="TR Run Health Check")
 async def run_health_check(request: Request):
     """
     Manually run health check.
     
-    Requires OpsAuth token.
+    TR Açıklama:
+    Sistem sağlık kontrolünü (Health Check) anlık olarak başlatır.
+    
+    Güvenlik:
+    - OpsAuth gerektirir (Sistemi yorabilir veya durum değiştirebilir).
     """
     ctx = get_ctx(request)
     
@@ -115,9 +144,14 @@ async def run_health_check(request: Request):
 
 
 # Alert endpoints
-@router.get("/alerts/top")
+@router.get("/alerts/top", summary="TR Top Alerts")
 async def get_top_alerts(request: Request, limit: int = 20):
-    """Get top alerts with routing info."""
+    """
+    Get top alerts with routing info.
+    
+    TR Açıklama:
+    Sistemdeki en önemli (BLOCK/WARN) alarmları ve yönlendirme bilgisini listeler.
+    """
     ctx = get_ctx(request)
     
     try:

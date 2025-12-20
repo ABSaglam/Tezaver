@@ -14,6 +14,8 @@ from datetime import datetime, timezone
 
 from tezaver.bulut.core.context import get_context
 from tezaver.bulut.ui.chart_indicators import calculate_rsi, calculate_macd, calculate_atr, calculate_sma, calculate_ema
+from tezaver.bulut.ui.contracts.panel_guard import guarded_render
+from tezaver.bulut.ui.contracts.backend_guard import backend_status, render_backend_offline_banner
 
 # --- Config ---
 API_BASE = "http://127.0.0.1:8000"
@@ -21,12 +23,16 @@ API_BASE = "http://127.0.0.1:8000"
 def get_ctx():
     return get_context()
 
+def render_page(ctx=None):
+    """Entrypoint for Registry."""
+    guarded_render("Canlı Grafikler", lambda: _render_content(ctx))
+
 # --- Data Fetching (Cached) ---
 
 @st.cache_data(ttl=10)
-def fetch_bars_df(symbol: str, tf: str, limit: int) -> pd.DataFrame:
+def fetch_bars_df(api_base: str, symbol: str, tf: str, limit: int) -> pd.DataFrame:
     try:
-        url = f"{API_BASE}/bars/series?symbol={symbol}&tf={tf}&limit={limit}"
+        url = f"{api_base}/bars/series?symbol={symbol}&tf={tf}&limit={limit}"
         resp = requests.get(url)
         resp.raise_for_status()
         data = resp.json()
@@ -42,9 +48,9 @@ def fetch_bars_df(symbol: str, tf: str, limit: int) -> pd.DataFrame:
         return pd.DataFrame()
 
 @st.cache_data(ttl=30)
-def fetch_timelines_data(limit: int = 200) -> list:
+def fetch_timelines_data(api_base: str, limit: int = 200) -> list:
     try:
-        url = f"{API_BASE}/cycles/timelines?limit={limit}"
+        url = f"{api_base}/cycles/timelines?limit={limit}"
         resp = requests.get(url)
         if resp.status_code == 200:
             return resp.json()
@@ -52,19 +58,19 @@ def fetch_timelines_data(limit: int = 200) -> list:
     except: return []
 
 @st.cache_data(ttl=10)
-def fetch_latest_plans(limit: int = 50) -> list:
+def fetch_latest_plans(api_base: str, limit: int = 50) -> list:
     try:
-        url = f"{API_BASE}/plans/latest?limit={limit}"
+        url = f"{api_base}/plans/latest?limit={limit}"
         resp = requests.get(url)
         if resp.status_code == 200:
             return resp.json()
         return []
     except: return []
 
-def fetch_open_positions() -> dict:
+def fetch_open_positions(api_base: str) -> dict:
     # No cache, real time status
     try:
-        url = f"{API_BASE}/ui/summary" # fallback source
+        url = f"{api_base}/ui/summary" # fallback source
         resp = requests.get(url)
         if resp.status_code == 200:
             data = resp.json()
@@ -72,8 +78,21 @@ def fetch_open_positions() -> dict:
     except: pass
     return {}
 
-def render_live_charts_page():
-    st.set_page_config(layout="wide", page_title="Tezaver Charts Pro")
+def _render_content(ctx=None):
+    # Backend Guard
+    api_base = API_BASE
+    if ctx and hasattr(ctx, 'config') and hasattr(ctx.config, 'bulut_api_base_url'):
+        api_base = ctx.config.bulut_api_base_url
+        
+    ok_be, info, err_be = backend_status(api_base)
+    if not ok_be:
+        render_backend_offline_banner(api_base, err_be)
+        return
+
+    # st.set_page_config is only for standalone mode or first load, 
+    # but here we are in a sub-component usually. Remove or check mode?
+    # Registry runs in main_panel which sets page config.
+    
     st.markdown("## 📈 Market Microscope (Pro)")
 
     # --- Sidebar Controls ---
@@ -102,7 +121,7 @@ def render_live_charts_page():
         indicator = st.selectbox("Indicator", ["None", "RSI", "MACD", "ATR"], index=1)
         
     # --- Data Loading ---
-    df = fetch_bars_df(symbol, tf, limit)
+    df = fetch_bars_df(api_base, symbol, tf, limit)
     
     if df.empty:
         st.warning(f"No data for {symbol}")
@@ -188,7 +207,7 @@ def render_live_charts_page():
     
     # Pattern Logic
     if show_patterns:
-        timelines = fetch_timelines_data()
+        timelines = fetch_timelines_data(api_base)
         pat_x = []
         pat_y = [] # place above high?
         pat_text = []
@@ -219,14 +238,7 @@ def render_live_charts_page():
                 # Parse TS
                 try:
                     ts = pd.to_datetime(ts_str)
-                    # Align Y to chart High at that time?
-                    # Or just query DF for close price near that time.
-                    # Or simpler: if we can locate in DF.
-                    # Let's try to find row in DF
-                    # Round ts to nearest 15m? cycle_ts corresponds to close of bar usually.
                     
-                    # Fuzzy match
-                    # Assuming exact match for now
                     # We add trace with XY points.
                     # We need Y value. We can pass Y=None and use annotation, or find price.
                     row = df[df["time"] == ts]
@@ -255,7 +267,7 @@ def render_live_charts_page():
 
     # Lifecycle Logic (Plans/Pos)
     if show_lifecycle:
-        plans = fetch_latest_plans()
+        plans = fetch_latest_plans(api_base)
         pl_x = []
         pl_y = []
         pl_sym = []
@@ -286,7 +298,7 @@ def render_live_charts_page():
             ), row=1, col=1)
 
         # Active Position Lines
-        positions = fetch_open_positions()
+        positions = fetch_open_positions(api_base)
         my_pos = positions.get(symbol)
         if my_pos:
             entry_px = my_pos.get("entry_price")
@@ -295,12 +307,6 @@ def render_live_charts_page():
                 
             # Protective
             meta = my_pos
-            # SL/TP calculation if not explicit in meta?
-            # Usually positions dict has sl_order_id etc, but maybe not prices?
-            # It has sl_pct, tp_pct.
-            # Calculate from entry?
-            # But let's check if 'sl_price' is in object. Usually not persisted, only %
-            # Recompute for viz
             sl_pct = meta.get("sl_pct", 0)
             tp_pct = meta.get("tp_pct", 0)
             if entry_px and sl_pct:
@@ -317,32 +323,24 @@ def render_live_charts_page():
     # --- Facts Sidebar Update ---
     # Enhanced "Current Facts"
     if st.sidebar.expander("📌 Current Facts (Pro)", expanded=True):
-        pos = fetch_open_positions().get(symbol, {})
+        pos = fetch_open_positions(api_base).get(symbol, {})
         if pos:
             st.success(f"OPEN: {symbol}")
             st.write(f"Entry: {pos.get('entry_price')}")
             st.write(f"Notional: ${pos.get('notional', 0):.1f}")
             st.write(f"Size Profile: {pos.get('sizing_profile_id', '-')}")
             st.write(f"Prot. Status: {pos.get('protective_status', '-')}")
-        else:
-            st.info("No Open Position")
             
         # Last Pattern / Cycle info
         # Reuse logic from markers or just last
         # Fetching timelines again (cached)
-        timelines = fetch_timelines_data(limit=1)
+        timelines = fetch_timelines_data(api_base, limit=1)
         if timelines:
             last_tl = timelines[0]
             st.write(f"Last Cycle: {last_tl.get('cycle_ts')}")
-            # Check pattern
-            # ...
-            
-    # Session State Explorer Link
-    # If user selected from Explorer, 'selected_symbol' is set.
-    # We update it here if input changes.
 
 if __name__ == "__main__":
-    render_live_charts_page()
+    render_page()
 
-# Backward-compat alias
-render_live_charts = render_live_charts_page
+# Backward-compat alias (deprecated but kept for external calls not via registry yet)
+render_live_charts = render_page

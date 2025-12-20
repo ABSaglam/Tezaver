@@ -1,11 +1,25 @@
 import streamlit as st
 from tezaver.bulut.ui.http_client import call_api
 from tezaver.bulut.ui.components.ops_token_box import render_ops_token_box
-
 from tezaver.bulut.core.config import get_config
+from tezaver.bulut.ui.contracts.panel_guard import guarded_render
+from tezaver.bulut.ui.contracts.backend_guard import backend_status, render_backend_offline_banner
 
-def render_command_center(api_base: str = "http://localhost:8000"):
+def render_page(ctx=None):
+    """Entrypoint for Registry."""
+    guarded_render("Komuta Merkezi", _render_content)
+
+def _render_content():
+    """Actual content logic."""
     cfg = get_config()
+    
+    # Backend Guard
+    api_base = getattr(cfg, "bulut_api_base_url", "http://localhost:8000")
+    ok_be, info, err_be = backend_status(api_base)
+    if not ok_be:
+        render_backend_offline_banner(api_base, err_be)
+        return
+
     if cfg.deploy_env == "PROD" and not st.session_state.get("ops_token"):
          st.error("⚠️ PRODUCTION MODE: OPS TOKEN MISSING! MUTATIONS LOCKED.")
 
@@ -15,6 +29,27 @@ def render_command_center(api_base: str = "http://localhost:8000"):
     with st.sidebar:
         st.divider()
         render_ops_token_box()
+
+    # 0. Perf & Cost (Short Panel)
+    st.subheader("Perf & Cost (Current)")
+    ok_perf, perf_status = call_api("GET", "/perf/status")
+    if ok_perf:
+         # Layout: Mode | Budget | Cycle | Overrides
+         p1, p2, p3, p4 = st.columns(4)
+         p1.metric("Mode", perf_status.get("mode", "UNKNOWN"))
+         p2.metric("Budget", f"{perf_status.get('budget_usage_pct', 0):.0f}%")
+         p3.metric("Cycle", f"{perf_status.get('cycle_ms', 0)}ms")
+         
+         recs = len(perf_status.get("recommended_overrides", []))
+         p4.metric("Recs", recs)
+         
+         if st.button("Open Perf Page", key="btn_open_perf"):
+              st.session_state['cloud_nav'] = "Perf & Cost" # Matches registry title or we handle via ID switching if simpler
+              st.rerun()
+    else:
+         st.warning("Perf Status Unavailable")
+
+    st.divider()
 
     # 1. Operational Commands
     st.subheader("Operations")
@@ -94,8 +129,6 @@ def render_command_center(api_base: str = "http://localhost:8000"):
                         
     else:
         st.error(f"Proof Ladder Status Failed: {pl_data}")
-
-
 
     st.divider()
 
@@ -324,5 +357,3 @@ def render_command_center(api_base: str = "http://localhost:8000"):
     ok, summary = call_api("GET", "/ui/summary")
     if ok:
         st.json(summary)
-    else:
-        st.error("Backend unreachable. Start `uvicorn`?")
