@@ -9,6 +9,19 @@ def register_all_pages():
     """
     Import and register all known UI pages.
     """
+    # 0. Bulut Home (Ana Sahne)
+    try:
+        from tezaver.bulut.ui.pages import bulut_home
+        Registry.register_page(BulutPage(
+            id="bulut_home",
+            title_tr="Ana Sahne",
+            category_tr="Operasyon",
+            order=0,
+            render_fn=bulut_home.render_page,
+            requires_backend=True
+        ))
+    except ImportError: pass
+
     # 1. Command Center
     try:
         from tezaver.bulut.ui.pages import command_center
@@ -24,8 +37,7 @@ def register_all_pages():
             category_tr="Operasyon",
             order=10,
             render_fn=command_center.render_page,
-            requires_backend=True,
-            requires_ops_token=True # Maybe? It has ops actions
+            requires_backend=True
         ))
     except ImportError as e:
         print(f"Warning: Could not load command_center: {e}")

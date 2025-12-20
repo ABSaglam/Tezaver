@@ -1,22 +1,20 @@
-# Tezaver Bulut - Daily Ops UI Page (P12)
 """
-Streamlit page for Day-2 Operations dashboard.
+Tezaver Bulut - Daily Ops Page
+Daily reports, health checks, and summary.
 """
 import streamlit as st
-import requests
+import pandas as pd
 from tezaver.bulut.ui.contracts.panel_guard import guarded_render
 from tezaver.bulut.ui.contracts.backend_guard import backend_status, render_backend_offline_banner
-
-# API Base URL
-API_BASE = "http://localhost:8000"
+from tezaver.bulut.ui.contracts.result_card import call_api, render_result_card
 
 def render_page(ctx=None):
     """Entrypoint for Registry."""
-    guarded_render("Daily Ops", lambda: _render_content(ctx))
+    guarded_render("Günlük Operasyon", lambda: _render_content(ctx))
 
 def _render_content(ctx=None):
     """Actual content logic."""
-    api_base = API_BASE
+    api_base = "http://localhost:8000"
     if ctx and hasattr(ctx, 'config') and hasattr(ctx.config, 'bulut_api_base_url'):
         api_base = ctx.config.bulut_api_base_url
         
@@ -25,132 +23,66 @@ def _render_content(ctx=None):
         render_backend_offline_banner(api_base, err_be)
         return
 
-    st.header("📅 Daily Ops Dashboard")
+    st.title("📅 Daily Ops")
     
-    # Row 1: Today and Yesterday Reports
-    col1, col2 = st.columns(2)
+    # READ-ONLY SECTION (Always Free)
+    st.subheader("📊 Reports (Read Only)")
+    c1, c2 = st.columns(2)
+    with c1:
+        st.caption("Bugün (Today)")
+        res = call_api(ctx, "GET", "/ops/daily/today") # ops_required=False (implicit for GET)
+        if res.ok and res.json_body:
+            st.code(str(res.json_body), language="json")
+        else:
+            st.info("No Data")
+            
+    with c2:
+        st.caption("Dün (Yesterday)")
+        res = call_api(ctx, "GET", "/ops/daily/yesterday")
+        if res.ok and res.json_body:
+            st.code(str(res.json_body), language="json")
+        else:
+            st.info("No data available")
+            
+    st.markdown("---")
     
-    with col1:
-        st.subheader("📊 Bugün")
-        try:
-            res = requests.get(f"{api_base}/ops/daily/today", timeout=5)
-            if res.status_code == 200:
-                data = res.json()
-                if data.get("date"):
-                    st.metric("Net PnL", f"${data.get('net_pnl', 0):.2f}")
-                    st.metric("Trades", data.get("trades_count", 0))
-                    st.metric("Alerts", data.get("alerts_count", 0))
-                    st.metric("Kill Switch Events", data.get("kill_switch_events", 0))
-                    st.metric("Recovery Runs", data.get("recovery_runs", 0))
-                else:
-                    st.info("Bugün için rapor henüz yok")
-        except Exception as e:
-            st.error(f"API hatası: {e}")
+    # ACTIONS SECTION (Ops Token Required)
+    st.subheader("⚡ Operator Actions")
     
-    with col2:
-        st.subheader("📊 Dün")
-        try:
-            res = requests.get(f"{api_base}/ops/daily/yesterday", timeout=5)
-            if res.status_code == 200:
-                data = res.json()
-                if data.get("date"):
-                    st.metric("Net PnL", f"${data.get('net_pnl', 0):.2f}")
-                    st.metric("Trades", data.get("trades_count", 0))
-                    st.metric("Alerts", data.get("alerts_count", 0))
-                else:
-                    st.info("Dün için rapor yok")
-        except Exception:
-            st.warning("Dün raporu yüklenemedi")
+    has_token = bool(st.session_state.get('ops_token'))
+    if not has_token:
+        st.warning("🔒 Ops Token Missing - Actions Locked")
     
-    st.divider()
+    t_act, t_health = st.tabs(["Daily Computations", "Health & Alerts"])
     
-    # Row 2: Actions
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        if st.button("🔄 Bugün Raporu Oluştur", use_container_width=True):
-            try:
-                res = requests.post(f"{api_base}/ops/daily/compute", timeout=10)
-                if res.status_code == 200:
-                    st.success("Rapor oluşturuldu!")
-                    st.rerun()
-                else:
-                    st.error(f"Hata: {res.status_code}")
-            except Exception as e:
-                st.error(f"API hatası: {e}")
-    
-    with col2:
-        if st.button("🏥 Health Check Çalıştır", use_container_width=True):
-            try:
-                res = requests.post(f"{api_base}/ops/daily/health/run", timeout=10)
-                if res.status_code == 200:
-                    result = res.json()
-                    if result.get("result", {}).get("healthy"):
-                        st.success("✅ Sistem sağlıklı")
-                    else:
-                        st.warning("⚠️ Anomaliler tespit edildi")
-                    st.rerun()
-                else:
-                    st.error(f"Hata: {res.status_code}")
-            except Exception as e:
-                st.error(f"API hatası: {e}")
-    
-    with col3:
-        # Health status
-        try:
-            res = requests.get(f"{api_base}/ops/daily/health/status", timeout=5)
-            if res.status_code == 200:
-                data = res.json()
-                last_check = data.get("last_check_ts")
-                if last_check:
-                    st.info(f"Son kontrol: {last_check[:19]}")
-                else:
-                    st.info("Henüz kontrol yapılmadı")
-        except Exception:
-            pass
-    
-    st.divider()
-    
-    # Row 3: Health Checks Timeline
-    with st.expander("🏥 Health Checks Timeline", expanded=False):
-        try:
-            res = requests.get(f"{api_base}/ops/daily/health/checks?limit=20", timeout=5)
-            if res.status_code == 200:
-                checks = res.json()
-                if checks:
-                    for check in checks[:10]:
-                        status = "✅" if check.get("healthy") else "⚠️"
-                        ts = check.get("ts", "")[:19]
-                        anomalies = check.get("anomalies", [])
-                        if anomalies:
-                            st.warning(f"{status} {ts} - {len(anomalies)} anomali")
-                        else:
-                            st.success(f"{status} {ts} - Sağlıklı")
-                else:
-                    st.info("Henüz health check kaydı yok")
-        except Exception as e:
-            st.error(f"Health checks yüklenemedi: {e}")
-    
-    # Row 4: Top Alerts
-    with st.expander("🚨 Top Alerts", expanded=False):
-        try:
-            res = requests.get(f"{api_base}/ops/daily/alerts/top?limit=10", timeout=5)
-            if res.status_code == 200:
-                alerts = res.json()
-                if alerts:
-                    for alert in alerts:
-                        level = alert.get("level", "INFO")
-                        icon = "🔴" if level == "BLOCK" else "🟡" if level == "WARN" else "🔵"
-                        msg = alert.get("message", "")[:80]
-                        action = alert.get("recommended_action")
-                        st.markdown(f"{icon} **{level}**: {msg}")
-                        if action:
-                            st.caption(f"   → {action}")
-                else:
-                    st.success("Aktif alert yok")
-        except Exception as e:
-            st.error(f"Alerts yüklenemedi: {e}")
-
-
-if __name__ == "__main__":
-    render_page()
+    with t_act:
+        if st.button("🧮 Compute Daily Report Now", use_container_width=True, disabled=not has_token):
+             res = call_api(ctx, "POST", "/ops/daily/compute", ops_required=True)
+             render_result_card("Compute Result", res)
+        elif not has_token:
+             st.caption("🔒 Requires Ops Token")
+             
+    with t_health:
+        if st.button("💉 Run Health Checks Now", use_container_width=True, disabled=not has_token):
+             res = call_api(ctx, "POST", "/ops/daily/health/run", ops_required=True)
+             render_result_card("Health Run", res)
+        elif not has_token:
+             st.caption("🔒 Requires Ops Token")
+             
+        st.markdown("---")
+        # READ ONLY CHECK LISTS
+        st.caption("Recent Checks (Read Only)")
+        res_checks = call_api(ctx, "GET", "/ops/daily/health/checks")
+        if res_checks.ok and res_checks.json_body:
+             data = res_checks.json_body.get('checks', [])
+             if data:
+                 st.dataframe(pd.DataFrame(data), use_container_width=True)
+             else:
+                 st.info("No checks recorded.")
+                 
+        st.caption("Top Alerts (Read Only)")
+        res_alerts = call_api(ctx, "GET", "/ops/daily/alerts/top")
+        if res_alerts.ok and res_alerts.json_body:
+             alerts = res_alerts.json_body.get('alerts', [])
+             if alerts:
+                 st.dataframe(pd.DataFrame(alerts), use_container_width=True)
