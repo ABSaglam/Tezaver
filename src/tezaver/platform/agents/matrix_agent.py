@@ -1,21 +1,26 @@
 """
-MX-21001..21005: Matrix Agent - Real Binding to V4
+MX-21006..21007: Matrix Agent - Real Binding (No Stub)
 
-Handles Matrix engine jobs with real V4 core/apps calls:
-- MATRIX_IMPORT_CANDIDATE
-- MATRIX_RUN_SNIPER
-- MATRIX_RUN_WAR
-- MATRIX_RUN_LIVE_STEP
-- MATRIX_APPROVE_EXPORT
+Handles Matrix engine jobs with real V4 core/apps calls.
+Stub fallback is disabled by default (allow_stubs=False).
 """
 
 import time
 import hashlib
-from typing import Dict, Any, Optional
-from dataclasses import dataclass
+from typing import Dict, Any
+from dataclasses import dataclass, field
 
 from tezaver.platform.agents.base import BaseAgent, AgentConfig
 from tezaver.platform.jobs.queue import Job
+
+
+class MissingBindingError(Exception):
+    """Raised when a required binding is not available."""
+    def __init__(self, code: str, detail: str, detail_tr: str = ""):
+        self.code = code
+        self.detail = detail
+        self.detail_tr = detail_tr or detail
+        super().__init__(f"{code}: {detail}")
 
 
 @dataclass
@@ -24,6 +29,7 @@ class MatrixAgentConfig(AgentConfig):
     matrix_home: str = ".tezaver_matrix"
     max_attempts: int = 3
     engine_version: str = "v4.0"
+    allow_stubs: bool = False  # MX-21006: No stub by default
 
 
 class MatrixAgent(BaseAgent):
@@ -34,6 +40,7 @@ class MatrixAgent(BaseAgent):
         self.matrix_home = config.matrix_home
         self.max_attempts = config.max_attempts
         self.engine_version = config.engine_version
+        self.allow_stubs = config.allow_stubs
         
     def setup_handlers(self) -> None:
         self.register_handler("MATRIX_IMPORT_CANDIDATE", self._handle_import_candidate)
@@ -72,87 +79,87 @@ class MatrixAgent(BaseAgent):
         self.bus.append_ndjson("events/matrix.ndjson", event)
         
     def _handle_import_candidate(self, job: Job) -> Dict[str, Any]:
-        """
-        Import candidate from bus artifact to matrix home.
-        """
-        import os
-        import json
-        
+        """Import candidate from bus artifact to matrix home."""
         self._log_job_event("JOB_START", job)
         start_ts = time.time()
         
         artifact_path = job.payload.get("artifact_path")
         if not artifact_path:
-            self._log_job_event("JOB_FAIL", job, {"reason": "missing_artifact_path"})
-            return {"ok": False, "error": "missing artifact_path", "trace": self._build_trace(job)}
+            self._log_job_event("JOB_FAIL", job, {"error_code": "MISSING_ARTIFACT_PATH"})
+            return {
+                "ok": False, 
+                "error_code": "MISSING_ARTIFACT_PATH",
+                "error_detail_tr": "artifact_path parametresi eksik",
+                "trace": self._build_trace(job),
+            }
             
-        # Get artifact from bus
         artifact = self.bus.get_json(artifact_path)
         if not artifact:
-            self._log_job_event("JOB_FAIL", job, {"reason": "artifact_not_found"})
-            return {"ok": False, "error": f"artifact not found: {artifact_path}", "trace": self._build_trace(job)}
+            self._log_job_event("JOB_FAIL", job, {"error_code": "ARTIFACT_NOT_FOUND"})
+            return {
+                "ok": False, 
+                "error_code": "ARTIFACT_NOT_FOUND",
+                "error_detail_tr": f"Artifact bulunamadı: {artifact_path}",
+                "trace": self._build_trace(job),
+            }
             
         try:
             home = self._get_home(job)
             
-            # Direct file save (simple approach)
-            candidate_id = artifact.get("candidate_id", job.job_id)
-            cand_dir = os.path.join(home, "candidates", candidate_id)
-            os.makedirs(cand_dir, exist_ok=True)
-            
-            manifest_path = os.path.join(cand_dir, "manifest.json")
-            with open(manifest_path, "w") as f:
-                json.dump(artifact, f, indent=2)
+            # Use real binding
+            from tezaver.matrix.apps.platform_bindings import import_candidate
+            result = import_candidate(home, artifact)
             
             elapsed = time.time() - start_ts
-            self._log_job_event("JOB_OK", job, {"candidate_id": candidate_id, "elapsed_s": elapsed})
+            self._log_job_event("JOB_OK", job, {
+                "candidate_id": result.get("candidate_id"),
+                "elapsed_s": elapsed,
+            })
             
             return {
                 "ok": True,
-                "candidate_id": candidate_id,
-                "trace": self._build_trace(job, {"data_fingerprint": candidate_id[:8]}),
+                "candidate_id": result.get("candidate_id"),
+                "trace": self._build_trace(job, {"data_fingerprint": result.get("candidate_id", "")[:8]}),
             }
+        except ImportError as e:
+            if self.allow_stubs:
+                # Stub fallback (only if allowed)
+                return self._stub_import(job, artifact)
+            raise MissingBindingError(
+                "BINDING_MISSING",
+                f"import_candidate binding not available: {e}",
+                "import_candidate bağlantısı bulunamadı"
+            )
         except Exception as e:
-            self._log_job_event("JOB_FAIL", job, {"reason": str(e)})
-            return {"ok": False, "error": str(e), "trace": self._build_trace(job)}
+            self._log_job_event("JOB_FAIL", job, {"error_code": "EXCEPTION", "detail": str(e)})
+            return {
+                "ok": False, 
+                "error_code": "EXCEPTION",
+                "error_detail_tr": str(e),
+                "trace": self._build_trace(job),
+            }
             
     def _handle_run_sniper(self, job: Job) -> Dict[str, Any]:
-        """
-        Run sniper on candidate.
-        Uses sniper_engine from Phase-8A.
-        """
+        """Run sniper on candidate."""
         self._log_job_event("JOB_START", job)
         start_ts = time.time()
         
         candidate_id = job.payload.get("candidate_id")
         if not candidate_id:
-            self._log_job_event("JOB_FAIL", job, {"reason": "missing_candidate_id"})
-            return {"ok": False, "error": "missing candidate_id", "trace": self._build_trace(job)}
+            self._log_job_event("JOB_FAIL", job, {"error_code": "MISSING_CANDIDATE_ID"})
+            return {
+                "ok": False, 
+                "error_code": "MISSING_CANDIDATE_ID",
+                "error_detail_tr": "candidate_id parametresi eksik",
+                "trace": self._build_trace(job),
+            }
             
         try:
             home = self._get_home(job)
             
-            # Try to use sniper_engine
-            try:
-                from tezaver.matrix.core.sniper_engine import sniper_run
-                result = sniper_run(home, candidate_id)
-            except ImportError:
-                # Fallback: create a stub run
-                import os
-                import json
-                run_id = f"sniper_{candidate_id}_{int(time.time())}"
-                run_dir = os.path.join(home, "runs", run_id)
-                os.makedirs(run_dir, exist_ok=True)
-                
-                result = {
-                    "run_id": run_id,
-                    "candidate_id": candidate_id,
-                    "verdict": "PASS",
-                    "stub": True,
-                }
-                
-                with open(os.path.join(run_dir, "result.json"), "w") as f:
-                    json.dump(result, f, indent=2)
+            # Use real binding
+            from tezaver.matrix.apps.platform_bindings import run_sniper
+            result = run_sniper(home, candidate_id)
             
             elapsed = time.time() - start_ts
             self._log_job_event("JOB_OK", job, {
@@ -164,18 +171,30 @@ class MatrixAgent(BaseAgent):
             return {
                 "ok": True,
                 "run_id": result.get("run_id"),
-                "verdict": result.get("verdict", "UNKNOWN"),
+                "verdict": result.get("verdict"),
+                "scorecard_path": result.get("scorecard_path"),
+                "judge_path": result.get("judge_path"),
                 "trace": self._build_trace(job),
             }
+        except ImportError as e:
+            if self.allow_stubs:
+                return self._stub_sniper(job, candidate_id)
+            raise MissingBindingError(
+                "BINDING_MISSING",
+                f"run_sniper binding not available: {e}",
+                "run_sniper bağlantısı bulunamadı"
+            )
         except Exception as e:
-            self._log_job_event("JOB_FAIL", job, {"reason": str(e)})
-            return {"ok": False, "error": str(e), "trace": self._build_trace(job)}
+            self._log_job_event("JOB_FAIL", job, {"error_code": "EXCEPTION", "detail": str(e)})
+            return {
+                "ok": False, 
+                "error_code": "EXCEPTION",
+                "error_detail_tr": str(e),
+                "trace": self._build_trace(job),
+            }
             
     def _handle_run_war(self, job: Job) -> Dict[str, Any]:
-        """
-        Run war game on candidates.
-        Uses war_game from Phase-8B.
-        """
+        """Run war game on candidates."""
         self._log_job_event("JOB_START", job)
         start_ts = time.time()
         
@@ -183,33 +202,19 @@ class MatrixAgent(BaseAgent):
         session_id = job.payload.get("session_id")
         
         if not candidate_ids and not session_id:
-            self._log_job_event("JOB_FAIL", job, {"reason": "missing_candidate_ids_or_session"})
-            return {"ok": False, "error": "missing candidate_ids or session_id", "trace": self._build_trace(job)}
+            self._log_job_event("JOB_FAIL", job, {"error_code": "MISSING_PARAMS"})
+            return {
+                "ok": False, 
+                "error_code": "MISSING_PARAMS",
+                "error_detail_tr": "candidate_ids veya session_id gerekli",
+                "trace": self._build_trace(job),
+            }
             
         try:
             home = self._get_home(job)
             
-            # Try to use war_game
-            try:
-                from tezaver.matrix.core.war_game import war_game_run
-                result = war_game_run(home, candidate_ids, session_id=session_id)
-            except ImportError:
-                # Fallback: create stub session
-                import os
-                import json
-                session_id = session_id or f"war_{int(time.time())}"
-                session_dir = os.path.join(home, "war_sessions", session_id)
-                os.makedirs(session_dir, exist_ok=True)
-                
-                result = {
-                    "session_id": session_id,
-                    "candidates": candidate_ids,
-                    "summary": {"total": len(candidate_ids), "passed": len(candidate_ids)},
-                    "stub": True,
-                }
-                
-                with open(os.path.join(session_dir, "summary.json"), "w") as f:
-                    json.dump(result, f, indent=2)
+            from tezaver.matrix.apps.platform_bindings import run_war
+            result = run_war(home, candidate_ids, session_id)
             
             elapsed = time.time() - start_ts
             self._log_job_event("JOB_OK", job, {
@@ -220,18 +225,20 @@ class MatrixAgent(BaseAgent):
             return {
                 "ok": True,
                 "session_id": result.get("session_id"),
-                "summary": result.get("summary", {}),
+                "pass_count": result.get("pass_count"),
+                "fail_count": result.get("fail_count"),
                 "trace": self._build_trace(job),
             }
+        except ImportError as e:
+            if self.allow_stubs:
+                return {"ok": True, "session_id": "stub", "stub": True}
+            raise MissingBindingError("BINDING_MISSING", str(e))
         except Exception as e:
-            self._log_job_event("JOB_FAIL", job, {"reason": str(e)})
-            return {"ok": False, "error": str(e), "trace": self._build_trace(job)}
+            self._log_job_event("JOB_FAIL", job, {"error_code": "EXCEPTION", "detail": str(e)})
+            return {"ok": False, "error_code": "EXCEPTION", "error_detail_tr": str(e), "trace": self._build_trace(job)}
             
     def _handle_run_live_step(self, job: Job) -> Dict[str, Any]:
-        """
-        Run live step on candidate.
-        Uses live runner from Phase-8C.
-        """
+        """Run live step on candidate."""
         self._log_job_event("JOB_START", job)
         start_ts = time.time()
         
@@ -239,58 +246,34 @@ class MatrixAgent(BaseAgent):
         steps = job.payload.get("steps", 5)
         
         if not candidate_id:
-            self._log_job_event("JOB_FAIL", job, {"reason": "missing_candidate_id"})
-            return {"ok": False, "error": "missing candidate_id", "trace": self._build_trace(job)}
+            return {"ok": False, "error_code": "MISSING_CANDIDATE_ID", "trace": self._build_trace(job)}
             
         try:
             home = self._get_home(job)
             
-            # Try to use live runner
-            try:
-                from tezaver.matrix.core.live_runner import live_step
-                result = live_step(home, candidate_id, steps=steps)
-            except ImportError:
-                # Fallback: stub
-                import os
-                import json
-                run_id = f"live_{candidate_id}_{int(time.time())}"
-                run_dir = os.path.join(home, "runs", run_id)
-                os.makedirs(run_dir, exist_ok=True)
-                
-                result = {
-                    "run_id": run_id,
-                    "candidate_id": candidate_id,
-                    "cursor": steps,
-                    "verdict": "RUNNING",
-                    "stub": True,
-                }
-                
-                with open(os.path.join(run_dir, "state.json"), "w") as f:
-                    json.dump(result, f, indent=2)
+            from tezaver.matrix.apps.platform_bindings import run_live_step
+            result = run_live_step(home, candidate_id, steps)
             
             elapsed = time.time() - start_ts
-            self._log_job_event("JOB_OK", job, {
-                "run_id": result.get("run_id"),
-                "cursor": result.get("cursor"),
-                "elapsed_s": elapsed,
-            })
+            self._log_job_event("JOB_OK", job, {"run_id": result.get("run_id"), "elapsed_s": elapsed})
             
             return {
                 "ok": True,
                 "run_id": result.get("run_id"),
                 "cursor": result.get("cursor"),
-                "verdict": result.get("verdict", "RUNNING"),
+                "verdict": result.get("verdict"),
                 "trace": self._build_trace(job),
             }
+        except ImportError as e:
+            if self.allow_stubs:
+                return {"ok": True, "run_id": "stub", "cursor": steps, "verdict": "RUNNING", "stub": True}
+            raise MissingBindingError("BINDING_MISSING", str(e))
         except Exception as e:
-            self._log_job_event("JOB_FAIL", job, {"reason": str(e)})
-            return {"ok": False, "error": str(e), "trace": self._build_trace(job)}
+            self._log_job_event("JOB_FAIL", job, {"error_code": "EXCEPTION", "detail": str(e)})
+            return {"ok": False, "error_code": "EXCEPTION", "error_detail_tr": str(e), "trace": self._build_trace(job)}
             
     def _handle_approve_export(self, job: Job) -> Dict[str, Any]:
-        """
-        Approve and export run.
-        Uses approve/export from Phase-9A + release_gate from Phase-15B.
-        """
+        """Approve and export candidate."""
         self._log_job_event("JOB_START", job)
         start_ts = time.time()
         
@@ -298,75 +281,60 @@ class MatrixAgent(BaseAgent):
         candidate_id = job.payload.get("candidate_id")
         do_export = job.payload.get("export", True)
         
-        if not run_id and not candidate_id:
-            self._log_job_event("JOB_FAIL", job, {"reason": "missing_run_id_or_candidate_id"})
-            return {"ok": False, "error": "missing run_id or candidate_id", "trace": self._build_trace(job)}
+        cid = candidate_id or run_id
+        if not cid:
+            return {"ok": False, "error_code": "MISSING_ID", "trace": self._build_trace(job)}
             
         try:
             home = self._get_home(job)
             
-            # Use candidate_id if run_id not provided
-            cid = candidate_id or run_id
+            from tezaver.matrix.apps.platform_bindings import approve_export
+            result = approve_export(home, cid, do_export)
             
-            # Check release gate first
-            try:
-                from tezaver.matrix.core.release_gate import evaluate_release_gate
-                gate_result = evaluate_release_gate(home, cid)
-                gate_ok = gate_result.get("ok", False)
-            except ImportError:
-                gate_ok = True  # Skip if not available
-                gate_result = {"ok": True, "stub": True}
-                
-            if not gate_ok:
-                self._log_job_event("JOB_FAIL", job, {"reason": "release_gate_failed"})
-                return {
-                    "ok": False,
-                    "error": "Release gate failed",
-                    "gate_result": gate_result,
-                    "trace": self._build_trace(job),
-                }
-                
-            # Approve
-            try:
-                from tezaver.matrix.core.approve import approve_candidate
-                approve_result = approve_candidate(home, cid)
-            except ImportError:
-                # Stub
-                import os
+            # Also put export to bus if path exists
+            if result.get("export_path"):
                 import json
-                approved_dir = os.path.join(home, "approved", cid)
-                os.makedirs(approved_dir, exist_ok=True)
-                
-                approve_result = {"approved_id": cid, "stub": True}
-                with open(os.path.join(approved_dir, "manifest.json"), "w") as f:
-                    json.dump({"candidate_id": cid, "approved_at": int(time.time())}, f)
-                    
-            export_path = None
-            if do_export:
-                try:
-                    from tezaver.matrix.core.export_v1 import export_cloud_strategy
-                    export_result = export_cloud_strategy(home, cid)
-                    export_path = f"artifacts/matrix/exports/{cid}.json"
-                    self.bus.put_json(export_path, export_result)
-                except ImportError:
-                    # Stub
-                    export_path = f"artifacts/matrix/exports/{cid}.json"
-                    self.bus.put_json(export_path, {"candidate_id": cid, "stub": True})
-                    
+                with open(result["export_path"]) as f:
+                    export_data = json.load(f)
+                bus_path = f"artifacts/matrix/exports/{cid}.json"
+                self.bus.put_json(bus_path, export_data)
+                result["bus_export_path"] = bus_path
+            
             elapsed = time.time() - start_ts
-            self._log_job_event("JOB_OK", job, {
-                "approved_id": cid,
-                "export_path": export_path,
-                "elapsed_s": elapsed,
-            })
+            self._log_job_event("JOB_OK", job, {"approved_id": cid, "elapsed_s": elapsed})
             
             return {
                 "ok": True,
-                "approved_id": cid,
-                "export_path": export_path,
-                "activated": False,  # Manual activation required
+                "approved_id": result.get("approved_id"),
+                "export_path": result.get("export_path"),
+                "bus_export_path": result.get("bus_export_path"),
                 "trace": self._build_trace(job),
             }
+        except ImportError as e:
+            if self.allow_stubs:
+                return {"ok": True, "approved_id": cid, "stub": True}
+            raise MissingBindingError("BINDING_MISSING", str(e))
         except Exception as e:
-            self._log_job_event("JOB_FAIL", job, {"reason": str(e)})
-            return {"ok": False, "error": str(e), "trace": self._build_trace(job)}
+            self._log_job_event("JOB_FAIL", job, {"error_code": "EXCEPTION", "detail": str(e)})
+            return {"ok": False, "error_code": "EXCEPTION", "error_detail_tr": str(e), "trace": self._build_trace(job)}
+            
+    # Stub methods (only used if allow_stubs=True)
+    def _stub_import(self, job: Job, artifact: Dict) -> Dict:
+        import os, json
+        home = self._get_home(job)
+        cid = artifact.get("candidate_id", job.job_id)
+        cand_dir = os.path.join(home, "candidates", cid)
+        os.makedirs(cand_dir, exist_ok=True)
+        with open(os.path.join(cand_dir, "manifest.json"), "w") as f:
+            json.dump(artifact, f)
+        return {"ok": True, "candidate_id": cid, "stub": True, "trace": self._build_trace(job)}
+        
+    def _stub_sniper(self, job: Job, candidate_id: str) -> Dict:
+        import os, json
+        home = self._get_home(job)
+        run_id = f"sniper_{candidate_id}_{int(time.time())}"
+        run_dir = os.path.join(home, "runs", run_id)
+        os.makedirs(run_dir, exist_ok=True)
+        with open(os.path.join(run_dir, "result.json"), "w") as f:
+            json.dump({"run_id": run_id, "verdict": "PASS", "stub": True}, f)
+        return {"ok": True, "run_id": run_id, "verdict": "PASS", "stub": True, "trace": self._build_trace(job)}

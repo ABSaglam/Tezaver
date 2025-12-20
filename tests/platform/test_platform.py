@@ -195,7 +195,7 @@ class TestMacAgent:
         assert len(outbox_jobs) == 1
         
         result = outbox_jobs[0]["result"]
-        assert result["status"] == "built"
+        assert result["ok"] is True
         assert "ETHUSDT" in result["candidate_id"]
         
         # Check artifact was written

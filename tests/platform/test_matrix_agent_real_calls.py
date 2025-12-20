@@ -113,7 +113,7 @@ class TestMatrixAgentRealCalls:
         outbox = list_jobs(agent.bus, "matrix", "outbox")
         assert len(outbox) == 1
         assert outbox[0]["result"]["ok"] is False
-        assert "not found" in outbox[0]["result"]["error"]
+        assert outbox[0]["result"]["error_code"] == "ARTIFACT_NOT_FOUND"
         
     def test_events_logged_to_bus(self, tmp_path):
         """Test that job events are logged to bus."""
