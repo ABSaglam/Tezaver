@@ -72,3 +72,13 @@ class FileRunStore(StorePort):
             return {}
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
+
+    def read_meta(self, run_id: str) -> Dict:
+        path = os.path.join(self._run_dir(run_id), "meta.json")
+        if not os.path.exists(path): return {}
+        with open(path, "r", encoding="utf-8") as f: return json.load(f)
+
+    def read_judge(self, run_id: str) -> Dict:
+        path = os.path.join(self._run_dir(run_id), "judge.json")
+        if not os.path.exists(path): return {}
+        with open(path, "r", encoding="utf-8") as f: return json.load(f)

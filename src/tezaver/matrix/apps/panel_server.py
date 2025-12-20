@@ -922,6 +922,75 @@ class PanelHandler(BaseHTTPRequestHandler):
             self.wfile.write(html.encode("utf-8"))
             return
 
+            self.wfile.write(html.encode("utf-8"))
+            return
+            
+        # UI-NEW: E2E Scenario
+        if path.startswith("/e2e/run"):
+             from tezaver.matrix.core.golden_e2e import run_golden_e2e
+             try:
+                 res = run_golden_e2e(self.home)
+                 eid = res["e2e_id"]
+                 self.wfile.write(f"HTTP/1.1 302 Found\r\nLocation: /e2e/{eid}\r\n\r\n".encode("utf-8"))
+             except Exception as e:
+                 self.wfile.write(f"E2E Failed: {e}".encode("utf-8"))
+             return
+
+        if path.startswith("/e2e"):
+            e2e_root = os.path.join(self.home, "e2e")
+            
+            # Detail
+            if len(path.split("/")) > 2:
+                eid = path.split("/")[-1]
+                b_dir = os.path.join(e2e_root, eid)
+                
+                content = "<h3>Not Found</h3>"
+                if os.path.exists(b_dir):
+                    man = {}
+                    with open(os.path.join(b_dir, "manifest.json")) as f: man = json.load(f)
+                    
+                    links = {}
+                    lp = os.path.join(b_dir, "links.json")
+                    if os.path.exists(lp):
+                        with open(lp) as f: links = json.load(f)
+                        
+                    link_html = "<ul>"
+                    for k, v in links.items():
+                        link_html += f"<li><b>{k}:</b> <a href='{v}'>{v}</a></li>"
+                    link_html += "</ul>"
+                    
+                    content = f"""
+                    <h2>E2E Bundle: {eid}</h2>
+                    <p>TS: {man.get('ts')}</p>
+                    <h3>Artifact Links</h3>
+                    {link_html}
+                    <h3>Manifest</h3>
+                    <pre>{json.dumps(man, indent=2)}</pre>
+                    """
+                
+                html = f"""<html><a href="/e2e"><< Back</a>{content}</html>"""
+                self.wfile.write(html.encode("utf-8"))
+                return
+            
+            # List
+            rows = ""
+            if os.path.exists(e2e_root):
+                for eid in sorted(os.listdir(e2e_root), reverse=True):
+                    rows += f"<tr><td><a href='/e2e/{eid}'>{eid}</a></td></tr>"
+                    
+            html = f"""
+            <html>
+                <h1>Golden E2E Scenarios</h1>
+                <p><a href="/e2e/run"><button style="background:gold; color:black">RUN GOLDEN E2E</button></a></p>
+                <table border="1">
+                    <tr><th>E2E ID</th></tr>
+                    {rows}
+                </table>
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+
         # UI-C: Live Runner (Demo)
         if path.startswith("/runs/live/"):
             parts = path.split("/")
