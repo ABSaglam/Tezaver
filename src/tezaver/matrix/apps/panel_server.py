@@ -609,6 +609,124 @@ class PanelHandler(BaseHTTPRequestHandler):
             self.wfile.write(html.encode("utf-8"))
             return
             
+        # UI-C: Live Runner (Demo)
+        if path.startswith("/runs/live/"):
+            parts = path.split("/")
+            # /runs/live/<cid> -> Start New
+            # /runs/live/step/<rid>?steps=N -> Step (Resume)
+            
+            # Start New
+            if len(parts) == 4 and parts[2] == "live":
+                cid = parts[3]
+                # Use run_live CLI logic or embedded live_engine? 
+                # Embedded is cleaner for demo speed.
+                
+                from tezaver.matrix.core.live_engine import start_live_run, live_step
+                from tezaver.matrix.adapters.candidate_store_fs import FileCandidateStore
+                from tezaver.matrix.adapters.data_port_json import JsonFileDataPort
+                from tezaver.matrix.adapters.broker_sim import SimBroker
+                from tezaver.matrix.adapters.store_run_fs import FileRunStore
+                from tezaver.matrix.core.trace import TraceIds
+                from tezaver.matrix.core.gates import RiskGateConfig, GovernanceConfig
+                
+                c_store = FileCandidateStore(self.home)
+                candidate = c_store.load(cid)
+                if not candidate:
+                    self.wfile.write(b"Candidate not found")
+                    return
+                
+                # Bars
+                bars_path = os.path.join(self.home, "sample_bars.json")
+                if not os.path.exists(bars_path):
+                     with open(bars_path, "w") as f:
+                        json.dump([
+                             {"ts": 1000, "open":10, "high":12, "low":9, "close":11, "volume":100, "closed": True},
+                             {"ts": 2000, "open":11, "high":13, "low":10, "close":12, "volume":100, "closed": True},
+                             # Gap
+                             {"ts": 5000000, "open":12, "high":14, "low":11, "close":13, "volume":100, "closed": True} 
+                        ], f)
+                
+                rid = start_live_run(
+                    home=self.home,
+                    symbol=candidate["symbol"],
+                    timeframe=candidate["timeframe"],
+                    candidate_build_ts=candidate["build_ts"],
+                    trace_ids=TraceIds("panel-live", "sample", "live"),
+                    data=JsonFileDataPort(bars_path),
+                    broker=SimBroker(),
+                    store=FileRunStore(self.home),
+                    gov_cfg=GovernanceConfig(allowlist=[candidate["symbol"]], max_age_seconds=999999999),
+                    risk_cfg=RiskGateConfig()
+                )
+                
+                # Step initial 10
+                live_step(
+                    home=self.home,
+                    run_id=rid,
+                    steps=1,
+                    symbol=candidate["symbol"],
+                    timeframe=candidate["timeframe"],
+                    trace_ids=TraceIds("panel-live", "sample", "live"),
+                    data=JsonFileDataPort(bars_path),
+                    broker=SimBroker(),
+                    store=FileRunStore(self.home),
+                    gov_cfg=GovernanceConfig(allowlist=[candidate["symbol"]], max_age_seconds=999999999),
+                    risk_cfg=RiskGateConfig(),
+                    candidate_id=cid
+                )
+                
+                # Redirect
+                self.wfile.write(b"HTTP/1.1 302 Found\r\n")
+                self.wfile.write(f"Location: /reports/{rid}\r\n".encode("utf-8"))
+                self.wfile.write(b"\r\n")
+                return
+
+            # Step Existing
+            if len(parts) >= 4 and parts[2] == "live" and parts[3] == "step":
+                # /runs/live/step/<rid>?steps=20
+                rid = parts[4].split("?")[0]
+                
+                # We need symbol/tf from meta.
+                mp = os.path.join(self.home, "runs", rid, "meta.json")
+                if not os.path.exists(mp):
+                    self.wfile.write(b"Run not found")
+                    return
+                with open(mp) as f: meta = json.load(f)
+                
+                sym = meta["candidate"]["symbol"]
+                tf = meta["candidate"]["timeframe"]
+                cid = meta.get("candidate", {}).get("symbol", "UNKNOWN") # approximate
+                
+                bars_path = os.path.join(self.home, "sample_bars.json")
+                
+                from tezaver.matrix.core.live_engine import live_step
+                from tezaver.matrix.adapters.data_port_json import JsonFileDataPort
+                from tezaver.matrix.adapters.broker_sim import SimBroker
+                from tezaver.matrix.adapters.store_run_fs import FileRunStore
+                from tezaver.matrix.core.trace import TraceIds
+                from tezaver.matrix.core.gates import RiskGateConfig, GovernanceConfig
+
+                live_step(
+                    home=self.home,
+                    run_id=rid,
+                    steps=1, # Just 1 for demo click
+                    symbol=sym,
+                    timeframe=tf,
+                    trace_ids=TraceIds("panel-live", "sample", "live"),
+                    data=JsonFileDataPort(bars_path),
+                    broker=SimBroker(),
+                    store=FileRunStore(self.home),
+                    gov_cfg=GovernanceConfig(allowlist=[sym], max_age_seconds=999999999),
+                    risk_cfg=RiskGateConfig(),
+                    candidate_id=cid
+                )
+                
+                # Redirect
+                self.wfile.write(b"HTTP/1.1 302 Found\r\n")
+                self.wfile.write(f"Location: /reports/{rid}\r\n".encode("utf-8"))
+                self.wfile.write(b"\r\n")
+                return
+
         # UI-F: Report Detail
         if path.startswith("/reports/"):
             rid = path.split("/")[-1]
@@ -639,6 +757,22 @@ class PanelHandler(BaseHTTPRequestHandler):
             # Try to get candidate_id if stored? We decided to rely on meta or external.
             # Links
             
+            # Live State
+            live_html = ""
+            ls_path = os.path.join(run_dir, "live_state.json")
+            if os.path.exists(ls_path):
+                with open(ls_path) as f: ls = json.load(f)
+                live_html = f"""
+                <div style="padding:10px; background:#eef; margin-bottom:20px">
+                    <h3>LIVE STATE</h3>
+                    <p><b>Cursor:</b> {ls.get('cursor', '?')}</p>
+                    <p><b>Last Bar TS:</b> {ls.get('last_bar_ts', '?')}</p>
+                    <p>
+                        <a href="/runs/live/step/{rid}"><button>Step >></button></a>
+                    </p>
+                </div>
+                """
+            
             html = f"""
             <html>
                 <h1>Report: {rid}</h1>
@@ -648,6 +782,8 @@ class PanelHandler(BaseHTTPRequestHandler):
                     <h2>Verdict: {verdict}</h2>
                     <h3>Profile: {profile}</h3>
                 </div>
+                
+                {live_html}
                 
                 <h3>Jury Scorecard (MX-7001)</h3>
                 <pre>{json.dumps(score, indent=2)}</pre>
