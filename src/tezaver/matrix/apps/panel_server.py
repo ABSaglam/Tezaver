@@ -1011,8 +1011,52 @@ class PanelHandler(BaseHTTPRequestHandler):
                  self.wfile.write(f"Runtime Failed: {e}".encode("utf-8"))
              return
 
+        # UI-NEW: Strategy Detail
+        if path.startswith("/cloud/runtime/strategy/"):
+             sid = path.split("/cloud/runtime/strategy/")[1]
+             # Load artifacts
+             s_path = os.path.join(self.home, "cloud_registry", "strategies", sid, "strategy.json")
+             pf_path = os.path.join(self.home, "cloud_runtime", "strategies", sid, "portfolio.json")
+             ord_path = os.path.join(self.home, "cloud_runtime", "strategies", sid, "orders.ndjson")
+             
+             s_json = {}
+             if os.path.exists(s_path):
+                 with open(s_path) as f: s_json = json.load(f)
+             
+             pf_json = {}
+             if os.path.exists(pf_path):
+                 with open(pf_path) as f: pf_json = json.load(f)
+                 
+             orders_html = "<p>No orders</p>"
+             if os.path.exists(ord_path):
+                 # Tail last 20
+                 lines = []
+                 with open(ord_path) as f:
+                     for line in f: lines.append(line)
+                 tail = lines[-20:]
+                 orders_html = "<pre>" + "".join(tail) + "</pre>"
+                 
+             html = f"""
+             <html>
+                <h1>Strategy Detail: {sid}</h1>
+                <p><a href="/cloud/runtime">Back to Runtime</a></p>
+                
+                <h2>Portfolio</h2>
+                <pre>{json.dumps(pf_json, indent=2)}</pre>
+                
+                <h2>Orders (Tail)</h2>
+                {orders_html}
+                
+                <h2>Strategy Config</h2>
+                <pre>{json.dumps(s_json, indent=2)}</pre>
+             </html>
+             """
+             self.wfile.write(html.encode("utf-8"))
+             return
+             
         if path.startswith("/cloud/runtime"):
             from tezaver.matrix.core.cloud_runtime import list_active_strategies, start_or_load_runtime_state, load_strategy_state
+            from tezaver.matrix.core.paper_broker import load_portfolio
             
             active = list_active_strategies(self.home)
             state = start_or_load_runtime_state(self.home) # ensure structure exists
@@ -1031,6 +1075,7 @@ class PanelHandler(BaseHTTPRequestHandler):
             rows = ""
             for sid in active:
                 s_state = load_strategy_state(self.home, sid)
+                pf = load_portfolio(self.home, sid)
                 
                 # Default values if no state yet
                 cursor = "-"
@@ -1040,15 +1085,13 @@ class PanelHandler(BaseHTTPRequestHandler):
                      cursor = s_state.get("cursor", 0)
                      last_ts = s_state.get("last_ts", 0)
                      
-                # Check for skipped? 
-                # We interpret this from last event? 
-                # Or just show cursor.
-                
                 rows += f"""
                 <tr>
-                    <td><a href='/cloud/{sid}'>{sid}</a></td>
+                    <td><a href='/cloud/runtime/strategy/{sid}'>{sid}</a></td>
                     <td>{cursor}</td>
                     <td>{last_ts}</td>
+                    <td>{pf.get('position_qty')}</td>
+                    <td>{pf.get('avg_price')}</td>
                 </tr>
                 """
             
@@ -1058,6 +1101,8 @@ class PanelHandler(BaseHTTPRequestHandler):
                     <th>Strategy ID</th>
                     <th>Cursor</th>
                     <th>Last TS</th>
+                    <th>Pos Qty</th>
+                    <th>Avg Price</th>
                 </tr>
                 {rows}
             </table>

@@ -135,20 +135,19 @@ def strategy_step(home: str, cloud_run_id: str, strategy_id: str, strategy_json:
     advanced = 0
     final_ts = int(time.time() * 1000)
     
+    # Import Paper Broker
+    from tezaver.matrix.core.paper_broker import execute_paper_order, load_portfolio
+    
     for _ in range(steps):
         if cursor >= len(bars): break
         
         bar = bars[cursor]
         if not bar.get("closed", False) and not bar.get("is_closed", False):
-            # Bar not closed, assume it's current forming bar, maybe skip?
-            # Or use it but don't advance cursor if we treat it as live?
-            # For simplicity in 'playback' mode, we usually only ingest closed bars.
-            # If we encounter an open bar in a JSON file, we probably stop there.
             break
             
-        # Gap Check
-        # If we have a last_ts, and (bar_ts - last_ts) > 1.1 * tf_ms
         bar_ts = bar["ts"]
+        
+        # Gap Check
         if last_ts > 0 and (bar_ts - last_ts) > (1.1 * tf_ms):
              evt = {
                 "ts": int(time.time() * 1000), "type": "STRATEGY_GAP_DETECTED",
@@ -171,11 +170,30 @@ def strategy_step(home: str, cloud_run_id: str, strategy_id: str, strategy_json:
         }
         append_runtime_event(home, cloud_run_id, evt_bar)
         
-        # Decision (HOLD)
+        # Decision Logic (Demo Rule: Green->BUY, Red->SELL)
+        pf = load_portfolio(home, strategy_id)
+        qty = pf["position_qty"]
+        action = "HOLD"
+        
+        open_p = bar.get("open", 0)
+        close_p = bar.get("close", 0)
+        
+        if close_p > open_p and qty == 0:
+            action = "BUY"
+        elif close_p < open_p and qty > 0:
+            action = "SELL"
+            
+        # Execute
+        if action == "BUY":
+            execute_paper_order(home, strategy_id, "BUY", 1.0, close_p, bar_ts)
+        elif action == "SELL":
+            execute_paper_order(home, strategy_id, "SELL", 1.0, close_p, bar_ts)
+            
+        # Decision Event
         evt_dec = {
             "ts": int(time.time() * 1000), "type": "STRATEGY_DECISION",
             "strategy_id": strategy_id,
-            "payload": {"action": "HOLD", "bar_ts": bar_ts}
+            "payload": {"action": action, "bar_ts": bar_ts, "trigger_price": close_p}
         }
         append_runtime_event(home, cloud_run_id, evt_dec)
         
@@ -188,10 +206,20 @@ def strategy_step(home: str, cloud_run_id: str, strategy_id: str, strategy_json:
     state["last_ts"] = last_ts
     save_strategy_state(home, strategy_id, state)
     
+    # Portfolio Snapshot in Heartbeat?
+    # Or just keep it separate. User said "strategy heartbeat to portfolio snapshot ekle" in request.
+    # Let's add simple portfolio summary to heartbeat for observability.
+    pf_final = load_portfolio(home, strategy_id)
+    
     evt_hb = {
         "ts": int(time.time() * 1000), "type": "STRATEGY_HEARTBEAT",
         "strategy_id": strategy_id,
-        "payload": {"cursor": cursor, "total": len(bars), "last_ts": last_ts}
+        "payload": {
+            "cursor": cursor, 
+            "total": len(bars), 
+            "last_ts": last_ts,
+            "position": pf_final["position_qty"]
+        }
     }
     append_runtime_event(home, cloud_run_id, evt_hb)
     
