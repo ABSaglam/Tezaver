@@ -78,12 +78,14 @@ class BaseAgent(ABC):
         }
         
     def health(self) -> Dict[str, Any]:
-        """Return health status."""
+        """Return health status with version info."""
         return {
             "agent": self.config.agent_name,
             "status": "healthy",
             "bus_root": self.config.bus_root,
             "bus_type": self.bus.bus_type,
+            "api_version": "1",
+            "platform_version": "platform_v1",
         }
         
     @abstractmethod

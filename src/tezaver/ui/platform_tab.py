@@ -18,65 +18,177 @@ from tezaver.platform.jobs.queue import (
 
 
 # ============================================================================
-# CONNECTORS PAGE
+# ERROR CODES TR DICT (MX-25001)
+# ============================================================================
+
+ERROR_CODES_TR = {
+    "OK": "✅ Bağlantı başarılı",
+    "AUTH_FAIL": "❌ Token hatalı veya yetkisiz",
+    "TIMEOUT": "❌ Servis yanıt vermedi (zaman aşımı)",
+    "CONN_REFUSED": "❌ Servise bağlanılamadı (port kapalı)",
+    "BAD_URL": "❌ URL hatalı",
+    "UNKNOWN": "❌ Bilinmeyen hata",
+}
+
+
+# ============================================================================
+# HTTP CLIENT HELPER (MX-25002)
+# ============================================================================
+
+def request_with_timeout(
+    url: str,
+    token: str = "",
+    method: str = "GET",
+    timeout_s: float = 3.0,
+    retries: int = 2,
+    backoff: float = 0.2,
+) -> Dict[str, Any]:
+    """
+    HTTP request with timeout and retry.
+    TR: Zaman aşımı ve tekrar deneme destekli HTTP istek.
+    
+    Returns: {"ok": bool, "data": dict, "error_code": str}
+    """
+    import time
+    from urllib.error import URLError, HTTPError
+    
+    last_error = "UNKNOWN"
+    
+    for attempt in range(retries + 1):
+        try:
+            req = Request(url, method=method)
+            if token:
+                req.add_header("Authorization", f"Bearer {token}")
+                
+            with urlopen(req, timeout=timeout_s) as resp:
+                data = json.loads(resp.read().decode())
+                return {"ok": True, "data": data, "error_code": "OK"}
+                
+        except HTTPError as e:
+            if e.code == 401 or e.code == 403:
+                return {"ok": False, "data": None, "error_code": "AUTH_FAIL"}
+            last_error = f"HTTP_{e.code}"
+        except URLError as e:
+            reason = str(e.reason).lower()
+            if "connection refused" in reason:
+                last_error = "CONN_REFUSED"
+            elif "timed out" in reason or "timeout" in reason:
+                last_error = "TIMEOUT"
+            else:
+                last_error = "BAD_URL"
+        except Exception as e:
+            if "timed out" in str(e).lower():
+                last_error = "TIMEOUT"
+            else:
+                last_error = "UNKNOWN"
+                
+        if attempt < retries:
+            time.sleep(backoff * (attempt + 1))
+            
+    return {"ok": False, "data": None, "error_code": last_error}
+
+
+# ============================================================================
+# CONNECTORS PAGE (MX-25001: Token Safety)
 # ============================================================================
 
 def render_platform_connectors():
-    """Render Platform Connectors page."""
+    """Render Platform Connectors page with token safety."""
     st.header("🔌 Platform Connectors")
     
     st.info("""
     Bu sayfada Mac, Matrix ve Cloud agent'larının bağlantı ayarlarını yapabilirsiniz.
-    Şu an FS (dosya sistemi) üzerinden çalışıyoruz.
+    Token alanları güvenlik için gizlidir. "Göster" ile anlık görüntüleyebilirsiniz.
     """)
     
     # Connector settings
-    st.subheader("⚙️ Bağlantı Ayarları")
+    st.subheader("⚙️ Agent Bağlantı Ayarları")
+    
+    agents = [
+        ("🍎 Mac Agent", "mac", "http://127.0.0.1:9001"),
+        ("🎛️ Matrix Agent", "matrix", "http://127.0.0.1:9002"),
+        ("☁️ Cloud Agent", "cloud", "http://127.0.0.1:9003"),
+    ]
     
     col1, col2, col3 = st.columns(3)
     
-    with col1:
-        st.markdown("### 🍎 Mac Agent")
-        mac_url = st.text_input("Base URL", "http://localhost:9001", key="mac_url")
-        mac_token = st.text_input("Token", "", type="password", key="mac_token")
-        if st.button("Test Mac", key="test_mac"):
-            _test_agent_health(mac_url)
-            
-    with col2:
-        st.markdown("### 🎛️ Matrix Agent")
-        matrix_url = st.text_input("Base URL", "http://localhost:9002", key="matrix_url")
-        matrix_token = st.text_input("Token", "", type="password", key="matrix_token")
-        if st.button("Test Matrix", key="test_matrix"):
-            _test_agent_health(matrix_url)
-            
-    with col3:
-        st.markdown("### ☁️ Cloud Agent")
-        cloud_url = st.text_input("Base URL", "http://localhost:9003", key="cloud_url")
-        cloud_token = st.text_input("Token", "", type="password", key="cloud_token")
-        if st.button("Test Cloud", key="test_cloud"):
-            _test_agent_health(cloud_url)
+    for col, (label, name, default_url) in zip([col1, col2, col3], agents):
+        with col:
+            _render_agent_connector(label, name, default_url)
             
     st.divider()
     
     # Bus settings
     st.subheader("📦 Bus Ayarları")
-    bus_root = st.text_input("Bus Root Path", ".tezaver_bus", key="bus_root")
+    
+    bus_root = st.text_input(
+        "Bus Root Path (FS veya S3)",
+        ".tezaver_bus",
+        key="bus_root",
+        help="FS: '.tezaver_bus' veya S3: 's3://bucket/prefix'"
+    )
     st.session_state["platform_bus_root"] = bus_root
     
-    if st.button("Bus Root Oluştur"):
-        os.makedirs(bus_root, exist_ok=True)
-        st.success(f"✅ Bus root oluşturuldu: {bus_root}")
+    col_a, col_b = st.columns(2)
+    with col_a:
+        if st.button("📁 Bus Root Oluştur"):
+            if not bus_root.startswith("s3://"):
+                os.makedirs(bus_root, exist_ok=True)
+                st.success(f"✅ Bus root oluşturuldu: {bus_root}")
+            else:
+                st.info("S3 bucket zaten mevcut olmalı")
+    with col_b:
+        if bus_root.startswith("s3://"):
+            st.info("🪣 S3 Mode")
+        else:
+            st.info("📁 FS Mode")
 
 
-def _test_agent_health(base_url: str):
-    """Test agent health endpoint."""
-    try:
-        req = Request(f"{base_url}/health")
-        with urlopen(req, timeout=2) as resp:
-            data = json.loads(resp.read().decode())
-            st.success(f"✅ Bağlı: {data.get('agent', 'unknown')}")
-    except Exception as e:
-        st.error(f"❌ Bağlantı hatası: {e}")
+def _render_agent_connector(label: str, name: str, default_url: str):
+    """Render single agent connector card."""
+    st.markdown(f"### {label}")
+    
+    url_key = f"{name}_url"
+    token_key = f"{name}_token"
+    show_key = f"{name}_show_token"
+    
+    # URL
+    url = st.text_input("Base URL", default_url, key=url_key)
+    
+    # Token with mask toggle
+    show_token = st.checkbox("🔓 Token göster", key=show_key, value=False)
+    token_type = "default" if show_token else "password"
+    token = st.text_input(
+        "Token (Gizli anahtar)",
+        "",
+        type=token_type,
+        key=token_key,
+        help="Agent için güvenlik tokeni. Loglama YASAK."
+    )
+    
+    # Store in session for other pages
+    st.session_state[url_key] = url
+    st.session_state[token_key] = token
+    
+    # Test Connection
+    if st.button(f"🔌 Bağlantıyı Test Et", key=f"test_{name}"):
+        _test_agent_connection(url, token)
+
+
+def _test_agent_connection(base_url: str, token: str):
+    """Test agent connection with detailed error."""
+    result = request_with_timeout(f"{base_url}/health", token, timeout_s=3.0, retries=1)
+    
+    if result["ok"]:
+        data = result["data"]
+        agent_name = data.get("agent", "?")
+        bus_type = data.get("bus_type", "?")
+        api_version = data.get("api_version", "?")
+        st.success(f"✅ Bağlı: {agent_name} | bus:{bus_type} | api:v{api_version}")
+    else:
+        error_code = result["error_code"]
+        tr_msg = ERROR_CODES_TR.get(error_code, ERROR_CODES_TR["UNKNOWN"])
+        st.error(f"{tr_msg} ({error_code})")
 
 
 # ============================================================================
@@ -264,6 +376,30 @@ def render_platform_ops():
         else:
             st.info("No active alerts")
             
+    # -------------------------------------------------------------------------
+    # 4.5 Backup Button (MX-25004)
+    # -------------------------------------------------------------------------
+    with st.expander("📦 Backup / Export", expanded=False):
+        st.caption("TR: Tek tuşla sistem fotoğrafı al - inceleme ve ispat paketi")
+        
+        if st.button("📦 Backup Al", type="primary"):
+            import time
+            ts = int(time.time())
+            
+            if bus_root.startswith("s3://"):
+                out_path = f"backups/BACKUP_{ts}.manifest.json"
+            else:
+                out_path = f"backups/BACKUP_{ts}.zip"
+                
+            from tezaver.platform.cli.bus_backup_cli import run_backup
+            result = run_backup(bus_root, out_path)
+            
+            if result["ok"]:
+                st.success(f"✅ Yedek alındı: {result['output_path']}")
+                st.text(f"Dosya sayısı: {result.get('files_count') or result.get('keys_count')}")
+            else:
+                st.error(f"❌ Hata: {result.get('error')}")
+            
     st.divider()
     
     # -------------------------------------------------------------------------
@@ -317,7 +453,7 @@ def _fetch_agent_health(url: str) -> Dict:
 
 
 def _render_health_card(icon: str, health: Dict, url: str):
-    """Render single health card."""
+    """Render single health card with version colors."""
     st.markdown(f"**{icon}**")
     
     status = health.get("status", "unknown")
@@ -326,6 +462,23 @@ def _render_health_card(icon: str, health: Dict, url: str):
     else:
         st.error(f"❌ {status}")
         
+    # Version compatibility colors (MX-25003)
+    api_version = health.get("api_version", "?")
+    platform_version = health.get("platform_version", "?")
+    
+    expected_api = "1"
+    if api_version == expected_api:
+        version_color = "green"
+        version_status = "uyumlu"
+    elif api_version == "?":
+        version_color = "orange"
+        version_status = "bilinmiyor"
+    else:
+        version_color = "red"
+        version_status = "UYUMSUZ"
+        
+    st.markdown(f"API: :{version_color}[v{api_version}] ({version_status})")
+    
     bus_type = health.get("bus_type", "?")
     bus_root = health.get("bus_root", "?")
     if len(bus_root) > 20:
