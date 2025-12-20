@@ -772,6 +772,74 @@ class PanelHandler(BaseHTTPRequestHandler):
             self.wfile.write(html.encode("utf-8"))
             return
 
+            self.wfile.write(html.encode("utf-8"))
+            return
+
+        # UI-NEW: Cloud Registry
+        if path.startswith("/cloud"):
+            from tezaver.matrix.core.cloud_registry import list_strategies, read_strategy, set_status
+            
+            # Actions
+            if "/activate" in path or "/pause" in path:
+                sid = path.split("/")[2]
+                new_status = "ACTIVE" if "/activate" in path else "PAUSED"
+                set_status(self.home, sid, new_status)
+                self.wfile.write(f"HTTP/1.1 302 Found\r\nLocation: /cloud/{sid}\r\n\r\n".encode("utf-8"))
+                return
+                
+            # Detail
+            if len(path.split("/")) > 2:
+                sid = path.split("/")[2]
+                strat = read_strategy(self.home, sid)
+                
+                content = "<h3>Not Found</h3>"
+                if strat:
+                    status = strat.get("status_info", {}).get("status", "UNKNOWN")
+                    # Action buttons
+                    actions = ""
+                    if status == "ACTIVE":
+                        actions = f"""<a href="/cloud/{sid}/pause"><button style="background:orange">PAUSE</button></a>"""
+                    else:
+                        actions = f"""<a href="/cloud/{sid}/activate"><button style="background:green;color:white">ACTIVATE</button></a>"""
+                        
+                    content = f"""
+                    <h2>Cloud Strategy: {sid}</h2>
+                    <div style="padding:10px; border:1px solid #ccc; background:#eee">
+                        Status: <b>{status}</b> {actions}
+                    </div>
+                    <ul>
+                        <li>Candidate: {strat.get('candidate_id')}</li>
+                        <li>Symbol: {strat.get('symbol')}</li>
+                        <li>Imported: {strat.get('imported_ts')}</li>
+                    </ul>
+                    <h3>Strategy JSON</h3>
+                    <pre>{json.dumps(strat, indent=2)}</pre>
+                    """
+                
+                html = f"""<html><a href="/cloud"><< Back</a>{content}</html>"""
+                self.wfile.write(html.encode("utf-8"))
+                return
+            
+            # List
+            strategies = list_strategies(self.home)
+            rows = ""
+            for sid in strategies:
+                s = read_strategy(self.home, sid)
+                st = s.get("status_info", {}).get("status", "UNKNOWN")
+                rows += f"<tr><td><a href='/cloud/{sid}'>{sid}</a></td><td>{s.get('symbol')}</td><td>{st}</td></tr>"
+            
+            html = f"""
+            <html>
+                <h1>Cloud Registry</h1>
+                <table border="1">
+                    <tr><th>Strategy ID</th><th>Symbol</th><th>Status</th></tr>
+                    {rows}
+                </table>
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+
         # UI-C: Live Runner (Demo)
         if path.startswith("/runs/live/"):
             parts = path.split("/")
