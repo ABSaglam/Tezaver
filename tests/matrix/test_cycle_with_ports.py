@@ -38,7 +38,8 @@ def test_cycle_with_ports(tmp_path):
         store=store,
         risk_cfg=RiskGateConfig(),
         gov_cfg=GovernanceConfig(),
-        home=str(tmp_path)
+        home=str(tmp_path),
+        run_profile="SNIPER"
     )
     
     assert meta["event_count"] == 2

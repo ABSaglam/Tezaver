@@ -34,7 +34,8 @@ def test_cycle_block_incident(tmp_path):
         store=store,
         risk_cfg=RiskGateConfig(),
         gov_cfg=gov_cfg,
-        home=str(tmp_path)
+        home=str(tmp_path),
+        run_profile="SNIPER"
     )
     
     # Check if blocked and incident created

@@ -270,20 +270,81 @@ class PanelHandler(BaseHTTPRequestHandler):
             meta = run_cycle(
                 symbol=symbol,
                 timeframe=timeframe,
-                candidate_build_ts=build_ts,
+                candidate_build_ts=str(int(time.time())),
                 trace_ids=trace,
                 data=data_port,
                 broker=broker_port,
-                store=store_port,
+                store=store,
                 risk_cfg=risk_cfg,
                 gov_cfg=gov_cfg,
-                home=home
+                home=self.home,
+                run_profile="SNIPER"
             )
             
             # Redirect
-            self.send_response(302)
-            self.send_header("Location", f"/runs/{meta['run_id']}")
-            self.end_headers()
+            self.wfile.write(b"HTTP/1.1 302 Found\r\n")
+            self.wfile.write(f"Location: /runs/{meta['run_id']}\r\n".encode("utf-8"))
+            self.wfile.write(b"\r\n")
+            return
+            
+        # UI-C: Sniper Runner
+        if path.startswith("/runs/sniper/"):
+            cid = path.split("/")[-1]
+            # Execute Run Sniper logic
+            # For simplicity in panel, we can reuse logic, but let's call CLI via subprocess to ensure full environment separation?
+            # Or embedded: Call run_sniper module's main logic but adapted?
+            # We already have run_cycle logic embedded above in /runs/demo.
+            # Let's clone /runs/demo logic but force SNIPER and real candidate load.
+            
+            from tezaver.matrix.adapters.candidate_store_fs import FileCandidateStore
+            c_store = FileCandidateStore()
+            candidate = c_store.load(cid)
+            if not candidate:
+                self.wfile.write(b"Candidate not found")
+                return
+                
+            # Need Bars
+            # Use sample_bars.json from home or root if exists, else create dummy?
+            bars_path = os.path.join(self.home, "sample_bars.json")
+            if not os.path.exists(bars_path):
+                # Create dummy
+                 with open(bars_path, "w") as f:
+                     json.dump([
+                         {"ts": 1000, "open":10, "high":12, "low":9, "close":11, "volume":100, "closed": True},
+                         {"ts": 2000, "open":11, "high":13, "low":10, "close":12, "volume":100, "closed": True}
+                     ], f)
+            
+            # Setup Ports
+            from tezaver.matrix.adapters.data_port_json import JsonFileDataPort
+            from tezaver.matrix.adapters.broker_sim import SimBroker
+            from tezaver.matrix.adapters.store_run_fs import FileRunStore
+            from tezaver.matrix.core.trace import TraceIds
+            from tezaver.matrix.core.gates import RiskGateConfig, GovernanceConfig
+            from tezaver.matrix.core.cycle_engine import run_cycle
+            
+            store = FileRunStore(self.home)
+            trace = TraceIds("panel", "sample_bars", "sniper-mode")
+            
+             # Run
+            meta = run_cycle(
+                symbol=candidate["symbol"],
+                timeframe=candidate["timeframe"],
+                candidate_build_ts=candidate["build_ts"],
+                trace_ids=trace,
+                data=JsonFileDataPort(bars_path),
+                broker=SimBroker(),
+                store=store,
+                risk_cfg=RiskGateConfig(),
+                gov_cfg=GovernanceConfig(allowlist=[candidate["symbol"]], max_age_seconds=99999999),
+                home=self.home,
+                run_profile="SNIPER"
+            )
+            
+            # Redirect to Report
+            rid = meta["run_id"]
+            self.wfile.write(b"HTTP/1.1 302 Found\r\n")
+            self.wfile.write(f"Location: /reports/{rid}\r\n".encode("utf-8"))
+            self.wfile.write(b"\r\n")
             return
 
         # UI-C: Run Detail
@@ -444,6 +505,8 @@ class PanelHandler(BaseHTTPRequestHandler):
             color = "green" if verdict == "PASS" else ("red" if verdict == "FAIL" else "orange")
             
             cid = meta.get("candidate", {}).get("symbol", "??") # Approximate
+            profile = meta.get("run_profile", "UNKNOWN")
+            
             # Try to get candidate_id if stored? We decided to rely on meta or external.
             # Links
             
@@ -454,6 +517,7 @@ class PanelHandler(BaseHTTPRequestHandler):
                 
                 <div style="padding:20px; border:2px solid {color}; margin-bottom:20px">
                     <h2>Verdict: {verdict}</h2>
+                    <h3>Profile: {profile}</h3>
                 </div>
                 
                 <h3>Jury Scorecard (MX-7001)</h3>

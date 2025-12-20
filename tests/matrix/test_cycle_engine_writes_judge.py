@@ -39,7 +39,8 @@ def test_cycle_writes_artifacts(tmp_path):
         risk_cfg=RiskGateConfig(),
         gov_cfg=GovernanceConfig(),
         home=home,
-        run_id=rid
+        run_id=rid,
+        run_profile="SNIPER"
     )
     
     # Verify artifacts exist

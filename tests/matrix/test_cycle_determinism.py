@@ -56,11 +56,11 @@ def test_cycle_determinism(tmp_path):
     )
     
     # Run 1
-    m1 = run_cycle(**args, run_id="run1")
+    m1 = run_cycle(**args, run_id="run1", run_profile="SNIPER")
     h1 = get_events_hash(os.path.join(tmp_path, "runs", "run1"))
     
     # Run 2
-    m2 = run_cycle(**args, run_id="run2")
+    m2 = run_cycle(**args, run_id="run2", run_profile="SNIPER")
     h2 = get_events_hash(os.path.join(tmp_path, "runs", "run2"))
     
     assert h1 == h2
