@@ -684,6 +684,94 @@ class PanelHandler(BaseHTTPRequestHandler):
             self.wfile.write(html.encode("utf-8"))
             return
 
+            self.wfile.write(html.encode("utf-8"))
+            return
+
+        # UI-NEW: Approved Pool
+        if path.startswith("/approved"):
+            # Detail
+            if len(path.split("/")) > 2:
+                cid = path.split("/")[-1]
+                app_dir = os.path.join(self.home, "approved", cid)
+                man_path = os.path.join(app_dir, "manifest.json")
+                
+                content = "<h3>Not Found</h3>"
+                if os.path.exists(man_path):
+                    with open(man_path) as f: man = json.load(f)
+                    
+                    last_live = man.get("last_live_run_id", "")
+                    content = f"""
+                    <h2>Approved Details: {cid}</h2>
+                    <ul>
+                        <li>Symbol: {man.get('symbol')}</li>
+                        <li>Timeframe: {man.get('timeframe')}</li>
+                        <li>Approved TS: {man.get('approved_ts')}</li>
+                        <li>Last Live Run: <a href="/reports/{last_live}">{last_live}</a></li>
+                        <li>Story: <a href="/story/{cid}?mode=read">View Story</a></li>
+                    </ul>
+                    <h3>Manifest</h3>
+                    <pre>{json.dumps(man, indent=2)}</pre>
+                    <h3>Proofs</h3>
+                    <ul>
+                        <li><a href="/approved/{cid}/proofs/last_live_run_judge.json">Judge</a></li>
+                        <li><a href="/approved/{cid}/proofs/last_live_run_scorecard.json">Scorecard</a></li>
+                    </ul>
+                    """
+                
+                html = f"""<html><a href="/approved"><< Back</a>{content}</html>"""
+                self.wfile.write(html.encode("utf-8"))
+                return
+            
+            # List
+            app_root = os.path.join(self.home, "approved")
+            rows = ""
+            if os.path.exists(app_root):
+                for cid in sorted(os.listdir(app_root)):
+                    if cid.startswith("EXPORT_"): continue # Just in case
+                    mp = os.path.join(app_root, cid, "manifest.json")
+                    ts = ""
+                    if os.path.exists(mp):
+                        with open(mp) as f: ts = json.load(f).get("approved_ts", "")
+                    rows += f"<tr><td><a href='/approved/{cid}'>{cid}</a></td><td>{ts}</td></tr>"
+            
+            html = f"""
+            <html>
+                <h1>Approved Pool</h1>
+                <table border="1">
+                    <tr><th>Candidate</th><th>Approved TS</th></tr>
+                    {rows}
+                </table>
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+
+        # UI-NEW: Exports
+        if path.startswith("/exports"):
+            exp_root = os.path.join(self.home, "exports")
+            rows = ""
+            if os.path.exists(exp_root):
+                for eid in sorted(os.listdir(exp_root), reverse=True):
+                    mp = os.path.join(exp_root, eid, "export_manifest.json")
+                    info = ""
+                    if os.path.exists(mp):
+                        with open(mp) as f: 
+                            m = json.load(f)
+                            info = f"{m.get('candidate_id')} ({len(m.get('files',[]))} files)"
+                    rows += f"<tr><td>{eid}</td><td>{info}</td></tr>"
+                    
+            html = f"""
+            <html>
+                <h1>Exports</h1>
+                <table border="1">
+                    <tr><th>Export ID</th><th>Info</th></tr>
+                    {rows}
+                </table>
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+
         # UI-C: Live Runner (Demo)
         if path.startswith("/runs/live/"):
             parts = path.split("/")
