@@ -26,6 +26,7 @@ ROUTES = {
     "/alerts": "UI-P: Alerts",
     "/cloud/userstream": "UI-D: User Stream",
     "/migration": "UI-E: Migration",
+    "/release": "UI-F: Release Gate",
 }
 
 class PanelHandler(BaseHTTPRequestHandler):
@@ -1608,7 +1609,8 @@ class PanelHandler(BaseHTTPRequestHandler):
                     if r.get("status") == "OK": color = "green"
                     if r.get("status") == "FAIL": color = "red"
                     if r.get("status") == "SKIPPED": color = "orange"
-                    res_rows += f"<li>{r.get('candidate_id')} -> <b style='color:{color}'>{r.get('status')}</b> {r.get('strategy_id', '')} {r.get('error', '')}</li>"
+                    gate_link = f" <a href='/release/{r.get('candidate_id')}' style='font-size:0.8em'>[Checklist]</a>"
+                    res_rows += f"<li>{r.get('candidate_id')} -> <b style='color:{color}'>{r.get('status')}</b> {r.get('strategy_id', '')} {r.get('error', '')}{gate_link}</li>"
                     
                 report_html = f"""
                 <div style="border:1px solid #ccc; padding:10px; margin-top:10px;">
@@ -1656,6 +1658,58 @@ class PanelHandler(BaseHTTPRequestHandler):
             
             # Redirect back
             self.wfile.write(b"HTTP/1.1 302 Found\r\nLocation: /migration\r\n\r\n")
+            return
+
+        # UI-F: Release Checklist (Phase-15B)
+        if path.startswith("/release"):
+            # Check if specific candidate requested
+            parts = path.split("/")
+            cid = None
+            if len(parts) > 2 and parts[2]:
+                cid = parts[2]
+            else:
+                 # Check query param ?candidate_id=...
+                 from urllib.parse import urlparse, parse_qs
+                 query = parse_qs(urlparse(path).query)
+                 if "candidate_id" in query:
+                     cid = query["candidate_id"][0]
+
+            content = ""
+            if cid:
+                from tezaver.matrix.core.release_gate import evaluate_release_gate
+                res = evaluate_release_gate(self.home, cid)
+                
+                rows = ""
+                for c in res["checks"]:
+                    col = "green" if c["status"] == "PASS" else "red"
+                    rows += f"<tr><td>{c['code']}</td><td>{c['name']}</td><td style='color:{col}'><b>{c['status']}</b></td><td>{c['detail']}</td></tr>"
+                    
+                overall_col = "green" if res["ok"] else "red"
+                content = f"""
+                <h3>Checklist for {cid}</h3>
+                <h2 style='color:{overall_col}'>Overall: {'PASS' if res['ok'] else 'FAIL'}</h2>
+                <table border="1" cellpadding="5" style="border-collapse:collapse; width:100%">
+                    <tr style="background:#ddd"><th>Code</th><th>Name</th><th>Status</th><th>Detail</th></tr>
+                    {rows}
+                </table>
+                """
+            else:
+                content = """
+                <h3>Release Checklist</h3>
+                <form action="/release" method="get">
+                    Candidate ID: <input type="text" name="candidate_id">
+                    <input type="submit" value="Check">
+                </form>
+                """
+
+            html = f"""
+            <html>
+                <h1>Release Validation Gate</h1>
+                <p><a href="/">Back to Home</a> | <a href="/migration">Migration</a></p>
+                {content}
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
             return
 
         # UI-I: Story Timeline

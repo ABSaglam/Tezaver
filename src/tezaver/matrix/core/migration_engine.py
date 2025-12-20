@@ -109,7 +109,17 @@ def execute_migration(home: str, plan: Dict) -> Dict:
             exp_res = export_candidate(home, cid)
             export_path = exp_res["export_path"]
             
-            # 2. Import
+            # 2. Gate Check (MX-15004)
+            if activate:
+                from tezaver.matrix.core.release_gate import evaluate_release_gate
+                gate_res = evaluate_release_gate(home, cid)
+                if not gate_res["ok"]:
+                    activate = False # FORCE PAUSED
+                    log_event("MIGRATION_BLOCKED_BY_GATE", cid, f"Forced PAUSED. Failed checks: {[c['code'] for c in gate_res['checks'] if c['status']=='FAIL']}")
+                    res_item["gate_blocked"] = True
+                    res_item["gate_details"] = gate_res
+            
+            # 3. Import
             imp_res = import_export_package(home, export_path, activate=activate)
             strat_id = imp_res["strategy_id"]
             
