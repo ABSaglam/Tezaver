@@ -1,0 +1,32 @@
+[
+  {
+    "ts": 1766251370714,
+    "kind": "RUNTIME",
+    "title": "SECRETS_HEALTH",
+    "detail": "{'present': False, 'source': 'NONE', 'testnet': False}"
+  },
+  {
+    "ts": 1766251370714,
+    "kind": "RUNTIME",
+    "title": "BROKER_MODE",
+    "detail": "{'mode': 'PAPER', 'exchange': 'BINANCE'}"
+  },
+  {
+    "ts": 1766251370714,
+    "kind": "RUNTIME",
+    "title": "GLOBAL_RISK_SNAPSHOT",
+    "detail": "{'totals': {'open_positions': 0, 'total_notional': 0.0}, 'limits': {'max_open_positions': 999, 'max_total_notional': 999999999.0, 'max_open_trades_per_tick': 999, 'paused': False, 'last_update_ts': 0}}"
+  },
+  {
+    "ts": 1766251370714,
+    "kind": "RUNTIME",
+    "title": "CLOUD_TICK",
+    "detail": ""
+  },
+  {
+    "ts": 1766251370714,
+    "kind": "RUNTIME",
+    "title": "RUNTIME_HEARTBEAT",
+    "detail": ""
+  }
+]

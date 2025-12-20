@@ -1,0 +1,5 @@
+{"ts": 1766251370714, "type": "SECRETS_HEALTH", "payload": {"present": false, "source": "NONE", "testnet": false}}
+{"ts": 1766251370714, "type": "BROKER_MODE", "payload": {"mode": "PAPER", "exchange": "BINANCE"}}
+{"ts": 1766251370714, "type": "GLOBAL_RISK_SNAPSHOT", "payload": {"totals": {"open_positions": 0, "total_notional": 0.0}, "limits": {"max_open_positions": 999, "max_total_notional": 999999999.0, "max_open_trades_per_tick": 999, "paused": false, "last_update_ts": 0}}}
+{"ts": 1766251370714, "type": "CLOUD_TICK", "tick_seq": 1}
+{"ts": 1766251370714, "type": "RUNTIME_HEARTBEAT", "active_count": 0, "strategies": []}

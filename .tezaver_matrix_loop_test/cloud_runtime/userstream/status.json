@@ -1,0 +1,7 @@
+{
+  "status": "ERROR_WS",
+  "listenKey": null,
+  "updated_ts": 1766251360698,
+  "keepalive_due_ts": 1766254660698,
+  "last_error": "401 Client Error: Unauthorized for url: https://demo-fapi.binance.com/fapi/v1/listenKey"
+}

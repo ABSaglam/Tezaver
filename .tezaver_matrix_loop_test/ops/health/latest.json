@@ -1,0 +1,25 @@
+{
+  "ts": 1766251370,
+  "overall": "YELLOW",
+  "summary": "Preflight Failed",
+  "signals": {
+    "preflight_ok": false,
+    "recovery_ok": false,
+    "alerts_active": 0,
+    "active_crit_alerts": 0,
+    "active_warn_alerts": 0,
+    "global_paused": false,
+    "broker_mode": "UNKNOWN",
+    "secrets_present": false,
+    "userstream_connected": false,
+    "drift_detected_recently": false,
+    "last_cloud_tick_ts": 1766251370714
+  },
+  "links": {
+    "preflight": "ops/preflight/latest.json",
+    "recovery": "ops/recovery/latest.json",
+    "migration": "ops/migration/latest.json",
+    "alerts_active_dir": "alerts/active/",
+    "cloud_runtime_userstream": "cloud_runtime/userstream/status.json"
+  }
+}

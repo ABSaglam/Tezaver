@@ -4,7 +4,13 @@ import time
 import hashlib
 from typing import Dict, Any, List, Optional
 from tezaver.matrix.ports.notifier_port import NotifierPort
+from tezaver.matrix.adapters.notifier_file import FileNotifier
 from tezaver.matrix.core.cloud_runtime import start_or_load_runtime_state
+
+def scan_alerts(home: str) -> Dict[str, Any]:
+    """Convenience wrapper for scanning alerts using FileNotifier."""
+    notifier = FileNotifier(home)
+    return scan_cloud_events_for_alerts(home, notifier)
 
 def scan_cloud_events_for_alerts(home: str, notifier: NotifierPort, cloud_run_id: Optional[str] = None) -> Dict[str, Any]:
     # 1. Resolve Run ID
@@ -129,12 +135,12 @@ def process_event(evt: Dict[str, Any], run_id: str, line_no: int) -> Optional[Di
         
         return {
             "alert_id": aid,
+            "level": severity, # Renamed severity to level for consistency with alert contract
             "type": alert_type,
-            "severity": severity,
             "ts": ts,
             "source": {"cloud_run_id": run_id, "strategy_id": evt.get("strategy_id")},
+            "message": msg_en, # Canonical msg
             "message_tr": msg_tr,
-            "message_en": msg_en,
             "event_ref": {"event_type": etype, "line": line_no},
             "dedup_key": raw_key
         }

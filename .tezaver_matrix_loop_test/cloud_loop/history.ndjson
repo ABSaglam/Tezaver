@@ -1,0 +1,3 @@
+{"ts": 1766251370704, "kind": "LOOP_USERSTREAM_STEP_OK", "payload": "Recv limit 10"}
+{"ts": 1766251370706, "kind": "LOOP_RECONCILE_OK", "payload": "Processed stream"}
+{"ts": 1766251370715, "kind": "LOOP_RUNTIME_OK", "payload": "Tick 1"}

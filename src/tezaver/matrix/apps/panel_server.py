@@ -1664,6 +1664,88 @@ class PanelHandler(BaseHTTPRequestHandler):
              self.wfile.write(b"HTTP/1.1 302 Found\r\nLocation: /ops\r\n\r\n")
              return
 
+        # UI-L: Cloud Loop Supervisor (Phase-17A)
+        if path == "/cloud/loop":
+            loop_dir = os.path.join(self.home, "cloud_loop")
+            state_p = os.path.join(loop_dir, "state.json")
+            state = {}
+            if os.path.exists(state_p):
+                with open(state_p) as f: state = json.load(f)
+                
+            hist_p = os.path.join(loop_dir, "history.ndjson")
+            lines = []
+            if os.path.exists(hist_p):
+                with open(hist_p) as f: lines = f.readlines()[-30:] # Last 30
+                
+            hist_rows = ""
+            for l in reversed(lines):
+                 try:
+                     e = json.loads(l)
+                     ts = time.strftime('%H:%M:%S', time.localtime(e.get("ts")/1000))
+                     hist_rows += f"<tr><td>{ts}</td><td>{e.get('kind')}</td><td>{e.get('payload')}</td></tr>"
+                 except: pass
+            
+            run_col = "green" if state.get("running") else "gray"
+            
+            html = f"""
+            <html>
+                <h1>Cloud Loop Supervisor</h1>
+                <p><a href="/">Back</a> | <a href="/cloud/runtime">Runtime</a></p>
+                
+                <div style="padding:20px; border:4px solid {run_col}; background:#f9f9f9;">
+                    <h2>Status: {"RUNNING" if state.get("running") else "IDLE"}</h2>
+                    <p>Tick Count: {state.get("tick_count")}</p>
+                    <p>Last Tick: {state.get("last_tick_ts")}</p>
+                    <p>Last Error: <span style="color:red">{state.get("last_error") or "None"}</span></p>
+                </div>
+                
+                <div style="margin-top:20px; padding:10px; background:#eef;">
+                    <h3>Actions</h3>
+                    <form action="/cloud/loop/run" method="get">
+                        Ticks: <input type="number" name="ticks" value="10" style="width:50px">
+                        Steps: <input type="number" name="steps" value="5" style="width:50px">
+                        <input type="submit" value="RUN (Batch)">
+                    </form>
+                    <form action="/cloud/loop/once" method="get">
+                        <input type="submit" value="RUN ONCE (1 Tick)">
+                    </form>
+                </div>
+                
+                <h3>History (Last 30)</h3>
+                <table border="1" style="width:100%; border-collapse:collapse; font-size:0.9em;">
+                    <tr style="background:#ddd"><th>Time</th><th>Kind</th><th>Payload</th></tr>
+                    {hist_rows}
+                </table>
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+            
+        if path.startswith("/cloud/loop/run") or path.startswith("/cloud/loop/once"):
+            # Trigger Loop via CLI/Supervisor (in-process for demo/simplicity)
+            # Warning: Blocking call! Cloud loop sleeps?
+            # We should probably run in thread or subprocess if long.
+            # But the requirement allows simple integration.
+            # Using 'ticks=10' might take a few seconds. Panel OK to block briefly.
+            
+            query = {}
+            if "?" in path:
+                from urllib.parse import urlparse, parse_qs
+                query = parse_qs(urlparse(path).query)
+                
+            ticks = int(query.get("ticks", [1])[0])
+            steps = int(query.get("steps", [5])[0])
+            
+            # If 'once', ticks=1
+            if "once" in path: ticks = 1
+            
+            from tezaver.matrix.core.cloud_loop import CloudLoopSupervisor
+            sup = CloudLoopSupervisor(self.home)
+            sup.run_loop(ticks, steps, 10, 24)
+            
+            self.wfile.write(b"HTTP/1.1 302 Found\r\nLocation: /cloud/loop\r\n\r\n")
+            return
+
         if path == "/cloud/userstream":
             status_p = os.path.join(self.home, "cloud_runtime", "userstream", "status.json")
             status = {}

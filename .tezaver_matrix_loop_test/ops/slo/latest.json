@@ -1,0 +1,14 @@
+{
+  "ts": 1766251370,
+  "window_hours": 24,
+  "counts": {
+    "cloud_ticks": 0,
+    "gap_detected": 0,
+    "reconnects": 0,
+    "risk_blocks": 0,
+    "broker_misconfig": 0,
+    "reduce_only_violations": 0,
+    "alerts_created": 0
+  },
+  "summary": "SLO Computed"
+}
