@@ -156,66 +156,255 @@ def render_platform_jobs():
 
 
 # ============================================================================
-# OPS PAGE
+# OPS PAGE (MX-24002: Single Pane Dashboard)
 # ============================================================================
 
 def render_platform_ops():
-    """Render Platform Ops page."""
-    st.header("📊 Platform Ops")
+    """Render Platform Ops single-pane dashboard."""
+    st.header("📊 Ops Control Center")
     
     bus_root = st.session_state.get("platform_bus_root", ".tezaver_bus")
+    from tezaver.platform.bus.adapter import create_bus_adapter
+    bus = create_bus_adapter(bus_root)
     
-    # Agent health status
-    st.subheader("🏥 Agent Durumları")
+    # -------------------------------------------------------------------------
+    # 1. Agent Health Cards
+    # -------------------------------------------------------------------------
+    st.subheader("🏥 Agent Health")
     
     col1, col2, col3 = st.columns(3)
     
-    with col1:
-        st.markdown("**🍎 Mac Agent**")
-        _show_agent_status("http://localhost:9001")
+    agents = [
+        ("🍎 Mac", "http://127.0.0.1:9001", "mac"),
+        ("🎛️ Matrix", "http://127.0.0.1:9002", "matrix"),
+        ("☁️ Cloud", "http://127.0.0.1:9003", "cloud"),
+    ]
+    
+    for col, (icon, url, name) in zip([col1, col2, col3], agents):
+        with col:
+            health = _fetch_agent_health(url)
+            _render_health_card(icon, health, url)
+            
+    st.divider()
+    
+    # -------------------------------------------------------------------------
+    # 2. Cloud Runtime Summary
+    # -------------------------------------------------------------------------
+    st.subheader("☁️ Cloud Runtime")
+    
+    col_a, col_b, col_c, col_d = st.columns(4)
+    
+    with col_a:
+        paused = _get_cloud_paused(bus)
+        if paused:
+            st.error("🔴 PAUSED")
+        else:
+            st.success("🟢 RUNNING")
+            
+    with col_b:
+        strat_count = _count_active_strategies(bus)
+        st.metric("Active Strategies", strat_count)
         
-    with col2:
-        st.markdown("**🎛️ Matrix Agent**")
-        _show_agent_status("http://localhost:9002")
+    with col_c:
+        events = bus.tail_events("cloud", 20)
+        tick_events = [e for e in events if e.get("kind") == "RUNTIME_TICK"]
+        last_tick = tick_events[0].get("ts", "-") if tick_events else "-"
+        st.metric("Last Tick", last_tick if last_tick == "-" else _format_ts(last_tick))
         
-    with col3:
-        st.markdown("**☁️ Cloud Agent**")
-        _show_agent_status("http://localhost:9003")
+    with col_d:
+        total_ticks = len([e for e in bus.tail_events("cloud", 100) if e.get("kind") == "RUNTIME_TICK"])
+        st.metric("Recent Ticks", total_ticks)
         
     st.divider()
     
-    # Events tail
-    st.subheader("📜 Events (Son 30)")
+    # -------------------------------------------------------------------------
+    # 3. SLO Mini Metrics
+    # -------------------------------------------------------------------------
+    st.subheader("📈 SLO Metrics (Son 100 Event)")
     
-    bus = FsBusAdapter(bus_root)
+    col_1, col_2, col_3, col_4, col_5 = st.columns(5)
     
-    for agent in ["mac", "matrix", "cloud"]:
-        events_path = f"events/{agent}.ndjson"
-        full_path = os.path.join(bus_root, events_path)
+    all_events = _merge_all_events(bus, 100)
+    
+    with col_1:
+        gaps = len([e for e in all_events if "GAP" in e.get("kind", "")])
+        st.metric("🔴 GAP", gaps)
         
-        if os.path.exists(full_path):
-            with open(full_path) as f:
-                lines = f.readlines()[-10:]
+    with col_2:
+        blocks = len([e for e in all_events if "BLOCK" in e.get("kind", "")])
+        st.metric("🟠 BLOCK", blocks)
+        
+    with col_3:
+        fails = len([e for e in all_events if "FAIL" in e.get("kind", "")])
+        st.metric("❌ FAIL", fails)
+        
+    with col_4:
+        ticks = len([e for e in all_events if "TICK" in e.get("kind", "")])
+        st.metric("✅ TICK", ticks)
+        
+    with col_5:
+        complete = len([e for e in all_events if "COMPLETED" in e.get("kind", "") or "JOB_OK" in e.get("kind", "")])
+        st.metric("✅ OK", complete)
+        
+    st.divider()
+    
+    # -------------------------------------------------------------------------
+    # 4. Alerts Widget
+    # -------------------------------------------------------------------------
+    with st.expander("🚨 Alerts (Beta)", expanded=False):
+        alerts = _get_alerts(bus)
+        if alerts:
+            for alert in alerts:
+                severity = alert.get("severity", "INFO")
+                color = "red" if severity == "CRIT" else "orange" if severity == "WARN" else "blue"
+                st.markdown(f":{color}[{severity}] {alert.get('message', alert.get('kind', 'Unknown'))}")
+            if st.button("✓ Acknowledge All"):
+                _ack_all_alerts(bus)
+                st.success("Alerts acknowledged")
+        else:
+            st.info("No active alerts")
             
-            if lines:
-                st.markdown(f"**{agent.upper()} Events:**")
-                for line in reversed(lines):
-                    try:
-                        e = json.loads(line)
-                        st.text(f"{e.get('ts', '')} | {e.get('kind', '')} | {e.get('job_id', '')}")
-                    except:
-                        pass
+    st.divider()
+    
+    # -------------------------------------------------------------------------
+    # 5. Unified Event Timeline
+    # -------------------------------------------------------------------------
+    st.subheader("📜 Unified Event Timeline")
+    
+    col_filter1, col_filter2 = st.columns(2)
+    with col_filter1:
+        stream_filter = st.selectbox("Stream", ["all", "mac", "matrix", "cloud"])
+    with col_filter2:
+        type_filter = st.text_input("Type contains", "")
+        
+    # Merge events from all streams
+    events = _merge_all_events(bus, 200)
+    
+    # Apply filters
+    if stream_filter != "all":
+        events = [e for e in events if e.get("_stream") == stream_filter]
+    if type_filter:
+        events = [e for e in events if type_filter.lower() in e.get("kind", "").lower()]
+        
+    # Display
+    st.text(f"Showing {len(events)} events")
+    
+    for e in events[:50]:
+        ts = e.get("ts", "-")
+        stream = e.get("_stream", "?")
+        kind = e.get("kind", "?")
+        job_id = e.get("job_id", "")[:10] if e.get("job_id") else ""
+        
+        # Severity color
+        if "FAIL" in kind or "BLOCK" in kind or "GAP" in kind:
+            color = "red"
+        elif "WARN" in kind or "DEADLETTER" in kind:
+            color = "orange"
+        else:
+            color = "green"
+            
+        st.markdown(f":{color}[{_format_ts(ts)}] **{stream}** | {kind} | {job_id}")
 
 
-def _show_agent_status(base_url: str):
-    """Show agent health status."""
+def _fetch_agent_health(url: str) -> Dict:
+    """Fetch agent health."""
     try:
-        req = Request(f"{base_url}/health")
-        with urlopen(req, timeout=1) as resp:
-            data = json.loads(resp.read().decode())
-            st.success(f"✅ {data.get('status', 'ok')}")
+        req = Request(f"{url}/health")
+        with urlopen(req, timeout=2) as resp:
+            return json.loads(resp.read().decode())
     except:
-        st.error("❌ Bağlantı yok")
+        return {"status": "unhealthy", "error": "Connection failed"}
+
+
+def _render_health_card(icon: str, health: Dict, url: str):
+    """Render single health card."""
+    st.markdown(f"**{icon}**")
+    
+    status = health.get("status", "unknown")
+    if status == "healthy":
+        st.success(f"✅ {status}")
+    else:
+        st.error(f"❌ {status}")
+        
+    bus_type = health.get("bus_type", "?")
+    bus_root = health.get("bus_root", "?")
+    if len(bus_root) > 20:
+        bus_root = "..." + bus_root[-17:]
+        
+    st.text(f"bus: {bus_type} | {bus_root}")
+
+
+def _format_ts(ts) -> str:
+    """Format timestamp for display."""
+    if isinstance(ts, int):
+        from datetime import datetime
+        try:
+            return datetime.fromtimestamp(ts).strftime("%H:%M:%S")
+        except:
+            return str(ts)
+    return str(ts)
+
+
+def _get_cloud_paused(bus) -> bool:
+    """Check if cloud runtime is paused."""
+    try:
+        gr = bus.get_json("cloud_runtime/global_risk.json")
+        if gr:
+            return gr.get("paused", False)
+    except:
+        pass
+    return False
+
+
+def _count_active_strategies(bus) -> int:
+    """Count active strategies in registry."""
+    try:
+        items = bus.list("cloud_registry/strategies")
+        return len([i for i in items if not i.endswith(".ndjson")])
+    except:
+        return 0
+
+
+def _merge_all_events(bus, n: int) -> list:
+    """Merge events from all streams, sorted by ts."""
+    all_events = []
+    
+    for stream in ["mac", "matrix", "cloud"]:
+        events = bus.tail_events(stream, n)
+        for e in events:
+            e["_stream"] = stream
+        all_events.extend(events)
+        
+    # Sort by ts (newest first)
+    all_events.sort(key=lambda x: x.get("ts", 0), reverse=True)
+    return all_events[:n]
+
+
+def _get_alerts(bus) -> list:
+    """Get active alerts from events."""
+    events = _merge_all_events(bus, 50)
+    alerts = []
+    
+    for e in events:
+        kind = e.get("kind", "")
+        if "FAIL" in kind or "BLOCK" in kind or "GAP" in kind or "KILL" in kind:
+            severity = "CRIT" if "BLOCK" in kind or "KILL" in kind else "WARN"
+            alerts.append({
+                "severity": severity,
+                "message": f"{e.get('_stream', '?')}: {kind}",
+                "ts": e.get("ts"),
+            })
+            
+    return alerts[:10]  # Top 10
+
+
+def _ack_all_alerts(bus):
+    """Acknowledge all alerts (write to bus)."""
+    import time
+    bus.put_json("artifacts/panel/acks.json", {
+        "acked_at": int(time.time()),
+        "count": 0,
+    })
 
 
 # ============================================================================
