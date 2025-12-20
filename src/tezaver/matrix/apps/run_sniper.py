@@ -29,15 +29,31 @@ def run_sniper_once(home: str, candidate_id: str, bars_path: str) -> dict:
     data_port = JsonFileDataPort(bars_path)
     broker_port = SimBroker()
     store_port = FileRunStore(home)
+
+    # Risk & Governance Configs (needed for signature)
+    gov_cfg = GovernanceConfig(allowlist=[candidate.get("symbol")], max_age_seconds=999999999)
+    risk_cfg = RiskGateConfig() # Defaults
     
+    # Config Signature (MX-10002)
+    from tezaver.matrix.core.config_signature import ConfigSpec, compute_config_signature
+    from dataclasses import asdict
+    
+    cspec = ConfigSpec(
+        run_profile="SNIPER",
+        symbol=candidate.get("symbol"),
+        timeframe=candidate.get("timeframe"),
+        risk=asdict(risk_cfg),
+        governance=asdict(gov_cfg)
+    )
+    sig = compute_config_signature(cspec)
+
+    # 3. Configs
+    # Trace
     trace = TraceIds(
         engine_version="v4-dev",
         data_fingerprint=f"bars_{os.path.basename(bars_path)}",
-        config_signature="sniper-demo"
+        config_signature=sig
     )
-    
-    gov_cfg = GovernanceConfig(allowlist=[candidate.get("symbol")], max_age_seconds=999999999)
-    risk_cfg = RiskGateConfig()
     
     sym = candidate.get("symbol")
     tf = candidate.get("timeframe")

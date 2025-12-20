@@ -77,7 +77,24 @@ def run_war_once(home: str, candidates_dir: str, bars_dir: str, limit: int = 0) 
             
             row["bars_path"] = bars_path
             
-            trace = TraceIds("v4-dev", f"bars_{os.path.basename(bars_path)}", f"war:{session_id}")
+            # Config Signature
+            from tezaver.matrix.core.config_signature import ConfigSpec, compute_config_signature
+            from dataclasses import asdict
+            
+            risk_cfg = RiskGateConfig(max_notional=0)
+            gov_cfg = GovernanceConfig(allowlist=[sym], max_age_seconds=999999999)
+            
+            cspec = ConfigSpec(
+                run_profile="WAR",
+                symbol=sym,
+                timeframe=tf,
+                risk=asdict(risk_cfg),
+                governance=asdict(gov_cfg),
+                extras={"session_id": session_id}
+            )
+            sig = compute_config_signature(cspec)
+            
+            trace = TraceIds("v4-dev", f"bars_{os.path.basename(bars_path)}", sig)
             
             meta = run_cycle(
                 symbol=sym, timeframe=tf, candidate_build_ts=build_ts,

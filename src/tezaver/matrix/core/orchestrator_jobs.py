@@ -65,14 +65,31 @@ def execute_job(home: str, job) -> Dict:
         broker = SimBroker()
         store = FileRunStore(home)
         
+        gov_cfg = GovernanceConfig(allowlist=[sym], max_age_seconds=999999999)
+        risk_cfg = RiskGateConfig()
+        
+        # Sig
+        from tezaver.matrix.core.config_signature import ConfigSpec, compute_config_signature
+        from dataclasses import asdict
+        cspec = ConfigSpec(
+            run_profile="LIVE_STEP", # Or inherit from run meta? Usually step uses run's config.
+            # But here we are creating a trace for the STEP execution (ephemeral?)
+            # live_step func uses trace_ids passed to it for logging?
+            # Actually live_step uses stored state trace usually.
+            # But let's act as if we pass a new trace for this operation context.
+            symbol=sym,
+            timeframe=tf,
+            risk=asdict(risk_cfg),
+            governance=asdict(gov_cfg),
+            extras={"run_id": run_id}
+        )
+        sig = compute_config_signature(cspec)
+        
         trace = TraceIds(
             engine_version="v4-live",
             data_fingerprint=f"file:{os.path.basename(bars_path)}",
-            config_signature="live-orch"
+            config_signature=sig
         )
-        
-        gov_cfg = GovernanceConfig(allowlist=[sym], max_age_seconds=999999999)
-        risk_cfg = RiskGateConfig()
         
         summary = live_step(
             home=home,

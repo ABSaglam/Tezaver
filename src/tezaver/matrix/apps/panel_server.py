@@ -840,6 +840,53 @@ class PanelHandler(BaseHTTPRequestHandler):
             self.wfile.write(html.encode("utf-8"))
             return
 
+        # UI-NEW: Ops & Maintenance
+        if path.startswith("/maintenance/run_preflight"):
+            from tezaver.matrix.core.preflight import run_preflight
+            run_preflight(self.home)
+            # Save report logic in run_preflight doesn't save to file by default in core?
+            # Wait, preflight_cli saves. core checking function returns dict.
+            # We should save here too.
+            rep = run_preflight(self.home)
+            rp = os.path.join(self.home, "ops", "preflight", "latest.json")
+            os.makedirs(os.path.dirname(rp), exist_ok=True)
+            with open(rp, "w") as f: json.dump(rep, f, indent=2)
+            
+            self.wfile.write(b"HTTP/1.1 302 Found\r\nLocation: /ops\r\n\r\n")
+            return
+
+        if path.startswith("/ops") or path.startswith("/maintenance"):
+            # Load Preflight
+            rp = os.path.join(self.home, "ops", "preflight", "latest.json")
+            rep_html = "<p>No preflight report.</p>"
+            if os.path.exists(rp):
+                with open(rp) as f: r = json.load(f)
+                color = "green" if r.get("ok") else "red"
+                rep_html = f"<h3 style='color:{color}'>Preflight Status: {'PASS' if r.get('ok') else 'FAIL'}</h3>"
+                rep_html += "<ul>"
+                for c in r.get("checks", []):
+                    rep_html += f"<li>[{c['status']}] {c['name']}: {c['detail']}</li>"
+                rep_html += "</ul>"
+                if r.get("warnings"):
+                    rep_html += "<h4>Warnings</h4><ul>"
+                    for w in r.get("warnings"): rep_html += f"<li>{w}</li>"
+                    rep_html += "</ul>"
+                    
+            html = f"""
+            <html>
+                <h1>Ops & Maintenance</h1>
+                <p>
+                    <a href="/maintenance/run_preflight"><button>RUN PREFLIGHT CHECKS</button></a>
+                </p>
+                <div style="border:1px solid #ccc; padding:10px">
+                    <h2>Latest Report</h2>
+                    {rep_html}
+                </div>
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+
         # UI-C: Live Runner (Demo)
         if path.startswith("/runs/live/"):
             parts = path.split("/")
@@ -971,13 +1018,16 @@ class PanelHandler(BaseHTTPRequestHandler):
             meta = {}
             
             jp = os.path.join(run_dir, "judge.json")
-            if os.path.exists(jp): with open(jp) as f: judge = json.load(f)
+            if os.path.exists(jp): 
+                with open(jp) as f: judge = json.load(f)
                 
             sp = os.path.join(run_dir, "scorecard.json")
-            if os.path.exists(sp): with open(sp) as f: score = json.load(f)
+            if os.path.exists(sp): 
+                with open(sp) as f: score = json.load(f)
                 
             mp = os.path.join(run_dir, "meta.json")
-            if os.path.exists(mp): with open(mp) as f: meta = json.load(f)
+            if os.path.exists(mp): 
+                with open(mp) as f: meta = json.load(f)
             
             verdict = judge.get("overall", "UNKNOWN")
             color = "green" if verdict == "PASS" else ("red" if verdict == "FAIL" else "orange")
