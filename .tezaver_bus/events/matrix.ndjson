@@ -1,0 +1,9 @@
+{"ts": 1766258551, "kind": "JOB_START", "job_id": "job_import_001", "job_type": "MATRIX_IMPORT_CANDIDATE"}
+{"ts": 1766258551, "kind": "JOB_OK", "job_id": "job_import_001", "job_type": "MATRIX_IMPORT_CANDIDATE", "candidate_id": "BTCUSDT_15m_1766258510", "elapsed_s": 0.0025610923767089844}
+{"ts": 1766258551, "kind": "JOB_COMPLETED", "job_id": "job_import_001", "status": "success"}
+{"ts": 1766258584, "kind": "JOB_START", "job_id": "job_sniper_001", "job_type": "MATRIX_RUN_SNIPER"}
+{"ts": 1766258584, "kind": "JOB_OK", "job_id": "job_sniper_001", "job_type": "MATRIX_RUN_SNIPER", "run_id": "sniper_BTCUSDT_15m_1766258510_1766258584", "verdict": "PASS", "elapsed_s": 0.0007607936859130859}
+{"ts": 1766258584, "kind": "JOB_COMPLETED", "job_id": "job_sniper_001", "status": "success"}
+{"ts": 1766258609, "kind": "JOB_START", "job_id": "job_approve_001", "job_type": "MATRIX_APPROVE_EXPORT"}
+{"ts": 1766258609, "kind": "JOB_OK", "job_id": "job_approve_001", "job_type": "MATRIX_APPROVE_EXPORT", "approved_id": "BTCUSDT_15m_1766258510", "elapsed_s": 0.003412008285522461}
+{"ts": 1766258609, "kind": "JOB_COMPLETED", "job_id": "job_approve_001", "status": "success"}

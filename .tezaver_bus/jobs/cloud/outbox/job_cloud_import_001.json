@@ -1,0 +1,11 @@
+{
+  "job_id": "job_cloud_import_001",
+  "status": "success",
+  "result": {
+    "ok": true,
+    "strategy_id": "BTCUSDT_15m_1766258510",
+    "status": "PAUSED"
+  },
+  "completed_at": 1766258639,
+  "error": null
+}

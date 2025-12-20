@@ -1,0 +1,11 @@
+{
+  "job_id": "job_mac_build_001",
+  "status": "success",
+  "result": {
+    "ok": true,
+    "candidate_id": "BTCUSDT_15m_1766258510",
+    "artifact_path": "artifacts/mac/candidates/BTCUSDT_15m_1766258510.json"
+  },
+  "completed_at": 1766258510,
+  "error": null
+}

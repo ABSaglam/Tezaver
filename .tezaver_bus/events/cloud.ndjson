@@ -1,0 +1,11 @@
+{"ts": 1766258639, "kind": "JOB_START", "job_id": "job_cloud_import_001", "job_type": "CLOUD_IMPORT_STRATEGY"}
+{"ts": 1766258639, "kind": "JOB_OK", "job_id": "job_cloud_import_001", "job_type": "CLOUD_IMPORT_STRATEGY", "strategy_id": "BTCUSDT_15m_1766258510"}
+{"ts": 1766258639, "kind": "JOB_COMPLETED", "job_id": "job_cloud_import_001", "status": "success"}
+{"ts": 1766258666, "kind": "JOB_START", "job_id": "job_cloud_active_001", "job_type": "CLOUD_SET_STATUS"}
+{"ts": 1766258666, "kind": "JOB_OK", "job_id": "job_cloud_active_001", "job_type": "CLOUD_SET_STATUS", "strategy_id": "BTCUSDT_15m_1766258510", "status": "ACTIVE"}
+{"ts": 1766258666, "kind": "JOB_COMPLETED", "job_id": "job_cloud_active_001", "status": "success"}
+{"ts": 1766258668, "kind": "JOB_START", "job_id": "job_cloud_tick_001", "job_type": "CLOUD_RUNTIME_TICK"}
+{"ts": 1766258668, "kind": "RUNTIME_TICK", "tick_num": 1, "job_id": "job_cloud_tick_001"}
+{"ts": 1766258668, "kind": "RUNTIME_TICK", "tick_num": 2, "job_id": "job_cloud_tick_001"}
+{"ts": 1766258668, "kind": "JOB_OK", "job_id": "job_cloud_tick_001", "job_type": "CLOUD_RUNTIME_TICK", "ticks_done": 2, "events_written": 2}
+{"ts": 1766258668, "kind": "JOB_COMPLETED", "job_id": "job_cloud_tick_001", "status": "success"}

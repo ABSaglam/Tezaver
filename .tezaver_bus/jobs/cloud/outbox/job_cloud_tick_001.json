@@ -1,0 +1,11 @@
+{
+  "job_id": "job_cloud_tick_001",
+  "status": "success",
+  "result": {
+    "ok": true,
+    "ticks_done": 2,
+    "events_written": 2
+  },
+  "completed_at": 1766258668,
+  "error": null
+}

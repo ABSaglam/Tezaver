@@ -1,0 +1,18 @@
+{
+  "job_id": "job_approve_001",
+  "status": "success",
+  "result": {
+    "ok": true,
+    "approved_id": "BTCUSDT_15m_1766258510",
+    "export_path": ".tezaver_matrix/exports/BTCUSDT_15m_1766258510/export_v1.json",
+    "bus_export_path": "artifacts/matrix/exports/BTCUSDT_15m_1766258510.json",
+    "trace": {
+      "engine_version": "v4.0",
+      "config_signature": "6c09e20d",
+      "job_id": "job_approve_001",
+      "ts": 1766258609
+    }
+  },
+  "completed_at": 1766258609,
+  "error": null
+}

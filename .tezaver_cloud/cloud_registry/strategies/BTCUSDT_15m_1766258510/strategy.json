@@ -1,0 +1,14 @@
+{
+  "strategy_id": "BTCUSDT_15m_1766258510",
+  "symbol": "BTCUSDT",
+  "timeframe": "15m",
+  "params": {
+    "entry": "breakout"
+  },
+  "status_info": {
+    "status": "ACTIVE"
+  },
+  "imported_at": 1766258639,
+  "source_export": "artifacts/matrix/exports/BTCUSDT_15m_1766258510.json",
+  "status_updated_at": 1766258666
+}

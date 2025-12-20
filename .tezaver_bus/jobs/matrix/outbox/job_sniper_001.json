@@ -1,0 +1,19 @@
+{
+  "job_id": "job_sniper_001",
+  "status": "success",
+  "result": {
+    "ok": true,
+    "run_id": "sniper_BTCUSDT_15m_1766258510_1766258584",
+    "verdict": "PASS",
+    "scorecard_path": ".tezaver_matrix/runs/sniper_BTCUSDT_15m_1766258510_1766258584/scorecard.json",
+    "judge_path": ".tezaver_matrix/runs/sniper_BTCUSDT_15m_1766258510_1766258584/judge.json",
+    "trace": {
+      "engine_version": "v4.0",
+      "config_signature": "6c09e20d",
+      "job_id": "job_sniper_001",
+      "ts": 1766258584
+    }
+  },
+  "completed_at": 1766258584,
+  "error": null
+}
