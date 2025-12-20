@@ -443,8 +443,9 @@ def render_cloud_mode():
     st.info("Bulut modu geliştirme aşamasında.")
 
 def render_matrix_mode():
-    from tezaver.ui.matrix_operator_tab import render_matrix_operator_tab
-    render_matrix_operator_tab()
+    # V4 Bridge: Redirect to V4 Panel instead of legacy matrix imports
+    from tezaver.ui.matrix_v4_bridge import render_matrix_v4_bridge
+    render_matrix_v4_bridge()
 
 # --- MODE SWITCHER & MAIN ---
 
