@@ -1071,10 +1071,28 @@ class PanelHandler(BaseHTTPRequestHandler):
              self.wfile.write(b"HTTP/1.1 302 Found\r\nLocation: /cloud/runtime\r\n\r\n")
              return
 
+        # UI-NEW: Broker Mode Switch
+        if path.startswith("/cloud/runtime/broker/paper"):
+             from tezaver.matrix.core.broker_config import load_broker_config, save_broker_config
+             cfg = load_broker_config(self.home)
+             cfg["mode"] = "PAPER"
+             save_broker_config(self.home, cfg)
+             self.wfile.write(b"HTTP/1.1 302 Found\r\nLocation: /cloud/runtime\r\n\r\n")
+             return
+             
+        if path.startswith("/cloud/runtime/broker/real_dryrun"):
+             from tezaver.matrix.core.broker_config import load_broker_config, save_broker_config
+             cfg = load_broker_config(self.home)
+             cfg["mode"] = "REAL_DRYRUN"
+             save_broker_config(self.home, cfg)
+             self.wfile.write(b"HTTP/1.1 302 Found\r\nLocation: /cloud/runtime\r\n\r\n")
+             return
+
         if path.startswith("/cloud/runtime"):
             from tezaver.matrix.core.cloud_runtime import list_active_strategies, start_or_load_runtime_state, load_strategy_state
             from tezaver.matrix.core.paper_broker import load_portfolio
             from tezaver.matrix.core.global_risk import load_global_risk, compute_totals, evaluate_risk_status
+            from tezaver.matrix.core.broker_config import load_broker_config
             
             active = list_active_strategies(self.home)
             state = start_or_load_runtime_state(self.home) # ensure structure exists
@@ -1086,6 +1104,22 @@ class PanelHandler(BaseHTTPRequestHandler):
             
             risk_color = "red" if risk_status or risk_cfg["paused"] else "green"
             pause_btn = '<a href="/cloud/runtime/resume"><button style="background:green;color:white">RESUME</button></a>' if risk_cfg["paused"] else '<a href="/cloud/runtime/pause"><button style="background:red;color:white">PAUSE (Kill Switch)</button></a>'
+            
+            # Broker Config
+            broker_cfg = load_broker_config(self.home)
+            broker_mode = broker_cfg.get("mode", "PAPER")
+            broker_color = "orange" if broker_mode == "REAL_DRYRUN" else "blue"
+            
+            broker_html = f"""
+            <div style="border:2px solid {broker_color}; padding: 10px; margin-bottom: 20px;">
+                <h3>Broker Adapter</h3>
+                <p>Mode: <b>{broker_mode}</b></p>
+                <p>
+                    <a href="/cloud/runtime/broker/paper"><button>Switch to PAPER</button></a>
+                    <a href="/cloud/runtime/broker/real_dryrun"><button>Switch to REAL_DRYRUN (Simulated)</button></a>
+                </p>
+            </div>
+            """
             
             risk_html = f"""
             <div style="border:2px solid {risk_color}; padding: 10px; margin-bottom: 20px;">
@@ -1150,7 +1184,10 @@ class PanelHandler(BaseHTTPRequestHandler):
             <html>
                 <h1>Cloud Runtime</h1>
                 
-                {risk_html}
+                <div style="display:flex; gap:20px">
+                    <div style="flex:1">{risk_html}</div>
+                    <div style="flex:1">{broker_html}</div>
+                </div>
                 
                 <p>
                     <b>Run ID:</b> {crid} <br/>
