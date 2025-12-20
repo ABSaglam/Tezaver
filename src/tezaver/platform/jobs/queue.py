@@ -127,7 +127,7 @@ def write_result(bus: BusAdapter, target: str, job_id: str, result: Dict, status
     bus.delete(processing_path)
     
     # Append to events log
-    bus.append_ndjson(f"events/{target}.ndjson", {
+    bus.append_event(target, {
         "ts": int(time.time()),
         "kind": "JOB_COMPLETED",
         "job_id": job_id,
@@ -148,7 +148,7 @@ def write_deadletter(bus: BusAdapter, target: str, job_id: str, reason: str) -> 
         bus.put_json(deadletter_path, job_data)
         bus.delete(processing_path)
         
-        bus.append_ndjson(f"events/{target}.ndjson", {
+        bus.append_event(target, {
             "ts": int(time.time()),
             "kind": "JOB_DEADLETTER",
             "job_id": job_id,

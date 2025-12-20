@@ -39,7 +39,7 @@ class MacAgent(BaseAgent):
         artifact_path = f"artifacts/mac/candidates/{candidate['candidate_id']}.json"
         self.bus.put_json(artifact_path, candidate)
         
-        self.bus.append_ndjson("events/mac.ndjson", {
+        self.bus.append_event("mac", {
             "ts": int(time.time()),
             "kind": "CANDIDATE_BUILT",
             "candidate_id": candidate["candidate_id"],
@@ -74,7 +74,7 @@ class MacAgent(BaseAgent):
                 
             self.bus.put_json(artifact_path, data)
             
-            self.bus.append_ndjson("events/mac.ndjson", {
+            self.bus.append_event("mac", {
                 "ts": int(time.time()),
                 "kind": "CANDIDATE_PUBLISHED",
                 "artifact_path": artifact_path,
@@ -103,7 +103,7 @@ class MacAgent(BaseAgent):
                 
             self.bus.put_json(artifact_path, data)
             
-            self.bus.append_ndjson("events/mac.ndjson", {
+            self.bus.append_event("mac", {
                 "ts": int(time.time()),
                 "kind": "STORY_PUBLISHED",
                 "artifact_path": artifact_path,

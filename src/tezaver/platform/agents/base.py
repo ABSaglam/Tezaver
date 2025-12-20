@@ -11,7 +11,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 import threading
 
-from tezaver.platform.bus.adapter import BusAdapter, FsBusAdapter
+from tezaver.platform.bus.adapter import BusAdapter, FsBusAdapter, create_bus_adapter
 from tezaver.platform.jobs.queue import (
     Job, claim_next_job, write_result, write_deadletter
 )
@@ -32,7 +32,7 @@ class BaseAgent(ABC):
     
     def __init__(self, config: AgentConfig):
         self.config = config
-        self.bus = FsBusAdapter(config.bus_root)
+        self.bus = create_bus_adapter(config.bus_root)
         self._handlers: Dict[str, Callable[[Job], Dict]] = {}
         
     def register_handler(self, job_type: str, handler: Callable[[Job], Dict]) -> None:
@@ -83,6 +83,7 @@ class BaseAgent(ABC):
             "agent": self.config.agent_name,
             "status": "healthy",
             "bus_root": self.config.bus_root,
+            "bus_type": self.bus.bus_type,
         }
         
     @abstractmethod

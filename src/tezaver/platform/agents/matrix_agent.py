@@ -78,7 +78,7 @@ class MatrixAgent(BaseAgent):
         }
         if extra:
             event.update(extra)
-        self.bus.append_ndjson("events/matrix.ndjson", event)
+        self.bus.append_event("matrix", event)
         
     def _handle_import_candidate(self, job: Job) -> Dict[str, Any]:
         """Import candidate from bus artifact to matrix home."""

@@ -48,7 +48,7 @@ class CloudAgent(BaseAgent):
         }
         if extra:
             event.update(extra)
-        self.bus.append_ndjson("events/cloud.ndjson", event)
+        self.bus.append_event("cloud", event)
         
     def _handle_import_strategy(self, job: Job) -> Dict[str, Any]:
         """Import strategy from export artifact."""
@@ -137,7 +137,7 @@ class CloudAgent(BaseAgent):
             # Write tick events
             events_written = 0
             for i in range(ticks):
-                self.bus.append_ndjson("events/cloud.ndjson", {
+                self.bus.append_event("cloud", {
                     "ts": int(time.time()),
                     "kind": "RUNTIME_TICK",
                     "tick_num": i + 1,
