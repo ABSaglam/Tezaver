@@ -275,6 +275,10 @@ def render_platform_ops():
     """Render Platform Ops single-pane dashboard."""
     st.header("📊 Ops Control Center")
     
+    # Version Banner (MX-26001)
+    from tezaver.version import __version__, build_commit
+    st.caption(f"🏷️ Tezaver v{__version__} | Commit: {build_commit()} | TR: Sürüm bilgisi")
+    
     bus_root = st.session_state.get("platform_bus_root", ".tezaver_bus")
     from tezaver.platform.bus.adapter import create_bus_adapter
     bus = create_bus_adapter(bus_root)
@@ -440,6 +444,34 @@ def render_platform_ops():
             color = "green"
             
         st.markdown(f":{color}[{_format_ts(ts)}] **{stream}** | {kind} | {job_id}")
+        
+    st.divider()
+    
+    # -------------------------------------------------------------------------
+    # 6. Smoke Reports Viewer (MX-26001)
+    # -------------------------------------------------------------------------
+    with st.expander("🧪 Smoke Reports", expanded=False):
+        st.caption("TR: Duman testi raporları - tezaver-smoke CLI ile oluşturulur")
+        
+        smoke_reports = _list_smoke_reports()
+        
+        if smoke_reports:
+            for report_path in smoke_reports[:5]:
+                report = _load_smoke_report(report_path)
+                if report:
+                    overall = report.get("overall", "?")
+                    version = report.get("tezaver_version", "?")
+                    ts = report.get("smoke_ts", "?")
+                    
+                    icon = "✅" if overall == "PASS" else "❌"
+                    col_a, col_b = st.columns([3, 1])
+                    with col_a:
+                        st.markdown(f"{icon} **{overall}** | v{version} | ts:{ts}")
+                    with col_b:
+                        if st.button("📋", key=f"show_{ts}"):
+                            st.json(report)
+        else:
+            st.info("Henüz smoke raporu yok. tezaver-smoke kullanın.")
 
 
 def _fetch_agent_health(url: str) -> Dict:
@@ -558,6 +590,24 @@ def _ack_all_alerts(bus):
         "acked_at": int(time.time()),
         "count": 0,
     })
+
+
+def _list_smoke_reports() -> list:
+    """List smoke reports from smoke_reports directory."""
+    import glob
+    reports = glob.glob("smoke_reports/SMOKE_*.json")
+    # Sort by timestamp in filename (newest first)
+    reports.sort(reverse=True)
+    return reports
+
+
+def _load_smoke_report(path: str) -> dict:
+    """Load smoke report from file."""
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except:
+        return None
 
 
 # ============================================================================

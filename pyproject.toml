@@ -49,6 +49,7 @@ tezaver-matrix-agent = "tezaver.platform.cli.matrix_agent_cli:main"
 tezaver-cloud-agent = "tezaver.platform.cli.cloud_agent_cli:main"
 tezaver-panel = "tezaver.platform.cli.panel_cli:main"
 tezaver-bus-backup = "tezaver.platform.cli.bus_backup_cli:main"
+tezaver-smoke = "tezaver.platform.cli.smoke_cli:main"
 
 [project.urls]
 Homepage = "https://github.com/absaglam/tezaver"
