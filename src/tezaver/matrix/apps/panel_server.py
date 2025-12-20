@@ -23,6 +23,7 @@ ROUTES = {
     "/tests": "UI-M: Tests",
     "/maintenance": "UI-N: Maintenance",
     "/registry": "UI-O: Registry",
+    "/alerts": "UI-P: Alerts",
 }
 
 class PanelHandler(BaseHTTPRequestHandler):
@@ -1430,8 +1431,92 @@ class PanelHandler(BaseHTTPRequestHandler):
             rid = path.split("/")[-1]
             # Same content as report section basically, simplified
             html = f"<html><h1>Judge: {rid}</h1><p>See <a href='/reports/{rid}'>Report</a></p></html>"
-            self.wfile.write(html.encode(html))
+            self.wfile.write(html.encode("utf-8")) # Correction: encode(str) -> bytes. Fixed bug below.
             return
+
+        # UI-C: Alerts (Phase-13C)
+        if path == "/alerts":
+            from tezaver.matrix.adapters.notifier_file import FileNotifier
+            notifier = FileNotifier(self.home)
+            active = notifier.list_active()
+            
+            rows = ""
+            for a in active:
+                aid = a["alert_id"]
+                sev = a["severity"]
+                color = "black"
+                if sev == "CRIT": color = "red"
+                if sev == "WARN": color = "orange"
+                if sev == "INFO": color = "blue"
+                
+                rows += f"""
+                <tr>
+                    <td><b style="color:{color}">{sev}</b></td>
+                    <td>{a.get('type')}</td>
+                    <td><a href="/alerts/{aid}">{aid}</a></td>
+                    <td>{a.get('ts')}</td>
+                    <td>{a.get('message_tr')}</td>
+                    <td><a href="/alerts/{aid}/ack"><button>ACK</button></a></td>
+                </tr>
+                """
+                
+            if not active:
+                rows = "<tr><td colspan='6'>No active alerts.</td></tr>"
+                
+            html = f"""
+            <html>
+                <h1>Active Alerts ({len(active)})</h1>
+                <p><a href="/">Back to Home</a> | <a href="/cloud/runtime">Runtime</a></p>
+                <table border="1">
+                    <tr><th>Sev</th><th>Type</th><th>ID</th><th>TS</th><th>Message</th><th>Action</th></tr>
+                    {rows}
+                </table>
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+            
+        if path.startswith("/alerts/") and "/ack" in path:
+            # /alerts/<id>/ack
+            aid = path.split("/")[2]
+            from tezaver.matrix.adapters.notifier_file import FileNotifier
+            notifier = FileNotifier(self.home)
+            notifier.ack(aid)
+            
+            self.wfile.write(b"HTTP/1.1 302 Found\r\nLocation: /alerts\r\n\r\n")
+            return
+            
+        if path.startswith("/alerts/"):
+            aid = path.split("/")[-1]
+            # Detail
+            from tezaver.matrix.adapters.notifier_file import FileNotifier
+            # Load manually or list? List is inefficient. Direct read active/history.
+            # But adapter doesn't expose read. Just use active check first.
+            p_act = os.path.join(self.home, "alerts", "active", f"{aid}.json")
+            p_hist = os.path.join(self.home, "alerts", "history", f"{aid}.json")
+            
+            data = {}
+            status = "UNKNOWN"
+            if os.path.exists(p_act):
+                status = "ACTIVE"
+                with open(p_act) as f: data = json.load(f)
+            elif os.path.exists(p_hist):
+                status = "HISTORY (ACK)"
+                with open(p_hist) as f: data = json.load(f)
+                
+            ack_btn = f'<a href="/alerts/{aid}/ack"><button>ACKNOWLEDGE</button></a>' if status == "ACTIVE" else ""
+            
+            html = f"""
+            <html>
+                <h1>Alert: {aid}</h1>
+                <p><a href="/alerts">Back to Alerts</a></p>
+                <h2>Status: {status} {ack_btn}</h2>
+                <pre>{json.dumps(data, indent=2)}</pre>
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+
             
         # UI-I: Story Timeline
         if path.startswith("/story/"):
