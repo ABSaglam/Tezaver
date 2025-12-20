@@ -23,6 +23,7 @@ CATEGORIES = [
     ("CANDIDATES", "📋 Candidates", "Strateji adayları"),
     ("RUNS", "▶️ Runs", "Çalıştırma geçmişi"),
     ("REGISTRY", "📚 Registry", "Cloud strateji kaydı"),
+    ("PLATFORM", "🏗️ Platform", "Connectors, Jobs, Ops"),
 ]
 
 def render_matrix_v4():
@@ -94,6 +95,9 @@ def render_matrix_v4():
         render_runs(home)
     elif selected_cat == "REGISTRY":
         render_registry(home)
+    elif selected_cat == "PLATFORM":
+        from tezaver.ui.platform_tab import render_platform_tab
+        render_platform_tab()
 
 # ============================================================================
 # CATEGORY RENDERERS
