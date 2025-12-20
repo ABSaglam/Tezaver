@@ -55,6 +55,36 @@ def run_preflight(home: str) -> Dict[str, Any]:
     except Exception as e:
         checks.append({"name": "IMPORT_PATH", "status": "FAIL", "detail": str(e)})
         
+    # Check 5: Secrets & Broker Mode
+    try:
+        from tezaver.matrix.core.broker_config import load_broker_config
+        from tezaver.matrix.core.secrets import load_binance_secrets, redact_secrets
+        
+        broker_cfg = load_broker_config(home)
+        mode = broker_cfg.get("mode", "PAPER")
+        secrets = load_binance_secrets(home)
+        
+        # Always report secrets health as detail
+        sec_info = redact_secrets(secrets)
+        checks.append({"name": "SECRETS_HEALTH", "status": "INFO", "detail": str(sec_info)})
+        
+        if mode.startswith("REAL_"):
+            if not secrets["present"]:
+                checks.append({"name": "SECRETS_CHECK", "status": "FAIL", "detail": "Missing secrets for REAL mode"})
+            else:
+                checks.append({"name": "SECRETS_CHECK", "status": "PASS", "detail": f"Present ({secrets['source']})"})
+                # File Perms
+                if secrets["source"] == "FILE":
+                     try:
+                         if (os.stat(os.path.join(home, "secrets", "binance.json")).st_mode & 0o077) != 0:
+                              warnings.append("Secret file permissions too open")
+                     except: pass
+        else:
+             checks.append({"name": "SECRETS_CHECK", "status": "PASS", "detail": "Skipped (Paper)"})
+             
+    except Exception as e:
+        checks.append({"name": "SECRETS_CHECK", "status": "FAIL", "detail": str(e)})
+
     # Consolidate
     failed = any(c["status"] == "FAIL" for c in checks)
     

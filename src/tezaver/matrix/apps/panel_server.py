@@ -1087,12 +1087,21 @@ class PanelHandler(BaseHTTPRequestHandler):
              save_broker_config(self.home, cfg)
              self.wfile.write(b"HTTP/1.1 302 Found\r\nLocation: /cloud/runtime\r\n\r\n")
              return
+             
+        if path.startswith("/cloud/runtime/broker/real_binance_stub"):
+             from tezaver.matrix.core.broker_config import load_broker_config, save_broker_config
+             cfg = load_broker_config(self.home)
+             cfg["mode"] = "REAL_BINANCE_STUB"
+             save_broker_config(self.home, cfg)
+             self.wfile.write(b"HTTP/1.1 302 Found\r\nLocation: /cloud/runtime\r\n\r\n")
+             return
 
         if path.startswith("/cloud/runtime"):
             from tezaver.matrix.core.cloud_runtime import list_active_strategies, start_or_load_runtime_state, load_strategy_state
             from tezaver.matrix.core.paper_broker import load_portfolio
             from tezaver.matrix.core.global_risk import load_global_risk, compute_totals, evaluate_risk_status
             from tezaver.matrix.core.broker_config import load_broker_config
+            from tezaver.matrix.core.secrets import load_binance_secrets, redact_secrets
             
             active = list_active_strategies(self.home)
             state = start_or_load_runtime_state(self.home) # ensure structure exists
@@ -1105,18 +1114,26 @@ class PanelHandler(BaseHTTPRequestHandler):
             risk_color = "red" if risk_status or risk_cfg["paused"] else "green"
             pause_btn = '<a href="/cloud/runtime/resume"><button style="background:green;color:white">RESUME</button></a>' if risk_cfg["paused"] else '<a href="/cloud/runtime/pause"><button style="background:red;color:white">PAUSE (Kill Switch)</button></a>'
             
-            # Broker Config
+            # Broker Config & Secrets
             broker_cfg = load_broker_config(self.home)
             broker_mode = broker_cfg.get("mode", "PAPER")
-            broker_color = "orange" if broker_mode == "REAL_DRYRUN" else "blue"
+            broker_color = "blue"
+            if broker_mode == "REAL_DRYRUN": broker_color = "orange"
+            if broker_mode == "REAL_BINANCE_STUB": broker_color = "purple"
+            
+            secrets = load_binance_secrets(self.home)
+            rsec = redact_secrets(secrets)
+            sec_html = f"<span style='color:green'>SECRETS OK ({rsec['source']})</span>" if secrets['present'] else "<span style='color:red'>SECRETS MISSING</span>"
             
             broker_html = f"""
             <div style="border:2px solid {broker_color}; padding: 10px; margin-bottom: 20px;">
                 <h3>Broker Adapter</h3>
                 <p>Mode: <b>{broker_mode}</b></p>
+                <p>Secrets Health: {sec_html}</p>
                 <p>
-                    <a href="/cloud/runtime/broker/paper"><button>Switch to PAPER</button></a>
-                    <a href="/cloud/runtime/broker/real_dryrun"><button>Switch to REAL_DRYRUN (Simulated)</button></a>
+                    <a href="/cloud/runtime/broker/paper"><button>PAPER</button></a>
+                    <a href="/cloud/runtime/broker/real_dryrun"><button>REAL_DRYRUN</button></a>
+                    <a href="/cloud/runtime/broker/real_binance_stub"><button>REAL_BINANCE_STUB</button></a>
                 </p>
             </div>
             """

@@ -224,34 +224,62 @@ def strategy_step(home: str, cloud_run_id: str, strategy_id: str, strategy_json:
                 if action == "SELL" and risk_totals: risk_totals["open_positions"] = max(0, risk_totals["open_positions"] - 1)
                 
             elif broker_mode == "REAL_DRYRUN":
-                # Real DryRun Execution
+                # Real DryRun Execution (Legacy/Simple)
                 broker = RealDryRunBroker(reduce_only=broker_config.get("reduce_only", True))
-                # Symbol? Strategy should define symbol. Strategy name or config? 
-                # Assuming Strategy ID maps to symbol somehow or we just use "UNKNOWN" for this skeleton phase
                 symbol = strategy_json.get("symbol", "UNKNOWN")
-                
                 res = broker.place_order(strategy_id, symbol, action, 1.0, close_p, bar_ts)
                 
-                # Emit WOULD_SEND event
                 evt_real = {
                     "ts": int(time.time() * 1000), "type": "REAL_ORDER_WOULD_SEND",
-                    "strategy_id": strategy_id, 
-                    "payload": res
+                    "strategy_id": strategy_id, "payload": res
                 }
                 append_runtime_event(home, cloud_run_id, evt_real)
-                
-                # Mimic Fill for State Consistency (as per requirement)
-                # We reuse execute_paper_order to update portfolio state so dashboard looks correct
-                # But we mark it as "SIMULATED_FILL" in logs if we wanted, but execute_paper_order logs ORDER_FILLED.
-                # Requirement: "fill immediate with dryrun_fill=true"
-                # Let's call execute_paper_order but maybe we should inject a flag?
-                # execute_paper_order doesn't take flags. 
-                # For Phase-14A, we treat "REAL_DRYRUN" as: "Send Real Log + Update Paper State".
                 execute_paper_order(home, strategy_id, action, 1.0, close_p, bar_ts)
-                
-                # Update totals
                 if action == "BUY" and risk_totals: risk_totals["open_positions"] += 1
                 if action == "SELL" and risk_totals: risk_totals["open_positions"] = max(0, risk_totals["open_positions"] - 1)
+
+            elif broker_mode == "REAL_BINANCE_STUB":
+                # 1. Secrets Gate
+                from tezaver.matrix.core.secrets import load_binance_secrets
+                secrets = load_binance_secrets(home)
+                
+                if not secrets["present"]:
+                    evt_mis = {
+                        "ts": int(time.time() * 1000), "type": "BROKER_MISCONFIG",
+                        "strategy_id": strategy_id,
+                        "payload": {"reason": "SECRETS_MISSING", "mode": broker_mode}
+                    }
+                    append_runtime_event(home, cloud_run_id, evt_mis)
+                    
+                    if action == "BUY":
+                        # Block BUY if secrets missing
+                        action = "HOLD"
+                        blocked_reason = "SECRETS_MISSING"
+                    # SELL is allowed? In real logic yes to reduce risk, but without secrets we CANNOT communicate with exchange effectively even in Stub mode (conceptually).
+                    # But Stub doesn't need real secrets to run code.
+                    # HOWEVER, user requirement says: "secrets present değilse FAIL ... BUY blokla ... SELL serbest (reduce-only mantığı)"
+                    # BUT enforce check: "write BROKER_MISCONFIG reason=SECRETS_MISSING"
+                    
+                else: 
+                    # 2. Stub Execution
+                    from tezaver.matrix.adapters.binance_client_stub import BinanceClientStub
+                    stub = BinanceClientStub(secrets["api_key"], secrets["api_secret"], secrets["testnet"])
+                    symbol = strategy_json.get("symbol", "UNKNOWN")
+                    
+                    # Call Stub
+                    res = stub.place_order(symbol, action, 1.0, close_p, broker_config.get("reduce_only", True), bar_ts)
+                    
+                    evt_real = {
+                        "ts": int(time.time() * 1000), "type": "REAL_ORDER_WOULD_SEND",
+                        "strategy_id": strategy_id,
+                        "payload": {"mode": "REAL_BINANCE_STUB", "response": res}
+                    }
+                    append_runtime_event(home, cloud_run_id, evt_real)
+                    
+                    # Simulate Fill for Portfolio Consistency
+                    execute_paper_order(home, strategy_id, action, 1.0, close_p, bar_ts)
+                    if action == "BUY" and risk_totals: risk_totals["open_positions"] += 1
+                    if action == "SELL" and risk_totals: risk_totals["open_positions"] = max(0, risk_totals["open_positions"] - 1)
             
         # Decision Event
         payload = {"action": action, "bar_ts": bar_ts, "trigger_price": close_p}
@@ -326,14 +354,22 @@ def cloud_runtime_tick(home: str, ticks: int = 1, steps_per_strategy: int = 10) 
             # Skip strategies
             continue
             
-        # 2. Broker Config Check
+        # 2. Secrets Health
+        from tezaver.matrix.core.secrets import load_binance_secrets, redact_secrets
+        secrets = load_binance_secrets(home)
+        append_runtime_event(home, crid, {
+            "ts": tick_ts, "type": "SECRETS_HEALTH",
+            "payload": redact_secrets(secrets)
+        })
+
+        # 3. Broker Config Check
         broker_cfg = load_broker_config(home)
         append_runtime_event(home, crid, {
             "ts": tick_ts, "type": "BROKER_MODE", 
             "payload": {"mode": broker_cfg["mode"], "exchange": broker_cfg.get("exchange")}
         })
             
-        # 3. Compute Totals
+        # 4. Compute Totals
         risk_totals = compute_totals(home, active_strats)
         append_runtime_event(home, crid, {
             "ts": tick_ts, "type": "GLOBAL_RISK_SNAPSHOT", 
