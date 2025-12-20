@@ -78,61 +78,39 @@ def _process_order_update(home: str, msg: Dict):
     
     sid = parts[1] # Strategy ID
     
-    # Extract Order Info
-    # s: symbol, S: side, q: original qty, z: filled qty, L: last filled price, X: status
-    # X: NEW, PARTIALLY_FILLED, FILLED, CANCELED, REJECTED, EXPIRED
+    # Use Lifecycle Tracker
+    from tezaver.matrix.core.exchange_lifecycle import ExchangeOrderLifecycleTracker
+    tracker = ExchangeOrderLifecycleTracker(home, sid)
+    
+    # Tracker handles delta calculation and idempotency
+    # data is the "o" payload
+    delta_qty = tracker.update_order(data)
+    
     status = data.get("X")
-    filled_qty = float(data.get("z", 0))
-    last_price = float(data.get("L", 0))
     side = data.get("S")
+    filled_qty = float(data.get("z", 0)) # Cumulative
+    last_price = float(data.get("L", 0))
     
-    # 1. Update Portfolio (Best Effort)
-    # If FILLED or PARTIALLY_FILLED, and "z" increased? 
-    # "z" is cumulative filled quantity.
-    # We need delta to update portfolio correctly if using incremental logic.
-    # Paper Broker `load_portfolio` reads `portfolio.json`.
-    # `portfolio.json` has `open_positions`, `pnl`, etc.
-    # This acts as a "source of truth update".
-    # But wait, `portfolio.json` is usually derived or simplistic in Paper. 
-    # In REAL mode, we should ideally REPLACE portfolio with Account Update snapshot.
-    # But ORDER_UPDATE gives us fast fills.
-    
-    # For Phase-14C.2, let's just emit proper EXCHANGE_ORDER_UPDATE event to `orders.ndjson`
-    # and maybe update a simplified "real_positions.json" if we wanted strict separation.
-    # The requirement says: "local portfolio.json güncelle (qty/avg_price best-effort)".
-    
-    if status in ["FILLED", "PARTIALLY_FILLED"]:
-        # We need to know if this fill was already processed?
-        # Reconciler runs sequentially. Checkpoint handles "processed up to line N".
-        # So we process each message ONCE.
-        # However, "z" is cumulative. We need "l" (last filled quantity of the trade)?
-        # msg["o"]["l"] is "Order Last Filled Quantity". This is the delta!
-        last_fill_qty = float(data.get("l", 0))
+    # 1. Update Portfolio (Incremental)
+    if delta_qty > 0:
+        pf = load_portfolio(home, sid)
+        curr_pos = pf.get("inventory", {}).get(data.get("s"), 0.0)
         
-        if last_fill_qty > 0:
-            pf = load_portfolio(home, sid)
-            # Update PF logic
-            # If BUY -> positions += qty, cost basis update?
-            # If SELL -> positions -= qty
+        if side == "BUY":
+            curr_pos += delta_qty
+        else:
+            curr_pos -= delta_qty
             
-            # Simple assumption for Matrix v4 (Long Only default? Or Net?)
-            # Assuming simplified "Net Position" tracking in `portfolio.json`.
-            
-            curr_pos = pf.get("inventory", {}).get(data.get("s"), 0.0)
-            
-            if side == "BUY":
-                curr_pos += last_fill_qty
-            else:
-                curr_pos -= last_fill_qty
-                
-            if "inventory" not in pf: pf["inventory"] = {}
-            pf["inventory"][data.get("s")] = curr_pos
-            
-            save_portfolio(home, sid, pf)
+        if "inventory" not in pf: pf["inventory"] = {}
+        pf["inventory"][data.get("s")] = curr_pos
+        
+        save_portfolio(home, sid, pf)
 
     # 2. Append Event to Strategy Order Log
-    # orders_path = .../strategies/<sid>/orders.ndjson
-    # We should append a normalized event.
+    # Only if there was an update worth logging?
+    # Or every time? EXECUTION_REPORT comes for status changes too.
+    # We log all relevant events.
+    
     order_evt = {
         "ts": msg.get("E"),
         "type": "EXCHANGE_ORDER_UPDATE",
@@ -142,7 +120,8 @@ def _process_order_update(home: str, msg: Dict):
             "status": status,
             "filled": filled_qty,
             "price": last_price,
-            "cid": cid
+            "cid": cid,
+            "delta_fill": delta_qty
         }
     }
     
@@ -152,23 +131,58 @@ def _process_order_update(home: str, msg: Dict):
             f.write(json.dumps(order_evt) + "\n")
 
 def _process_account_update(home: str, msg: Dict):
-    # msg["a"]["B"] -> Balances
-    # msg["a"]["P"] -> Positions
-    # For Phase-14C.2, we just verify it exists and maybe dump it.
-    # Requirement: "positions içinde ilgili symbol varsa authoritative snapshot gibi sakla"
-    
     data = msg.get("a", {})
     positions = data.get("P", [])
-    
-    # We don't know Strategy ID easily from Account Update (it's global for account).
-    # But we map by Symbol -> Strategy?
-    # Matrix maps Strategy -> Symbol.
-    # We can iterate active strategies and match symbol.
-    
-    active_strats = list_active_strategies(home) # returns list of sids
-    # Load each strat config to find symbol? Expensive.
-    # For this phase, let's just dump the global position snapshot.
     
     dump_path = os.path.join(home, "cloud_runtime", "userstream", "exchange_position_snapshot.json")
     with open(dump_path, "w") as f:
         json.dump(positions, f, indent=2)
+        
+    # Drift Check (Simplified)
+    # We check if any position differs significantly from a loaded strategy portfolio.
+    # But connecting symbols to strategies is hard without mapping.
+    # Helper: Check well-known strategy?
+    # For Phase-14C.3, we'll implement a basic check if we can resolve strategy.
+    # Let's iterate active strategies and check their symbol.
+    
+    active_sids = list_active_strategies(home)
+    for sid in active_sids:
+        # Load Strategy Config to get Symbol
+        # We assume standard path
+        try:
+             s_cfg_path = os.path.join(home, "cloud_runtime", "strategies", sid, "strategy.json")
+             with open(s_cfg_path) as f: cfg = json.load(f)
+             sym = cfg.get("symbol")
+             
+             # Find in exchange positions (snapshot)
+             ex_qty = 0.0
+             for p in positions:
+                 if p.get("s") == sym:
+                     ex_qty = float(p.get("pa", 0)) # Position Amount
+                     break
+                     
+             # Load Local
+             pf = load_portfolio(home, sid)
+             loc_qty = pf.get("inventory", {}).get(sym, 0.0)
+             
+             if abs(ex_qty - loc_qty) > 0.0001:
+                 # DRIFT!
+                 evt = {
+                     "ts": int(time.time()*1000), "type": "POSITION_DRIFT_DETECTED",
+                     "strategy_id": sid,
+                     "payload": {"symbol": sym, "local": loc_qty, "exchange": ex_qty}
+                 }
+                 # Warn Runtime? We need to write to runtime events.
+                 # Where is runtime events? Runs/...
+                 # UserStream Reconciler works on global userstream raw events, but needs to alert Runtime.
+                 # We don't have active run_id here easily without loading state.
+                 # We'll just print/log for now, or assume single active run?
+                 # Better: append to Strategy-specific log or a global Alerts queue (impl in Phase-13C Alert Engine scans events).
+                 # Alert Engine scans cloud_runtime/runs/...
+                 # So we need to find current run.
+                 from tezaver.matrix.core.cloud_runtime import start_or_load_runtime_state
+                 st = start_or_load_runtime_state(home)
+                 crid = st.get("cloud_run_id")
+                 if crid:
+                     append_runtime_event(home, crid, evt)
+        except: pass

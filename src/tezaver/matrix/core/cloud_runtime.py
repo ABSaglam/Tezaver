@@ -284,6 +284,29 @@ def strategy_step(home: str, cloud_run_id: str, strategy_id: str, strategy_json:
                     if action == "SELL" and risk_totals: risk_totals["open_positions"] = max(0, risk_totals["open_positions"] - 1)
 
             elif broker_mode == "REAL_BINANCE":
+                # 0. ReduceOnly Guard
+                from tezaver.matrix.core.reduce_only_guard import ReduceOnlyGuard
+                ro_guard = ReduceOnlyGuard()
+                reduce_only = broker_config.get("reduce_only", True)
+                
+                # Check Local Risk Totals for simple Open Pos check?
+                # Ideally we check Portfolio.
+                # Guard needs current position.
+                # We use local portfolio for now as best estimate.
+                from tezaver.matrix.core.paper_broker import load_portfolio
+                pf = load_portfolio(home, strategy_id)
+                curr_pos = pf.get("inventory", {}).get(strategy_json.get("symbol"), 0.0)
+                
+                violation = ro_guard.check_violation(action, reduce_only, curr_pos)
+                if violation:
+                     action = "HOLD"
+                     blocked_reason = f"REDUCE_ONLY_VIOLATION: {violation}"
+                     evt_v = {
+                         "ts": int(time.time()*1000), "type": "REDUCE_ONLY_VIOLATION",
+                         "strategy_id": strategy_id, "payload": {"reason": violation}
+                     }
+                     append_runtime_event(home, cloud_run_id, evt_v)
+                
                 # 1. Secrets Gate
                 from tezaver.matrix.core.secrets import load_binance_secrets
                 secrets = load_binance_secrets(home)
