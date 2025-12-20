@@ -443,9 +443,9 @@ def render_cloud_mode():
     st.info("Bulut modu geliştirme aşamasında.")
 
 def render_matrix_mode():
-    # V4 Bridge: Redirect to V4 Panel instead of legacy matrix imports
-    from tezaver.ui.matrix_v4_bridge import render_matrix_v4_bridge
-    render_matrix_v4_bridge()
+    # V4 Streamlit Integration: Use matrix_v4_tab (no panel_server, no legacy imports)
+    from tezaver.ui.matrix_v4_tab import render_matrix_v4
+    render_matrix_v4()
 
 # --- MODE SWITCHER & MAIN ---
 
