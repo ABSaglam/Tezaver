@@ -4,6 +4,7 @@ import sys
 PORT = 8085
 
 import os
+import json
 from tezaver.matrix.adapters.candidate_store_fs import FileCandidateStore
 
 ROUTES = {
@@ -141,6 +142,199 @@ class PanelHandler(BaseHTTPRequestHandler):
                     <hr/>
                     {content}
                 </body>
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+
+        # UI-H: Data Diagnostics
+        if path == "/data":
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            
+            home = os.environ.get("TEZAVER_MATRIX_HOME", ".tezaver_matrix")
+            latest_path = os.path.join(home, "data_reports", "latest.json")
+            
+            content = "<h3>No diagnostics yet. Run 'data_doctor' CLI.</h3>"
+            
+            if os.path.exists(latest_path):
+                try:
+                    with open(latest_path, "r", encoding="utf-8") as f:
+                        rep = json.load(f)
+                    
+                    status_color = "green" if rep.get("ok") else "red"
+                    issues_html = "".join([f"<li>{i}</li>" for i in rep.get("issues", [])]) or "<li>None</li>"
+                    
+                    content = f"""
+                    <h2>Data Quality Report: <span style="color:{status_color}">{ "OK" if rep.get("ok") else "FAIL" }</span></h2>
+                    <p>Report ID: {rep.get("report_id")}</p>
+                    <table border="1">
+                        <tr><td>Timeframe</td><td>{rep.get("timeframe")}</td></tr>
+                        <tr><td>Count</td><td>{rep.get("count")}</td></tr>
+                        <tr><td>Range</td><td>{rep.get("first_ts")} - {rep.get("last_ts")}</td></tr>
+                        <tr><td>Fingerprint</td><td><small>{rep.get("fingerprint")}</small></td></tr>
+                    </table>
+                    <h3>Stats</h3>
+                    <pre>{json.dumps(rep.get("stats"), indent=2)}</pre>
+                    <h3>Issues</h3>
+                    <ul>{issues_html}</ul>
+                    """
+                except Exception as e:
+                    content = f"<h3>Error loading report: {e}</h3>"
+            
+            html = f"""
+            <html>
+                <head><title>UI-H: Data</title></head>
+                <body>
+                    <h1>Data Diagnostics (UI-H)</h1>
+                    <p><a href="/">Back to Home</a></p>
+                    <hr/>
+                    {content}
+                </body>
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+
+        # UI-C: Runs List & Demo
+        if path == "/runs":
+            from tezaver.matrix.adapters.run_store_fs import RunStoreFS
+            store = RunStoreFS()
+            runs = store.list_runs()
+            
+            list_html = "".join([f'<li><a href="/runs/{r}">{r}</a></li>' for r in runs])
+            
+            html = f"""
+            <html>
+                <head><title>UI-C: Runs</title></head>
+                <body>
+                    <h1>Runs (UI-C)</h1>
+                    <p><a href="/">Back to Home</a> | <b style="color:blue"><a href="/runs/demo">▶ RUN DEMO</a></b></p>
+                    <hr/>
+                    <ul>{list_html}</ul>
+                </body>
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+
+        # Run Demo Logic
+        if path == "/runs/demo":
+            from tezaver.matrix.core.cycle_engine import run_cycle
+            from tezaver.matrix.core.bars import Bar
+            from tezaver.matrix.core.trace import TraceIds
+            from tezaver.matrix.core.gates import RiskGateConfig, GovernanceConfig
+            from tezaver.matrix.adapters.candidate_store_fs import FileCandidateStore
+            
+            # 1. Load a candidate
+            c_store = FileCandidateStore()
+            c_ids = c_store.list_ids()
+            if not c_ids:
+                self.wfile.write(b"No candidates found. Import one first.")
+                return
+            
+            cid = c_ids[0]
+            c_data = c_store.load(cid)
+            
+            # 2. Load bars (mock or sample)
+            home = os.environ.get("TEZAVER_MATRIX_HOME", ".tezaver_matrix")
+            sample_bars_path = "sample_bars.json" # try CWD
+            bars = []
+            
+            if os.path.exists(sample_bars_path):
+                with open(sample_bars_path, "r") as f:
+                    # Convert sec->ms manually as done in data_doctor
+                    raw = json.load(f)
+                    for b in raw:
+                        if 'is_closed' in b:
+                           bc = b.copy()
+                           bc['ts'] = int(b['ts']*1000)
+                           bars.append(Bar(**bc))
+            
+            if not bars:
+                # Mock bars
+                bars = [Bar(i*900000, 100+i, 105+i, 95+i, 102+i, True) for i in range(5)]
+            
+            # 3. Run Cycle
+            trace = TraceIds("v4-demo", "demo-data", "demo-cfg")
+            risk_cfg = RiskGateConfig(max_notional=10000)
+            gov_cfg = GovernanceConfig(allowlist=[c_data['symbol']]) # auto-allow
+            
+            meta = run_cycle(bars, trace, c_data, risk_cfg, gov_cfg, home)
+            
+            # Redirect
+            self.send_response(302)
+            self.send_header("Location", f"/runs/{meta['run_id']}")
+            self.end_headers()
+            return
+
+        # UI-C: Run Detail
+        if path.startswith("/runs/") and not path.endswith("demo"):
+            rid = path.split("/")[-1]
+            from tezaver.matrix.adapters.run_store_fs import RunStoreFS
+            store = RunStoreFS()
+            meta = store.load_meta(rid)
+            
+            html = f"""
+            <html>
+                <h1>Run: {rid}</h1>
+                <p><a href="/runs">Back to Runs</a></p>
+                <ul>
+                  <li><a href="/gates/{rid}">Gates Result (UI-E)</a></li>
+                  <li><a href="/evidence/{rid}">Evidence Events (UI-G)</a></li>
+                </ul>
+                <pre>{json.dumps(meta, indent=2)}</pre>
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+
+        # UI-E: Gates
+        if path.startswith("/gates/"):
+            rid = path.split("/")[-1]
+            from tezaver.matrix.adapters.run_store_fs import RunStoreFS
+            store = RunStoreFS()
+            gates = store.read_gates(rid)
+            
+            html = f"""
+            <html>
+                <h1>Gates: {rid}</h1>
+                <p><a href="/runs/{rid}">Back to Run</a></p>
+                <pre>{json.dumps(gates, indent=2)}</pre>
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+
+        # UI-G: Evidence
+        if path.startswith("/evidence/"):
+            rid = path.split("/")[-1]
+            from tezaver.matrix.adapters.run_store_fs import RunStoreFS
+            store = RunStoreFS()
+            txt = store.read_events_head_tail(rid)
+            
+            html = f"""
+            <html>
+                <h1>Evidence: {rid}</h1>
+                <p><a href="/runs/{rid}">Back to Run</a></p>
+                <pre>{txt}</pre>
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+            
+        # UI-D: Engine
+        if path == "/engine":
+            html = """
+            <html>
+                <h1>Engine Info (UI-D)</h1>
+                <p><a href="/">Back to Home</a></p>
+                <ul>
+                    <li>Version: Matrix v4-dev</li>
+                    <li>Cycle: Determinist Loop Enabled</li>
+                    <li>State: Position/Strategy/Run Validated</li>
+                </ul>
             </html>
             """
             self.wfile.write(html.encode("utf-8"))
