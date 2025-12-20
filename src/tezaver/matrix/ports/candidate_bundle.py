@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field, asdict
-from typing import List, Optional
+from typing import List, Optional, Dict
 import re
 
 @dataclass
@@ -18,6 +18,7 @@ class RallyStory:
     phases: List[Phase]
     anchors: Anchors
     tags: List[str] = field(default_factory=list)
+    signatures: Dict[str, Dict[str, float]] = field(default_factory=dict)
 
 @dataclass
 class CandidateBundle:
@@ -55,7 +56,8 @@ def bundle_from_dict(d: dict) -> CandidateBundle:
         story = RallyStory(
             phases=phases,
             anchors=anchors,
-            tags=story_data.get('tags', [])
+            tags=story_data.get('tags', []),
+            signatures=story_data.get('signatures', {})
         )
         
         return CandidateBundle(
@@ -113,4 +115,14 @@ def validate_bundle_dict(d: dict) -> List[str]:
         if not isinstance(anchors.get('invalidation_bar'), int):
             errors.append("Anchor invalidation_bar must be an int")
             
+    # Signatures validation (Optional)
+    signatures = story.get('signatures')
+    if signatures:
+        if not isinstance(signatures, dict):
+             errors.append("Story signatures must be a dictionary")
+        else:
+             from tezaver.matrix.core.story_signatures import check_signatures
+             sig_errors = check_signatures(signatures)
+             errors.extend(sig_errors)
+             
     return errors

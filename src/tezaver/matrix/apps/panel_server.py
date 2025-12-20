@@ -407,6 +407,64 @@ class PanelHandler(BaseHTTPRequestHandler):
             self.wfile.write(html.encode("utf-8"))
             return
 
+        # UI-I: Story Timeline
+        if path.startswith("/story/"):
+            cid = path.split("/")[-1]
+            from tezaver.matrix.adapters.candidate_store_fs import FileCandidateStore
+            from tezaver.matrix.core.story_render import render_story_html
+            from tezaver.matrix.ports.candidate_bundle import candidate_id, bundle_from_dict
+            
+            c_store = FileCandidateStore()
+            bundle = c_store.load(cid)
+            if not bundle:
+                self.wfile.write(b"Candidate not found")
+                return
+                
+            # Render HTML
+            story_html = render_story_html(bundle)
+            
+            # Derived Links Logic (MX-6003)
+            # Check for same bundle_version + build_ts but 1h/4h
+            # Reconstruct potential IDs
+            derived_links = []
+            current_tf = bundle.get("timeframe")
+            
+            if current_tf == "15m":
+                # Check 1h and 4h
+                def check_derived(tf):
+                     # Construct hypothetical bundle dict to reuse ID logic
+                     # (CandidateID depends on symbol, tf, ver, ts)
+                     # We can just manually construct the ID string if logic is known,
+                     # but using helper is safer if we had the object.
+                     # Helper: {symbol}_{tf}_{ver}_{ts_clean}
+                     from tezaver.matrix.ports.candidate_bundle import sanitize_id_part
+                     ts_clean = sanitize_id_part(bundle.get("build_ts"))
+                     did = f"{bundle.get('symbol')}_{tf}_{bundle.get('bundle_version')}_{ts_clean}"
+                     if c_store.load(did):
+                         return f'<a href="/story/{did}">{tf}</a>'
+                     return None
+                
+                l1 = check_derived("1h")
+                l4 = check_derived("4h")
+                if l1: derived_links.append(l1)
+                if l4: derived_links.append(l4)
+            
+            derived_html = ""
+            if derived_links:
+                derived_html = f"<div style='margin-top:10px;'>Derived Stories: {' | '.join(derived_links)}</div>"
+            
+            html = f"""
+            <html>
+                <h1>Story Timeline (UI-I)</h1>
+                <p><a href="/">Back to Home</a> | <a href="/candidates/{cid}">View JSON</a></p>
+                {derived_html}
+                <hr/>
+                {story_html}
+            </html>
+            """
+            self.wfile.write(html.encode("utf-8"))
+            return
+
         # UI-D: Engine
         if path == "/engine":
             html = """
@@ -419,6 +477,7 @@ class PanelHandler(BaseHTTPRequestHandler):
                     <li><b>DataPort:</b> JsonFileDataPort</li>
                     <li><b>BrokerPort:</b> SimBroker (Simulation)</li>
                     <li><b>StorePort:</b> FileRunStore (FileSystem)</li>
+                    <li><b>StoryEngine:</b> Timeline Renderer & Compiler (MX-6001/6003)</li>
                 </ul>
             </html>
             """
