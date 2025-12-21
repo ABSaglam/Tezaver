@@ -4,93 +4,60 @@ from datetime import datetime
 from typing import List, Dict, Any, Optional
 from .fingerprint import calculate_data_fingerprint, calculate_config_signature
 from tezaver.version import __version__ as REPO_VERSION
+import os
+import pandas as pd
 
-class CandidateBundleExporter:
+class BundleExporter:
     """
-    Exports CandidateBundle v1 (Manifest + Payload).
-    MACX-1020
+    Exports CandidateBundle v1.1.2 to standard disk structure.
+    Supports MACX-2140: Fail Artifacts
     """
-    
-    def __init__(self, output_base: Path):
-        self.output_base = output_base
-        
+    def __init__(self, base_dir: str = "out/matrix_candidates"):
+        self.base_dir = base_dir
+
     def export_bundle(self, 
                       symbol: str, 
-                      timeframe: str,
-                      stories: List[Dict[str, Any]],
-                      source_files: List[Path],
-                      config: Dict[str, Any],
-                      metrics: Optional[Dict[str, Any]] = None,
-                      diagnostics: Optional[List[Dict]] = None,
-                      compiled_stories_1h: Optional[List[Dict]] = None,
-                      compiled_stories_4h: Optional[List[Dict]] = None,
-                      version_tag: str = "v1") -> Path:
-        """
-        Creates manifest and payload files in a unique bundle directory.
-        MACX-2012, MACX-2014
-        """
-        bundle_id = f"{symbol}_{timeframe}_bundle_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        bundle_dir = self.output_base / symbol / timeframe / f"bundle_{version_tag}"
-        bundle_dir.mkdir(parents=True, exist_ok=True)
+                      tf: str, 
+                      stories: List[Dict], 
+                      compiled_stories: Dict,
+                      metrics: Dict,
+                      diagnostics: List[Dict],
+                      fingerprints: Dict,
+                      is_failed: bool = False) -> str:
         
-        # Calculate fingerprints
-        data_fp = calculate_data_fingerprint(source_files)
-        config_sig = calculate_config_signature(config)
+        # MACX-2140: Support _failed directory
+        sub_dir = "_failed" if is_failed else ""
+        bundle_id = f"bundle_v1_{int(pd.Timestamp.now().timestamp())}"
         
-        # Build Manifest
+        export_path = os.path.join(self.base_dir, sub_dir, symbol, tf, "bundle_v1", bundle_id)
+        os.makedirs(export_path, exist_ok=True)
+        
+        # manifest.json
         manifest = {
+            "version": "1.1.2",
+            "repo_version": REPO_VERSION,
             "bundle_id": bundle_id,
             "symbol": symbol,
-            "timeframe": timeframe,
-            "bundle_version": "1.1.1",
-            "build_ts": datetime.now().isoformat(),
-            "engine_min_version": REPO_VERSION,
-            "data_fingerprint": data_fp,
-            "config_signature": config_sig,
-            "story_count": len(stories),
-            "sources": [str(p) for p in source_files]
+            "tf": tf,
+            "export_time_utc": pd.Timestamp.now(tz='UTC').isoformat(),
+            "metrics": metrics,
+            "fingerprints": fingerprints,
+            "status": "failed" if is_failed else "success"
         }
         
-        # MACX-2012: Add detailed metrics to Manifest
-        if metrics:
-            manifest.update(metrics)
-        
-        # Build Payload
+        with open(os.path.join(export_path, "manifest.json"), "w") as f:
+            json.dump(manifest, f, indent=4)
+            
+        # payload.json
         payload = {
-            "rally_stories_v1": stories,
-            "compiled_stories_1h": compiled_stories_1h or [],
-            "compiled_stories_4h": compiled_stories_4h or [],
-            "sources": [str(p) for p in source_files],
-            "config": config,
-            "metadata": {
-                "exporter": "CandidateBundleExporter_v1.1",
-                "generated_at": datetime.now().isoformat()
-            }
+            "stories": stories,
+            "compiled_stories": compiled_stories
         }
-        
-        # MACX-2014: Write Diagnostics
-        if diagnostics:
-            diag_path = bundle_dir / "join_diagnostics.json"
-            summary = {
-                "total_events": len(diagnostics),
-                "matched_count": sum(1 for d in diagnostics if d['status'] == 'joined'),
-                "unmatched_count": sum(1 for d in diagnostics if d['status'] == 'unmatched'),
-                "avg_diff_min": round(sum(d['diff_min'] for d in diagnostics) / len(diagnostics), 2) if diagnostics else 0,
-                "details": diagnostics
-            }
-            with open(diag_path, 'w') as f:
-                json.dump(summary, f, indent=2)
-
-        # Write files
-        manifest_path = bundle_dir / "manifest.json"
-        payload_path = bundle_dir / "payload.json"
-        
-        with open(manifest_path, "w", encoding="utf-8") as f:
-            json.dump(manifest, f, indent=2, ensure_ascii=False)
+        with open(os.path.join(export_path, "payload.json"), "w") as f:
+            json.dump(payload, f, indent=4)
             
-        with open(payload_path, "w", encoding="utf-8") as f:
-            # Use compact JSON for payload to save space if needed, 
-            # but user likes readable for now.
-            json.dump(payload, f, indent=2, ensure_ascii=False)
+        # MACX-2014: join_diagnostics.json
+        with open(os.path.join(export_path, "join_diagnostics.json"), "w") as f:
+            json.dump(diagnostics, f, indent=4)
             
-        return bundle_dir
+        return export_path
