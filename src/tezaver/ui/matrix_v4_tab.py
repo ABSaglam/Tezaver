@@ -38,21 +38,14 @@ CATEGORIES = [
 def render_matrix_v4():
     """Main entry point for Matrix V4 Streamlit UI."""
     
-    # Sidebar: Home selection
-    st.sidebar.header("🎛️ Matrix V4")
-    
-    home = st.sidebar.text_input(
-        "Home Path",
-        value=st.session_state.get("matrix_home", ".tezaver_matrix"),
-        key="matrix_home_input"
-    )
+    # Default home path (hidden from UI)
+    home = st.session_state.get("matrix_home", ".tezaver_matrix")
     st.session_state["matrix_home"] = home
     
     # Build context
     ctx = build_matrix_v4_context(home)
     
     # Sidebar: Category selection
-    st.sidebar.markdown("---")
     st.sidebar.markdown("### Kategoriler")
     
     # MXI-1160: Support programmatic redirect via session state
