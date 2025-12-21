@@ -131,7 +131,7 @@ def render_platform_connectors():
     
     col_a, col_b = st.columns(2)
     with col_a:
-        if st.button("📁 Bus Root Oluştur"):
+        if st.button("📁 Bus Root Oluştur", help="Veri yolu (Bus) için gerekli klasör yapısını disk üzerinde hazırlar."):
             if not bus_root.startswith("s3://"):
                 os.makedirs(bus_root, exist_ok=True)
                 st.success(f"✅ Bus root oluşturuldu: {bus_root}")
@@ -172,7 +172,7 @@ def _render_agent_connector(label: str, name: str, default_url: str):
     )
     
     # Test Connection - uses session state values
-    if st.button(f"🔌 Bağlantıyı Test Et", key=f"test_{name}"):
+    if st.button(f"🔌 Bağlantıyı Test Et", key=f"test_{name}", help="Seçili Agent URL'sine health check isteği göndererek bağlantıyı doğrular."):
         _test_agent_connection(st.session_state[url_key], st.session_state[token_key])
 
 
@@ -258,7 +258,7 @@ def render_platform_jobs():
         payload_str = st.text_area("Payload (JSON)", "{}")
         priority = st.slider("Priority", 1, 100, 50)
         
-        if st.button("Create Job"):
+        if st.button("Create Job", help="Yeni bir işi (Build, Import, Sniper vb.) kuyruğa ekler."):
             try:
                 payload = json.loads(payload_str)
                 job = create_job(job_type, target, payload, priority)
@@ -375,7 +375,7 @@ def render_platform_ops():
                 severity = alert.get("severity", "INFO")
                 color = "red" if severity == "CRIT" else "orange" if severity == "WARN" else "blue"
                 st.markdown(f":{color}[{severity}] {alert.get('message', alert.get('kind', 'Unknown'))}")
-            if st.button("✓ Acknowledge All"):
+            if st.button("✓ Acknowledge All", help="Tüm aktif alarmları okundu olarak işaretler."):
                 _ack_all_alerts(bus)
                 st.success("Alerts acknowledged")
         else:
@@ -387,7 +387,7 @@ def render_platform_ops():
     with st.expander("📦 Backup / Export", expanded=False):
         st.caption("TR: Tek tuşla sistem fotoğrafı al - inceleme ve ispat paketi")
         
-        if st.button("📦 Backup Al", type="primary"):
+        if st.button("📦 Backup Al", type="primary", help="Sistemin anlık dosya ve veri durumunu yedekler (Zip/Manifest)."):
             import time
             ts = int(time.time())
             
@@ -615,16 +615,42 @@ def _load_smoke_report(path: str) -> dict:
 # MAIN TAB INTEGRATION
 # ============================================================================
 
+
+# ============================================================================
+# MAIN TAB INTEGRATION — HARDENED (NAV v1.0 Style)
+# ============================================================================
+
+PLATFORM_PAGES = [
+    ("Connectors", "🔌 Connectors", "Agent'ların bağlantı ve token ayarları."),
+    ("Jobs", "📋 Jobs", "İş kuyruğu yönetimi ve durum takibi."),
+    ("Ops", "📊 Ops Dashboard", "Sistem sağlığı, SLO metrikleri ve yedekleme merkezi."),
+    ("Golden", "🏆 Golden", "Onaylanmış strateji paketleri (Orijinal adaylar)."),
+    ("Candidate→Sniper", "🎯 Sniper Export", "Adayları test için Sniper moduna aktarır."),
+    ("Approved→Deploy", "🚀 Deploy", "Onaylı stratejileri canlıya (Loop) taşır."),
+]
+
 def render_platform_tab():
     """Main entry point for Platform tab in Streamlit."""
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### 🏗️ Platform")
+    st.sidebar.markdown("### 🏗️ Platform Menü")
     
-    page = st.sidebar.radio(
-        "Platform Sayfa",
-        ["Connectors", "Jobs", "Ops", "Golden", "Candidate→Sniper", "Approved→Deploy"],
-        label_visibility="collapsed"
-    )
+    # Initialize state
+    if "platform_selected_page" not in st.session_state:
+        st.session_state["platform_selected_page"] = "Connectors"
+    
+    # Render Sidebar Buttons
+    for page_key, label, help_text in PLATFORM_PAGES:
+        is_active = st.session_state["platform_selected_page"] == page_key
+        btn_type = "primary" if is_active else "secondary"
+        
+        if st.sidebar.button(label, key=f"plat_nav_{page_key}", use_container_width=True, type=btn_type, help=help_text):
+            st.session_state["platform_selected_page"] = page_key
+            st.rerun()
+    
+    page = st.session_state["platform_selected_page"]
+    
+    st.caption(f"📍 Konum: **Platform** > {page}")
+    st.divider()
     
     if page == "Connectors":
         render_platform_connectors()

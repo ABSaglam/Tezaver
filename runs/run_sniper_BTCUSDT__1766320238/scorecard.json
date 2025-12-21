@@ -1,0 +1,28 @@
+{
+  "run_id": "run_sniper_BTCUSDT__1766320238",
+  "bars_count": 70457,
+  "blocks_count": 0,
+  "trades_count": 1,
+  "total_pnl_raw": 41110.975215,
+  "fee_cost": 41.110975214999996,
+  "slippage_cost": 20.54521499999828,
+  "trade_audit_v2": [
+    {
+      "ts": 1702450800000,
+      "symbol": "BTCUSDT",
+      "side": "BUY",
+      "qty": 1.0,
+      "limit_price": 41090.43,
+      "fill_price": 41110.975215,
+      "fee": 41.110975214999996,
+      "slippage": 20.54521499999828,
+      "notional": 41110.975215
+    }
+  ],
+  "win_rate": 0.0,
+  "event_types": {
+    "RUN_START": 1,
+    "CYCLE_STEP": 70457,
+    "RUN_END": 1
+  }
+}

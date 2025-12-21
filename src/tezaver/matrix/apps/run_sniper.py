@@ -114,7 +114,7 @@ def run_sniper_stub(home: str, candidate_id: str) -> str:
     from tezaver.matrix.core.gates import RiskGateConfig, GovernanceConfig
     from pathlib import Path
 
-    registry = CandidateRegistry(registry_path=os.path.join(home, "candidates_registry.jsonl"))
+    registry = CandidateRegistry()
     cand_data = registry.get(candidate_id)
     if not cand_data:
         raise ValueError(f"Candidate not found in registry: {candidate_id}")
@@ -124,7 +124,7 @@ def run_sniper_stub(home: str, candidate_id: str) -> str:
     
     # 1. Setup Ports
     # Use standard coin_cells for parquet data
-    data_port = ParquetDataPort(base_path="coin_cells")
+    data_port = ParquetDataPort("coin_cells")
     broker_port = SimBroker(fee_pct=0.001, slippage_pct=0.0005)
     store_port = FileRunStore(home)
     run_reg = RunRegistry()
@@ -216,25 +216,42 @@ def run_sniper_stub(home: str, candidate_id: str) -> str:
 def main():
     parser = argparse.ArgumentParser(description="Matrix Sniper Runner (MX-8002)")
     parser.add_argument("--candidate-id", required=True, help="Candidate ID")
-    parser.add_argument("--bars", required=True, help="Path to bars.json")
-    parser.add_argument("--home", default=os.environ.get("TEZAVER_MATRIX_HOME", ".tezaver_matrix"), help="Matrix Home")
+    parser.add_argument("--bars", type=int, default=500, help="Number of bars to simulate")
+    parser.add_argument("--home", default=os.environ.get("TEZAVER_MATRIX_HOME", "."), help="Matrix Home")
     
     args = parser.parse_args()
     
-    res = run_sniper_once(args.home, args.candidate_id, args.bars)
+    from tezaver.matrix.adapters.run_registry import RunRegistry
+    print(f"Starting Pilot Sniper Run for: {args.candidate_id}")
+    print(f"Bars: {args.bars}")
     
-    if "error" in res:
-        print(f"Error: {res['error']}")
-        sys.exit(2)
+    try:
+        run_id = run_sniper_stub(args.home, args.candidate_id)
         
-    print(f"Run Complete. ID: {res['run_id']}")
-    print(f"Verdict: {res.get('verdict')}")
-    
-    if res.get('verdict') == "PASS":
-        sys.exit(0)
-    elif res.get('verdict') == "IMPROVE":
-        sys.exit(1)
-    else:
+        # Load verdict and results
+        run_reg = RunRegistry()
+        run = run_reg.get(run_id)
+        
+        print(f"\nRun Complete. ID: {run_id}")
+        if run:
+            print(f"Verdict: {run.get('verdict')}")
+            print(f"Trades: {run.get('trades_count', 0)}")
+            print(f"Net PnL: {run.get('net_pnl', 0):.2f}")
+            
+            if run.get('verdict') == "PASS":
+                sys.exit(0)
+            elif run.get('verdict') == "IMPROVE":
+                sys.exit(1)
+            else:
+                sys.exit(2)
+        else:
+            print("Error: Run not found in registry after completion.")
+            sys.exit(2)
+            
+    except Exception as e:
+        print(f"Error: {e}")
+        import traceback
+        traceback.print_exc()
         sys.exit(2)
 
 if __name__ == "__main__":

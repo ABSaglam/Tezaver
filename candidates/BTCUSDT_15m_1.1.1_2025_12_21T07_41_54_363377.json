@@ -1,0 +1,25 @@
+{
+  "symbol": "BTCUSDT",
+  "timeframe": "15m",
+  "bundle_version": "1.1.1",
+  "build_ts": "2025-12-21T07:41:54.363377",
+  "story": {
+    "phases": [
+      {
+        "name": "Full",
+        "start_bar": 0,
+        "end_bar": 100
+      }
+    ],
+    "anchors": {
+      "entry_bar": 50,
+      "invalidation_bar": 0
+    },
+    "tags": [],
+    "signatures": {}
+  },
+  "engine_min_version": "0.1.0",
+  "data_fingerprint": "7566d4ccd49cc73a0ea3dd48027f7abcf5b80b283beb8762383dd9a8b6ecc3be",
+  "config_signature": "2cddf44a96ec24f52c565b7330b4ea7849044304d011664e59169f7bd543771d",
+  "notes": "Pilot Run - Story: BTCUSDT_15m_20231213_0700"
+}

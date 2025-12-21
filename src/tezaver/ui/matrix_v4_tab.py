@@ -12,7 +12,77 @@ import pandas as pd
 from pathlib import Path
 from tezaver.ui.matrix_v4_context import build_matrix_v4_context
 
-# Categories
+# ============================================================================
+# NAVIGATION v1.0 HARDENED — Alt Başlıklar Türkçe + FIX-1/2/3
+# ============================================================================
+
+# Main headings for sidebar (9 items) — ORIGINAL LABELS (değişmedi)
+# Each item: (key, label, help_text)
+MAIN_HEADINGS = [
+    ("DASHBOARD", "📊 Dashboard", "Genel sistem durumu, alarmlar ve yayın kontrolleri."),
+    ("CANDIDATES", "📋 Candidates", "Strateji adaylarını inceleme ve onay merkezi."),
+    ("SNIPER", "🎯 Sniper", "Tekil strateji testleri ve geçmişi."),
+    ("WAR", "⚔️ WAR", "Çoklu coin toplu backtest ve risk analizi."),
+    ("LIVE", "🟢 LIVE", "Canlı piyasa provası ve simülasyonu."),
+    ("EVIDENCE", "🧾 Evidence", "Koşu geçmişi, raporlar ve olay kayıtları."),
+    ("OPS", "🛠️ Ops", "Bakım, temizlik ve veri taşıma araçları."),
+    ("PLATFORM", "🏗️ Platform", "Registry ve altyapı yönetim paneli."),
+    ("CLOUD_LOCKED", "☁️ Cloud 🔒", "Bulut çalışma zamanı ve döngü yönetimi (Yakında)."),
+]
+
+# NAV_MAP: Sub-headings per main heading
+# Each item: (label_tr, route_key, filter_mode, disabled, help_text)
+# filter_mode: None for non-RUNS, "SNIPER"/"WAR"/"LIVE" for filtered RUNS
+# disabled: True for CLOUD_LOCKED items
+# help_text: Tooltip açıklaması
+NAV_MAP = {
+    "DASHBOARD": [
+        ("Sistem Durumu", "OPS", None, False, "Sistem sağlığı, SLO durumu ve timeline görüntüler."),
+        ("Alarmlar", "ALERTS", None, False, "Aktif alarmları listeler ve onaylama (ack) imkanı sağlar."),
+        ("Panel Sağlığı", "PANEL_HEALTH", None, False, "Bundle keşfi, import durumu ve hata raporlarını gösterir."),
+        ("Yayın Kapısı", "RELEASE", None, False, "Candidate'ın yayına hazır olup olmadığını değerlendirir."),
+        ("Prova (Go/No-Go)", "REHEARSAL", None, False, "Canlıya geçiş öncesi kontrol listesi ve Go/No-Go kararı."),
+    ],
+    "CANDIDATES": [
+        ("Adaylar", "CANDIDATES", None, False, "Strateji adaylarını listeler, onaylar veya reddeder."),
+    ],
+    "SNIPER": [
+        ("Sniper", "SNIPER", None, False, "Sniper tekli backtest geçmişi ve sonuçları."),
+        ("Koşular (Sniper)", "RUNS", "SNIPER", False, "Sadece Sniper modundaki koşuları filtreler."),
+    ],
+    "WAR": [
+        ("WAR", "WAR", None, False, "Çoklu-coin toplu backtest paneli. Yeni WAR run başlatır."),
+        ("Koşular (WAR)", "RUNS", "WAR", False, "Sadece WAR modundaki koşuları filtreler."),
+    ],
+    "LIVE": [
+        ("LIVE", "LIVE", None, False, "Canlı prova modu. Bar-bar simülasyon yapar."),
+        ("Koşular (LIVE)", "RUNS", "LIVE", False, "Sadece LIVE modundaki koşuları filtreler."),
+    ],
+    "EVIDENCE": [
+        ("Koşular (Tümü)", "RUNS", None, False, "Tüm modlardaki koşu geçmişini gösterir."),
+        ("Raporlar", "REPORTS", None, False, "WAR, LIVE ve Cloud run raporlarını özetler."),
+        ("Olaylar (Kanıt Paketleri)", "INCIDENTS", None, False, "Block, exception ve data gap olaylarını listeler."),
+    ],
+    "OPS": [
+        ("Bakım", "MAINTENANCE", None, False, "Cache temizleme, legacy cleanup ve registry rebuild araçları."),
+        ("Taşıma", "MIGRATION", None, False, "Veri taşıma raporlarını gösterir."),
+    ],
+    "PLATFORM": [
+        ("Kayıt Defteri", "REGISTRY", None, False, "Cloud'a kayıtlı stratejileri listeler."),
+        ("Platform", "PLATFORM", None, False, "Connector, Job ve Ops yönetim paneli."),
+    ],
+    "CLOUD_LOCKED": [
+        ("Bulut Çalışma Zamanı (Kilitli)", "CLOUD_RUNTIME", None, True, "🔒 Matrix v1.0 FINAL sonrası aktif olacak."),
+        ("Kullanıcı Akışı (Kilitli)", "USERSTREAM", None, True, "🔒 Matrix v1.0 FINAL sonrası aktif olacak."),
+        ("Bulut Döngüsü (Kilitli)", "LOOP", None, True, "🔒 Matrix v1.0 FINAL sonrası aktif olacak."),
+    ],
+}
+
+# Legacy alias for backward compatibility
+SUB_HEADINGS = {k: [(item[0], item[1], item[2]) for item in v] for k, v in NAV_MAP.items()}
+
+
+# Legacy categories (for backward compatibility)
 CATEGORIES = [
     ("OPS", "🏠 Operasyon", "Sistem sağlığı ve SLO"),
     ("ALERTS", "🔔 Alarmlar", "Aktif alarmlar ve bildirimler"),
@@ -35,102 +105,211 @@ CATEGORIES = [
     ("PLATFORM", "🏗️ Platform", "Connectors, Jobs, Ops"),
 ]
 
+
 def render_matrix_v4():
-    """Main entry point for Matrix V4 Streamlit UI."""
-    
-    # Default home path (hidden from UI)
+    """
+    Main entry point for Matrix V4 Streamlit UI.
+    Navigation v1.0 HARDENED: Türkçe labels, FIX-1/2/3, breadcrumb.
+    """
+    # Default home path
     home = st.session_state.get("matrix_home", ".tezaver_matrix")
     st.session_state["matrix_home"] = home
     
     # Build context
     ctx = build_matrix_v4_context(home)
-    
-    # Sidebar: Category selection
-    st.sidebar.markdown("### Kategoriler")
-    
-    # MXI-1160: Support programmatic redirect via session state
-    if "matrix_selected_cat" not in st.session_state:
-        st.session_state["matrix_selected_cat"] = "OPS"
-        
-    category_labels = {cat[0]: f"{cat[1]}" for cat in CATEGORIES}
-    
-    # Finding current index
-    cat_keys = [c[0] for c in CATEGORIES]
-    try:
-        current_idx = cat_keys.index(st.session_state["matrix_selected_cat"])
-    except:
-        current_idx = 0
-
-    selected_cat = st.sidebar.radio(
-        "Kategori Seç",
-        options=cat_keys,
-        index=current_idx,
-        format_func=lambda x: category_labels[x],
-        label_visibility="collapsed",
-        key="matrix_cat_radio"
-    )
-    # Sync if user manually clicks
-    if selected_cat != st.session_state["matrix_selected_cat"]:
-        st.session_state["matrix_selected_cat"] = selected_cat
-    
-    # Top Banner
     counts = ctx["counts"]
+    
+    # ===== INITIALIZE STATE =====
+    if "active_main" not in st.session_state:
+        st.session_state["active_main"] = "DASHBOARD"
+    if "selected_route_key" not in st.session_state:
+        st.session_state["selected_route_key"] = "OPS"
+    if "selected_filter_mode" not in st.session_state:
+        st.session_state["selected_filter_mode"] = None
+    if "last_sub_index_by_main" not in st.session_state:
+        st.session_state["last_sub_index_by_main"] = {}
+    
+    # Helper: Get main heading label
+    def get_main_label(main_key: str) -> str:
+        for k, label, help in MAIN_HEADINGS:
+            if k == main_key:
+                return label
+        return main_key
+    
+    # Helper: Get sub item by index with bounds check (FIX-3)
+    def get_sub_item_safe(main_key: str, idx: int):
+        items = NAV_MAP.get(main_key, [])
+        if not items:
+            return None
+        if idx < 0 or idx >= len(items):
+            idx = 0
+            st.session_state["last_sub_index_by_main"][main_key] = 0
+        return items[idx]
+    
+    # Helper: Get current sub label for breadcrumb
+    def get_current_sub_label() -> str:
+        active_main = st.session_state["active_main"]
+        items = NAV_MAP.get(active_main, [])
+        route_key = st.session_state["selected_route_key"]
+        filter_mode = st.session_state["selected_filter_mode"]
+        
+        for item in items:
+            # item: (label_tr, route_key, filter_mode, disabled, help_text)
+            if item[1] == route_key and item[2] == filter_mode:
+                return item[0]
+        return "(Seçim yok)"
+    
+    # ===== SIDEBAR: 9 Main Headings =====
+    st.sidebar.markdown("### Ana Menü")
+    
+    for item in MAIN_HEADINGS:
+        main_key = item[0]
+        main_label = item[1]
+        help_text = item[2] if len(item) > 2 else None
+        
+        is_active = st.session_state["active_main"] == main_key
+        btn_type = "primary" if is_active else "secondary"
+        
+        if st.sidebar.button(main_label, key=f"main_{main_key}", use_container_width=True, type=btn_type, help=help_text):
+            st.session_state["active_main"] = main_key
+            
+            # FIX-3: Bounds check for last_sub_index
+            items = NAV_MAP.get(main_key, [])
+            if items:
+                last_idx = st.session_state["last_sub_index_by_main"].get(main_key, 0)
+                if last_idx < 0 or last_idx >= len(items):
+                    last_idx = 0
+                    st.session_state["last_sub_index_by_main"][main_key] = 0
+                
+                sub = items[last_idx]
+                # FIX-2: Cloud LOCKED items should not change state
+                if not sub[3]:  # disabled flag
+                    st.session_state["selected_route_key"] = sub[1]
+                    # FIX-1: filter_mode only for RUNS
+                    if sub[1] == "RUNS":
+                        st.session_state["selected_filter_mode"] = sub[2]
+                    else:
+                        st.session_state["selected_filter_mode"] = None
+            st.rerun()
+    
+    # ===== MAIN CONTENT =====
+    
+    # Top Banner (compact)
     st.markdown(f"""
-    <div style="background:#333; color:#fff; padding:12px; font-family:monospace; margin-bottom:20px; border-radius:5px;">
-        <b>Build:</b> {ctx['commit']} | <b>Branch:</b> {ctx['branch']} | <b>Home:</b> {ctx['home']}<br/>
-        <small>candidates={counts['candidates']} runs={counts['runs']} alerts={counts['alerts_active']} 
-        approved={counts['approved']} exports={counts['exports']} strategies={counts['strategies']}</small>
+    <div style="background:#222; color:#aaa; padding:6px 12px; font-family:monospace; margin-bottom:10px; border-radius:4px; font-size:10px;">
+        <b>Build:</b> {ctx['commit'][:8]} | <b>Branch:</b> {ctx['branch']} | 
+        candidates={counts['candidates']} runs={counts['runs']} approved={counts['approved']}
     </div>
     """, unsafe_allow_html=True)
     
-    # Category Title
-    cat_info = next((c for c in CATEGORIES if c[0] == selected_cat), None)
-    if cat_info:
-        st.header(f"{cat_info[1]}")
-        st.caption(cat_info[2])
+    # ===== BREADCRUMB =====
+    active_main = st.session_state["active_main"]
+    main_label = get_main_label(active_main)
+    sub_label = get_current_sub_label()
+    st.caption(f"📍 Konum: **{main_label}** > {sub_label}")
+    
+    # ===== SUB-HEADING BAR (in main content) =====
+    items = NAV_MAP.get(active_main, [])
+    
+    if items:
+        # Split into rows of 5 for wrapping
+        rows = [items[i:i+5] for i in range(0, len(items), 5)]
+        
+        for row_idx, row in enumerate(rows):
+            cols = st.columns(len(row))
+            for col_idx, item in enumerate(row):
+                # Unpack item: (label_tr, route_key, filter_mode, disabled, help_text)
+                label_tr = item[0]
+                route_key = item[1]
+                filter_mode = item[2]
+                disabled = item[3]
+                help_text = item[4] if len(item) > 4 else None
+                
+                with cols[col_idx]:
+                    # Unique key
+                    unique_key = f"sub_{active_main}_{row_idx}_{col_idx}"
+                    
+                    # FIX-2: Cloud LOCKED items are disabled and do NOT change state
+                    if disabled:
+                        st.button(label_tr, key=unique_key, disabled=True, use_container_width=True, help=help_text)
+                    else:
+                        is_active = (
+                            st.session_state["selected_route_key"] == route_key and 
+                            st.session_state["selected_filter_mode"] == filter_mode
+                        )
+                        btn_type = "primary" if is_active else "secondary"
+                        
+                        if st.button(label_tr, key=unique_key, use_container_width=True, type=btn_type, help=help_text):
+                            st.session_state["selected_route_key"] = route_key
+                            # FIX-1: filter_mode only for RUNS
+                            if route_key == "RUNS":
+                                st.session_state["selected_filter_mode"] = filter_mode
+                            else:
+                                st.session_state["selected_filter_mode"] = None
+                            # Track last selected sub for this main
+                            global_idx = row_idx * 5 + col_idx
+                            st.session_state["last_sub_index_by_main"][active_main] = global_idx
+                            st.rerun()
     
     st.divider()
     
-    # Render selected category
-    if selected_cat == "OPS":
+    # ===== ROUTE TO PAGE =====
+    route_key = st.session_state.get("selected_route_key", "OPS")
+    filter_mode = st.session_state.get("selected_filter_mode")
+    
+    # FIX-1: Ensure filter_mode is None for non-RUNS routes
+    if route_key != "RUNS":
+        filter_mode = None
+        st.session_state["selected_filter_mode"] = None
+    
+    # Handle LOCKED routes (should not happen due to FIX-2, but safety check)
+    if filter_mode == "LOCKED":
+        st.warning("🔒 Bu sayfa Matrix v1.0 FINAL sonrası aktif olacak.")
+        return
+    
+    # Render based on route_key
+    if route_key == "OPS":
         render_ops(home)
-    elif selected_cat == "ALERTS":
+    elif route_key == "ALERTS":
         render_alerts(home)
-    elif selected_cat == "CLOUD_RUNTIME":
-        render_cloud_runtime(home)
-    elif selected_cat == "USERSTREAM":
-        render_userstream(home)
-    elif selected_cat == "LOOP":
-        render_loop(home)
-    elif selected_cat == "MIGRATION":
-        render_migration(home)
-    elif selected_cat == "RELEASE":
-        render_release(home)
-    elif selected_cat == "REHEARSAL":
-        render_rehearsal(home)
-    elif selected_cat == "CANDIDATES":
-        render_candidates(home)
-    elif selected_cat == "SNIPER":
-        render_sniper(home)
-    elif selected_cat == "RUNS":
-        render_runs(home)
-    elif selected_cat == "WAR":
-        render_war(home)
-    elif selected_cat == "LIVE":
-        render_live(home)
-    elif selected_cat == "REPORTS":
-        render_reports(home)
-    elif selected_cat == "INCIDENTS":
-        render_incidents(home)
-    elif selected_cat == "PANEL_HEALTH":
+    elif route_key == "PANEL_HEALTH":
         render_panel_health(home)
-    elif selected_cat == "MAINTENANCE":
+    elif route_key == "RELEASE":
+        render_release(home)
+    elif route_key == "REHEARSAL":
+        render_rehearsal(home)
+    elif route_key == "CANDIDATES":
+        render_candidates(home)
+    elif route_key == "SNIPER":
+        render_sniper(home)
+    elif route_key == "WAR":
+        render_war(home)
+    elif route_key == "LIVE":
+        render_live(home)
+    elif route_key == "RUNS":
+        render_runs(home)  # filter_mode can be used inside if needed
+    elif route_key == "REPORTS":
+        render_reports(home)
+    elif route_key == "INCIDENTS":
+        render_incidents(home)
+    elif route_key == "MAINTENANCE":
         render_maintenance(home)
-    elif selected_cat == "REGISTRY":
+    elif route_key == "MIGRATION":
+        render_migration(home)
+    elif route_key == "REGISTRY":
         render_registry(home)
-    elif selected_cat == "PLATFORM":
+    elif route_key == "PLATFORM":
         from tezaver.ui.platform_tab import render_platform_tab
         render_platform_tab()
+    elif route_key == "CLOUD_RUNTIME":
+        render_cloud_runtime(home)
+    elif route_key == "USERSTREAM":
+        render_userstream(home)
+    elif route_key == "LOOP":
+        render_loop(home)
+    else:
+        st.info(f"Route not found: {route_key}")
+
 
 # ============================================================================
 # CATEGORY RENDERERS
@@ -296,7 +475,7 @@ def render_loop(home: str):
     st.divider()
     
     ticks = st.number_input("Loop Ticks", min_value=1, max_value=10, value=3, key="loop_ticks")
-    if st.button("Run Loop Once"):
+    if st.button("Run Loop Once", help="Cloud Loop'u bir cycle için manuel olarak çalıştırır."):
         try:
             from tezaver.matrix.core.cloud_loop import CloudLoopSupervisor
             sup = CloudLoopSupervisor(home)
@@ -322,7 +501,7 @@ def render_release(home: str):
     
     candidate_id = st.text_input("Candidate ID", key="release_cid")
     
-    if st.button("Evaluate"):
+    if st.button("Evaluate", help="Seçili aday için yayın kriterlerini (quality, risk, profit) otomatik denetler."):
         if not candidate_id:
             st.warning("Candidate ID gerekli")
         else:
@@ -365,7 +544,7 @@ def render_rehearsal(home: str):
     st.divider()
     
     candidate_id = st.text_input("Candidate ID (optional)", key="rehearsal_cid")
-    if st.button("Run Rehearsal"):
+    if st.button("Run Rehearsal", help="Canlıya geçiş öncesi Go/No-Go provasını başlatır."):
         try:
             from tezaver.matrix.core.rehearsal import run_rehearsal, write_latest
             result = run_rehearsal(home, candidate_id if candidate_id else None)
@@ -415,7 +594,7 @@ def _render_candidates_inner(home: str):
     # --- Actions bar ---
     c1, c2 = st.columns([1, 4])
     with c1:
-        if st.button("🔄 Local Tara & Import", use_container_width=True):
+        if st.button("🔄 Local Tara & Import", use_container_width=True, help="Disk üzerindeki 'out/matrix_candidates' klasörünü tarar ve yeni adayları sisteme kaydeder."):
             from tezaver.matrix.adapters.bundle_source_local import UnsupportedBundleVersion
             import hashlib
             
@@ -587,7 +766,7 @@ def _render_candidates_inner(home: str):
         # MXI-1040: Sniper Run Button
         c_btn1, c_btn2, c_btn3 = st.columns(3)
         
-        if c_btn1.button("🚀 RUN SNIPER", type="primary", use_container_width=True):
+        if c_btn1.button("🚀 RUN SNIPER", type="primary", use_container_width=True, help="Seçili aday için Sniper backtestini başlatır."):
             registry.update_status(selected_cid, "TESTING")
             st.info(f"Sniper Run başlatılıyor: {selected_cid}")
             from tezaver.matrix.apps.run_sniper import run_sniper_stub
@@ -813,7 +992,7 @@ def render_panel_health(home: str):
     
     st.subheader("🏥 Panel Health Diagnostics")
     
-    if st.button("🔄 Refresh Health", type="primary"):
+    if st.button("🔄 Refresh Health", type="primary", help="Panel sağlık metriklerini ve bundle durumlarını günceller."):
         st.cache_data.clear()
         st.rerun()
     
@@ -914,7 +1093,7 @@ def render_maintenance(home: str):
     st.markdown("### 🔁 Registry Rebuild")
     st.caption("Bundle'lardan candidates_registry.jsonl'yi yeniden oluşturur.")
     
-    if st.button("🔄 Rebuild Candidates Registry", use_container_width=True):
+    if st.button("🔄 Rebuild Candidates Registry", use_container_width=True, help="Tüm kayıtları siler ve bundle'ları baştan tarayarak registry dosyasını yeniler."):
         from tezaver.matrix.adapters.bundle_source_local import LocalBundleSource, UnsupportedBundleVersion
         from tezaver.matrix.adapters.candidate_registry import CandidateRegistry
         from tezaver.matrix.core.candidate_v1 import generate_candidate_id
@@ -1016,7 +1195,7 @@ def render_war(home: str):
             max_notional = st.number_input("Max Total Notional", 1000, 1000000, 100000)
             max_positions = st.number_input("Max Concurrent Positions", 1, 20, 5)
         
-        if st.button("⚔️ Start WAR Run", type="primary"):
+        if st.button("⚔️ Start WAR Run", type="primary", help="Onaylı adaylar için toplu backtest simülasyonunu başlatır."):
             with st.spinner("WAR run başlatılıyor..."):
                 try:
                     plan = planner.generate_plan(max_candidates=max_candidates, seed=seed)
@@ -1183,7 +1362,7 @@ def render_live(home: str):
         with col2:
             max_bars = st.number_input("Max Bars (test)", 10, 500, 50, key="live_bars")
         
-        if st.button("🟢 Start LIVE Run", type="primary"):
+        if st.button("🟢 Start LIVE Run", type="primary", help="Onaylı adaylar için canlı prova oturumunu başlatır."):
             with st.spinner("LIVE run başlatılıyor..."):
                 try:
                     plan = planner.generate_plan(max_candidates=max_candidates)
