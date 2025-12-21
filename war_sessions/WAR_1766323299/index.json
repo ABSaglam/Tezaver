@@ -1,0 +1,17 @@
+[
+  {
+    "file": "join_diagnostics.json",
+    "status": "FAIL",
+    "error": "Invalid bundle: ['Missing required field: symbol', 'Missing required field: timeframe', 'Missing required field: bundle_version', 'Missing required field: build_ts', 'Missing required field: story']"
+  },
+  {
+    "file": "manifest.json",
+    "status": "FAIL",
+    "error": "Invalid bundle: ['Missing required field: story']"
+  },
+  {
+    "file": "payload.json",
+    "status": "FAIL",
+    "error": "Invalid bundle: ['Missing required field: symbol', 'Missing required field: timeframe', 'Missing required field: bundle_version', 'Missing required field: build_ts', 'Missing required field: story']"
+  }
+]

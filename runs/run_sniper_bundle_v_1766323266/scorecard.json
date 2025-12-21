@@ -1,0 +1,16 @@
+{
+  "run_id": "run_sniper_bundle_v_1766323266",
+  "bars_count": 100,
+  "blocks_count": 0,
+  "trades_count": 0,
+  "total_pnl_raw": 0,
+  "fee_cost": 0.0,
+  "slippage_cost": 0.0,
+  "trade_audit_v2": [],
+  "win_rate": 0.0,
+  "event_types": {
+    "RUN_START": 1,
+    "CYCLE_STEP": 100,
+    "RUN_END": 1
+  }
+}

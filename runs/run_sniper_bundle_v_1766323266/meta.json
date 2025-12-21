@@ -1,0 +1,16 @@
+{
+  "run_id": "run_sniper_bundle_v_1766323266",
+  "run_profile": "SNIPER",
+  "created_ts": 1766323266,
+  "candidate": {
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "build_ts": "2025-12-21T12:36:39.789663+00:00"
+  },
+  "trace": {
+    "engine_version": "v4-sniper-real",
+    "data_fingerprint": "mock_data_fp_100",
+    "config_signature": "mock_config_sig"
+  },
+  "event_count": 0
+}

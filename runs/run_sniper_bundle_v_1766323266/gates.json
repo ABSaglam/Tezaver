@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Gov:Allowlist",
+    "allow": true,
+    "reason": "BTCUSDT allowed"
+  },
+  {
+    "name": "Gov:Delist",
+    "allow": true,
+    "reason": ""
+  },
+  {
+    "name": "Gov:Staleness",
+    "allow": true,
+    "reason": ""
+  },
+  {
+    "name": "Risk:Check",
+    "allow": true,
+    "reason": ""
+  }
+]
