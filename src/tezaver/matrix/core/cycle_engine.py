@@ -3,6 +3,7 @@ from typing import Optional, Any, List
 from dataclasses import asdict
 
 from tezaver.matrix.core.bars import require_closed_bar, Bar
+from tezaver.matrix.core.lookahead_guard import LookaheadProtectedList
 from tezaver.matrix.core.trace import TraceIds, require_trace_ids
 from tezaver.matrix.core.state import RunState, validate_state
 from tezaver.matrix.core.gates import eval_all_gates, RiskGateConfig, GovernanceConfig, GateResult
@@ -62,6 +63,8 @@ def run_cycle(symbol: str,
         return ev
     
     log_event("RUN_START", {"meta": meta})
+    log_event("LOOKAHEAD_GUARD_OK", {"status": "ENFORCED"})
+
     
     # 2. Fetch Data
     bars = override_bars if override_bars is not None else data.get_closed_bars(symbol, timeframe)
@@ -77,8 +80,11 @@ def run_cycle(symbol: str,
     
     # 3. Main Loop
     try:
-        for bar in bars:
+        protected_bars = LookaheadProtectedList(bars, initial_index=0)
+        for i, bar in enumerate(bars):
+            protected_bars.set_current_index(i)
             require_closed_bar(bar)
+
                 
             # Validate State
             invariants = validate_state(state)

@@ -12,10 +12,17 @@ class GateVerdict:
 
 def judge_run(home: str, run_id: str, scorecard: Dict) -> Dict:
     """Evaluates a run against Gates and issues a Verdict."""
+    from tezaver.matrix.core.run_path import get_run_root
+    
+    # Infer mode from run_id prefix
+    mode = "SNIPER"
+    if run_id.startswith("war_"): mode = "WAR"
+    elif run_id.startswith("live_"): mode = "LIVE"
     
     # Load Meta
-    run_dir = os.path.join(home, "runs", run_id)
-    meta_path = os.path.join(run_dir, "meta.json")
+    run_root = get_run_root(mode, run_id, home)
+    meta_path = run_root / "meta.json"
+
     meta = {}
     if os.path.exists(meta_path):
         with open(meta_path, "r", encoding="utf-8") as f:
@@ -46,8 +53,16 @@ def judge_run(home: str, run_id: str, scorecard: Dict) -> Dict:
         gates.append(GateVerdict("NO_BLOCKS", "FAIL", f"Found {blocks} blocks"))
         
     # 4. DATA_OK
-    # Check data_reports/latest.json
-    data_rep_path = os.path.join(home, "data_reports", "latest.json")
+    # MX-5110: Run-scoped check
+    from tezaver.matrix.core.run_path import get_data_report_path
+    
+    # Infer mode from run_id prefix
+    mode = "SNIPER"
+    if run_id.startswith("war_"): mode = "WAR"
+    elif run_id.startswith("live_"): mode = "LIVE"
+    
+    data_rep_path = get_data_report_path(mode, run_id, home)
+    
     if os.path.exists(data_rep_path):
         try:
              with open(data_rep_path) as f:
@@ -55,11 +70,12 @@ def judge_run(home: str, run_id: str, scorecard: Dict) -> Dict:
                  if rep.get("ok"):
                      gates.append(GateVerdict("DATA_OK", "PASS"))
                  else:
-                     gates.append(GateVerdict("DATA_OK", "IMPROVE", "Data issues found"))
+                     gates.append(GateVerdict("DATA_OK", "FAIL", "DATA_QUALITY_FAIL"))
         except:
-             gates.append(GateVerdict("DATA_OK", "IMPROVE", "Corrupt data report"))
+             gates.append(GateVerdict("DATA_OK", "FAIL", "MISSING_RUN_SCOPED_REPORT (Corrupt)"))
     else:
-        gates.append(GateVerdict("DATA_OK", "IMPROVE", "No data report found"))
+        gates.append(GateVerdict("DATA_OK", "FAIL", "MISSING_RUN_SCOPED_REPORT"))
+
         
     # 5. MIN_TRADES (MXI-1140)
     trades_count = scorecard.get("trades_count", 0)
@@ -118,8 +134,9 @@ def judge_run(home: str, run_id: str, scorecard: Dict) -> Dict:
     }
     
     # MXI-1150: Generate report.json
-    report_path = os.path.join(run_dir, "report.json")
+    report_path = run_root / "report.json"
     with open(report_path, "w", encoding="utf-8") as f:
+
         json.dump(result, f, indent=2)
         
     return result

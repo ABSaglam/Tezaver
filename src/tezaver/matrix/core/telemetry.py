@@ -1,37 +1,39 @@
 import json
-from typing import List, Dict
+from datetime import datetime
+from typing import Dict, Any, Optional
+from tezaver.version import __version__, build_commit
 
-REQUIRED_FIELDS = ["ts", "event_type", "run_id", "trace", "payload"]
-
-def event_line(e: Dict) -> str:
-    """Returns a deterministic JSON line for an event."""
-    return json.dumps(e, sort_keys=True)
-
-def validate_event_dict(e: Dict) -> List[str]:
-    """Validates a single event dictionary against mandatory schema."""
-    errors = []
-    for field in REQUIRED_FIELDS:
-        if field not in e:
-            errors.append(f"Missing required field: {field}")
+def normalize_event(
+    event_type: Optional[str] = None,
+    data: Optional[Dict[str, Any]] = None,
+    run_id: str = "unknown",
+    config_signature: str = "unknown",
+    data_fingerprint: str = ""
+) -> Dict[str, Any]:
+    """
+    MX-5150: Standardizes telemetry event schema.
+    Tr: Telemetry event şemasını standartlaştırır.
+    """
+    data = data or {}
+    
+    # Kind to event_type mapping (backward compatibility)
+    final_type = event_type or data.get("event_type") or data.get("kind") or "UNKNOWN_EVENT"
+    
+    event = {
+        "event_type": final_type,
+        "ts": datetime.now().isoformat(),
+        "run_id": run_id,
+        "engine_version": f"v{__version__}",
+        "build_commit": build_commit(),
+        "config_signature": config_signature,
+    }
+    
+    if data_fingerprint:
+        event["data_fingerprint"] = data_fingerprint
+        
+    # Merge payload, avoiding overwriting mandatory fields
+    for k, v in data.items():
+        if k not in event:
+            event[k] = v
             
-    # Trace validation
-    if "trace" in e:
-        trace = e["trace"]
-        if not isinstance(trace, dict):
-             errors.append("Field 'trace' must be a dict")
-             
-    return errors
-
-def validate_ndjson_lines(lines: List[str]) -> List[str]:
-    """Validates a list of NDJSON event lines."""
-    all_errors = []
-    for idx, line in enumerate(lines):
-        try:
-            e = json.loads(line)
-            errs = validate_event_dict(e)
-            for err in errs:
-                all_errors.append(f"Line {idx+1}: {err}")
-        except json.JSONDecodeError:
-            all_errors.append(f"Line {idx+1}: Invalid JSON")
-            
-    return all_errors
+    return event

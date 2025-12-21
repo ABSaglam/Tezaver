@@ -340,7 +340,7 @@ def render_ops(home: str):
         for line in reversed(lines):
             try:
                 e = json.loads(line)
-                st.text(f"{e.get('ts', '')} | {e.get('kind', '')} | {e.get('title_tr', '')}")
+                st.text(f"{e.get('ts', '')} | {e.get('event_type', e.get('kind', ''))} | {e.get('title_tr', '')}")
             except:
                 pass
     else:
@@ -466,7 +466,7 @@ def render_loop(home: str):
         for line in reversed(lines):
             try:
                 e = json.loads(line)
-                st.text(f"{e.get('ts', '')} | {e.get('kind', '')}")
+                st.text(f"{e.get('ts', '')} | {e.get('event_type', e.get('kind', ''))}")
             except:
                 pass
     else:
@@ -499,6 +499,20 @@ def render_release(home: str):
     """Render Release Gate category."""
     st.subheader("🚀 Release Gate Evaluation")
     
+    # MX-5260: Safety Check
+    from tezaver.matrix.protocols.safety_registry import SafetyProtocolRegistry, SafetyStatus
+    try:
+        registry = SafetyProtocolRegistry()
+        red_protocols = [p for p in registry.protocols if registry.get_overall_for_active(p["mx"]) == SafetyStatus.RED]
+        
+        if red_protocols:
+            st.error("⚠️ CRITICAL: RED Safety Protocols detected. Release Gate is LOCKED.")
+            for p in red_protocols:
+                st.write(f"- **{p['mx']}**: {p['name']} (Status: RED)")
+            st.divider()
+    except Exception as e:
+        st.warning(f"Safety Registry check skipped: {e}")
+
     candidate_id = st.text_input("Candidate ID", key="release_cid")
     
     if st.button("Evaluate", help="Seçili aday için yayın kriterlerini (quality, risk, profit) otomatik denetler."):
@@ -509,15 +523,30 @@ def render_release(home: str):
                 from tezaver.matrix.core.release_gate import evaluate_release_gate
                 result = evaluate_release_gate(home, candidate_id)
                 
+                # MX-5260: Override outcome if RED protocols exist
+                try:
+                    registry = SafetyProtocolRegistry()
+                    red_protocols = [p for p in registry.protocols if registry.get_overall_for_active(p["mx"]) == SafetyStatus.RED]
+                    if red_protocols:
+                        result["ok"] = False
+                        result["summary"] = f"BLOCKED by {len(red_protocols)} RED Safety Protocols"
+                except: pass
+
                 ok = result.get("ok", False)
                 if ok:
                     st.success(f"✅ PASS: {result.get('summary', '')}")
                 else:
                     st.error(f"❌ FAIL: {result.get('summary', '')}")
+                    # MX-5110: Detail DATA_OK failures
+                    for check in result.get("checks", []):
+                        if check.get("code") == "DATA_OK" and check.get("status") == "FAIL":
+                            st.warning(f"⚠️ DATA_OK FAIL: {check.get('detail', 'Unknown reason')}")
                     
                 st.json(result)
+
             except Exception as e:
                 st.error(f"Error: {e}")
+
 
 def render_rehearsal(home: str):
     """Render Rehearsal category."""
@@ -986,6 +1015,7 @@ def render_panel_health(home: str):
     """
     PNL-1030: Panel Health Page.
     Shows bundle discovery/import statistics and errors.
+    MX-5260: Integrated Safety Protocol Registry.
     """
     from tezaver.ui.ui_guard import render_data_sources_box
     render_data_sources_box()
@@ -996,7 +1026,18 @@ def render_panel_health(home: str):
         st.cache_data.clear()
         st.rerun()
     
+    # MX-5260: Safety Protocol Registry Table
+    render_safety_protocols(home)
+    
+    # MX-5110: DataReport Summary
+    render_datareport_summary(home)
+    
+    # MX-5100: Closed-bar Health
+    render_closedbar_health(home)
+
+    
     try:
+
         from tezaver.matrix.apps.panel_health import run_health_check
         health = run_health_check()
         
@@ -1031,12 +1072,79 @@ def render_panel_health(home: str):
         # JSON Export
         with st.expander("📄 JSON Export"):
             st.json(health)
+        
             
     except Exception as e:
         st.error(f"Health check başarısız: {e}")
         st.exception(e)
 
+def render_safety_protocols(home: str):
+    """MX-5260: Render Safety Protocol Registry Table."""
+    st.divider()
+    st.subheader("🛡️ Safety Protocols (Güvenlik Sağlama)")
+    
+    from tezaver.matrix.protocols.safety_registry import SafetyProtocolRegistry
+    try:
+        registry = SafetyProtocolRegistry()
+        rows = registry.get_ui_rows()
+        
+        if registry.cloud_locked:
+            st.info("☁️ **Cloud Locked:** Bulut çalışma zamanı korumaları şu an için devredışı/deferred.")
+            
+        st.dataframe(
+            pd.DataFrame(rows),
+            use_container_width=True,
+            hide_index=True
+        )
+    except Exception as e:
+        st.error(f"Safety Registry yüklenemedi: {e}")
+        st.info("PyYAML yüklü mü? `pip install PyYAML` deneyin.")
+
+def render_datareport_summary(home: str):
+    """MX-5110: Render DataReport summary in Panel Health."""
+    st.divider()
+    st.subheader("📊 Latest DataReport (Run-Scoped)")
+    
+    from tezaver.matrix.core.run_path import get_data_report_path
+    
+    # Simple logic to find the latest data_report_v1.json across all modes
+    found_reports = []
+    for mode in ["SNIPER", "WAR", "LIVE"]:
+        mode_dir = Path(home) / "out" / "matrix_runs" / mode.lower()
+        if mode_dir.exists():
+            for rid in os.listdir(mode_dir):
+                rp = get_data_report_path(mode, rid, home)
+                if rp.exists():
+                    found_reports.append({
+                        "mode": mode,
+                        "run_id": rid,
+                        "path": str(rp),
+                        "mtime": os.path.getmtime(rp)
+                    })
+    
+    if found_reports:
+        found_reports.sort(key=lambda x: x["mtime"], reverse=True)
+        latest = found_reports[0]
+        try:
+            with open(latest["path"]) as f:
+                rep = json.load(f)
+            
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Latest Run", latest["run_id"][:12])
+            c2.metric("Resolve Rate", f"%{rep.get('resolved_rate', 0)*100:.1f}")
+            c3.metric("Status", "PASS" if rep.get("ok") else "FAIL")
+            
+            st.caption(f"**Report Path:** `{latest['path']}`")
+            with st.expander("Detaylı Rapor"):
+                st.json(rep)
+        except Exception as e:
+            st.error(f"Rapor okunamadı: {e}")
+    else:
+        st.info("Henüz kapsamlı (run-scoped) bir DataReport bulunamadı.")
+
 def render_maintenance(home: str):
+
+
     """
     PNL-1040: Maintenance Page.
     Provides tools for legacy cleanup, registry rebuild, and cache clear.
@@ -1315,12 +1423,41 @@ def render_war(home: str):
                         for line in lines:
                             try:
                                 e = json.loads(line)
-                                st.text(f"{e.get('kind', '')} | {e.get('candidate_id', '')}")
+                                st.text(f"{e.get('event_type', e.get('kind', ''))} | {e.get('candidate_id', '')}")
                             except:
                                 pass
+                
+                # MX-5120: Trade Audit Table
+                render_trade_audit_table(artifacts_dir)
+
+
+def render_trade_audit_table(artifacts_dir: Path):
+    """MX-5120: Render standard TradeAudit V2 table."""
+    audit_path = artifacts_dir / "trade_audit_v2.jsonl"
+    if audit_path.exists():
+        with st.expander("📈 Trade Audit (Real PnL)", expanded=True):
+            try:
+                import pandas as pd
+                rows = []
+                with open(audit_path) as f:
+                    for line in f:
+                        rows.append(json.loads(line))
+                if rows:
+                    df = pd.DataFrame(rows)
+                    # Use provided columns from prompt
+                    cols = ["entry_ts", "exit_ts", "symbol", "side", "qty", "entry_price", "exit_price", "net_pnl", "exit_reason"]
+                    present_cols = [c for c in cols if c in df.columns]
+                    st.dataframe(df[present_cols], use_container_width=True)
+                    
+                    st.metric("Net Total PnL", f"${df['net_pnl'].sum():.2f}")
+                else:
+                    st.info("No trades executed in this run.")
+            except Exception as e:
+                st.error(f"Audit processing error: {e}")
 
 
 def render_live(home: str):
+
     """MX-3040: Render LIVE panel for live trading mode."""
     from tezaver.ui.ui_guard import render_data_sources_box
     render_data_sources_box()
@@ -1443,9 +1580,13 @@ def render_live(home: str):
                     for line in lines:
                         try:
                             e = json.loads(line)
-                            st.text(f"{e.get('kind', '')} | bar={e.get('bar_index', '')}")
+                            st.text(f"{e.get('event_type', e.get('kind', ''))} | bar={e.get('bar_index', '')}")
                         except:
                             pass
+            
+            # MX-5120: Trade Audit Table
+            render_trade_audit_table(Path(f"out/matrix_runs/live/{selected_run_id}"))
+
     
     st.divider()
     
@@ -1575,6 +1716,38 @@ def render_incidents(home: str):
                 for line in lines:
                     try:
                         e = json.loads(line)
-                        st.text(f"{e.get('kind', '')} | {e.get('ts', '')[:19]}")
+                        st.text(f"{e.get('event_type', e.get('kind', ''))} | {e.get('ts', '')[:19]}")
                     except:
                         pass
+
+def render_closedbar_health(home: str):
+    \"\"\"MX-5100: Render Closed-bar Health status.\"\"\"
+    st.subheader("🛡️ Closed-bar Health")
+    
+    # Scan latest telemetry for any run to check guard status
+    runs_dir = Path(home) / "out" / "matrix_runs"
+    latest_event = None
+    
+    # Check WAR runs first
+    war_dir = runs_dir / "war"
+    if war_dir.exists():
+        for run_path in sorted(war_dir.glob("*"), key=os.path.getmtime, reverse=True):
+            tel_path = run_path / "telemetry.ndjson"
+            if tel_path.exists():
+                with open(tel_path, "r") as f:
+                    for line in f:
+                        if "LOOKAHEAD_GUARD_OK" in line:
+                            latest_event = json.loads(line)
+                            break
+            if latest_event: break
+            
+    col1, col2 = st.columns(2)
+    if latest_event:
+        col1.metric("Guard Status", "ACTIVE ✅")
+        col2.metric("Last Proven", latest_event.get("ts", "")[:19])
+        st.success(f"Lookahead Guard verified in run {latest_event.get('run_id')}")
+    else:
+        col1.metric("Guard Status", "WAITING ⏳")
+        col2.metric("Last Proven", "N/A")
+        st.warning("No guard proof found in recent telemetry.")
+

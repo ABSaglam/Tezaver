@@ -1,0 +1,217 @@
+version: safety_protocol_registry_v1
+cloud_locked: true
+notes: "Master registry for Matrix Safety Protocols. Cloud-specific protocols are currently LOCKED/DEFERRED."
+
+protocols:
+  - mx: "MX-5100"
+    name: "Closed-bar Only Lock"
+    purpose: "Signal ve close kararları yalnız kapalı bar ile"
+    active_in: ["SNIPER", "WAR", "LIVE"]
+    status:
+      SNIPER: "RED"
+      WAR: "RED"
+      LIVE: "GREEN"
+    last_proof_run_id:
+      SNIPER: null
+      WAR: null
+      LIVE: null
+    evidence:
+      telemetry: ["BAR_CLOSED_USED", "LOOKAHEAD_GUARD_OK"]
+      artifacts: []
+      ui: ["OPS/PANEL_HEALTH", "RUNS"]
+      tests:
+        [
+          "test_closed_bar_only_live.py",
+          "test_closed_bar_only_sniper.py",
+          "test_closed_bar_only_war.py",
+        ]
+    notes: "v1 standard"
+
+  - mx: "MX-5110"
+    name: "DataReport v1 + DATA_OK run-scoped fix"
+    purpose: "Data integrity and run-scoped validation"
+    active_in: ["SNIPER", "WAR", "LIVE"]
+    status:
+      SNIPER: "GREEN"
+      WAR: "GREEN"
+      LIVE: "GREEN"
+    last_proof_run_id:
+      SNIPER: null
+      WAR: "war_005535794ead"
+      LIVE: null
+    evidence:
+      telemetry: []
+      artifacts: ["reports/data_report_v1.json"]
+      ui: ["OPS/PANEL_HEALTH"]
+      tests: ["tests/matrix/protocols/test_mx_5110_gate.py"]
+    notes: "Pilot run war_005535794ead successful."
+
+  - mx: "MX-5120"
+    name: "Exit & Real PnL v1 (SL/TP/TimeStop + PnL sanity)"
+    purpose: "Accurate PnL calculation and exit condition enforcement"
+    active_in: ["SNIPER", "WAR", "LIVE"]
+    status:
+      SNIPER: "GREEN"
+      WAR: "GREEN"
+      LIVE: "GREEN"
+    last_proof_run_id:
+      SNIPER: null
+      WAR: "war_4074fb9285bf"
+      LIVE: null
+    evidence:
+      telemetry: ["POSITION_CLOSE", "TRADE_AUDIT_LINE_WRITTEN"]
+      artifacts: ["trade_audit_v2.jsonl"]
+      ui: ["RUNS/REPORTS", "TRADE_AUDIT_TABLE"]
+      tests: ["tests/matrix/audit/test_mx_5120_pnl_exits.py"]
+    notes: "Pilot run war_4074fb9285bf verified real PnL and exit reasons."
+
+  - mx: "MX-5130"
+    name: "Idempotency / Duplicate-order Shield"
+    purpose: "Prevent duplicate order execution"
+    active_in: ["LIVE"]
+    status:
+      SNIPER: "GRAY"
+      WAR: "GRAY"
+      LIVE: "GRAY"
+    evidence:
+      telemetry: []
+      artifacts: []
+      ui: []
+      tests: []
+
+  - mx: "MX-5140"
+    name: "Restart Reconciliation"
+    purpose: "State recovery after system restart"
+    active_in: ["LIVE"]
+    status:
+      SNIPER: "GRAY"
+      WAR: "GRAY"
+      LIVE: "GRAY"
+    evidence:
+      telemetry: []
+      artifacts: []
+      ui: []
+      tests: []
+
+  - mx: "MX-5150"
+    name: "Telemetry Schema Unification"
+    purpose: "Unified telemetry format across all components"
+    active_in: ["SNIPER", "WAR", "LIVE"]
+    status:
+      SNIPER: "GREEN"
+      WAR: "GREEN"
+      LIVE: "GREEN"
+    last_proof_run_id:
+      SNIPER: null
+      WAR: "war_f0a4864e2444"
+      LIVE: null
+    evidence:
+      telemetry: ["WAR_START", "CELL_START", "POSITION_OPEN"]
+      artifacts: ["telemetry.ndjson"]
+      ui: ["RUNS/DETAIL", "TELEMETRY_PREVIEW"]
+      tests: ["tests/matrix/telemetry/test_mx_5150_telemetry.py"]
+    notes: "Schema enforcement centralized via telemetry.py utility."
+
+  - mx: "MX-5160"
+    name: "Emergency Kill Switch + Safe Mode"
+    purpose: "Immediate halt of operations in case of anomaly"
+    active_in: ["LIVE"]
+    status:
+      SNIPER: "GRAY"
+      WAR: "GRAY"
+      LIVE: "GRAY"
+    evidence:
+      telemetry: []
+      artifacts: []
+      ui: []
+      tests: []
+
+  - mx: "MX-5170"
+    name: "Proof Bundle Packager"
+    purpose: "Packaging telemetry, reports, and incidents for audit"
+    active_in: ["SNIPER", "WAR", "LIVE"]
+    status:
+      SNIPER: "GRAY"
+      WAR: "GRAY"
+      LIVE: "GRAY"
+    evidence:
+      telemetry: []
+      artifacts: []
+      ui: []
+      tests: []
+
+  - mx: "MX-5180"
+    name: "Trust Score / Noise Filter"
+    purpose: "Signal filtering for SNIPER and WAR models"
+    active_in: ["SNIPER", "WAR"]
+    status:
+      SNIPER: "GRAY"
+      WAR: "GRAY"
+      LIVE: "GRAY"
+    evidence:
+      telemetry: []
+      artifacts: []
+      ui: []
+      tests: []
+
+  - mx: "MX-5190"
+    name: "Release Train Gates"
+    purpose: "Automated validation gates for deployment"
+    active_in: ["SNIPER", "WAR", "LIVE"]
+    status:
+      SNIPER: "GRAY"
+      WAR: "GRAY"
+      LIVE: "GRAY"
+    evidence:
+      telemetry: []
+      artifacts: []
+      ui: []
+      tests: []
+
+  - mx: "MX-5200"
+    name: "Order Lifecycle Prod-Grade v1"
+    active_in: ["LIVE"]
+    status: { SNIPER: "GRAY", WAR: "GRAY", LIVE: "GRAY" }
+    evidence: { telemetry: [], artifacts: [], ui: [], tests: [] }
+
+  - mx: "MX-5210"
+    name: "Market Data Integrity & Anti-Lookahead"
+    active_in: ["SNIPER", "WAR", "LIVE"]
+    status: { SNIPER: "GRAY", WAR: "GRAY", LIVE: "GRAY" }
+    evidence: { telemetry: [], artifacts: [], ui: [], tests: [] }
+
+  - mx: "MX-5220"
+    name: "Timebase Standard"
+    active_in: ["SNIPER", "WAR", "LIVE"]
+    status: { SNIPER: "GRAY", WAR: "GRAY", LIVE: "GRAY" }
+    evidence: { telemetry: [], artifacts: [], ui: [], tests: [] }
+
+  - mx: "MX-5230"
+    name: "Rate Limit + Retry/Backoff"
+    active_in: ["LIVE"]
+    status: { SNIPER: "GRAY", WAR: "GRAY", LIVE: "GRAY" }
+    evidence: { telemetry: [], artifacts: [], ui: [], tests: [] }
+
+  - mx: "MX-5240"
+    name: "Resource Exhaustion Guardrails"
+    active_in: ["LIVE"]
+    status: { SNIPER: "GRAY", WAR: "GRAY", LIVE: "GRAY" }
+    evidence: { telemetry: [], artifacts: [], ui: [], tests: [] }
+
+  - mx: "MX-5250"
+    name: "Tamper-Evident Evidence"
+    active_in: ["SNIPER", "WAR", "LIVE"]
+    status: { SNIPER: "GRAY", WAR: "GRAY", LIVE: "GRAY" }
+    evidence: { telemetry: [], artifacts: [], ui: [], tests: [] }
+
+  - mx: "MX-5260"
+    name: "Safety Protocol Registry + UI"
+    active_in: ["SNIPER", "WAR", "LIVE"]
+    status: { SNIPER: "GRAY", WAR: "GRAY", LIVE: "GRAY" }
+    evidence:
+      {
+        telemetry: [],
+        artifacts: [],
+        ui: ["OPS/PANEL_HEALTH"],
+        tests: ["test_safety_registry.py"],
+      }

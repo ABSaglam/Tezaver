@@ -1,0 +1,7 @@
+{"ts": "2025-12-21T16:53:03.068544", "kind": "WAR_START", "run_id": "war_4074fb9285bf", "plan_id": "pilot_plan_001", "cell_count": 1, "symbols": ["BTCUSDT"]}
+{"ts": "2025-12-21T16:53:03.068549", "kind": "CELL_START", "run_id": "war_4074fb9285bf", "candidate_id": "pilot_cand_001", "symbol": "BTCUSDT", "tf": "15m"}
+{"ts": "2025-12-21T16:53:03.124680", "kind": "POSITION_OPEN", "run_id": "war_4074fb9285bf", "candidate_id": "pilot_cand_001", "symbol": "BTCUSDT", "price": 40510.0, "qty": 0.024685262898049863, "side": "LONG"}
+{"ts": "2025-12-21T16:53:03.124728", "kind": "POSITION_CLOSE", "run_id": "war_4074fb9285bf", "candidate_id": "pilot_cand_001", "symbol": "BTCUSDT", "pnl": -1.2605529498889163, "reason": "CYCLE"}
+{"ts": "2025-12-21T16:53:03.124737", "kind": "CELL_END", "run_id": "war_4074fb9285bf", "candidate_id": "pilot_cand_001", "trades_count": 1}
+{"ts": "2025-12-21T16:53:03.125115", "kind": "CANDIDATE_STATUS_UPDATED", "run_id": "war_4074fb9285bf", "candidate_id": "pilot_cand_001", "bundle_id": "bundle_001", "old_status": "APPROVED_FOR_WAR", "new_status": "REJECTED_BY_WAR", "war_source": "WAR"}
+{"ts": "2025-12-21T16:53:03.125122", "kind": "WAR_END", "run_id": "war_4074fb9285bf", "verdict": "FAIL", "total_trades": 1, "net_pnl": -1.2606, "cell_error_count": 0}

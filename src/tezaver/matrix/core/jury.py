@@ -51,24 +51,29 @@ def compute_scorecard(home: str, run_id: str) -> Dict:
                         fee_cost += fee
                         slippage_cost += slip
                         
-                        # Audit Entry (MXI-1401)
+                        # Audit Entry (MX-5120 / V2)
                         audit_entry = {
                             "ts": ev.get("ts"),
                             "symbol": order.get("symbol"),
                             "side": order.get("side"),
                             "qty": qty,
-                            "limit_price": l_price,
-                            "fill_price": f_price,
+                            "entry_price": l_price, # assumed entry
+                            "exit_price": f_price,  # assumed fill
                             "fee": fee,
                             "slippage": slip,
-                            "notional": f_price * abs(qty)
+                            "net_pnl": 0.0, # Will be filled if paired or dummy calc
+                            "exit_reason": "FILLED"
                         }
+                        # For single-order audit, we can't easily calc net_pnl without exit,
+                        # but we fix the bug where notional was treated as pnl.
                         trade_audit.append(audit_entry)
 
             except:
                 continue
 
-    # PnL Calculation (Simplified: entries only)
+    # PnL Calculation
+    # MX-5120: total_pnl_raw should be sum of net_pnl, not notional.
+    total_pnl_raw = sum([t.get('net_pnl', 0) for t in trade_audit])
     total_trades = len(trades)
     
     return {
@@ -76,10 +81,11 @@ def compute_scorecard(home: str, run_id: str) -> Dict:
         "bars_count": bars_count,
         "blocks_count": blocks_count,
         "trades_count": total_trades,
-        "total_pnl_raw": sum([t.get('notional',0) for t in trade_audit]), 
+        "total_pnl_raw": total_pnl_raw, 
         "fee_cost": fee_cost,
         "slippage_cost": slippage_cost,
         "trade_audit_v2": trade_audit, # MXI-1401
+
         "win_rate": 0.0,
         "event_types": dict(event_counts)
     }

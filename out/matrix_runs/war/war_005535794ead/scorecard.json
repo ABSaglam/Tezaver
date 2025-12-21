@@ -1,0 +1,26 @@
+{
+  "total_trades": 2,
+  "net_pnl": 0.0987,
+  "max_drawdown": 0.0,
+  "win_rate": 1.0,
+  "fee_cost_total": 0.0001,
+  "slippage_cost_total": 0.0,
+  "risk_blocks_count": 0,
+  "symbols_active": [
+    "BTCUSDT"
+  ],
+  "scorecard_hash": "2b2bf535d82d1f07",
+  "by_candidate": {
+    "pilot_cand_001": {
+      "trades": 2,
+      "net_pnl": 0.0987,
+      "fee_cost": 0.0001
+    }
+  },
+  "by_symbol": {
+    "BTCUSDT": {
+      "trades": 2,
+      "net_pnl": 0.0987
+    }
+  }
+}
