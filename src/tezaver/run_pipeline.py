@@ -10,7 +10,7 @@ Usage:
 
 Modes:
     full: Runs all pipeline steps from data ingestion to export
-    fast: Runs only brain sync and bulut export (for quick updates)
+    fast: Runs only brain sync (for quick updates)
 """
 
 import argparse
@@ -36,7 +36,7 @@ from tezaver.brains.run_regime_shock_build import main as run_regime_shock_build
 from tezaver.wisdom.run_global_wisdom import main as run_global_wisdom_main
 from tezaver.levels.run_trend_levels_build import main as run_trend_levels_build_main
 from tezaver.core.run_brain_sync import main as run_brain_sync_main
-from tezaver.export.run_bulut_export import main as run_bulut_export_main
+# REMOVED: Bulut export silindi (17 Aralık yedeği)
 from tezaver.backup.run_backup import main as run_backup_main
 
 logger = get_logger(__name__)
@@ -58,7 +58,7 @@ def run_full_pipeline() -> None:
         M18 - Global wisdom
         M11-M12 - Levels build
         M7  - CoinState brain sync
-        M16 - Bulut export
+        (Bulut export silindi)
         M13 - Mini backup
     """
     logger.info("=" * 60)
@@ -96,13 +96,10 @@ def run_full_pipeline() -> None:
         logger.info("Step 10/13: M11-M12 - Levels build")
         run_trend_levels_build_main()
         
-        logger.info("Step 11/13: M7 - CoinState brain sync")
+        logger.info("Step 11/12: M7 - CoinState brain sync")
         run_brain_sync_main()
         
-        logger.info("Step 12/13: M16 - Bulut export")
-        run_bulut_export_main()
-        
-        logger.info("Step 13/13: M13 - Mini backup")
+        logger.info("Step 12/12: M13 - Mini backup")
         run_backup_main()
         
         logger.info("=" * 60)
@@ -120,18 +117,14 @@ def run_fast_pipeline() -> None:
     
     Fast Pipeline Steps:
         M7  - CoinState brain sync
-        M16 - Bulut export
     """
     logger.info("=" * 60)
     logger.info("TEZAVER MAC FAST PIPELINE STARTING")
     logger.info("=" * 60)
     
     try:
-        logger.info("Step 1/2: M7 - CoinState brain sync")
+        logger.info("Step 1/1: M7 - CoinState brain sync")
         run_brain_sync_main()
-        
-        logger.info("Step 2/2: M16 - Bulut export")
-        run_bulut_export_main()
         
         logger.info("=" * 60)
         logger.info("FAST PIPELINE COMPLETED SUCCESSFULLY")

@@ -193,8 +193,8 @@ def render_system_dashboard():
             ("🌍 Global Wisdom", "src/tezaver/wisdom/run_global_wisdom.py")
         ]
         tasks_sync = [
-             ("🧠 Brain Sync", "src/tezaver/core/run_brain_sync.py"),
-             ("☁️ Bulut Export", "src/tezaver/export/run_bulut_export.py")
+             ("🧠 Brain Sync", "src/tezaver/core/run_brain_sync.py")
+             # REMOVED: Bulut Export silindi (17 Aralık yedeği)
         ]
         
         # Group 5: Maintenance & Health (Special commands handled via string for shlex)
