@@ -342,24 +342,143 @@ def render_rehearsal(home: str):
             st.error(f"Error: {e}")
 
 def render_candidates(home: str):
-    """Render Candidates category."""
-    st.subheader("📋 Candidates")
+    """
+    MXI-1030: Render Candidates category with detailed table and story view.
+    MXI-1040: Sniper Run integration.
+    """
+    from tezaver.matrix.adapters.bundle_source_local import LocalBundleSource
+    from tezaver.matrix.adapters.candidate_registry import CandidateRegistry
     
-    cand_dir = os.path.join(home, "candidates")
-    if os.path.exists(cand_dir):
-        cids = [d for d in os.listdir(cand_dir) if os.path.isdir(os.path.join(cand_dir, d))]
+    source = LocalBundleSource() # Default path out/matrix_candidates
+    registry = CandidateRegistry() # Default path data/matrix/candidates_registry.jsonl
+    
+    st.subheader("📋 Strategy Candidates (Adaylar)")
+    
+    # --- Actions bar ---
+    c1, c2 = st.columns([1, 4])
+    with c1:
+        if st.button("🔄 Local Tara & Import", use_container_width=True):
+            bundles = source.discover_bundles()
+            imported_count = 0
+            for bdir in bundles:
+                try:
+                    manifest, _ = source.load_bundle(bdir)
+                    from tezaver.matrix.core.candidate_v1 import generate_candidate_id
+                    cid = generate_candidate_id(manifest)
+                    registry.register(
+                        candidate_id=cid,
+                        symbol=manifest.symbol,
+                        tf=manifest.tf,
+                        bundle_id=manifest.bundle_id,
+                        bundle_path=str(bdir),
+                        metrics={
+                            "trigger_resolve_rate": manifest.metrics.trigger_resolve_rate,
+                            "join_coverage": manifest.metrics.join_coverage
+                        }
+                    )
+                    imported_count += 1
+                except Exception as e:
+                    st.error(f"Hata ({bdir}): {e}")
+            st.success(f"{imported_count} aday başarıyla tarandı/güncellendi.")
+            st.rerun()
+
+    # --- Filters ---
+    all_cands = registry.list_all()
+    if not all_cands:
+        st.info("Kayıtlı aday yok. Lütfen 'Local Tara' butonuna basın.")
+        return
+
+    df_full = pd.DataFrame(all_cands)
+    
+    with st.expander("🔍 Filtreler", expanded=True):
+        f1, f2, f3 = st.columns(3)
+        symbols = sorted(df_full["symbol"].unique().tolist())
+        tfs = sorted(df_full["tf"].unique().tolist())
+        statuses = sorted(df_full["status"].unique().tolist())
         
-        if cids:
-            for cid in cids:
-                manifest_path = os.path.join(cand_dir, cid, "manifest.json")
-                if os.path.exists(manifest_path):
-                    with open(manifest_path) as f:
-                        m = json.load(f)
-                    st.text(f"📁 {cid}: {m.get('symbol', '?')} / {m.get('timeframe', '?')}")
-        else:
-            st.info("Henüz candidate yok")
-    else:
-        st.info("candidates klasörü yok")
+        sel_sym = f1.multiselect("Sembol", symbols)
+        sel_tf = f2.multiselect("TF", tfs)
+        sel_stat = f3.multiselect("Durum", statuses)
+        
+    df = df_full.copy()
+    if sel_sym: df = df[df["symbol"].isin(sel_sym)]
+    if sel_tf: df = df[df["tf"].isin(sel_tf)]
+    if sel_stat: df = df[df["status"].isin(sel_stat)]
+
+    # --- Table ---
+    # MXI-1030: symbol, tf, bundle_id, bundle_version, join_coverage, resolve_rate, status, build_ts
+    # Note: We need to load manifest to get bundle_version and build_ts if not in registry
+    # For now we'll show what we have in registry + some placeholders if needed.
+    
+    cols_to_show = ["symbol", "tf", "bundle_id", "resolve_rate", "join_coverage", "status", "created_at"]
+    st.dataframe(
+        df[cols_to_show].sort_values("created_at", ascending=False),
+        use_container_width=True,
+        hide_index=True
+    )
+    
+    # --- Detail View ---
+    st.divider()
+    selected_cid = st.selectbox("Detay İncele (Aday Seç):", df["candidate_id"].tolist())
+    
+    if selected_cid:
+        cand = registry.get(selected_cid)
+        if not cand: return
+        
+        # Load full bundle
+        from pathlib import Path
+        try:
+            m, p = source.load_bundle(Path(cand["bundle_path"]))
+        except Exception as e:
+            st.error(f"Bundle yüklenemedi: {e}")
+            return
+            
+        # UI-B Layout
+        st.header(f"📍 {cand['symbol']} - {cand['tf']}")
+        
+        # MXI-1030: Warning banner
+        if cand["join_coverage"] < 0.80:
+            st.warning(f"⚠️ DÜŞÜK JOIN KAPSAMI: %{cand['join_coverage']*100:.1f} (Hedef > %80)")
+            
+        col_m1, col_m2, col_m3 = st.columns(3)
+        col_m1.metric("Resolve Rate", f"%{m.metrics.trigger_resolve_rate*100:.1f}")
+        col_m2.metric("Join Coverage", f"%{m.metrics.join_coverage*100:.1f}")
+        col_m3.metric("Status", cand["status"])
+        
+        with st.expander("📋 Manifest & Metrics Detayı"):
+            st.json(m.dict() if hasattr(m, 'dict') else m.__dict__) # dataclass __dict__ or pydantic dict()
+            
+        # MXI-1040: Sniper Run Button
+        if st.button("🚀 RUN SNIPER", type="primary", use_container_width=True):
+            st.info(f"Sniper Run başlatılıyor: {selected_cid}")
+            from tezaver.matrix.apps.run_sniper import run_sniper_stub
+            run_id = run_sniper_stub(home, selected_cid)
+            st.success(f"Sniper Run oluşturuldu: {run_id}")
+            # In real app we might redirect to RUNS tab
+            # st.session_state["matrix_selected_cat"] = "RUNS"
+            # st.rerun()
+
+        st.subheader("📖 Rally Stories (V1)")
+        stories_df = []
+        for s in p.stories:
+            stories_df.append({
+                "story_id": s.story_id,
+                "trigger": s.entry.get("trigger", ""),
+                "source": s.entry.get("trigger_source", ""),
+                "entry": s.entry.get("entry_price", 0),
+                "risk (SL %)": s.risk.get("stop_loss_pct", 0),
+                "levels (S/R)": f"{s.entry.get('levels', {}).get('nearest_support', '')} / {s.entry.get('levels', {}).get('nearest_resistance', '')}",
+                "time_utc": s.entry.get("event_time_utc", "")
+            })
+        st.table(stories_df)
+        
+        # MXI-1030: Diagnostics
+        diag_path = Path(cand["bundle_path"]) / "join_diagnostics.json"
+        if diag_path.exists():
+            with open(diag_path, "r") as f:
+                diag_data = json.load(f)
+            with st.expander("🔍 Join Diagnostics (Tanılama Günlüğü)"):
+                st.json(diag_data)
 
 def render_runs(home: str):
     """Render Runs category."""

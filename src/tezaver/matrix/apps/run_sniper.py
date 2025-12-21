@@ -96,6 +96,65 @@ def run_sniper_once(home: str, candidate_id: str, bars_path: str) -> dict:
         }
     except Exception as e:
         return {"run_id": rid, "error": str(e), "status": "FAIL"}
+def run_sniper_stub(home: str, candidate_id: str) -> str:
+    """
+    MXI-1040: Stub Sniper Run implementation.
+    TR: Sahte Sniper çalışması (Stub). UI akışını test etmek için kanal üretir.
+    """
+    import os
+    import json
+    import time
+    from datetime import datetime
+    import hashlib
+    
+    run_id = f"run_sniper_{int(time.time())}"
+    run_dir = os.path.join(home, "runs", run_id)
+    os.makedirs(run_dir, exist_ok=True)
+    
+    # 1. Telemetry logs (MXI-1040)
+    telemetry_path = os.path.join(run_dir, "telemetry.ndjson")
+    
+    events = [
+        {
+            "ts": datetime.now().isoformat(),
+            "event_type": "RUN_STARTED",
+            "run_id": run_id,
+            "trace": {"candidate_id": candidate_id, "engine_version": "v4-stub"},
+            "payload": {"msg": "Sniper run started from candidate"}
+        },
+        {
+            "ts": datetime.now().isoformat(),
+            "event_type": "RUN_FINISHED",
+            "run_id": run_id,
+            "trace": {"candidate_id": candidate_id},
+            "payload": {"verdict": "PASS", "pnl": 0.05}
+        },
+        {
+            "ts": datetime.now().isoformat(),
+            "event_type": "REPORT_CREATED",
+            "run_id": run_id,
+            "trace": {"candidate_id": candidate_id},
+            "payload": {"report_path": "judge.json"}
+        }
+    ]
+    
+    with open(telemetry_path, "w") as f:
+        for e in events:
+            f.write(json.dumps(e) + "\n")
+            
+    # 2. Evidence (Kanıtlar)
+    judge_data = {
+        "run_id": run_id,
+        "candidate_id": candidate_id,
+        "overall": "PASS",
+        "pnl_pct": 5.2,
+        "trade_count": 1,
+        "msg": "STUB RUN COMPLETE (SUCCESS)"
+    }
+    with open(os.path.join(run_dir, "judge.json"), "w") as f:
+        json.dump(judge_data, f, indent=2)
+        
+    return run_id
 
 def main():
     parser = argparse.ArgumentParser(description="Matrix Sniper Runner (MX-8002)")
