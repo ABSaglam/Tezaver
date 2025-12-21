@@ -1,0 +1,31 @@
+[
+  {
+    "order_id": "ord_pilot_cand_001_1700009000000",
+    "symbol": "BTCUSDT",
+    "side": "LONG",
+    "qty": 0.024685262898049863,
+    "final_status": "FILLED",
+    "history": [
+      {
+        "ts": 1766330045.739292,
+        "old_status": "NEW",
+        "new_status": "SUBMITTED",
+        "reason": ""
+      },
+      {
+        "ts": 1766330045.754355,
+        "old_status": "SUBMITTED",
+        "new_status": "ACKED",
+        "reason": ""
+      },
+      {
+        "ts": 1766330045.7803771,
+        "old_status": "ACKED",
+        "new_status": "FILLED",
+        "reason": ""
+      }
+    ],
+    "fill_price": 40510.0,
+    "fill_qty": 0.024685262898049863
+  }
+]

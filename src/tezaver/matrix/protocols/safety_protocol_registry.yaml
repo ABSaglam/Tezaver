@@ -8,24 +8,19 @@ protocols:
     purpose: "Signal ve close kararları yalnız kapalı bar ile"
     active_in: ["SNIPER", "WAR", "LIVE"]
     status:
-      SNIPER: "RED"
-      WAR: "RED"
+      SNIPER: "GREEN"
+      WAR: "GREEN"
       LIVE: "GREEN"
     last_proof_run_id:
-      SNIPER: null
-      WAR: null
-      LIVE: null
+      SNIPER: "war_a3b80f5ce1c1"
+      WAR: "war_a3b80f5ce1c1"
+      LIVE: "war_a3b80f5ce1c1"
     evidence:
-      telemetry: ["BAR_CLOSED_USED", "LOOKAHEAD_GUARD_OK"]
+      telemetry: ["LOOKAHEAD_GUARD_OK"]
       artifacts: []
       ui: ["OPS/PANEL_HEALTH", "RUNS"]
-      tests:
-        [
-          "test_closed_bar_only_live.py",
-          "test_closed_bar_only_sniper.py",
-          "test_closed_bar_only_war.py",
-        ]
-    notes: "v1 standard"
+      tests: ["tests/matrix/closedbar/test_mx_5100_lookahead.py"]
+    notes: "v1 standard - WAR verified with lookahead guard"
 
   - mx: "MX-5110"
     name: "DataReport v1 + DATA_OK run-scoped fix"

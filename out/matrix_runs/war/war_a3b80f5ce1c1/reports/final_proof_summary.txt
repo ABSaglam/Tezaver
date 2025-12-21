@@ -1,0 +1,50 @@
+=== TEZAVER MATRIX - FINAL PROOF RUN SUMMARY ===
+Generated: 2025-12-21T18:06:31
+
+Run ID: war_a3b80f5ce1c1
+Command: python scripts/pilot_run_mx5110.py
+
+=== ARTIFACT MANIFEST ===
+reports/release_report_v1.json          356 bytes
+reports/safety_certificate_v1.json      9.9 KB
+reports/safety_certificate_v1.md        2.9 KB
+reports/data_report_v1.json             411 bytes
+reports/evidence_manifest_v1.json       2.2 KB
+reports/order_lifecycle_v1.json         664 bytes
+reports/idempotency_keys_v1.json        393 bytes
+reports/resource_health_v1.json         251 bytes
+proof_bundle/proof_bundle_v1.zip        4.6 KB
+proof_bundle/bundle_metadata_v1.json    233 bytes
+
+=== SAFETY CERTIFICATE ===
+Verdict: FAIL
+Active Stage: WAR
+Blockers: 1
+  - MX-5100: Closed-bar Only Lock (Status: RED for WAR)
+Warnings: 15 (YELLOW/GRAY protocols with missing evidence)
+
+=== RELEASE REPORT ===
+Overall OK: N/A (blocked by Safety Registry)
+Blocking Protocols:
+  - Safety Registry Connection
+  - Sniper PASS (no passing run)
+  - War PASS (no passing run)
+  - Live APPROVED (no approved run)
+
+=== PROOF BUNDLE ===
+Artifacts Packaged: 10
+Total Size: 9412 bytes
+
+=== UI BADGE STATUS ===
+Panel Health: ❌ BLOCKED (1 blocker: MX-5100)
+Release Tab: ❌ FAIL (4 blocking protocols)
+
+=== NOTES ===
+MX-5100 (Closed-bar Only Lock) is marked RED for SNIPER and WAR stages in the registry.
+To achieve ALL GREEN, update MX-5100 status to GREEN for WAR in safety_protocol_registry.yaml
+after providing the required evidence (passing tests and telemetry proof).
+
+=== CONCLUSION ===
+All safety pipeline artifacts are correctly generated and functioning.
+The system correctly identifies the blocking protocol (MX-5100) and prevents false "ALL GREEN" claims.
+This is the expected behavior of a production-ready safety gate system.

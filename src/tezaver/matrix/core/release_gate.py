@@ -34,9 +34,10 @@ def evaluate_release_gate(home: str, candidate_id: str, active_stage: Optional[s
         })
         if not passed:
             if severity == "CRITICAL":
-                blocking_protocols.append(name)
+                blocking_protocols.append(code)  # Use MX code for clarity
             else:
-                warnings.append(name)
+                warnings.append(code)
+
 
     # RG-00: Safety Registry Check (MX-5260 integration)
     try:

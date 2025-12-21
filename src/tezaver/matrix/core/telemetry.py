@@ -37,3 +37,23 @@ def normalize_event(
             event[k] = v
             
     return event
+
+def event_line(
+    event_type: str,
+    data: Dict[str, Any] = None,
+    run_id: str = "unknown",
+    config_signature: str = "unknown"
+) -> str:
+    """
+    Creates a JSON-formatted telemetry line.
+    Backward compatibility wrapper for normalize_event.
+    """
+    event = normalize_event(event_type, data, run_id, config_signature)
+    return json.dumps(event)
+
+def validate_event_dict(event: Dict[str, Any]) -> bool:
+    """
+    Validates that an event dict has required fields.
+    """
+    required = ["event_type", "ts", "run_id"]
+    return all(k in event for k in required)
