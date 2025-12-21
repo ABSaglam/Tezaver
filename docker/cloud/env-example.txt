@@ -1,0 +1,16 @@
+# Tezaver Cloud Service Environment Variables Example
+
+# Trading Configuration
+CLOUD_MODE=PAPER
+CLOUD_DATA_MODE=REPLAY
+CLOUD_SYMBOLS=BTCUSDT
+CLOUD_TF=15m
+
+# Cost Configuration
+CLOUD_FEE_PCT=0.001
+CLOUD_SLIPPAGE_PCT=0.0005
+
+# Runtime Configuration
+CLOUD_MAX_BARS=
+CLOUD_OUTPUT_DIR=out/cloud_runs
+CLOUD_DATA_DIR=data/cloud

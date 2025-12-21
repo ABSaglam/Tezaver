@@ -1,0 +1,26 @@
+{"ts": "2025-12-21T11:10:04.878566", "kind": "LIVE_START", "run_id": "live_3dfb30e5a8b5", "plan_id": "test_plan", "cell_count": 1, "safe_mode": false}
+{"ts": "2025-12-21T11:10:04.878828", "kind": "BAR_CLOSED", "run_id": "live_3dfb30e5a8b5", "bar_index": 0}
+{"ts": "2025-12-21T11:10:04.879440", "kind": "BAR_CLOSED", "run_id": "live_3dfb30e5a8b5", "bar_index": 1}
+{"ts": "2025-12-21T11:10:04.884909", "kind": "BAR_CLOSED", "run_id": "live_3dfb30e5a8b5", "bar_index": 2}
+{"ts": "2025-12-21T11:10:04.886150", "kind": "BAR_CLOSED", "run_id": "live_3dfb30e5a8b5", "bar_index": 3}
+{"ts": "2025-12-21T11:10:04.886412", "kind": "BAR_CLOSED", "run_id": "live_3dfb30e5a8b5", "bar_index": 4}
+{"ts": "2025-12-21T11:10:04.891141", "kind": "BAR_CLOSED", "run_id": "live_3dfb30e5a8b5", "bar_index": 5}
+{"ts": "2025-12-21T11:10:04.891214", "kind": "POSITION_OPEN", "run_id": "live_3dfb30e5a8b5", "candidate_id": "test_cand", "symbol": "BTCUSDT", "price": 40050}
+{"ts": "2025-12-21T11:10:04.893983", "kind": "BAR_CLOSED", "run_id": "live_3dfb30e5a8b5", "bar_index": 6}
+{"ts": "2025-12-21T11:10:04.894177", "kind": "POSITION_CLOSE", "run_id": "live_3dfb30e5a8b5", "candidate_id": "test_cand", "symbol": "BTCUSDT", "pnl": 0.024968789013732832}
+{"ts": "2025-12-21T11:10:04.894762", "kind": "BAR_CLOSED", "run_id": "live_3dfb30e5a8b5", "bar_index": 7}
+{"ts": "2025-12-21T11:10:04.895311", "kind": "BAR_CLOSED", "run_id": "live_3dfb30e5a8b5", "bar_index": 8}
+{"ts": "2025-12-21T11:10:04.895826", "kind": "BAR_CLOSED", "run_id": "live_3dfb30e5a8b5", "bar_index": 9}
+{"ts": "2025-12-21T11:10:04.896324", "kind": "BAR_CLOSED", "run_id": "live_3dfb30e5a8b5", "bar_index": 10}
+{"ts": "2025-12-21T11:10:04.896865", "kind": "BAR_CLOSED", "run_id": "live_3dfb30e5a8b5", "bar_index": 11}
+{"ts": "2025-12-21T11:10:04.897350", "kind": "BAR_CLOSED", "run_id": "live_3dfb30e5a8b5", "bar_index": 12}
+{"ts": "2025-12-21T11:10:04.897824", "kind": "BAR_CLOSED", "run_id": "live_3dfb30e5a8b5", "bar_index": 13}
+{"ts": "2025-12-21T11:10:04.898343", "kind": "BAR_CLOSED", "run_id": "live_3dfb30e5a8b5", "bar_index": 14}
+{"ts": "2025-12-21T11:10:04.899184", "kind": "BAR_CLOSED", "run_id": "live_3dfb30e5a8b5", "bar_index": 15}
+{"ts": "2025-12-21T11:10:04.899259", "kind": "POSITION_OPEN", "run_id": "live_3dfb30e5a8b5", "candidate_id": "test_cand", "symbol": "BTCUSDT", "price": 40150}
+{"ts": "2025-12-21T11:10:04.900012", "kind": "BAR_CLOSED", "run_id": "live_3dfb30e5a8b5", "bar_index": 16}
+{"ts": "2025-12-21T11:10:04.900191", "kind": "POSITION_CLOSE", "run_id": "live_3dfb30e5a8b5", "candidate_id": "test_cand", "symbol": "BTCUSDT", "pnl": 0.024906600249066}
+{"ts": "2025-12-21T11:10:04.900982", "kind": "BAR_CLOSED", "run_id": "live_3dfb30e5a8b5", "bar_index": 17}
+{"ts": "2025-12-21T11:10:04.902510", "kind": "BAR_CLOSED", "run_id": "live_3dfb30e5a8b5", "bar_index": 18}
+{"ts": "2025-12-21T11:10:04.903340", "kind": "BAR_CLOSED", "run_id": "live_3dfb30e5a8b5", "bar_index": 19}
+{"ts": "2025-12-21T11:10:04.903885", "kind": "LIVE_STOP", "run_id": "live_3dfb30e5a8b5", "bar_count": 20, "trade_count": 2}

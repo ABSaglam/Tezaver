@@ -1,0 +1,24 @@
+{"ts": "2025-12-21T11:51:10.694909", "kind": "SAFE_MODE_ENABLED", "run_id": "cloud_35d42fb56674", "issues": ["Found 1 open positions"]}
+{"ts": "2025-12-21T11:51:10.695098", "kind": "RECONCILE_RESULT", "run_id": "cloud_35d42fb56674", "consistent": false, "safe_mode": true, "issues": ["Found 1 open positions"], "previous_run_id": "cloud_c2546d94fc3d"}
+{"ts": "2025-12-21T11:51:10.695396", "kind": "CLOUD_START", "run_id": "cloud_35d42fb56674", "symbols": ["BTCUSDT"], "mode": "PAPER", "safe_mode": true}
+{"ts": "2025-12-21T11:51:10.695462", "kind": "BAR_CLOSED", "run_id": "cloud_35d42fb56674", "bar_index": 0, "symbols": ["BTCUSDT"]}
+{"ts": "2025-12-21T11:51:10.695512", "kind": "SKIP_SAFE_MODE", "run_id": "cloud_35d42fb56674", "symbol": "BTCUSDT"}
+{"ts": "2025-12-21T11:51:10.696075", "kind": "BAR_CLOSED", "run_id": "cloud_35d42fb56674", "bar_index": 1, "symbols": ["BTCUSDT"]}
+{"ts": "2025-12-21T11:51:10.696162", "kind": "SKIP_SAFE_MODE", "run_id": "cloud_35d42fb56674", "symbol": "BTCUSDT"}
+{"ts": "2025-12-21T11:51:10.696351", "kind": "BAR_CLOSED", "run_id": "cloud_35d42fb56674", "bar_index": 2, "symbols": ["BTCUSDT"]}
+{"ts": "2025-12-21T11:51:10.696407", "kind": "SKIP_SAFE_MODE", "run_id": "cloud_35d42fb56674", "symbol": "BTCUSDT"}
+{"ts": "2025-12-21T11:51:10.696556", "kind": "BAR_CLOSED", "run_id": "cloud_35d42fb56674", "bar_index": 3, "symbols": ["BTCUSDT"]}
+{"ts": "2025-12-21T11:51:10.696603", "kind": "SKIP_SAFE_MODE", "run_id": "cloud_35d42fb56674", "symbol": "BTCUSDT"}
+{"ts": "2025-12-21T11:51:10.696746", "kind": "BAR_CLOSED", "run_id": "cloud_35d42fb56674", "bar_index": 4, "symbols": ["BTCUSDT"]}
+{"ts": "2025-12-21T11:51:10.696790", "kind": "SKIP_SAFE_MODE", "run_id": "cloud_35d42fb56674", "symbol": "BTCUSDT"}
+{"ts": "2025-12-21T11:51:10.696917", "kind": "BAR_CLOSED", "run_id": "cloud_35d42fb56674", "bar_index": 5, "symbols": ["BTCUSDT"]}
+{"ts": "2025-12-21T11:51:10.696959", "kind": "SKIP_SAFE_MODE", "run_id": "cloud_35d42fb56674", "symbol": "BTCUSDT"}
+{"ts": "2025-12-21T11:51:10.697203", "kind": "BAR_CLOSED", "run_id": "cloud_35d42fb56674", "bar_index": 6, "symbols": ["BTCUSDT"]}
+{"ts": "2025-12-21T11:51:10.697254", "kind": "SKIP_SAFE_MODE", "run_id": "cloud_35d42fb56674", "symbol": "BTCUSDT"}
+{"ts": "2025-12-21T11:51:10.697381", "kind": "BAR_CLOSED", "run_id": "cloud_35d42fb56674", "bar_index": 7, "symbols": ["BTCUSDT"]}
+{"ts": "2025-12-21T11:51:10.697421", "kind": "SKIP_SAFE_MODE", "run_id": "cloud_35d42fb56674", "symbol": "BTCUSDT"}
+{"ts": "2025-12-21T11:51:10.697645", "kind": "BAR_CLOSED", "run_id": "cloud_35d42fb56674", "bar_index": 8, "symbols": ["BTCUSDT"]}
+{"ts": "2025-12-21T11:51:10.697686", "kind": "SKIP_SAFE_MODE", "run_id": "cloud_35d42fb56674", "symbol": "BTCUSDT"}
+{"ts": "2025-12-21T11:51:10.697829", "kind": "BAR_CLOSED", "run_id": "cloud_35d42fb56674", "bar_index": 9, "symbols": ["BTCUSDT"]}
+{"ts": "2025-12-21T11:51:10.697874", "kind": "SKIP_SAFE_MODE", "run_id": "cloud_35d42fb56674", "symbol": "BTCUSDT"}
+{"ts": "2025-12-21T11:51:10.698003", "kind": "CLOUD_STOP", "run_id": "cloud_35d42fb56674", "bar_count": 10, "trade_count": 0}

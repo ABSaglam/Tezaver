@@ -1,0 +1,10 @@
+{
+  "incident_id": "inc_367310d109e8",
+  "run_id": "conformance_test",
+  "incident_type": "CONFORMANCE_TEST",
+  "created_at": "2025-12-21T11:51:10.698498",
+  "has_stacktrace": false,
+  "telemetry_event_count": 1,
+  "has_config": false,
+  "has_candidate_summary": false
+}

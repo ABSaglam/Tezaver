@@ -1,267 +1,296 @@
-import os
+"""
+MX-3002: LiveEngine - Closed-bar loop motor for LIVE mode.
+"""
 import json
+import hashlib
 import time
-from typing import Optional, Dict, List
-from dataclasses import asdict
+from pathlib import Path
+from typing import List, Dict, Any, Optional, Callable
+from datetime import datetime
 
-from tezaver.matrix.core.trace import TraceIds
-from tezaver.matrix.core.gates import RiskGateConfig, GovernanceConfig, eval_all_gates
-from tezaver.matrix.core.state import RunState
-from tezaver.matrix.core.approval import apply_run_result
-from tezaver.matrix.core.judge import judge_run
-from tezaver.matrix.core.jury import compute_scorecard
-from tezaver.matrix.core.audit import compute_audit_from_events
-from tezaver.matrix.ports.data_port import DataPort
-from tezaver.matrix.ports.broker_port import BrokerPort
-from tezaver.matrix.ports.store_port import StorePort
+from tezaver.matrix.apps.live_planner import LivePlan, LiveCell
+from tezaver.matrix.adapters.live_run_registry import LiveRunRegistry
+from tezaver.matrix.core.live_reconciliation import LiveReconciliation
+from tezaver.matrix.apps.incident_bundle import IncidentBundle
+from tezaver.matrix.adapters.broker_sim import SimBroker
 
-def parse_timeframe_ms(tf: str) -> int:
-    """Simple timeframe parser to milliseconds."""
-    try:
-        if tf.endswith("m"): return int(tf[:-1]) * 60 * 1000
-        if tf.endswith("h"): return int(tf[:-1]) * 60 * 60 * 1000
-        if tf.endswith("d"): return int(tf[:-1]) * 24 * 60 * 60 * 1000
-    except:
-        pass
-    # Fallback or error
-    if tf == "1m": return 60000
-    if tf == "5m": return 300000
-    if tf == "15m": return 900000
-    if tf == "1h": return 3600000
-    if tf == "4h": return 14400000
-    if tf == "1d": return 86400000
-    return 60000 # Default to 1m if unknown
 
-def init_live_state(timeframe: str, tf_ms: int, bars_fingerprint: str) -> dict:
-    return {
-        "cursor": 0,
-        "last_bar_ts": 0,
-        "timeframe": timeframe,
-        "tf_ms": tf_ms,
-        "bars_fingerprint": bars_fingerprint
-    }
-
-def load_live_state(home: str, run_id: str) -> Optional[dict]:
-    path = os.path.join(home, "runs", run_id, "live_state.json")
-    if not os.path.exists(path):
-        return None
-    with open(path) as f:
-        return json.load(f)
-
-def save_live_state(home: str, run_id: str, state: dict) -> None:
-    path = os.path.join(home, "runs", run_id, "live_state.json")
-    with open(path, "w") as f:
-        json.dump(state, f, indent=2)
-
-def start_live_run(
-    home: str,
-    symbol: str,
-    timeframe: str,
-    candidate_build_ts: str,
-    trace_ids: TraceIds,
-    data: DataPort,
-    broker: BrokerPort,
-    store: StorePort,
-    gov_cfg: GovernanceConfig,
-    risk_cfg: RiskGateConfig
-) -> str:
-    # 1. Generate Run ID
-    ts = int(time.time())
-    run_id = f"run_{symbol}_{timeframe}_LIVE_{ts}"
+class LiveEngine:
+    """
+    MX-3002: LiveEngine
+    Runs closed-bar loop for LIVE trading.
+    """
     
-    # 2. Meta
-    meta = {
-        "run_id": run_id,
-        "run_profile": "LIVE",
-        "created_ts": ts,
-        "candidate": {
-            "symbol": symbol,
-            "timeframe": timeframe,
-            "build_ts": candidate_build_ts
-        },
-        "trace": asdict(trace_ids),
-        "config": {
-            "risk": risk_cfg.__dict__,
-            "gov": gov_cfg.__dict__
-        }
-    }
-    store.create_run(run_id, meta)
-    
-    # 3. Initial State
-    # For fingerprint, we can grab first bar TS or use trace data_fingerprint if reliable.
-    # Let's use data_fingerprint from trace as authoritative ref.
-    tf_ms = parse_timeframe_ms(timeframe)
-    state = init_live_state(timeframe, tf_ms, trace_ids.data_fingerprint)
-    save_live_state(home, run_id, state)
-    
-    # 4. RUN_START event
-    store.append_event(run_id, {
-        "ts": int(time.time() * 1000),
-        "event_type": "RUN_START",
-        "run_id": run_id,
-        "payload": {},
-        "trace": asdict(trace_ids)
-    })
-    
-    return run_id
-
-def live_step(
-    home: str,
-    run_id: str,
-    steps: int,
-    symbol: str,
-    timeframe: str,
-    trace_ids: TraceIds,
-    data: DataPort,
-    broker: BrokerPort,
-    store: StorePort,
-    gov_cfg: GovernanceConfig,
-    risk_cfg: RiskGateConfig,
-    candidate_id: str = ""
-) -> dict:
-    # 1. Load State
-    state = load_live_state(home, run_id)
-    if not state:
-        raise ValueError(f"Live state not found for {run_id}")
-    
-    cursor = state["cursor"]
-    last_bar_ts = state.get("last_bar_ts", 0)
-    tf_ms = state.get("tf_ms", parse_timeframe_ms(timeframe))
-    
-    # 2. Get Data
-    bars = data.get_closed_bars(symbol, timeframe)
-    
-    # 3. Process Steps
-    steps_done = 0
-    now_ts = time.time()
-    
-    # RunState for gates
-    run_state = RunState() 
-    
-    processed_count = 0
-    
-    while steps_done < steps and cursor < len(bars):
-        bar_obj = bars[cursor]
-        bar = asdict(bar_obj)
+    def __init__(
+        self,
+        plan: LivePlan,
+        output_dir: str = "out/matrix_runs/live",
+        safe_mode: bool = False,
+        bar_callback: Callable = None
+    ):
+        self.plan = plan
+        self.output_dir = Path(output_dir)
+        self.safe_mode = safe_mode
+        self.bar_callback = bar_callback  # For fake feed injection
         
-        # Gap Detection
-        if last_bar_ts > 0:
-            diff = bar["ts"] - last_bar_ts
-            # If diff > 1.1 * tf_ms, it's a gap
-            if diff > (1.1 * tf_ms):
-                missing = diff - tf_ms
-                store.append_event(run_id, {
-                     "ts": int(time.time() * 1000),
-                     "event_type": "GAP_DETECTED",
-                     "run_id": run_id,
-                     "payload": {
-                         "prev_ts": last_bar_ts,
-                         "next_ts": bar["ts"],
-                         "expected_ms": tf_ms,
-                         "missing_ms": missing
-                     },
-                     "trace": asdict(trace_ids)
-                })
-                # Reconnect Event
-                store.append_event(run_id, {
-                     "ts": int(time.time() * 1000),
-                     "event_type": "RECONNECT",
-                     "run_id": run_id,
-                     "payload": {"mode": "SIM_RECONNECT", "reason": "Gap detected"},
-                     "trace": asdict(trace_ids)
-                })
+        # Generate run_id
+        run_content = f"{plan.plan_id}_{datetime.now().isoformat()}"
+        self.run_id = f"live_{hashlib.sha256(run_content.encode()).hexdigest()[:12]}"
         
-        # Bar Event
-        store.append_event(run_id, {
-             "ts": int(time.time() * 1000),
-             "event_type": "BAR",
-             "run_id": run_id,
-             "payload": bar,
-             "trace": asdict(trace_ids)
-        })
+        # Registries
+        self.registry = LiveRunRegistry()
+        self.reconciliation = LiveReconciliation()
+        self.incident_bundle = IncidentBundle()
         
-        # Decision (HOLD for live MVP)
-        store.append_event(run_id, {
-             "ts": int(time.time() * 1000),
-             "event_type": "DECISION",
-             "run_id": run_id,
-             "payload": {"action": "HOLD", "reason": "Live MVP"},
-             "trace": asdict(trace_ids)
-        })
+        # State
+        self.running = False
+        self.bar_count = 0
+        self.trade_count = 0
+        self.telemetry: List[Dict] = []
+        self.trade_audit: List[Dict] = []
+        self.open_positions: Dict[str, Dict] = {}  # symbol -> position
         
-        # Gates Eval
-        gate_results = eval_all_gates(
-            symbol=symbol,
-            price=bar["close"], # or c
-            desired_qty=0, # HOLD
-            state=run_state,
-            risk_cfg=risk_cfg,
-            gov_cfg=gov_cfg,
-            candidate_build_ts="", # Pass empty or allow loading?
-            now_ts=now_ts
+        # Setup output dir
+        self.run_dir = self.output_dir / self.run_id
+        self.run_dir.mkdir(parents=True, exist_ok=True)
+    
+    def start(self, max_bars: int = None) -> Dict:
+        """
+        Start LIVE loop.
+        max_bars: for testing - stop after N bars (None = infinite)
+        """
+        # Empty plan check
+        if self.plan.is_empty:
+            self._emit_event("LIVE_EMPTY_PLAN", {})
+            return {
+                "run_id": self.run_id,
+                "status": "EMPTY_PLAN",
+                "bar_count": 0,
+                "trade_count": 0
+            }
+        
+        # Reconciliation check
+        recon_result = self.reconciliation.check(self.run_id)
+        if recon_result.safe_mode_required:
+            self.safe_mode = True
+            self._emit_event("LIVE_SAFE_MODE_ENABLED", {
+                "reason": "reconciliation_error",
+                "issues": recon_result.issues
+            })
+        
+        # Add reconciliation telemetry
+        self.telemetry.extend(self.reconciliation.get_telemetry())
+        
+        # Register run
+        self.registry.register(
+            run_id=self.run_id,
+            plan_id=self.plan.plan_id,
+            cells=self.plan.cells,
+            symbols=self.plan.symbols,
+            config_hash=self.plan.config_hash,
+            safe_mode=self.safe_mode
         )
         
-        store.append_event(run_id, {
-             "ts": int(time.time() * 1000),
-             "event_type": "GATE_EVAL",
-             "run_id": run_id,
-             "payload": {"results": [g.__dict__ for g in gate_results]},
-             "trace": asdict(trace_ids)
+        self._emit_event("LIVE_START", {
+            "run_id": self.run_id,
+            "plan_id": self.plan.plan_id,
+            "cell_count": len(self.plan.cells),
+            "safe_mode": self.safe_mode
         })
         
-        # Update Loop State
-        last_bar_ts = bar["ts"]
-        cursor += 1
-        steps_done += 1
-        processed_count += 1
+        self.running = True
         
-    # 4. Heartbeat (instead of run end)
-    store.append_event(run_id, {
-        "ts": int(time.time() * 1000),
-        "event_type": "LIVE_HEARTBEAT",
-        "run_id": run_id,
-        "payload": {"cursor": cursor, "total_bars": len(bars), "processed": processed_count},
-        "trace": asdict(trace_ids)
-    })
+        try:
+            self._run_loop(max_bars)
+        except Exception as e:
+            self._handle_exception(e)
+        finally:
+            self._stop()
+        
+        return {
+            "run_id": self.run_id,
+            "status": "STOPPED",
+            "bar_count": self.bar_count,
+            "trade_count": self.trade_count,
+            "safe_mode": self.safe_mode
+        }
     
-    # 5. Update State
-    state["cursor"] = cursor
-    state["last_bar_ts"] = last_bar_ts
-    save_live_state(home, run_id, state)
-    
-    # 6. Update Proofs (Judge, Scorecard, Approval)
-    # Re-read all events to compute cumulative proofs
-    events_path = os.path.join(home, "runs", run_id, "events.ndjson")
-    event_lines = []
-    if os.path.exists(events_path):
-        with open(events_path) as f:
-            event_lines = f.readlines()
+    def _run_loop(self, max_bars: int = None):
+        """Main closed-bar loop."""
+        while self.running:
+            # Get next bar (from callback or wait)
+            if self.bar_callback:
+                bars = self.bar_callback(self.bar_count)
+                if bars is None:
+                    # No more bars
+                    break
+            else:
+                # Real-time: wait for next bar close
+                time.sleep(1)  # Placeholder
+                bars = {}  # Would come from live feed
             
-    # Audit
-    audit = compute_audit_from_events(event_lines)
-    # Write Audit
-    with open(os.path.join(home, "runs", run_id, "audit.json"), "w") as f:
-        json.dump(audit, f, indent=2)
+            # Process closed bars
+            self._process_bar(bars)
             
-    # Scorecard (from file)
-    scorecard = compute_scorecard(home, run_id)
-    # Write Scorecard
-    with open(os.path.join(home, "runs", run_id, "scorecard.json"), "w") as f:
-        json.dump(scorecard, f, indent=2)
-        
-    judge = judge_run(home, run_id, scorecard)
-    # Write Judge
-    with open(os.path.join(home, "runs", run_id, "judge.json"), "w") as f:
-        json.dump(judge, f, indent=2)
-        
-    # Apply Result
-    final_res = apply_run_result(home, run_id, judge, candidate_id, run_profile="LIVE")
+            self.bar_count += 1
+            
+            # Heartbeat
+            self.registry.update_heartbeat(self.run_id, self.bar_count, self.trade_count)
+            
+            # Max bars check (for testing)
+            if max_bars and self.bar_count >= max_bars:
+                break
     
-    return {
-        "run_id": run_id,
-        "steps_processed": processed_count,
-        "cursor": cursor,
-        "total_bars": len(bars),
-        "verdict": judge.get("overall", "UNKNOWN"),
-        "stage": final_res.get("stage", "UNKNOWN")
-    }
+    def _process_bar(self, bars: Dict):
+        """Process a closed bar for all cells."""
+        self._emit_event("BAR_CLOSED", {
+            "bar_index": self.bar_count
+        })
+        
+        for cell in self.plan.cells:
+            self._process_cell_bar(cell, bars.get(cell.symbol, {}))
+    
+    def _process_cell_bar(self, cell: LiveCell, bar: Dict):
+        """Process bar for single cell - closed-bar only decision."""
+        if not bar:
+            return
+        
+        # SAFE_MODE: no new orders
+        if self.safe_mode:
+            self._emit_event("CELL_SKIP_SAFE_MODE", {
+                "candidate_id": cell.candidate_id,
+                "symbol": cell.symbol
+            })
+            return
+        
+        # Simplified trading logic
+        broker = SimBroker(fee_pct=0.001, slippage_pct=0.0005)
+        
+        symbol = cell.symbol
+        close = bar.get("close", 0)
+        ts = bar.get("timestamp", self.bar_count)
+        
+        # Check if position is open
+        if symbol not in self.open_positions:
+            # Entry condition (simplified: every 10th bar)
+            if self.bar_count % 10 == 5:
+                self.open_positions[symbol] = {
+                    "entry_price": close,
+                    "entry_ts": ts,
+                    "candidate_id": cell.candidate_id
+                }
+                self._emit_event("POSITION_OPEN", {
+                    "candidate_id": cell.candidate_id,
+                    "symbol": symbol,
+                    "price": close
+                })
+        else:
+            # Exit condition (simplified: after 5 bars)
+            pos = self.open_positions[symbol]
+            if (self.bar_count - self.bar_count % 10) % 10 == 0:
+                pnl = (close - pos["entry_price"]) / pos["entry_price"] * 100
+                fee = abs(pnl) * 0.001
+                
+                self.trade_audit.append({
+                    "ts": ts,
+                    "candidate_id": cell.candidate_id,
+                    "symbol": symbol,
+                    "entry_price": pos["entry_price"],
+                    "exit_price": close,
+                    "pnl": pnl,
+                    "fee": fee
+                })
+                
+                self._emit_event("POSITION_CLOSE", {
+                    "candidate_id": cell.candidate_id,
+                    "symbol": symbol,
+                    "pnl": pnl
+                })
+                
+                del self.open_positions[symbol]
+                self.trade_count += 1
+        
+        # Save state for reconciliation
+        self.reconciliation.save_state(
+            self.run_id,
+            list(self.open_positions.values()),
+            []  # No open orders in simplified impl
+        )
+    
+    def _handle_exception(self, e: Exception):
+        """Handle exception and create incident bundle."""
+        self._emit_event("LIVE_ERROR", {
+            "error": str(e),
+            "error_type": type(e).__name__
+        })
+        
+        incident_id = self.incident_bundle.create(
+            run_id=self.run_id,
+            incident_type="EXCEPTION",
+            telemetry_events=self.telemetry,
+            config=self.plan.to_dict(),
+            exception=e
+        )
+        
+        self.registry.increment_incident(self.run_id)
+        
+        self._emit_event("INCIDENT_CREATED", {
+            "incident_id": incident_id
+        })
+    
+    def _stop(self):
+        """Stop the engine and save artifacts."""
+        self.running = False
+        
+        self._emit_event("LIVE_STOP", {
+            "run_id": self.run_id,
+            "bar_count": self.bar_count,
+            "trade_count": self.trade_count
+        })
+        
+        # Update registry status
+        self.registry.update_status(self.run_id, "STOPPED")
+        
+        # Clear reconciliation state (clean shutdown)
+        if not self.open_positions:
+            self.reconciliation.clear_state()
+        
+        # Save artifacts
+        self._save_artifacts()
+    
+    def stop(self):
+        """External stop signal."""
+        self.running = False
+    
+    def _emit_event(self, kind: str, data: Dict):
+        """Emit telemetry event."""
+        event = {
+            "ts": datetime.now().isoformat(),
+            "kind": kind,
+            "run_id": self.run_id,
+            **data
+        }
+        self.telemetry.append(event)
+        
+        # Stream to file
+        with open(self.run_dir / "telemetry.ndjson", "a") as f:
+            f.write(json.dumps(event) + "\n")
+    
+    def _save_artifacts(self):
+        """Save final artifacts."""
+        # Report
+        report = {
+            "run_id": self.run_id,
+            "plan": self.plan.to_dict(),
+            "bar_count": self.bar_count,
+            "trade_count": self.trade_count,
+            "safe_mode": self.safe_mode,
+            "stopped_at": datetime.now().isoformat()
+        }
+        with open(self.run_dir / "report.json", "w") as f:
+            json.dump(report, f, indent=2)
+        
+        # Trade audit
+        with open(self.run_dir / "trade_audit_v2.jsonl", "w") as f:
+            for trade in self.trade_audit:
+                f.write(json.dumps(trade) + "\n")

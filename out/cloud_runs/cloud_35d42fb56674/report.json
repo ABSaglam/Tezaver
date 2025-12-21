@@ -1,0 +1,12 @@
+{
+  "run_id": "cloud_35d42fb56674",
+  "symbols": [
+    "BTCUSDT"
+  ],
+  "tf": "15m",
+  "mode": "PAPER",
+  "bar_count": 10,
+  "trade_count": 0,
+  "safe_mode": true,
+  "stopped_at": "2025-12-21T11:51:10.698192"
+}

@@ -1,0 +1,28 @@
+{
+  "run_id": "live_cf23cf1c9ae0",
+  "plan": {
+    "plan_id": "test_plan",
+    "created_at": "2025-01-01",
+    "cell_count": 1,
+    "symbols": [
+      "TEST"
+    ],
+    "candidate_ids": [
+      "test"
+    ],
+    "config_hash": "test",
+    "is_empty": false,
+    "diagnostics": {
+      "candidates_total": 0,
+      "candidates_by_status": {},
+      "approved_for_live_count": 0,
+      "selected_cells_count": 0,
+      "symbols_found": [],
+      "registry_path": ""
+    }
+  },
+  "bar_count": 5,
+  "trade_count": 0,
+  "safe_mode": false,
+  "stopped_at": "2025-12-21T11:51:08.858074"
+}

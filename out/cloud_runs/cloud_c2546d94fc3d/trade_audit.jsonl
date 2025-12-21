@@ -1,0 +1,3 @@
+{"order_id": "paper_1", "symbol": "BTCUSDT", "side": "BUY", "qty": 0.1, "price": 43821.45, "fill_price": 43843.36072499999, "fee": 4.384336072499999, "slippage": 21.910724999994272, "filled_at": "2025-12-21T11:19:35.801924"}
+{"order_id": "paper_2", "symbol": "BTCUSDT", "side": "SELL", "qty": 0.1, "price": 43687.1, "fill_price": 43665.25645, "fee": 4.366525645, "slippage": 21.843549999997776, "filled_at": "2025-12-21T11:19:35.803049"}
+{"order_id": "paper_3", "symbol": "BTCUSDT", "side": "BUY", "qty": 0.1, "price": 43424.43, "fill_price": 43446.142215, "fee": 4.3446142215, "slippage": 21.71221499999956, "filled_at": "2025-12-21T11:19:35.804209"}

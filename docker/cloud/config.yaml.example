@@ -1,0 +1,37 @@
+# Tezaver Cloud Configuration Example
+
+cloud:
+  # Trading mode: PAPER or LIVE
+  mode: PAPER
+  
+  # Data feed mode: REPLAY or POLL
+  data_mode: REPLAY
+  
+  # Symbols to trade
+  symbols:
+    - BTCUSDT
+    - ETHUSDT
+  
+  # Timeframe
+  tf: 15m
+
+costs:
+  # Fee percentage (0.001 = 0.1%)
+  fee_pct: 0.001
+  
+  # Slippage percentage
+  slippage_pct: 0.0005
+
+paths:
+  # Output directory
+  output_dir: out/cloud_runs
+  
+  # Data directory
+  data_dir: data/cloud
+
+runtime:
+  # Maximum bars (null = unlimited)
+  max_bars: null
+  
+  # Heartbeat interval (seconds)
+  heartbeat_interval: 30

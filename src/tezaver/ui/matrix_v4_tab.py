@@ -23,8 +23,12 @@ CATEGORIES = [
     ("RELEASE", "🚀 Release Gate", "Yayın kontrolü"),
     ("REHEARSAL", "✅ Rehearsal", "Go/No-Go kontrol listesi"),
     ("CANDIDATES", "📋 Candidates", "Strateji adayları"),
+    ("SNIPER", "🎯 Sniper", "Sniper run geçmişi"),
     ("RUNS", "▶️ Runs", "Çalıştırma geçmişi"),
     ("WAR", "⚔️ WAR", "Multi-coin backtest"),
+    ("LIVE", "🟢 LIVE", "Canlı trading modu"),
+    ("REPORTS", "🧾 Reports", "Raporlar ve özet"),
+    ("INCIDENTS", "🚨 Incidents", "Kanıt paketleri"),
     ("PANEL_HEALTH", "🏥 Panel Health", "Bundle ve registry sağlık durumu"),
     ("MAINTENANCE", "🔧 Maintenance", "Bakım ve temizlik araçları"),
     ("REGISTRY", "📚 Registry", "Cloud strateji kaydı"),
@@ -113,10 +117,18 @@ def render_matrix_v4():
         render_rehearsal(home)
     elif selected_cat == "CANDIDATES":
         render_candidates(home)
+    elif selected_cat == "SNIPER":
+        render_sniper(home)
     elif selected_cat == "RUNS":
         render_runs(home)
     elif selected_cat == "WAR":
         render_war(home)
+    elif selected_cat == "LIVE":
+        render_live(home)
+    elif selected_cat == "REPORTS":
+        render_reports(home)
+    elif selected_cat == "INCIDENTS":
+        render_incidents(home)
     elif selected_cat == "PANEL_HEALTH":
         render_panel_health(home)
     elif selected_cat == "MAINTENANCE":
@@ -1134,3 +1146,263 @@ def render_war(home: str):
                                 st.text(f"{e.get('kind', '')} | {e.get('candidate_id', '')}")
                             except:
                                 pass
+
+
+def render_live(home: str):
+    """MX-3040: Render LIVE panel for live trading mode."""
+    from tezaver.ui.ui_guard import render_data_sources_box
+    render_data_sources_box()
+    
+    from tezaver.matrix.adapters.live_run_registry import LiveRunRegistry
+    from tezaver.matrix.apps.live_planner import LivePlanner
+    from tezaver.matrix.core.live_engine import LiveEngine
+    from tezaver.matrix.apps.incident_bundle import IncidentBundle
+    
+    registry = LiveRunRegistry()
+    planner = LivePlanner()
+    incidents = IncidentBundle()
+    
+    # --- Diagnostics Panel ---
+    with st.expander("📊 Registry Diagnostics", expanded=False):
+        diag = planner.get_diagnostics()
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Toplam Aday", diag.candidates_total)
+            st.metric("APPROVED_FOR_LIVE", diag.approved_for_live_count)
+        with col2:
+            st.caption("Status Dağılımı")
+            for status, count in diag.candidates_by_status.items():
+                color = "🟢" if "APPROVED_FOR_LIVE" in status else "🟡" if "APPROVED" in status else "🔴"
+                st.text(f"{color} {status}: {count}")
+        with col3:
+            st.caption("Semboller")
+            for sym in diag.symbols_found[:5]:
+                st.text(f"• {sym}")
+    
+    # --- Start New LIVE Run ---
+    with st.expander("🚀 Start LIVE Run", expanded=False):
+        st.caption("APPROVED_FOR_LIVE adaylarını canlı çalıştır")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            max_candidates = st.number_input("Max Cells", 1, 10, 3, key="live_max")
+            safe_mode = st.checkbox("Safe Mode (no new orders)", key="live_safe")
+        with col2:
+            max_bars = st.number_input("Max Bars (test)", 10, 500, 50, key="live_bars")
+        
+        if st.button("🟢 Start LIVE Run", type="primary"):
+            with st.spinner("LIVE run başlatılıyor..."):
+                try:
+                    plan = planner.generate_plan(max_candidates=max_candidates)
+                    
+                    if plan.is_empty:
+                        st.warning("⚠️ APPROVED_FOR_LIVE statüsünde aday yok!")
+                        st.json(plan.diagnostics.to_dict())
+                    else:
+                        # Fake bar callback for testing
+                        def fake_bar_feed(bar_idx):
+                            if bar_idx >= max_bars:
+                                return None
+                            # Generate fake bars for all symbols
+                            return {s: {"close": 40000 + bar_idx * 10, "timestamp": bar_idx} for s in plan.symbols}
+                        
+                        engine = LiveEngine(plan=plan, safe_mode=safe_mode, bar_callback=fake_bar_feed)
+                        result = engine.start(max_bars=max_bars)
+                        
+                        st.success(f"✅ LIVE Run tamamlandı: {result['run_id']}")
+                        st.json({
+                            "status": result["status"],
+                            "bar_count": result["bar_count"],
+                            "trade_count": result["trade_count"],
+                            "safe_mode": result["safe_mode"]
+                        })
+                except Exception as e:
+                    st.error(f"LIVE Run hatası: {e}")
+    
+    st.divider()
+    
+    # --- LIVE Runs List ---
+    st.subheader("📋 LIVE Runs")
+    runs = registry.list_all()
+    
+    if not runs:
+        st.info("Henüz LIVE run yok.")
+    else:
+        df = pd.DataFrame([
+            {
+                "run_id": r["run_id"][:16] + "...",
+                "status": r.get("status", "?"),
+                "cells": len(r.get("cells", [])),
+                "bars": r.get("bar_count", 0),
+                "trades": r.get("trade_count", 0),
+                "safe_mode": "✓" if r.get("safe_mode") else "",
+                "heartbeat": r.get("last_heartbeat_ts", "")[:19]
+            }
+            for r in runs
+        ])
+        st.dataframe(df, use_container_width=True)
+    
+    st.divider()
+    
+    # --- Run Detail ---
+    st.subheader("🔍 Run Detail")
+    run_ids = [r["run_id"] for r in runs]
+    
+    if run_ids:
+        selected_run_id = st.selectbox("Run seçin", run_ids, key="live_run_select")
+        run = registry.get(selected_run_id)
+        
+        if run:
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Status", run.get("status", "?"))
+                st.metric("Bar Count", run.get("bar_count", 0))
+            with col2:
+                st.metric("Trade Count", run.get("trade_count", 0))
+                st.metric("Incidents", run.get("incident_count", 0))
+            
+            # Telemetry preview
+            with st.expander("📜 Telemetry Preview"):
+                artifacts_dir = Path(f"out/matrix_runs/live/{selected_run_id}")
+                tele_path = artifacts_dir / "telemetry.ndjson"
+                if tele_path.exists():
+                    with open(tele_path) as f:
+                        lines = f.readlines()[-30:]
+                    for line in lines:
+                        try:
+                            e = json.loads(line)
+                            st.text(f"{e.get('kind', '')} | bar={e.get('bar_index', '')}")
+                        except:
+                            pass
+    
+    st.divider()
+    
+    # --- Incidents ---
+    st.subheader("⚠️ Incidents")
+    inc_list = incidents.list_incidents()
+    
+    if not inc_list:
+        st.success("Incident yok.")
+    else:
+        for inc in inc_list[:5]:
+            st.warning(f"{inc.get('incident_type', '?')} | {inc.get('incident_id', '')} | {inc.get('created_at', '')[:19]}")
+
+
+def render_sniper(home: str):
+    """MX-FINAL-0302: Render Sniper page for sniper runs."""
+    from tezaver.ui.ui_guard import render_data_sources_box
+    render_data_sources_box()
+    
+    st.subheader("🎯 Sniper Runs")
+    st.caption("Sniper mode run geçmişi ve detayları")
+    
+    # List sniper runs from runs directory
+    runs_dir = Path("out/matrix_runs/sniper")
+    
+    if not runs_dir.exists():
+        st.info("Henüz Sniper run yok.")
+        st.caption("Candidates sayfasından Run Sniper ile başlatabilirsiniz.")
+        return
+    
+    runs = sorted(runs_dir.iterdir(), reverse=True)[:20]
+    
+    if not runs:
+        st.info("Henüz Sniper run yok.")
+        return
+    
+    # List runs
+    for run_dir in runs:
+        if run_dir.is_dir():
+            report_path = run_dir / "report.json"
+            if report_path.exists():
+                with open(report_path) as f:
+                    report = json.load(f)
+                
+                col1, col2, col3 = st.columns([3, 1, 1])
+                with col1:
+                    st.text(run_dir.name)
+                with col2:
+                    st.text(f"trades: {report.get('trade_count', '?')}")
+                with col3:
+                    st.text(report.get('stopped_at', '')[:10] if report.get('stopped_at') else '')
+
+
+def render_reports(home: str):
+    """MX-FINAL: Render Reports page for summaries."""
+    from tezaver.ui.ui_guard import render_data_sources_box
+    render_data_sources_box()
+    
+    st.subheader("🧾 Reports")
+    st.caption("WAR, LIVE ve Cloud run raporları")
+    
+    # WAR Reports
+    with st.expander("⚔️ WAR Reports", expanded=True):
+        war_dir = Path("out/matrix_runs/war")
+        if war_dir.exists():
+            reports = list(war_dir.glob("*/report.json"))[:5]
+            for rp in reports:
+                with open(rp) as f:
+                    data = json.load(f)
+                st.text(f"{rp.parent.name} | verdict: {data.get('verdict', '?')} | trades: {data.get('total_trades', '?')}")
+        else:
+            st.info("WAR rapor bulunamadı")
+    
+    # LIVE Reports
+    with st.expander("🟢 LIVE Reports", expanded=False):
+        live_dir = Path("out/matrix_runs/live")
+        if live_dir.exists():
+            reports = list(live_dir.glob("*/report.json"))[:5]
+            for rp in reports:
+                with open(rp) as f:
+                    data = json.load(f)
+                st.text(f"{rp.parent.name} | bars: {data.get('bar_count', '?')} | trades: {data.get('trade_count', '?')}")
+        else:
+            st.info("LIVE rapor bulunamadı")
+    
+    # Cloud Reports
+    with st.expander("☁️ Cloud Reports", expanded=False):
+        cloud_dir = Path("out/cloud_runs")
+        if cloud_dir.exists():
+            reports = list(cloud_dir.glob("*/report.json"))[:5]
+            for rp in reports:
+                with open(rp) as f:
+                    data = json.load(f)
+                st.text(f"{rp.parent.name} | mode: {data.get('mode', '?')} | trades: {data.get('trade_count', '?')}")
+        else:
+            st.info("Cloud rapor bulunamadı")
+
+
+def render_incidents(home: str):
+    """MX-FINAL-0401: Render Incidents page for evidence bundles."""
+    from tezaver.ui.ui_guard import render_data_sources_box
+    render_data_sources_box()
+    
+    from tezaver.matrix.apps.incident_bundle import IncidentBundle
+    
+    st.subheader("🚨 Incidents")
+    st.caption("Kanıt paketleri (block, exception, data gap, reconcile error)")
+    
+    bundle = IncidentBundle()
+    incidents = bundle.list_incidents()
+    
+    if not incidents:
+        st.success("✅ Aktif incident yok")
+        return
+    
+    for inc in incidents[:10]:
+        with st.expander(f"{inc.get('incident_type', '?')} - {inc.get('incident_id', '')}", expanded=False):
+            st.json(inc)
+            
+            # Show telemetry snapshot if exists
+            inc_path = Path(f"out/matrix_incidents/live/{inc['incident_id']}")
+            tele_path = inc_path / "telemetry_snapshot.ndjson"
+            if tele_path.exists():
+                st.caption("Telemetry Snapshot (last 10)")
+                with open(tele_path) as f:
+                    lines = f.readlines()[-10:]
+                for line in lines:
+                    try:
+                        e = json.loads(line)
+                        st.text(f"{e.get('kind', '')} | {e.get('ts', '')[:19]}")
+                    except:
+                        pass
