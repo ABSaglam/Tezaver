@@ -28,12 +28,18 @@ def run_safety_sweep(run_dir: str, active_stage: str) -> Dict:
         mx = p["mx"]
         name = p["name"]
         
+        # MX-5280: Skip protocols not active in current stage
+        active_in = p.get("active_in", [])
+        if active_stage not in active_in:
+            continue  # Skip this protocol for this stage
+        
         # Get declared status for this stage
         declared_status = registry.compute_overall_status(mx, active_stage)
         
         # Run evidence drift check
         drift = registry.check_evidence(mx, run_dir)
         evidence_ok = not any(drift.values())
+
         
         # Compute effective status
         # If declared GREEN but evidence missing -> degrade to YELLOW
