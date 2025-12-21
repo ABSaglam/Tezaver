@@ -362,11 +362,36 @@ def render_candidates(home: str):
     """
     MXI-1030: Render Candidates category with detailed table and story view.
     MXI-1040: Sniper Run integration.
+    MXI-1500: UI Guard with panel_health diagnostics.
     """
+    try:
+        _render_candidates_inner(home)
+    except Exception as e:
+        st.error(f"⚠️ Panel Render Hatası: {e}")
+        st.exception(e)
+        # Show panel health summary
+        try:
+            from tezaver.matrix.apps.panel_health import run_health_check
+            health = run_health_check()
+            st.warning(f"Discovered: {health['discovered_count']}, OK: {health['imported_count']}, Failed: {health['failed_count']}")
+            if health['errors']:
+                for err in health['errors'][:3]:
+                    st.caption(f"❌ {err.get('path')}: {err.get('error')}")
+        except:
+            pass
+
+def _render_candidates_inner(home: str):
+    """Inner implementation of render_candidates."""
     from tezaver.matrix.adapters.bundle_source_local import LocalBundleSource
     from tezaver.matrix.adapters.candidate_registry import CandidateRegistry
     
-    source = LocalBundleSource() # Default path out/matrix_candidates
+    # Debug Header (MXI-1500)
+    candidates_root = os.environ.get("MATRIX_CANDIDATES_ROOT", "out/matrix_candidates")
+    with st.expander("🔧 Debug: Config", expanded=False):
+        st.caption(f"Candidates Root: `{candidates_root}`")
+        st.caption(f"CWD: `{os.getcwd()}`")
+    
+    source = LocalBundleSource(base_path=candidates_root)
     registry = CandidateRegistry() # Default path data/matrix/candidates_registry.jsonl
     
     st.subheader("📋 Strategy Candidates (Adaylar)")
@@ -375,8 +400,13 @@ def render_candidates(home: str):
     c1, c2 = st.columns([1, 4])
     with c1:
         if st.button("🔄 Local Tara & Import", use_container_width=True):
+            from tezaver.matrix.adapters.bundle_source_local import UnsupportedBundleVersion
+            import hashlib
+            
             bundles = source.discover_bundles()
             imported_count = 0
+            failed_count = 0
+            
             for bdir in bundles:
                 try:
                     manifest, _ = source.load_bundle(bdir)
@@ -394,9 +424,38 @@ def render_candidates(home: str):
                         }
                     )
                     imported_count += 1
+                    
+                except UnsupportedBundleVersion as e:
+                    # MXI-3.1: Register legacy bundle as FAILED_IMPORT
+                    cid = hashlib.md5(str(bdir).encode()).hexdigest()[:16]
+                    registry.register(
+                        candidate_id=cid,
+                        symbol="UNKNOWN",
+                        tf="UNKNOWN",
+                        bundle_id=str(bdir.name),
+                        bundle_path=str(bdir),
+                        metrics={},
+                        status="FAILED_IMPORT",
+                        reason="UNSUPPORTED_BUNDLE_VERSION",
+                        detected_version=e.detected_version
+                    )
+                    failed_count += 1
+                    
                 except Exception as e:
-                    st.error(f"Hata ({bdir}): {e}")
-            st.success(f"{imported_count} aday başarıyla tarandı/güncellendi.")
+                    # MXI-3.1: Register generic failure
+                    cid = hashlib.md5(str(bdir).encode()).hexdigest()[:16]
+                    registry.register(
+                        candidate_id=cid,
+                        symbol="UNKNOWN",
+                        tf="UNKNOWN",
+                        bundle_id=str(bdir.name),
+                        bundle_path=str(bdir),
+                        metrics={},
+                        status="FAILED_IMPORT",
+                        reason=str(e)[:100]
+                    )
+                    failed_count += 1
+                    
             st.rerun()
 
     # --- Filters ---
@@ -408,7 +467,7 @@ def render_candidates(home: str):
     df_full = pd.DataFrame(all_cands)
     
     with st.expander("🔍 Filtreler", expanded=True):
-        f1, f2, f3 = st.columns(3)
+        f1, f2, f3, f4 = st.columns(4)
         symbols = sorted(df_full["symbol"].unique().tolist())
         tfs = sorted(df_full["tf"].unique().tolist())
         statuses = sorted(df_full["status"].unique().tolist())
@@ -416,18 +475,19 @@ def render_candidates(home: str):
         sel_sym = f1.multiselect("Sembol", symbols)
         sel_tf = f2.multiselect("TF", tfs)
         sel_stat = f3.multiselect("Durum", statuses)
+        hide_legacy = f4.checkbox("Legacy Gizle", value=True, help="FAILED_IMPORT durumundaki eski paketleri gizle")
         
     df = df_full.copy()
     if sel_sym: df = df[df["symbol"].isin(sel_sym)]
     if sel_tf: df = df[df["tf"].isin(sel_tf)]
     if sel_stat: df = df[df["status"].isin(sel_stat)]
+    if hide_legacy: df = df[df["status"] != "FAILED_IMPORT"]
 
-    # --- Table ---
-    # MXI-1030: symbol, tf, bundle_id, bundle_version, join_coverage, resolve_rate, status, build_ts
-    # Note: We need to load manifest to get bundle_version and build_ts if not in registry
-    # For now we'll show what we have in registry + some placeholders if needed.
-    
-    cols_to_show = ["symbol", "tf", "bundle_id", "resolve_rate", "join_coverage", "status", "created_at"]
+    # MXI-3.1: Show reason column for failed imports
+    cols_to_show = ["symbol", "tf", "bundle_id", "resolve_rate", "join_coverage", "status", "reason", "created_at"]
+    # Ensure reason column exists
+    if "reason" not in df.columns:
+        df["reason"] = None
     st.dataframe(
         df[cols_to_show].sort_values("created_at", ascending=False),
         use_container_width=True,
@@ -568,7 +628,16 @@ def render_candidates(home: str):
 def render_runs(home: str):
     """
     MXI-1160: Render Runs history and detail.
+    MXI-1500: UI Guard.
     """
+    try:
+        _render_runs_inner(home)
+    except Exception as e:
+        st.error(f"⚠️ Runs Render Hatası: {e}")
+        st.exception(e)
+
+def _render_runs_inner(home: str):
+    """Inner implementation of render_runs."""
     from tezaver.matrix.adapters.run_registry import RunRegistry
     registry = RunRegistry()
     

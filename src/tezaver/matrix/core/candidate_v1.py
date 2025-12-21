@@ -113,8 +113,12 @@ class PayloadV1:
     compiled_stories: Dict[str, Any]
 
 def payload_from_dict(d: dict) -> PayloadV1:
+    # Support both 'stories' and 'rally_stories_v1' keys
+    stories_key = 'stories' if 'stories' in d else 'rally_stories_v1'
+    raw_stories = d.get(stories_key, [])
+    
     stories = []
-    for s in d['stories']:
+    for s in raw_stories:
         # Support optional pre_pattern mapping
         pp_dict = s.get('pre_pattern')
         pp = None

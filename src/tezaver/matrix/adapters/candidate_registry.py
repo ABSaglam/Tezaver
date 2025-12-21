@@ -37,8 +37,13 @@ class CandidateRegistry:
                  bundle_id: str, 
                  bundle_path: str,
                  metrics: Dict,
-                 status: str = "NEW"):
-        
+                 status: str = "NEW",
+                 reason: str = None,
+                 detected_version: str = None):
+        """
+        Register a candidate with optional failure reason for legacy bundles.
+        MXI-3.1: FAILED_IMPORT support.
+        """
         entry = {
             "candidate_id": candidate_id,
             "symbol": symbol,
@@ -48,6 +53,8 @@ class CandidateRegistry:
             "resolve_rate": metrics.get("trigger_resolve_rate", 0),
             "join_coverage": metrics.get("join_coverage", 0),
             "status": status,
+            "reason": reason, # MXI-3.1: Failure reason
+            "detected_version": detected_version, # MXI-3.1: Bundle version
             "created_at": datetime.now().isoformat(),
             "updated_at": datetime.now().isoformat()
         }
