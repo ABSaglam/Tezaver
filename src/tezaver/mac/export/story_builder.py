@@ -7,16 +7,18 @@ import hashlib
 
 class RallyStoryBuilder:
     """
-    Builds RallyStory v1.1 objects by joining multi-source data.
-    MACX-2010, MACX-2020, MACX-2030
+    Builds RallyStory v1.1.1 objects by joining multi-source data.
+    MACX-2011, MACX-2012
     """
     
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.sl_atr_k = config.get("sl_atr_k", 1.5)
-        # MACX-2010: Metrics
-        self.total_build_attempts = 0
-        self.successful_joins = 0
+        # MACX-2011/2012: Counter breakdown
+        self.total_attempts = 0
+        self.join_matched_count = 0
+        self.fallback_used_count = 0
+        self.diagnostics_log = [] # List of {event_time, status, diff_min, snapshot_time}
         
     def build_story(self, 
                     symbol: str,
@@ -29,9 +31,9 @@ class RallyStoryBuilder:
                     pattern_stats: List[Dict],
                     families: List[Dict]) -> Dict[str, Any]:
         """
-        Constructs a single RallyStory v1.1 object.
+        Constructs a single RallyStory v1.1 object with diagnostic info.
         """
-        self.total_build_attempts += 1
+        self.total_attempts += 1
         
         # MACX-2020: Timezone Lock - Ensure everything is UTC or naive but treated as UTC
         event_time = event_row['event_time']
@@ -40,10 +42,20 @@ class RallyStoryBuilder:
         else:
             event_time_utc = pd.Timestamp(event_time).tz_localize('UTC')
 
-        # MACX-1010/2010: Event -> Trigger Join
-        trigger_info = self._get_trigger_info(event_time, event_row, patterns_df)
-        if trigger_info['trigger'] != "unknown" and "_fallback" not in trigger_info['trigger']:
-            self.successful_joins += 1
+        # MACX-2011: Event -> Trigger Join Alignment
+        trigger_info = self._get_trigger_info(event_time_utc, patterns_df)
+        
+        # MACX-2012: Update metrics based on meaningful resolution
+        if trigger_info['trigger_source'] == "join":
+            self.join_matched_count += 1
+        elif trigger_info['trigger_source'] == "fallback":
+            # Check if we have a valid fallback reason
+            if event_row.get('macd_phase_15m') == 'KOSU':
+                trigger_info['trigger'] = "macd_bull_cross_fallback"
+                self.fallback_used_count += 1 # Meaningful fallback
+            else:
+                trigger_info['trigger'] = "unknown"
+                # Do NOT increment fallback_used_count for unknown
         
         # Get price data at event
         entry_price = self._get_entry_price(event_time, history_df)
@@ -62,7 +74,7 @@ class RallyStoryBuilder:
         
         # MACX-2030: Expanded v1.1 Story
         story = {
-            "version": "1.1.0",
+            "version": "1.1.1",
             "story_id": f"{symbol}_{event_row.get('event_tf', '15m')}_{event_time_utc.strftime('%Y%m%d_%H%M')}",
             "symbol": symbol,
             "context": {
@@ -80,6 +92,7 @@ class RallyStoryBuilder:
                 "trigger": trigger_info['trigger'],
                 "trigger_source": trigger_info['trigger_source'],
                 "trigger_time_utc": trigger_info.get('trigger_time_utc'),
+                "trigger_hour_key": trigger_info.get('trigger_hour_key'), # MACX-2011 Debug
                 "rsi_15m": round(event_row.get('rsi_15m', 0), 2),
                 "macd_phase_15m": event_row.get('macd_phase_15m'),
                 "volume_rel_15m": round(event_row.get('volume_rel_15m', 0), 2),
@@ -119,56 +132,75 @@ class RallyStoryBuilder:
         }
         return story
 
-    def get_join_metrics(self) -> Dict[str, Any]:
-        """MACX-2010: Coverage metrics."""
-        coverage = self.successful_joins / self.total_build_attempts if self.total_build_attempts > 0 else 0
+    def get_metrics(self) -> Dict[str, Any]:
+        """MACX-2012: Separated metrics."""
+        total = self.total_attempts
+        join_cov = self.join_matched_count / total if total > 0 else 0
+        resolve_rate = (self.join_matched_count + self.fallback_used_count) / total if total > 0 else 0
+        
         return {
-            "join_coverage": round(coverage, 4),
-            "join_total_attempts": self.total_build_attempts,
-            "join_matched_count": self.successful_joins,
-            "join_unmatched_count": self.total_build_attempts - self.successful_joins
+            "join_coverage": round(join_cov, 4),
+            "join_total_attempts": total,
+            "join_matched_count": self.join_matched_count,
+            "fallback_used_count": self.fallback_used_count,
+            "trigger_resolve_rate": round(resolve_rate, 4),
+            "join_unmatched_count": total - self.join_matched_count
         }
 
-    def _get_trigger_info(self, event_time, event_row, patterns_df) -> Dict:
-        """MACX-1010/2020: Joins with UTC normalization."""
-        # Ensure event_time is naive for comparison if common
-        evt_naive = event_time.tz_localize(None)
-        h1_ts = evt_naive.floor('h')
+    def _get_trigger_info(self, event_time_utc, patterns_df) -> Dict:
+        """MACX-2011: Join Alignment (Strict Nearest within 30m)."""
+        evt_naive = event_time_utc.tz_localize(None)
         
-        # Ensure patterns_df['datetime'] is naive
         if 'datetime' not in patterns_df.columns and 'timestamp' in patterns_df.columns:
             patterns_df['datetime'] = pd.to_datetime(patterns_df['timestamp'], unit='ms')
-            
-        # Convert to naive for safe comparison
-        pat_dt = patterns_df['datetime'].dt.tz_localize(None)
-        matches = patterns_df[pat_dt == h1_ts]
         
-        if not matches.empty:
-            # Prefer non-'vol_dry' if exists (more specific triggers)
-            specific = matches[matches['trigger'] != 'vol_dry']
-            best_match = specific.iloc[0] if not specific.empty else matches.iloc[0]
+        pat_dt = patterns_df['datetime'].dt.tz_localize(None)
+        
+        # Find closest snapshot in the entire patterns_df
+        diff_min = 0
+        snapshot_time = None
+        status = "unmatched"
+        matches = pd.DataFrame()
+
+        if not patterns_df.empty:
+            diffs = (pat_dt - evt_naive).abs()
+            min_diff_idx = diffs.idxmin()
+            min_diff = diffs[min_diff_idx]
             
-            # UTC conversion for trigger time
+            diff_min = min_diff.total_seconds() / 60
+            snapshot_time = pat_dt.iloc[min_diff_idx]
+
+            if min_diff <= pd.Timedelta(minutes=30):
+                matches = patterns_df.iloc[[min_diff_idx]]
+                status = "joined"
+            else:
+                status = "unmatched"
+
+        # Log diagnostics
+        self.diagnostics_log.append({
+            "event_time_utc": event_time_utc.isoformat(),
+            "status": status,
+            "diff_min": round(diff_min, 1),
+            "snapshot_time_utc": snapshot_time.isoformat() if snapshot_time else None,
+            "hour_key": evt_naive.round('h').isoformat() # Best hour guess for debug
+        })
+
+        if not matches.empty:
+            best_match = matches.iloc[0]
             trig_dt = best_match['datetime']
             trig_utc = trig_dt.tz_localize('UTC').isoformat() if trig_dt.tzinfo is None else trig_dt.tz_convert('UTC').isoformat()
 
             return {
                 "trigger": best_match['trigger'],
-                "trigger_source": f"snapshots_labeled_1h.parquet:timestamp={h1_ts}",
-                "trigger_time_utc": trig_utc
-            }
-            
-        # Fallback to macd_phase or scenario
-        if event_row.get('macd_phase_15m') == 'KOSU':
-             return {
-                "trigger": "macd_bull_cross_fallback",
-                "trigger_source": "fast15_rallies.parquet:macd_phase_15m=KOSU",
-                "trigger_time_utc": event_time.tz_localize('UTC').isoformat() if event_time.tzinfo is None else event_time.tz_convert('UTC').isoformat()
+                "trigger_source": "join",
+                "trigger_time_utc": trig_utc,
+                "trigger_hour_key": snapshot_time.isoformat()
             }
             
         return {
             "trigger": "unknown",
-            "trigger_source": "none"
+            "trigger_source": "fallback",
+            "trigger_hour_key": evt_naive.round('h').isoformat()
         }
 
     def _get_entry_price(self, event_time, history_df) -> float:

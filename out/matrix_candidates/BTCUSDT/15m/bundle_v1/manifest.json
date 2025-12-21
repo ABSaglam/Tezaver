@@ -1,12 +1,12 @@
 {
-  "bundle_id": "BTCUSDT_15m_bundle_20251221_073733",
+  "bundle_id": "BTCUSDT_15m_bundle_20251221_074154",
   "symbol": "BTCUSDT",
   "timeframe": "15m",
-  "bundle_version": "1.1.0",
-  "build_ts": "2025-12-21T07:37:33.282979",
+  "bundle_version": "1.1.1",
+  "build_ts": "2025-12-21T07:41:54.363377",
   "engine_min_version": "0.1.0",
   "data_fingerprint": "7566d4ccd49cc73a0ea3dd48027f7abcf5b80b283beb8762383dd9a8b6ecc3be",
-  "config_signature": "d124f22a2a25fd397f8d03baf5b042f824c00ff6ec6d5b97f3ed94188bb4f8e3",
+  "config_signature": "2cddf44a96ec24f52c565b7330b4ea7849044304d011664e59169f7bd543771d",
   "story_count": 5,
   "sources": [
     "/Users/alisaglam/TezaverMac/library/fast15_rallies/BTCUSDT/fast15_rallies.parquet",
@@ -21,5 +21,7 @@
   "join_coverage": 0.6,
   "join_total_attempts": 5,
   "join_matched_count": 3,
+  "fallback_used_count": 1,
+  "trigger_resolve_rate": 0.8,
   "join_unmatched_count": 2
 }

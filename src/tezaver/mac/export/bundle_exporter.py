@@ -20,12 +20,14 @@ class CandidateBundleExporter:
                       stories: List[Dict[str, Any]],
                       source_files: List[Path],
                       config: Dict[str, Any],
-                      join_metrics: Optional[Dict[str, Any]] = None,
+                      metrics: Optional[Dict[str, Any]] = None,
+                      diagnostics: Optional[List[Dict]] = None,
                       compiled_stories_1h: Optional[List[Dict]] = None,
                       compiled_stories_4h: Optional[List[Dict]] = None,
                       version_tag: str = "v1") -> Path:
         """
         Creates manifest and payload files in a unique bundle directory.
+        MACX-2012, MACX-2014
         """
         bundle_id = f"{symbol}_{timeframe}_bundle_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         bundle_dir = self.output_base / symbol / timeframe / f"bundle_{version_tag}"
@@ -40,7 +42,7 @@ class CandidateBundleExporter:
             "bundle_id": bundle_id,
             "symbol": symbol,
             "timeframe": timeframe,
-            "bundle_version": "1.1.0",
+            "bundle_version": "1.1.1",
             "build_ts": datetime.now().isoformat(),
             "engine_min_version": REPO_VERSION,
             "data_fingerprint": data_fp,
@@ -49,9 +51,9 @@ class CandidateBundleExporter:
             "sources": [str(p) for p in source_files]
         }
         
-        # MACX-2010: Add Join Metrics to Manifest
-        if join_metrics:
-            manifest.update(join_metrics)
+        # MACX-2012: Add detailed metrics to Manifest
+        if metrics:
+            manifest.update(metrics)
         
         # Build Payload
         payload = {
@@ -61,11 +63,24 @@ class CandidateBundleExporter:
             "sources": [str(p) for p in source_files],
             "config": config,
             "metadata": {
-                "exporter": "CandidateBundleExporter_v1",
+                "exporter": "CandidateBundleExporter_v1.1",
                 "generated_at": datetime.now().isoformat()
             }
         }
         
+        # MACX-2014: Write Diagnostics
+        if diagnostics:
+            diag_path = bundle_dir / "join_diagnostics.json"
+            summary = {
+                "total_events": len(diagnostics),
+                "matched_count": sum(1 for d in diagnostics if d['status'] == 'joined'),
+                "unmatched_count": sum(1 for d in diagnostics if d['status'] == 'unmatched'),
+                "avg_diff_min": round(sum(d['diff_min'] for d in diagnostics) / len(diagnostics), 2) if diagnostics else 0,
+                "details": diagnostics
+            }
+            with open(diag_path, 'w') as f:
+                json.dump(summary, f, indent=2)
+
         # Write files
         manifest_path = bundle_dir / "manifest.json"
         payload_path = bundle_dir / "payload.json"

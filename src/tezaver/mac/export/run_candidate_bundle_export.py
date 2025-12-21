@@ -20,12 +20,12 @@ from .story_compiler import StoryCompiler
 
 logger = get_logger(__name__)
 
-def run_export(symbol: str, timeframe: str, limit: int = 5, fail_threshold: float = 0.8):
+def run_export(symbol: str, timeframe: str, limit: int = 5, fail_threshold: float = 0.99, warn_threshold: float = 0.80):
     """
     Main export orchestration logic.
-    MACX-2010, MACX-2030, MACX-2040
+    MACX-2011, MACX-2012, MACX-2013
     """
-    logger.info(f"🚀 Starting CandidateBundle v1.1 export for {symbol} ({timeframe})")
+    logger.info(f"🚀 Starting CandidateBundle v1.1.1 export for {symbol} ({timeframe})")
     
     # Paths (unchanged)
     project_root = Path("/Users/alisaglam/TezaverMac")
@@ -56,11 +56,12 @@ def run_export(symbol: str, timeframe: str, limit: int = 5, fail_threshold: floa
     with open(p_stats_path) as f: p_stats = json.load(f)
     with open(families_path) as f: families = json.load(f)
 
-    # Config
+    # Config (MACX-2013)
     config = {
         "sl_atr_k": 1.5, 
-        "version": "v1.1", 
-        "fail_threshold": fail_threshold
+        "version": "v1.1.1", 
+        "min_trigger_resolve_rate": fail_threshold,
+        "warn_join_coverage": warn_threshold
     }
     
     # Builders & Compilers
@@ -89,24 +90,33 @@ def run_export(symbol: str, timeframe: str, limit: int = 5, fail_threshold: floa
         except Exception as e:
             logger.warning(f"⚠️ Failed to build story for {row.get('event_time')}: {e}")
 
-    # MACX-2010: Check Coverage
-    metrics = builder.get_join_metrics()
-    coverage = metrics['join_coverage']
-    logger.info(f"📊 Join Coverage: {coverage*100:.2f}% ({metrics['join_matched_count']}/{metrics['join_total_attempts']})")
+    # MACX-2012/2013: Metrikler ve Katı Eşik Kontrolü
+    metrics = builder.get_metrics()
+    resolve_rate = metrics['trigger_resolve_rate']
+    join_cov = metrics['join_coverage']
     
-    if coverage < fail_threshold:
-        logger.error(f"❌ Join coverage ({coverage:.2f}) is below threshold ({fail_threshold:.2f}). Export aborted.")
+    logger.info(f"📊 Join Coverage: {join_cov*100:.2f}%")
+    logger.info(f"📊 Trigger Resolve Rate: {resolve_rate*100:.2f}% ({metrics['join_matched_count']} join + {metrics['fallback_used_count']} fallback)")
+    
+    # 1. Hard Lock: Resolve Rate
+    if resolve_rate < fail_threshold:
+        logger.error(f"❌ FAIL: Trigger resolve rate ({resolve_rate:.2f}) is below mandatory threshold ({fail_threshold:.2f}). Aborting.")
         sys.exit(1)
+        
+    # 2. Warning: Join Coverage
+    if join_cov < warn_threshold:
+        logger.warning(f"⚠️ WARN: Join coverage ({join_cov:.2f}) is below recommended threshold ({warn_threshold:.2f}).")
 
     # MACX-2040: Compile Summaries
     stories_1h = compiler.compile_summaries(stories, "1h")
     stories_4h = compiler.compile_summaries(stories, "4h")
 
-    # Export
+    # Export (MACX-2014)
     source_files = [fast15_path, patterns_path, history_path, levels_path, regime_path, shock_path, p_stats_path, families_path]
     bundle_dir = exporter.export_bundle(
         symbol, timeframe, stories, source_files, config, 
-        join_metrics=metrics,
+        metrics=metrics,
+        diagnostics=builder.diagnostics_log,
         compiled_stories_1h=stories_1h,
         compiled_stories_4h=stories_4h
     )
@@ -114,11 +124,12 @@ def run_export(symbol: str, timeframe: str, limit: int = 5, fail_threshold: floa
     logger.info(f"✅ Export completed! {processed_count} stories saved to {bundle_dir}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="CandidateBundle v1.1 Exporter")
+    parser = argparse.ArgumentParser(description="CandidateBundle v1.1.1 Exporter")
     parser.add_argument("--symbol", type=str, required=True, help="Coin symbol (e.g. BTCUSDT)")
     parser.add_argument("--tf", type=str, default="15m", help="Base timeframe")
     parser.add_argument("--limit", type=int, default=5, help="Limit number of events")
-    parser.add_argument("--fail-threshold", type=float, default=0.8, help="Join coverage fail threshold")
+    parser.add_argument("--fail-threshold", type=float, default=0.99, help="Min trigger resolve rate (mandatory)")
+    parser.add_argument("--warn-threshold", type=float, default=0.80, help="Min join coverage (recommended)")
     
     args = parser.parse_args()
-    run_export(args.symbol, args.tf, args.limit, args.fail_threshold)
+    run_export(args.symbol, args.tf, args.limit, args.fail_threshold, args.warn_threshold)

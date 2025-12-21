@@ -1,0 +1,43 @@
+{
+  "total_events": 5,
+  "matched_count": 3,
+  "unmatched_count": 2,
+  "avg_diff_min": 75.0,
+  "details": [
+    {
+      "event_time_utc": "2023-12-13T07:00:00+00:00",
+      "status": "joined",
+      "diff_min": 0.0,
+      "snapshot_time_utc": "2023-12-13T07:00:00",
+      "hour_key": "2023-12-13T07:00:00"
+    },
+    {
+      "event_time_utc": "2023-12-18T16:00:00+00:00",
+      "status": "unmatched",
+      "diff_min": 120.0,
+      "snapshot_time_utc": "2023-12-18T18:00:00",
+      "hour_key": "2023-12-18T16:00:00"
+    },
+    {
+      "event_time_utc": "2024-01-01T14:15:00+00:00",
+      "status": "unmatched",
+      "diff_min": 225.0,
+      "snapshot_time_utc": "2024-01-01T18:00:00",
+      "hour_key": "2024-01-01T14:00:00"
+    },
+    {
+      "event_time_utc": "2024-01-01T22:15:00+00:00",
+      "status": "joined",
+      "diff_min": 15.0,
+      "snapshot_time_utc": "2024-01-01T22:00:00",
+      "hour_key": "2024-01-01T22:00:00"
+    },
+    {
+      "event_time_utc": "2024-01-08T09:45:00+00:00",
+      "status": "joined",
+      "diff_min": 15.0,
+      "snapshot_time_utc": "2024-01-08T10:00:00",
+      "hour_key": "2024-01-08T10:00:00"
+    }
+  ]
+}
