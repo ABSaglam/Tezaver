@@ -49,9 +49,29 @@ class WarEngine:
     def run(self) -> Dict:
         """
         Execute WAR backtest.
+        W2: Returns EMPTY_PLAN error if no cells.
+        W3: Updates candidate status based on verdict.
         Returns: run result dict
         """
         start_ts = datetime.now()
+        
+        # W2: Handle empty plan
+        if self.plan.is_empty:
+            self._emit_event("WAR_EMPTY_PLAN", {
+                "run_id": self.run_id,
+                "diagnostics": self.plan.diagnostics.to_dict()
+            })
+            return {
+                "run_id": self.run_id,
+                "plan_id": self.plan.plan_id,
+                "verdict": "EMPTY_PLAN",
+                "scorecard": {},
+                "verdict_report": {"verdict": "EMPTY_PLAN", "reasons": ["No APPROVED_FOR_WAR candidates"]},
+                "duration_s": 0,
+                "artifacts_dir": None,
+                "run_created": False,
+                "diagnostics": self.plan.diagnostics.to_dict()
+            }
         
         # Register run as started
         self.registry.register(
@@ -85,6 +105,9 @@ class WarEngine:
         # Update registry
         self.registry.update_finished(self.run_id, scorecard_dict, verdict)
         
+        # W3: Update candidate status based on verdict
+        self._update_candidate_status(verdict)
+        
         self._emit_event("WAR_END", {
             "run_id": self.run_id,
             "verdict": verdict,
@@ -104,8 +127,46 @@ class WarEngine:
             "scorecard": scorecard_dict,
             "verdict_report": verdict_report,
             "duration_s": (end_ts - start_ts).total_seconds(),
-            "artifacts_dir": str(self.output_dir / self.run_id)
+            "artifacts_dir": str(self.output_dir / self.run_id),
+            "run_created": True
         }
+    
+    def _update_candidate_status(self, verdict: str):
+        """
+        W3: Update candidate status based on WAR verdict.
+        PASS -> APPROVED_FOR_LIVE
+        IMPROVE -> NEEDS_PATCH
+        FAIL -> REJECTED_BY_WAR
+        """
+        from tezaver.matrix.adapters.candidate_registry import CandidateRegistry
+        
+        status_map = {
+            "PASS": "APPROVED_FOR_LIVE",
+            "IMPROVE": "NEEDS_PATCH",
+            "FAIL": "REJECTED_BY_WAR"
+        }
+        
+        new_status = status_map.get(verdict)
+        if not new_status:
+            return
+        
+        candidate_registry = CandidateRegistry()
+        
+        for candidate_id in self.plan.candidate_ids:
+            # Find by bundle_id (which is used as primary key now)
+            for cell in self.plan.cells:
+                if cell.candidate_id == candidate_id:
+                    candidate_registry.update_status(cell.bundle_id, new_status)
+                    
+                    self._emit_event("CANDIDATE_STATUS_UPDATED", {
+                        "candidate_id": candidate_id,
+                        "bundle_id": cell.bundle_id,
+                        "old_status": "APPROVED_FOR_WAR",
+                        "new_status": new_status,
+                        "war_source": "WAR",
+                        "run_id": self.run_id
+                    })
+                    break
     
     def _process_cell(self, cell: WarCell):
         """Process a single cell (candidate) in the WAR run."""
