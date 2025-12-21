@@ -33,8 +33,14 @@ def run_health_check(candidates_root: str = None, output_path: str = None) -> Di
         _save_result(result, output_path)
         return result
     
-    # Discovery: find all manifest.json files
-    manifests = list(root.rglob("manifest.json"))
+    # Discovery: find all manifest.json files (excluding _legacy and _fixtures)
+    all_manifests = list(root.rglob("manifest.json"))
+    manifests = []
+    for m in all_manifests:
+        path_str = str(m)
+        if "/_legacy/" in path_str or "/_fixtures/" in path_str or "/_failed/" in path_str:
+            continue
+        manifests.append(m)
     result["discovered_count"] = len(manifests)
     
     for mpath in manifests:

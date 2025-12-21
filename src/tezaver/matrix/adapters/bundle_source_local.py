@@ -22,13 +22,16 @@ class LocalBundleSource:
         self.base_path = Path(base_path)
 
     def discover_bundles(self) -> List[Path]:
-        """Scans for all manifest.json files (including legacy bundles)."""
+        """Scans for all manifest.json files, excluding _legacy and _fixtures."""
         bundles = []
         if not self.base_path.exists():
             return []
             
-        # MXI-3.1: Find ALL manifest.json files, not just bundle_v1
+        # Exclude _legacy and _fixtures directories
         for path in self.base_path.rglob("manifest.json"):
+            path_str = str(path)
+            if "/_legacy/" in path_str or "/_fixtures/" in path_str:
+                continue
             bundles.append(path.parent)
                 
         return bundles
@@ -46,11 +49,11 @@ class LocalBundleSource:
         if not payload_path.exists():
             raise FileNotFoundError(f"Payload missing in {bundle_dir}")
         
-        # MXI-3.1: Check bundle version before full parse
+        # MXI-3.1 + PNL-1100: Check bundle version before full parse (support both keys)
         with open(manifest_path, "r") as f:
             manifest_dict = json.load(f)
         
-        bundle_version = manifest_dict.get("bundle_version", "0.0.0")
+        bundle_version = manifest_dict.get("bundle_version") or manifest_dict.get("version") or "0.0.0"
         if not bundle_version.startswith("1.1"):
             raise UnsupportedBundleVersion(bundle_version, str(bundle_dir))
             

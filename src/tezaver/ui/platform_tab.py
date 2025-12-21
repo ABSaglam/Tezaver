@@ -152,27 +152,28 @@ def _render_agent_connector(label: str, name: str, default_url: str):
     token_key = f"{name}_token"
     show_key = f"{name}_show_token"
     
-    # URL
-    url = st.text_input("Base URL", default_url, key=url_key)
+    # Initialize session state if not exists (before widget creation)
+    if url_key not in st.session_state:
+        st.session_state[url_key] = default_url
+    if token_key not in st.session_state:
+        st.session_state[token_key] = ""
+    
+    # URL - uses session state via key
+    url = st.text_input("Base URL", key=url_key)
     
     # Token with mask toggle
     show_token = st.checkbox("🔓 Token göster", key=show_key, value=False)
     token_type = "default" if show_token else "password"
     token = st.text_input(
         "Token (Gizli anahtar)",
-        "",
         type=token_type,
         key=token_key,
         help="Agent için güvenlik tokeni. Loglama YASAK."
     )
     
-    # Store in session for other pages
-    st.session_state[url_key] = url
-    st.session_state[token_key] = token
-    
-    # Test Connection
+    # Test Connection - uses session state values
     if st.button(f"🔌 Bağlantıyı Test Et", key=f"test_{name}"):
-        _test_agent_connection(url, token)
+        _test_agent_connection(st.session_state[url_key], st.session_state[token_key])
 
 
 def _test_agent_connection(base_url: str, token: str):
