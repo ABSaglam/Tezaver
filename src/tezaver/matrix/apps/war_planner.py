@@ -1,10 +1,12 @@
 """
-MX-2001: WarPlanner - Collects APPROVED_FOR_WAR candidates and generates cell plan.
+MX-2001 + MX-2000.1: WarPlanner - Collects APPROVED_FOR_WAR candidates and generates cell plan.
+W1: Diagnostics support for candidate counts and status breakdown.
 """
 import hashlib
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional
 from datetime import datetime
+from collections import Counter
 
 from tezaver.matrix.adapters.candidate_registry import CandidateRegistry
 
@@ -22,6 +24,27 @@ class WarCell:
 
 
 @dataclass
+class PlanDiagnostics:
+    """W1: Diagnostics for plan generation."""
+    candidates_total: int = 0
+    candidates_by_status: Dict[str, int] = field(default_factory=dict)
+    approved_for_war_count: int = 0
+    selected_cells_count: int = 0
+    symbols_found: List[str] = field(default_factory=list)
+    registry_path: str = ""
+    
+    def to_dict(self) -> Dict:
+        return {
+            "candidates_total": self.candidates_total,
+            "candidates_by_status": self.candidates_by_status,
+            "approved_for_war_count": self.approved_for_war_count,
+            "selected_cells_count": self.selected_cells_count,
+            "symbols_found": self.symbols_found,
+            "registry_path": self.registry_path
+        }
+
+
+@dataclass
 class WarPlan:
     """Complete WAR run plan."""
     plan_id: str
@@ -30,6 +53,8 @@ class WarPlan:
     symbols: List[str]
     candidate_ids: List[str]
     config_hash: str
+    diagnostics: PlanDiagnostics = field(default_factory=PlanDiagnostics)
+    is_empty: bool = False
     
     def to_dict(self) -> Dict:
         return {
@@ -38,18 +63,41 @@ class WarPlan:
             "cell_count": len(self.cells),
             "symbols": self.symbols,
             "candidate_ids": self.candidate_ids,
-            "config_hash": self.config_hash
+            "config_hash": self.config_hash,
+            "is_empty": self.is_empty,
+            "diagnostics": self.diagnostics.to_dict()
         }
 
 
 class WarPlanner:
     """
-    MX-2001: WarPlanner
+    MX-2001 + MX-2000.1: WarPlanner
     Collects APPROVED_FOR_WAR candidates and generates execution plan.
+    W1: Diagnostics support for debugging empty plans.
     """
     
     def __init__(self, registry: CandidateRegistry = None):
         self.registry = registry or CandidateRegistry()
+        self._last_diagnostics: Optional[PlanDiagnostics] = None
+    
+    def get_diagnostics(self) -> PlanDiagnostics:
+        """W1: Get full diagnostics about candidate registry state."""
+        all_candidates = self.registry.list_all()
+        
+        status_counter = Counter(c.get("status", "UNKNOWN") for c in all_candidates)
+        symbols = list(set(c.get("symbol", "?") for c in all_candidates))
+        
+        diag = PlanDiagnostics(
+            candidates_total=len(all_candidates),
+            candidates_by_status=dict(status_counter),
+            approved_for_war_count=status_counter.get("APPROVED_FOR_WAR", 0),
+            selected_cells_count=0,  # Will be updated on generate_plan
+            symbols_found=symbols,
+            registry_path=str(self.registry.path)
+        )
+        
+        self._last_diagnostics = diag
+        return diag
     
     def collect_approved_candidates(
         self, 
@@ -83,7 +131,11 @@ class WarPlanner:
     ) -> WarPlan:
         """
         Generate WAR execution plan from approved candidates.
+        W2: Returns empty plan with is_empty=True if no approved candidates.
         """
+        # Get diagnostics first
+        diag = self.get_diagnostics()
+        
         candidates = self.collect_approved_candidates(symbols, max_candidates)
         
         cells = []
@@ -104,6 +156,9 @@ class WarPlanner:
             unique_symbols.add(cell.symbol)
             unique_candidate_ids.add(cell.candidate_id)
         
+        # Update diagnostics with selected count
+        diag.selected_cells_count = len(cells)
+        
         # Generate deterministic plan ID
         plan_content = f"{sorted(unique_symbols)}_{sorted(unique_candidate_ids)}_{seed}"
         plan_id = f"war_{hashlib.sha256(plan_content.encode()).hexdigest()[:12]}"
@@ -112,11 +167,16 @@ class WarPlanner:
         config_content = f"{seed}_{len(cells)}_{sorted(unique_symbols)}"
         config_hash = hashlib.sha256(config_content.encode()).hexdigest()[:16]
         
+        # W2: Mark as empty if no cells
+        is_empty = len(cells) == 0
+        
         return WarPlan(
             plan_id=plan_id,
             created_at=datetime.now().isoformat(),
             cells=cells,
             symbols=sorted(unique_symbols),
             candidate_ids=sorted(unique_candidate_ids),
-            config_hash=config_hash
+            config_hash=config_hash,
+            diagnostics=diag,
+            is_empty=is_empty
         )
