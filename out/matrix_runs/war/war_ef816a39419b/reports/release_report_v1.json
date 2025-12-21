@@ -1,0 +1,16 @@
+{
+  "run_id": "war_ef816a39419b",
+  "ts": "2025-12-21T15:37:33.124400Z",
+  "version": "v1",
+  "overall_ok": false,
+  "active_stage": "LIVE",
+  "assumed_stage": false,
+  "blocking_protocols": [
+    "SR-FAIL",
+    "RG-01",
+    "RG-02",
+    "RG-03"
+  ],
+  "warnings": [],
+  "summary": "Release Blocked by 4 critical issues"
+}

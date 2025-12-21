@@ -1,0 +1,16 @@
+{
+  "run_id": "war_8cc4bc1597bb",
+  "ts": "2025-12-21T15:37:32.152768Z",
+  "version": "v1",
+  "overall_ok": false,
+  "active_stage": "SNIPER",
+  "assumed_stage": false,
+  "blocking_protocols": [
+    "SR-FAIL",
+    "RG-01",
+    "RG-02",
+    "RG-03"
+  ],
+  "warnings": [],
+  "summary": "Release Blocked by 4 critical issues"
+}

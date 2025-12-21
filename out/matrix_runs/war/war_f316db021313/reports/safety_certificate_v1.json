@@ -1,0 +1,258 @@
+{
+  "version": "safety_certificate_v1",
+  "ts": "2025-12-21T18:36:17.237942",
+  "run_id": "war_f316db021313",
+  "engine_version": "v4",
+  "build_commit": "unknown",
+  "config_signature": "unknown",
+  "results": {
+    "verdict": "PASS",
+    "active_stage": "LIVE",
+    "counts": {
+      "GREEN": 8,
+      "YELLOW": 2,
+      "RED": 0,
+      "GRAY": 7,
+      "LOCKED": 0
+    },
+    "blockers": [],
+    "warnings": [
+      {
+        "mx": "MX-5130",
+        "name": "Idempotency / Duplicate-order Shield",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5130 is GRAY"
+      },
+      {
+        "mx": "MX-5140",
+        "name": "Restart Reconciliation",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5140 is GRAY"
+      },
+      {
+        "mx": "MX-5160",
+        "name": "Emergency Kill Switch + Safe Mode",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5160 is GRAY"
+      },
+      {
+        "mx": "MX-5170",
+        "name": "Proof Bundle Packager",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5170 is GRAY"
+      },
+      {
+        "mx": "MX-5190",
+        "name": "Release Train Gates",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5190 is GRAY"
+      },
+      {
+        "mx": "MX-5200",
+        "name": "Order Lifecycle Prod-Grade v1",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5200 is GRAY"
+      },
+      {
+        "mx": "MX-5210",
+        "name": "Market Data Integrity & Anti-Lookahead",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5210 is GRAY"
+      },
+      {
+        "mx": "MX-5230",
+        "name": "Rate Limit + Retry/Backoff",
+        "declared_status": "GREEN",
+        "effective_status": "YELLOW",
+        "evidence_ok": false,
+        "missing_summary": "artifacts:1, telemetry:4",
+        "reason": "Evidence drift detected (missing proof)"
+      },
+      {
+        "mx": "MX-5240",
+        "name": "Resource Exhaustion Guardrails",
+        "declared_status": "GREEN",
+        "effective_status": "YELLOW",
+        "evidence_ok": false,
+        "missing_summary": "telemetry:1",
+        "reason": "Evidence drift detected (missing proof)"
+      }
+    ],
+    "protocols": [
+      {
+        "mx": "MX-5100",
+        "name": "Closed-bar Only Lock",
+        "declared_status": "GREEN",
+        "effective_status": "GREEN",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": ""
+      },
+      {
+        "mx": "MX-5110",
+        "name": "DataReport v1 + DATA_OK run-scoped fix",
+        "declared_status": "GREEN",
+        "effective_status": "GREEN",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": ""
+      },
+      {
+        "mx": "MX-5120",
+        "name": "Exit & Real PnL v1 (SL/TP/TimeStop + PnL sanity)",
+        "declared_status": "GREEN",
+        "effective_status": "GREEN",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": ""
+      },
+      {
+        "mx": "MX-5130",
+        "name": "Idempotency / Duplicate-order Shield",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5130 is GRAY"
+      },
+      {
+        "mx": "MX-5140",
+        "name": "Restart Reconciliation",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5140 is GRAY"
+      },
+      {
+        "mx": "MX-5150",
+        "name": "Telemetry Schema Unification",
+        "declared_status": "GREEN",
+        "effective_status": "GREEN",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": ""
+      },
+      {
+        "mx": "MX-5160",
+        "name": "Emergency Kill Switch + Safe Mode",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5160 is GRAY"
+      },
+      {
+        "mx": "MX-5170",
+        "name": "Proof Bundle Packager",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5170 is GRAY"
+      },
+      {
+        "mx": "MX-5190",
+        "name": "Release Train Gates",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5190 is GRAY"
+      },
+      {
+        "mx": "MX-5200",
+        "name": "Order Lifecycle Prod-Grade v1",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5200 is GRAY"
+      },
+      {
+        "mx": "MX-5210",
+        "name": "Market Data Integrity & Anti-Lookahead",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5210 is GRAY"
+      },
+      {
+        "mx": "MX-5220",
+        "name": "Timebase Standard",
+        "declared_status": "GREEN",
+        "effective_status": "GREEN",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": ""
+      },
+      {
+        "mx": "MX-5230",
+        "name": "Rate Limit + Retry/Backoff",
+        "declared_status": "GREEN",
+        "effective_status": "YELLOW",
+        "evidence_ok": false,
+        "missing_summary": "artifacts:1, telemetry:4",
+        "reason": "Evidence drift detected (missing proof)"
+      },
+      {
+        "mx": "MX-5240",
+        "name": "Resource Exhaustion Guardrails",
+        "declared_status": "GREEN",
+        "effective_status": "YELLOW",
+        "evidence_ok": false,
+        "missing_summary": "telemetry:1",
+        "reason": "Evidence drift detected (missing proof)"
+      },
+      {
+        "mx": "MX-5250",
+        "name": "Tamper-Evident Evidence",
+        "declared_status": "GREEN",
+        "effective_status": "GREEN",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": ""
+      },
+      {
+        "mx": "MX-5260",
+        "name": "Safety Protocol Registry + UI",
+        "declared_status": "GREEN",
+        "effective_status": "GREEN",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": ""
+      },
+      {
+        "mx": "MX-5270",
+        "name": "Safety Sweep + Safety Certificate",
+        "declared_status": "GREEN",
+        "effective_status": "GREEN",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": ""
+      }
+    ]
+  }
+}

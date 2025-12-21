@@ -1,0 +1,95 @@
+{
+  "version": "safety_certificate_v1",
+  "ts": "2025-12-21T18:37:32.176263",
+  "run_id": "war_8cc4bc1597bb",
+  "engine_version": "v4",
+  "build_commit": "unknown",
+  "config_signature": "unknown",
+  "results": {
+    "verdict": "PASS",
+    "active_stage": "SNIPER",
+    "counts": {
+      "GREEN": 8,
+      "YELLOW": 0,
+      "RED": 0,
+      "GRAY": 0,
+      "LOCKED": 0
+    },
+    "blockers": [],
+    "warnings": [],
+    "protocols": [
+      {
+        "mx": "MX-5100",
+        "name": "Closed-bar Only Lock",
+        "declared_status": "GREEN",
+        "effective_status": "GREEN",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": ""
+      },
+      {
+        "mx": "MX-5110",
+        "name": "DataReport v1 + DATA_OK run-scoped fix",
+        "declared_status": "GREEN",
+        "effective_status": "GREEN",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": ""
+      },
+      {
+        "mx": "MX-5120",
+        "name": "Exit & Real PnL v1 (SL/TP/TimeStop + PnL sanity)",
+        "declared_status": "GREEN",
+        "effective_status": "GREEN",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": ""
+      },
+      {
+        "mx": "MX-5150",
+        "name": "Telemetry Schema Unification",
+        "declared_status": "GREEN",
+        "effective_status": "GREEN",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": ""
+      },
+      {
+        "mx": "MX-5220",
+        "name": "Timebase Standard",
+        "declared_status": "GREEN",
+        "effective_status": "GREEN",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": ""
+      },
+      {
+        "mx": "MX-5250",
+        "name": "Tamper-Evident Evidence",
+        "declared_status": "GREEN",
+        "effective_status": "GREEN",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": ""
+      },
+      {
+        "mx": "MX-5260",
+        "name": "Safety Protocol Registry + UI",
+        "declared_status": "GREEN",
+        "effective_status": "GREEN",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": ""
+      },
+      {
+        "mx": "MX-5270",
+        "name": "Safety Sweep + Safety Certificate",
+        "declared_status": "GREEN",
+        "effective_status": "GREEN",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": ""
+      }
+    ]
+  }
+}

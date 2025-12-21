@@ -1,0 +1,1 @@
+{"entry_ts": 1700009000000, "exit_ts": 1700036000000, "candidate_id": "pilot_cand_001", "symbol": "BTCUSDT", "side": "LONG", "qty": 0.024685262898049863, "entry_price": 40510.0, "exit_price": 40540.0, "gross_pnl": 0.7405578869414959, "fee": 2.0007405578869415, "slippage": 0.00037027894347074796, "net_pnl": -1.2605529498889163, "exit_reason": "CYCLE", "run_id": "war_223adb690ba1"}

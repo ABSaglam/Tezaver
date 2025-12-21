@@ -1,0 +1,66 @@
+{
+  "run_id": "war_8cc4bc1597bb",
+  "engine_version": "v4",
+  "build_commit": "m25-dev",
+  "config_signature": "pilot_hash_123",
+  "data_fingerprint": "5fd629b81457d2eba37c8d3bad23d6f3",
+  "ts": "2025-12-21T18:37:32.096781",
+  "artifacts": [
+    {
+      "rel_path": "report.json",
+      "sha256": "5391e85f026ac77d153adbebf27634898b6e53424b65d91fbbcc39809aa0b2ab",
+      "bytes": 819,
+      "mtime": "2025-12-21T18:37:32.095182"
+    },
+    {
+      "rel_path": "reports/data_integrity_v1.json",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "bytes": 2,
+      "mtime": "2025-12-21T18:37:32.082800"
+    },
+    {
+      "rel_path": "reports/data_report_v1.json",
+      "sha256": "86a10d00b145e52ce70cae5ac5212da69bcc0da877cead6f853cab5025946fa1",
+      "bytes": 411,
+      "mtime": "2025-12-21T18:37:32.082234"
+    },
+    {
+      "rel_path": "reports/idempotency_keys_v1.json",
+      "sha256": "047023c113af67e9f3741916101e456e4761b620bccd44cab77fa29e5443e76b",
+      "bytes": 393,
+      "mtime": "2025-12-21T18:37:32.082696"
+    },
+    {
+      "rel_path": "reports/order_lifecycle_v1.json",
+      "sha256": "640a901f5274cc65f7c6599c79bf71f06eb59130f10069deb6a5e507d9a04d71",
+      "bytes": 664,
+      "mtime": "2025-12-21T18:37:32.082466"
+    },
+    {
+      "rel_path": "reports/resource_health_v1.json",
+      "sha256": "863023ed39e546897695b21da5b9897146c1c28727c4b4e99efad49e31dbeb31",
+      "bytes": 250,
+      "mtime": "2025-12-21T18:37:32.082579"
+    },
+    {
+      "rel_path": "scorecard.json",
+      "sha256": "c93bba4e7dbffcda91b32e3694d214a72ac4e6111c2e6ec15e7dd9ee42462dbb",
+      "bytes": 469,
+      "mtime": "2025-12-21T18:37:32.095364"
+    },
+    {
+      "rel_path": "telemetry.ndjson",
+      "sha256": "fb838fb84eb9ed2a6440774af5ef326aa1a6c60c885885604c4d794449eec432",
+      "bytes": 3732,
+      "mtime": "2025-12-21T18:37:32.095512"
+    },
+    {
+      "rel_path": "trade_audit_v2.jsonl",
+      "sha256": "38ff82e5a10aad04c73594ce77c1757f3fae403ad8d6f037d6dd5783526ffa29",
+      "bytes": 383,
+      "mtime": "2025-12-21T18:37:32.095607"
+    }
+  ],
+  "prev_manifest_sha256": "eb230a4157b88500e5abf0886d256d6804c855d3039121801d3a8e77bf346f2a",
+  "manifest_sha256": "bbb3ee9fbcf6f560996effbe4b9bc08c500bc0dc1054595dab48a4110f860dbc"
+}

@@ -1,0 +1,18 @@
+{
+  "run_id": "war_8cc4bc1597bb",
+  "summary": {
+    "run_id": "war_8cc4bc1597bb",
+    "blocked_count": 0,
+    "unique_orders_count": 1
+  },
+  "keys": {
+    "97a9646eb0583a4694bbb2854bfdb09c54d546e0d86cb38b2916c0343417c377": {
+      "order_id": null,
+      "ts": "2025-12-21T18:37:31.983975",
+      "meta": {
+        "symbol": "BTCUSDT",
+        "qty": 0.024685262898049863
+      }
+    }
+  }
+}
