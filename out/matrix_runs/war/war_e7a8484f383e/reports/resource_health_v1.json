@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "reasons": [],
+  "metrics": {
+    "disk_free_mb": 1283.04,
+    "rss_mb": 156.67,
+    "fd_used": 15
+  },
+  "thresholds": {
+    "disk_min_mb": 100.0,
+    "rss_max_mb": 2048.0,
+    "fd_max": 800
+  },
+  "ts": "2025-12-21T18:21:08.445556"
+}

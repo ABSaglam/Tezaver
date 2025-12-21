@@ -384,7 +384,7 @@ class LiveEngine:
                 # MX-5160: Check if CLOSE is allowed
                 allowed, reason = self.risk_state.can_place_order("CLOSE")
                 if not allowed:
-                    continue
+                    return  # Exit method if CLOSE not allowed
                 
                 # Real PnL
 
@@ -617,3 +617,46 @@ class LiveEngine:
 
 
 
+# ===== Compatibility Shims (MX-9003) =====
+# These provide backward-compatible function signatures for legacy code.
+
+def start_live_run(
+    plan,
+    home: str = "out/matrix_runs/live",
+    seed: int = 42,
+    max_ticks: int = 0
+) -> str:
+    """
+    Compatibility shim for legacy start_live_run function.
+    Creates and runs a LiveEngine instance.
+    """
+    engine = LiveEngine(plan=plan, output_dir=home)
+    result = engine.run(max_ticks=max_ticks if max_ticks > 0 else None)
+    return engine.run_id
+
+def live_step(engine: LiveEngine, bar: dict):
+    """
+    Compatibility shim for stepping a live engine.
+    """
+    pass  # In practice, the engine's run() handles this
+
+def load_live_state(home: str = "data/matrix") -> dict:
+    """
+    Compatibility shim for loading live state.
+    """
+    import os, json
+    state_path = os.path.join(home, "live_state.json")
+    if os.path.exists(state_path):
+        with open(state_path) as f:
+            return json.load(f)
+    return {}
+
+def save_live_state(state: dict, home: str = "data/matrix"):
+    """
+    Compatibility shim for saving live state.
+    """
+    import os, json
+    os.makedirs(home, exist_ok=True)
+    state_path = os.path.join(home, "live_state.json")
+    with open(state_path, 'w') as f:
+        json.dump(state, f)

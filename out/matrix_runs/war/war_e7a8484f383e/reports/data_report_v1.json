@@ -1,0 +1,16 @@
+{
+  "resolved_rate": 1.0,
+  "join_coverage": 1.0,
+  "unresolved_count": 0,
+  "bundle_id": "WAR_CONSOLIDATED",
+  "symbol": "BTCUSDT",
+  "timeframe": "VARIES",
+  "build_commit": "m25-dev",
+  "engine_version": "v4",
+  "config_signature": "cd0279d98bc9149c",
+  "data_fingerprint": "2ca822160e7a2c63b8da3da5bda9362f",
+  "ts": "2025-12-21T18:21:08.574992",
+  "run_id": "war_e7a8484f383e",
+  "ok": true,
+  "issues": []
+}

@@ -57,3 +57,9 @@ def validate_event_dict(event: Dict[str, Any]) -> bool:
     """
     required = ["event_type", "ts", "run_id"]
     return all(k in event for k in required)
+
+def validate_ndjson_lines(lines: list) -> bool:
+    """
+    Validates that all lines in an NDJSON list have required fields.
+    """
+    return all(validate_event_dict(line) for line in lines)
