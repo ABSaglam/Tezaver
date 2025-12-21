@@ -1,0 +1,21 @@
+{
+  "bundle_id": "BTCUSDT_15m_bundle_20251221_071210",
+  "symbol": "BTCUSDT",
+  "timeframe": "15m",
+  "bundle_version": "0.1.0",
+  "build_ts": "2025-12-21T07:12:10.269412",
+  "engine_min_version": "unknown",
+  "data_fingerprint": "draft",
+  "config_signature": "draft",
+  "story_count": 1,
+  "sources": [
+    "library/fast15_rallies/BTCUSDT/fast15_rallies.parquet",
+    "coin_cells/BTCUSDT/data/history_15m.parquet",
+    "data/coin_profiles/BTCUSDT/levels_1h.json",
+    "data/coin_profiles/BTCUSDT/levels_4h.json",
+    "data/coin_profiles/BTCUSDT/regime_profile.json",
+    "data/coin_profiles/BTCUSDT/shock_profile.json",
+    "data/coin_profiles/BTCUSDT/pattern_stats.json",
+    "data/coin_profiles/BTCUSDT/rally_families.json"
+  ]
+}

@@ -1,0 +1,432 @@
+{
+  "rally_stories_v1": [
+    {
+      "version": "1.1.0",
+      "story_id": "BTCUSDT_15m_20231213_0700",
+      "symbol": "BTCUSDT",
+      "context": {
+        "timeframe": "15m",
+        "regime": "chaotic",
+        "shock_risk": 0.029067126896175854,
+        "trendiness_score": 0.05199501376895385,
+        "chop_score": 0.32405605293888673,
+        "scenario_id": "SCENARIO_NEUTRAL",
+        "scenario_risk": "Medium"
+      },
+      "entry": {
+        "event_time_utc": "2023-12-13T07:00:00+00:00",
+        "entry_price": 41090.43,
+        "trigger": "macd_bull_cross",
+        "trigger_source": "snapshots_labeled_1h.parquet:timestamp=2023-12-13 07:00:00",
+        "trigger_time_utc": "2023-12-13T07:00:00+00:00",
+        "rsi_15m": 56.45,
+        "macd_phase_15m": "KOSU",
+        "volume_rel_15m": 1.98,
+        "trust_score": 0.05464071856287425,
+        "levels": {
+          "nearest_support": 41073.71,
+          "support_strength": 0.0789,
+          "nearest_resistance": 41778.8453,
+          "resistance_strength": 0.1733
+        }
+      },
+      "target": {
+        "expected_gain_pct": 0.02335701741857272,
+        "hit_5p_rate": 0.12425149700598802,
+        "hit_10p_rate": 0.016467065868263474,
+        "bars_to_peak": 60
+      },
+      "risk": {
+        "stop_loss_price": 40858.07,
+        "stop_loss_pct": 0.5655,
+        "atr_pct_15m": 0.377,
+        "sl_k_multiplier": 1.5,
+        "pre_peak_drawdown_pct": -0.0021
+      },
+      "family": {
+        "family_id": "1d_rally_5p_F0",
+        "historical_success": 0.4,
+        "sample_count": 46,
+        "avg_win_rate": null
+      },
+      "quality": {
+        "quality_score": 42.3,
+        "rally_shape": "choppy",
+        "trend_efficiency": 0.4402,
+        "narrative_tr": "Net bir senaryo oluşmadı. İndikatörler karışık sinyaller veriyor."
+      },
+      "phases": [],
+      "evidence": {
+        "source_event": {
+          "symbol": "BTCUSDT",
+          "event_time": "2023-12-13T07:00:00",
+          "rally_bucket": "5p_10p",
+          "future_max_gain_pct": 0.058
+        },
+        "event_row_hash": "9439911fe882df00445604dde88c806dc9addebdd7c3c5abccf8e509b24af1e3",
+        "source_tf": "15m"
+      }
+    },
+    {
+      "version": "1.1.0",
+      "story_id": "BTCUSDT_15m_20231218_1600",
+      "symbol": "BTCUSDT",
+      "context": {
+        "timeframe": "15m",
+        "regime": "chaotic",
+        "shock_risk": 0.029067126896175854,
+        "trendiness_score": 0.05199501376895385,
+        "chop_score": 0.32405605293888673,
+        "scenario_id": "SCENARIO_NEUTRAL",
+        "scenario_risk": "Medium"
+      },
+      "entry": {
+        "event_time_utc": "2023-12-18T16:00:00+00:00",
+        "entry_price": 41304.59,
+        "trigger": "macd_bull_cross_fallback",
+        "trigger_source": "fast15_rallies.parquet:macd_phase_15m=KOSU",
+        "trigger_time_utc": "2023-12-18T16:00:00+00:00",
+        "rsi_15m": 51.3,
+        "macd_phase_15m": "KOSU",
+        "volume_rel_15m": 0.93,
+        "trust_score": 0.05464071856287425,
+        "levels": {
+          "nearest_support": 41284.289,
+          "support_strength": 0.1117,
+          "nearest_resistance": 41778.8453,
+          "resistance_strength": 0.1733
+        }
+      },
+      "target": {
+        "expected_gain_pct": 0.02335701741857272,
+        "hit_5p_rate": 0.12425149700598802,
+        "hit_10p_rate": 0.016467065868263474,
+        "bars_to_peak": 40
+      },
+      "risk": {
+        "stop_loss_price": 41026.94,
+        "stop_loss_pct": 0.6722,
+        "atr_pct_15m": 0.4481,
+        "sl_k_multiplier": 1.5,
+        "pre_peak_drawdown_pct": 0.0
+      },
+      "family": {
+        "family_id": "1d_rally_5p_F0",
+        "historical_success": 0.4,
+        "sample_count": 46,
+        "avg_win_rate": null
+      },
+      "quality": {
+        "quality_score": 48.8,
+        "rally_shape": "weak",
+        "trend_efficiency": 0.5246,
+        "narrative_tr": "Net bir senaryo oluşmadı. İndikatörler karışık sinyaller veriyor."
+      },
+      "phases": [],
+      "evidence": {
+        "source_event": {
+          "symbol": "BTCUSDT",
+          "event_time": "2023-12-18T16:00:00",
+          "rally_bucket": "5p_10p",
+          "future_max_gain_pct": 0.0531
+        },
+        "event_row_hash": "cf5208c2dab838349c47dabe88fbe771590adb645fda9effbfa7b3b4a933f3b0",
+        "source_tf": "15m"
+      }
+    },
+    {
+      "version": "1.1.0",
+      "story_id": "BTCUSDT_15m_20240101_1415",
+      "symbol": "BTCUSDT",
+      "context": {
+        "timeframe": "15m",
+        "regime": "chaotic",
+        "shock_risk": 0.029067126896175854,
+        "trendiness_score": 0.05199501376895385,
+        "chop_score": 0.32405605293888673,
+        "scenario_id": "SCENARIO_NEUTRAL",
+        "scenario_risk": "Medium"
+      },
+      "entry": {
+        "event_time_utc": "2024-01-01T14:15:00+00:00",
+        "entry_price": 42621.09,
+        "trigger": "unknown",
+        "trigger_source": "none",
+        "trigger_time_utc": null,
+        "rsi_15m": 46.93,
+        "macd_phase_15m": "UYKU",
+        "volume_rel_15m": 0.91,
+        "trust_score": null,
+        "levels": {
+          "nearest_support": 42521.1065,
+          "support_strength": 0.2031,
+          "nearest_resistance": 42903.4149,
+          "resistance_strength": 0.3268
+        }
+      },
+      "target": {
+        "expected_gain_pct": 0.06754660662127608,
+        "hit_5p_rate": null,
+        "hit_10p_rate": null,
+        "bars_to_peak": 53
+      },
+      "risk": {
+        "stop_loss_price": 42500.82,
+        "stop_loss_pct": 0.2822,
+        "atr_pct_15m": 0.1881,
+        "sl_k_multiplier": 1.5,
+        "pre_peak_drawdown_pct": -0.0002
+      },
+      "family": {
+        "family_id": "1d_rally_5p_F0",
+        "historical_success": 0.4,
+        "sample_count": 46,
+        "avg_win_rate": null
+      },
+      "quality": {
+        "quality_score": 51.6,
+        "rally_shape": "choppy",
+        "trend_efficiency": 0.5135,
+        "narrative_tr": "Net bir senaryo oluşmadı. İndikatörler karışık sinyaller veriyor."
+      },
+      "phases": [],
+      "evidence": {
+        "source_event": {
+          "symbol": "BTCUSDT",
+          "event_time": "2024-01-01T14:15:00",
+          "rally_bucket": "5p_10p",
+          "future_max_gain_pct": 0.0675
+        },
+        "event_row_hash": "86f0e4ede5b776b9c81c70530d8687b606f126aac5bbd37f4ba38de27ab38ff5",
+        "source_tf": "15m"
+      }
+    },
+    {
+      "version": "1.1.0",
+      "story_id": "BTCUSDT_15m_20240101_2215",
+      "symbol": "BTCUSDT",
+      "context": {
+        "timeframe": "15m",
+        "regime": "chaotic",
+        "shock_risk": 0.029067126896175854,
+        "trendiness_score": 0.05199501376895385,
+        "chop_score": 0.32405605293888673,
+        "scenario_id": "SCENARIO_NEUTRAL",
+        "scenario_risk": "Medium"
+      },
+      "entry": {
+        "event_time_utc": "2024-01-01T22:15:00+00:00",
+        "entry_price": 43471.1,
+        "trigger": "rsi_overbought",
+        "trigger_source": "snapshots_labeled_1h.parquet:timestamp=2024-01-01 22:00:00",
+        "trigger_time_utc": "2024-01-01T22:00:00+00:00",
+        "rsi_15m": 55.27,
+        "macd_phase_15m": "UYKU",
+        "volume_rel_15m": 0.88,
+        "trust_score": 0.06196049743964887,
+        "levels": {
+          "nearest_support": 43114.3212,
+          "support_strength": 0.3842,
+          "nearest_resistance": 43908.0079,
+          "resistance_strength": 0.2498
+        }
+      },
+      "target": {
+        "expected_gain_pct": 0.025239586236563995,
+        "hit_5p_rate": 0.1302121433796635,
+        "hit_10p_rate": 0.03291880029261156,
+        "bars_to_peak": 43
+      },
+      "risk": {
+        "stop_loss_price": 43259.1,
+        "stop_loss_pct": 0.4877,
+        "atr_pct_15m": 0.3251,
+        "sl_k_multiplier": 1.5,
+        "pre_peak_drawdown_pct": -0.0006
+      },
+      "family": {
+        "family_id": "1d_rally_5p_F0",
+        "historical_success": 0.4,
+        "sample_count": 46,
+        "avg_win_rate": null
+      },
+      "quality": {
+        "quality_score": 62.2,
+        "rally_shape": "choppy",
+        "trend_efficiency": 0.4892,
+        "narrative_tr": "Net bir senaryo oluşmadı. İndikatörler karışık sinyaller veriyor."
+      },
+      "phases": [],
+      "evidence": {
+        "source_event": {
+          "symbol": "BTCUSDT",
+          "event_time": "2024-01-01T22:15:00",
+          "rally_bucket": "5p_10p",
+          "future_max_gain_pct": 0.0554
+        },
+        "event_row_hash": "88127edfab7d8793043066c1a46d14c086b5c14f298bae7ce14828ef2dfc16af",
+        "source_tf": "15m"
+      }
+    },
+    {
+      "version": "1.1.0",
+      "story_id": "BTCUSDT_15m_20240108_0945",
+      "symbol": "BTCUSDT",
+      "context": {
+        "timeframe": "15m",
+        "regime": "chaotic",
+        "shock_risk": 0.029067126896175854,
+        "trendiness_score": 0.05199501376895385,
+        "chop_score": 0.32405605293888673,
+        "scenario_id": "SCENARIO_NEUTRAL",
+        "scenario_risk": "Medium"
+      },
+      "entry": {
+        "event_time_utc": "2024-01-08T09:45:00+00:00",
+        "entry_price": 43720.46,
+        "trigger": "macd_bear_cross",
+        "trigger_source": "snapshots_labeled_1h.parquet:timestamp=2024-01-08 09:00:00",
+        "trigger_time_utc": "2024-01-08T09:00:00+00:00",
+        "rsi_15m": 42.57,
+        "macd_phase_15m": "UYKU",
+        "volume_rel_15m": 0.98,
+        "trust_score": 0.0501497005988024,
+        "levels": {
+          "nearest_support": 43680.6384,
+          "support_strength": 0.2886,
+          "nearest_resistance": 43908.0079,
+          "resistance_strength": 0.2498
+        }
+      },
+      "target": {
+        "expected_gain_pct": 0.023238567261247373,
+        "hit_5p_rate": 0.11526946107784432,
+        "hit_10p_rate": 0.01347305389221557,
+        "bars_to_peak": 37
+      },
+      "risk": {
+        "stop_loss_price": 43491.15,
+        "stop_loss_pct": 0.5245,
+        "atr_pct_15m": 0.3497,
+        "sl_k_multiplier": 1.5,
+        "pre_peak_drawdown_pct": 0.0
+      },
+      "family": {
+        "family_id": "1d_rally_5p_F0",
+        "historical_success": 0.4,
+        "sample_count": 46,
+        "avg_win_rate": null
+      },
+      "quality": {
+        "quality_score": 65.4,
+        "rally_shape": "choppy",
+        "trend_efficiency": 0.5831,
+        "narrative_tr": "Net bir senaryo oluşmadı. İndikatörler karışık sinyaller veriyor."
+      },
+      "phases": [],
+      "evidence": {
+        "source_event": {
+          "symbol": "BTCUSDT",
+          "event_time": "2024-01-08T09:45:00",
+          "rally_bucket": "5p_10p",
+          "future_max_gain_pct": 0.0807
+        },
+        "event_row_hash": "5fd49d1d51f5d1e244abb929a4db67ad9f4b0646d3ca83899898e751f6369384",
+        "source_tf": "15m"
+      }
+    }
+  ],
+  "compiled_stories_1h": [
+    {
+      "time_utc": "2023-12-13T07:00:00+00:00",
+      "story_count": 1,
+      "avg_expected_gain": 0.0234,
+      "max_expected_gain": 0.0234,
+      "timeframe": "1h"
+    },
+    {
+      "time_utc": "2023-12-18T16:00:00+00:00",
+      "story_count": 1,
+      "avg_expected_gain": 0.0234,
+      "max_expected_gain": 0.0234,
+      "timeframe": "1h"
+    },
+    {
+      "time_utc": "2024-01-01T14:00:00+00:00",
+      "story_count": 1,
+      "avg_expected_gain": 0.0675,
+      "max_expected_gain": 0.0675,
+      "timeframe": "1h"
+    },
+    {
+      "time_utc": "2024-01-01T22:00:00+00:00",
+      "story_count": 1,
+      "avg_expected_gain": 0.0252,
+      "max_expected_gain": 0.0252,
+      "timeframe": "1h"
+    },
+    {
+      "time_utc": "2024-01-08T09:00:00+00:00",
+      "story_count": 1,
+      "avg_expected_gain": 0.0232,
+      "max_expected_gain": 0.0232,
+      "timeframe": "1h"
+    }
+  ],
+  "compiled_stories_4h": [
+    {
+      "time_utc": "2023-12-13T04:00:00+00:00",
+      "story_count": 1,
+      "avg_expected_gain": 0.0234,
+      "max_expected_gain": 0.0234,
+      "timeframe": "4h"
+    },
+    {
+      "time_utc": "2023-12-18T16:00:00+00:00",
+      "story_count": 1,
+      "avg_expected_gain": 0.0234,
+      "max_expected_gain": 0.0234,
+      "timeframe": "4h"
+    },
+    {
+      "time_utc": "2024-01-01T12:00:00+00:00",
+      "story_count": 1,
+      "avg_expected_gain": 0.0675,
+      "max_expected_gain": 0.0675,
+      "timeframe": "4h"
+    },
+    {
+      "time_utc": "2024-01-01T20:00:00+00:00",
+      "story_count": 1,
+      "avg_expected_gain": 0.0252,
+      "max_expected_gain": 0.0252,
+      "timeframe": "4h"
+    },
+    {
+      "time_utc": "2024-01-08T08:00:00+00:00",
+      "story_count": 1,
+      "avg_expected_gain": 0.0232,
+      "max_expected_gain": 0.0232,
+      "timeframe": "4h"
+    }
+  ],
+  "sources": [
+    "/Users/alisaglam/TezaverMac/library/fast15_rallies/BTCUSDT/fast15_rallies.parquet",
+    "/Users/alisaglam/TezaverMac/library/patterns/BTCUSDT/snapshots_labeled_1h.parquet",
+    "/Users/alisaglam/TezaverMac/coin_cells/BTCUSDT/data/history_15m.parquet",
+    "/Users/alisaglam/TezaverMac/data/coin_profiles/BTCUSDT/levels_1h.json",
+    "/Users/alisaglam/TezaverMac/data/coin_profiles/BTCUSDT/regime_profile.json",
+    "/Users/alisaglam/TezaverMac/data/coin_profiles/BTCUSDT/shock_profile.json",
+    "/Users/alisaglam/TezaverMac/data/coin_profiles/BTCUSDT/pattern_stats.json",
+    "/Users/alisaglam/TezaverMac/data/coin_profiles/BTCUSDT/rally_families.json"
+  ],
+  "config": {
+    "sl_atr_k": 1.5,
+    "version": "v1.1",
+    "fail_threshold": 0.5
+  },
+  "metadata": {
+    "exporter": "CandidateBundleExporter_v1",
+    "generated_at": "2025-12-21T07:37:33.282985"
+  }
+}

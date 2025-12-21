@@ -1,0 +1,25 @@
+{
+  "bundle_id": "BTCUSDT_15m_bundle_20251221_073733",
+  "symbol": "BTCUSDT",
+  "timeframe": "15m",
+  "bundle_version": "1.1.0",
+  "build_ts": "2025-12-21T07:37:33.282979",
+  "engine_min_version": "0.1.0",
+  "data_fingerprint": "7566d4ccd49cc73a0ea3dd48027f7abcf5b80b283beb8762383dd9a8b6ecc3be",
+  "config_signature": "d124f22a2a25fd397f8d03baf5b042f824c00ff6ec6d5b97f3ed94188bb4f8e3",
+  "story_count": 5,
+  "sources": [
+    "/Users/alisaglam/TezaverMac/library/fast15_rallies/BTCUSDT/fast15_rallies.parquet",
+    "/Users/alisaglam/TezaverMac/library/patterns/BTCUSDT/snapshots_labeled_1h.parquet",
+    "/Users/alisaglam/TezaverMac/coin_cells/BTCUSDT/data/history_15m.parquet",
+    "/Users/alisaglam/TezaverMac/data/coin_profiles/BTCUSDT/levels_1h.json",
+    "/Users/alisaglam/TezaverMac/data/coin_profiles/BTCUSDT/regime_profile.json",
+    "/Users/alisaglam/TezaverMac/data/coin_profiles/BTCUSDT/shock_profile.json",
+    "/Users/alisaglam/TezaverMac/data/coin_profiles/BTCUSDT/pattern_stats.json",
+    "/Users/alisaglam/TezaverMac/data/coin_profiles/BTCUSDT/rally_families.json"
+  ],
+  "join_coverage": 0.6,
+  "join_total_attempts": 5,
+  "join_matched_count": 3,
+  "join_unmatched_count": 2
+}
