@@ -1,0 +1,46 @@
+{
+  "run_id": "run_sniper_bundle_v_1766321088",
+  "overall": "IMPROVE",
+  "gates": [
+    {
+      "name": "TRACE_OK",
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "name": "TELEMETRY_OK",
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "name": "NO_BLOCKS",
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "name": "DATA_OK",
+      "status": "IMPROVE",
+      "reason": "No data report found"
+    },
+    {
+      "name": "MIN_TRADES",
+      "status": "PASS",
+      "reason": "Found 1 trades"
+    },
+    {
+      "name": "PROFITABLE",
+      "status": "PASS",
+      "reason": "PnL 41110.98 > 0"
+    },
+    {
+      "name": "PNL_SANITY",
+      "status": "PASS",
+      "reason": "All trades within limits"
+    }
+  ],
+  "created_ts": 1766321090,
+  "scorecard_summary": {
+    "pnl": 41110.975215,
+    "trades": 1
+  }
+}

@@ -91,10 +91,12 @@ def run_export(symbol: str, timeframe: str, limit: int = 5, min_resolve_rate: fl
         "summaries_4h": compiler.compile_summaries(stories, "4h")
     }
     
-    # Fingerprints (Placeholder logic for demo / simplified)
+    # MACX-2140: Real Fingerprints (PNL-1200)
+    from .fingerprint import calculate_data_fingerprint, calculate_config_signature
+    f_paths = [history_path, fast15_path, patterns_path]
     fingerprints = {
-        "data_fingerprint": "mock_data_fp",
-        "config_signature": "mock_config_sig"
+        "data_fingerprint": calculate_data_fingerprint(f_paths),
+        "config_signature": calculate_config_signature(config)
     }
     
     # MACX-2130: Metrics

@@ -27,7 +27,8 @@ def run_cycle(symbol: str,
               home: str,
               strategy: Optional[Any] = None, # MXI-1100
               run_profile: str = "SNIPER", 
-              run_id: Optional[str] = None) -> dict:
+              run_id: Optional[str] = None,
+              override_bars: Optional[List[Bar]] = None) -> dict:
               
     # 1. Init
     from tezaver.matrix.core.run_profile import require_profile
@@ -63,7 +64,7 @@ def run_cycle(symbol: str,
     log_event("RUN_START", {"meta": meta})
     
     # 2. Fetch Data
-    bars = data.get_closed_bars(symbol, timeframe)
+    bars = override_bars if override_bars is not None else data.get_closed_bars(symbol, timeframe)
     
     state = RunState()
     event_count = 0

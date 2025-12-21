@@ -4,6 +4,7 @@ import os
 import json
 import time
 from datetime import datetime
+from typing import List, Optional, Dict, Any
 
 from tezaver.matrix.core.cycle_engine import run_cycle
 from tezaver.matrix.adapters.candidate_store_fs import FileCandidateStore
@@ -97,7 +98,7 @@ def run_sniper_once(home: str, candidate_id: str, bars_path: str) -> dict:
         }
     except Exception as e:
         return {"run_id": rid, "error": str(e), "status": "FAIL"}
-def run_sniper_stub(home: str, candidate_id: str) -> str:
+def run_sniper_stub(home: str, candidate_id: str, bars_limit: Optional[int] = None) -> str:
     """
     MXI-1100: Real Sniper Run implementation.
     TR: Gerçek Sniper backtest akışı. Stub yerine gerçek motoru çalıştırır.
@@ -134,13 +135,19 @@ def run_sniper_stub(home: str, candidate_id: str) -> str:
     risk_cfg = RiskGateConfig()
     gov_cfg = GovernanceConfig(allowlist=[manifest.symbol])
     
+    # 3. Fetch & Slice Data
+    all_bars = data_port.get_closed_bars(manifest.symbol, manifest.tf)
+    if bars_limit:
+        all_bars = all_bars[:bars_limit]
+    
+    # Trace with bar count
     trace = TraceIds(
         engine_version="v4-sniper-real",
-        data_fingerprint=manifest.fingerprints.data_fingerprint,
+        data_fingerprint=f"{manifest.fingerprints.data_fingerprint}_{len(all_bars)}",
         config_signature=manifest.fingerprints.config_signature
     )
     
-    # 3. Execution (Real Cycle)
+    # 4. Execution (Real Cycle)
     run_id = f"run_sniper_{candidate_id[:8]}_{int(time.time())}"
     
     meta = run_cycle(
@@ -156,7 +163,8 @@ def run_sniper_stub(home: str, candidate_id: str) -> str:
         home=home,
         strategy=strategy,
         run_profile="SNIPER",
-        run_id=run_id
+        run_id=run_id,
+        override_bars=all_bars
     )
     
     # 4. Finalize & Register (MXI-1160, MXI-1300)
@@ -226,7 +234,7 @@ def main():
     print(f"Bars: {args.bars}")
     
     try:
-        run_id = run_sniper_stub(args.home, args.candidate_id)
+        run_id = run_sniper_stub(args.home, args.candidate_id, bars_limit=args.bars)
         
         # Load verdict and results
         run_reg = RunRegistry()
