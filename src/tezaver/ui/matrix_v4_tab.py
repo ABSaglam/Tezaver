@@ -1034,6 +1034,18 @@ def render_panel_health(home: str):
     
     # MX-5100: Closed-bar Health
     render_closedbar_health(home)
+    
+    # MX-5210: Data Integrity Health
+    render_dataintegrity_summary(home)
+    
+    # MX-5230: API Health
+    render_api_health_summary(home)
+    
+    # MX-5250: Evidence Manifest
+    render_evidence_summary(home)
+
+
+
 
     
     try:
@@ -1721,7 +1733,8 @@ def render_incidents(home: str):
                         pass
 
 def render_closedbar_health(home: str):
-    \"\"\"MX-5100: Render Closed-bar Health status.\"\"\"
+    """MX-5100: Render Closed-bar Health status."""
+
     st.subheader("🛡️ Closed-bar Health")
     
     # Scan latest telemetry for any run to check guard status
@@ -1750,4 +1763,119 @@ def render_closedbar_health(home: str):
         col1.metric("Guard Status", "WAITING ⏳")
         col2.metric("Last Proven", "N/A")
         st.warning("No guard proof found in recent telemetry.")
+
+
+def render_dataintegrity_summary(home: str):
+    """MX-5210: Render Data Integrity status."""
+
+    st.subheader("📊 Data Integrity Health")
+    
+    # Scan Latest War Run for Integrity Report
+    runs_dir = Path(home) / "out" / "matrix_runs" / "war"
+    latest_report = None
+    
+    if runs_dir.exists():
+        run_paths = sorted(runs_dir.glob("*"), key=os.path.getmtime, reverse=True)
+        for rp in run_paths:
+            integrity_path = rp / "reports" / "data_integrity_v1.json"
+            if integrity_path.exists():
+                try:
+                    with open(integrity_path) as f:
+                        data = json.load(f)
+                        # data is Map<CandidateId, Report>
+                        all_ok = True
+                        for rid, rep in data.items():
+                            if not rep.get("ok"): all_ok = False
+                        latest_report = {"ok": all_ok, "run_id": rp.name, "path": str(integrity_path)}
+                        break
+                except: pass
+                
+    if latest_report:
+        c1, c2 = st.columns(2)
+        if latest_report["ok"]:
+            c1.metric("Latest Integrity", "CLEAN ✨")
+            st.success(f"Market data verified as consistent in run {latest_report['run_id']}")
+        else:
+            c1.metric("Latest Integrity", "DIRTY ⚠️")
+            st.error(f"Integrity issues detected in {latest_report['run_id']}. Check logs.")
+    else:
+        st.metric("Latest Integrity", "N/A")
+        st.info("No data integrity reports found.")
+
+
+def render_api_health_summary(home: str):
+    """MX-5230: Render API Health status."""
+
+    st.subheader("🔌 API Health")
+    
+    # Scan Latest Live Run for API Health Report
+    runs_dir = Path(home) / "out" / "matrix_runs" / "live"
+    latest_report = None
+    
+    if runs_dir.exists():
+        run_paths = sorted(runs_dir.glob("*"), key=os.path.getmtime, reverse=True)
+        for rp in run_paths:
+            api_path = rp / "reports" / "api_health_v1.json"
+            if api_path.exists():
+                try:
+                    with open(api_path) as f:
+                        latest_report = json.load(f)
+                        latest_report["run_id"] = rp.name
+                        break
+                except: pass
+                
+    if latest_report:
+        c1, c2, c3 = st.columns(3)
+        state = latest_report.get("circuit_state", "UNKNOWN")
+        
+        if state == "CLOSED":
+            c1.metric("Circuit State", "CLOSED ✅")
+        else:
+            c1.metric("Circuit State", f"{state} 🚨")
+            
+        c2.metric("Total Calls", latest_report.get("total_calls", 0))
+        c3.metric("Retries", latest_report.get("retries_count", 0))
+        
+        if latest_report.get("rate_limit_count", 0) > 0:
+            st.warning(f"Rate limits hit: {latest_report['rate_limit_count']}")
+    else:
+        st.metric("API Health", "N/A")
+        st.info("No API health reports found.")
+
+
+def render_evidence_summary(home: str):
+    """MX-5250: Render Evidence Manifest status."""
+
+    st.subheader("🛡️ Evidence Manifest")
+    
+    # Scan Latest War Run for Manifest
+    runs_dir = Path(home) / "out" / "matrix_runs" / "war"
+    latest_manifest = None
+    
+    if runs_dir.exists():
+        run_paths = sorted(runs_dir.glob("*"), key=os.path.getmtime, reverse=True)
+        for rp in run_paths:
+            manifest_path = rp / "reports" / "evidence_manifest_v1.json"
+            if manifest_path.exists():
+                try:
+                    with open(manifest_path) as f:
+                        latest_manifest = json.load(f)
+                        latest_manifest["run_id"] = rp.name
+                        break
+                except: pass
+                
+    if latest_manifest:
+        col1, col2 = st.columns([1, 2])
+        col1.metric("Artifacts", len(latest_manifest.get("artifacts", [])))
+        col2.code(latest_manifest.get("manifest_sha256", "N/A"), language="text")
+        
+        with st.expander("📄 Manifest Artifacts"):
+            for art in latest_manifest.get("artifacts", []):
+                st.write(f"- `{art['rel_path']}` ({art['bytes']} bytes)")
+    else:
+        st.metric("Evidence", "N/A")
+        st.info("No evidence manifests found.")
+
+
+
 

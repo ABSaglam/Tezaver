@@ -17,6 +17,9 @@ from tezaver.matrix.adapters.data_port_parquet import ParquetDataPort
 from tezaver.matrix.core.telemetry import normalize_event
 from tezaver.matrix.core.lookahead_guard import LookaheadProtectedList
 from tezaver.matrix.core.order_lifecycle import Order, OrderStatus, OrderLifecycleTracker
+from tezaver.matrix.data.data_integrity import validate_candles
+from tezaver.matrix.evidence.evidence_manifest import generate_manifest
+
 
 
 class WarEngine:
@@ -56,6 +59,10 @@ class WarEngine:
         # MX-5200: Order Lifecycle Tracking
         self.order_tracker = OrderLifecycleTracker(self.run_id, emit_fn=self._emit_event)
         self.tracked_orders: List[Order] = []
+        
+        # MX-5210: Data Integrity Reports
+        self.integrity_reports: Dict[str, Dict] = {}
+
 
     
     def run(self) -> Dict:
@@ -479,6 +486,11 @@ class WarEngine:
         with open(reports_dir / "order_lifecycle_v1.json", "w") as f:
             json.dump(lifecycle_data, f, indent=2)
             
+        # MX-5210: Data Integrity Report
+        with open(reports_dir / "data_integrity_v1.json", "w") as f:
+            json.dump(self.integrity_reports, f, indent=2)
+        self._emit_event("DATA_INTEGRITY_REPORT_CREATED", {"path": "reports/data_integrity_v1.json"})
+            
         # Report
         report = {
             "run_id": self.run_id,
@@ -503,3 +515,18 @@ class WarEngine:
         with open(run_dir / "trade_audit_v2.jsonl", "w") as f:
             for trade in self.trade_audit:
                 f.write(json.dumps(trade) + "\n")
+                
+        # MX-5250: Evidence Manifest
+        build_info = {
+            "run_id": self.run_id,
+            "engine_version": "v4",
+            "build_commit": "m25-dev",
+            "config_signature": self.plan.config_hash,
+            "data_fingerprint": hashlib.md5(self.plan.config_hash.encode()).hexdigest()
+        }
+        manifest = generate_manifest(run_dir, "war", build_info)
+        self._emit_event("EVIDENCE_MANIFEST_WRITTEN", {
+            "path": "reports/evidence_manifest_v1.json",
+            "manifest_sha256": manifest["manifest_sha256"]
+        })
+

@@ -1,0 +1,54 @@
+{
+  "run_id": "war_3be5da9772bd",
+  "engine_version": "v4",
+  "build_commit": "m25-dev",
+  "config_signature": "pilot_hash_123",
+  "data_fingerprint": "5fd629b81457d2eba37c8d3bad23d6f3",
+  "ts": "2025-12-21T17:11:08.511718",
+  "artifacts": [
+    {
+      "rel_path": "report.json",
+      "sha256": "5c887b83b3b88ad5fb965a865e601ab1bf291c11e889a5f86d0a5e82fdfd3bc5",
+      "bytes": 819,
+      "mtime": "2025-12-21T17:11:08.510582"
+    },
+    {
+      "rel_path": "reports/data_integrity_v1.json",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "bytes": 2,
+      "mtime": "2025-12-21T17:11:08.498148"
+    },
+    {
+      "rel_path": "reports/data_report_v1.json",
+      "sha256": "944ead63869d046088420d475f718bda5e795a2da5e4108faac10a9566032e1f",
+      "bytes": 411,
+      "mtime": "2025-12-21T17:11:08.497834"
+    },
+    {
+      "rel_path": "reports/order_lifecycle_v1.json",
+      "sha256": "d00d805761a3cfccc21891c874f261c20b2f750183601b20053180719c0d8a7f",
+      "bytes": 664,
+      "mtime": "2025-12-21T17:11:08.498052"
+    },
+    {
+      "rel_path": "scorecard.json",
+      "sha256": "c93bba4e7dbffcda91b32e3694d214a72ac4e6111c2e6ec15e7dd9ee42462dbb",
+      "bytes": 469,
+      "mtime": "2025-12-21T17:11:08.510731"
+    },
+    {
+      "rel_path": "telemetry.ndjson",
+      "sha256": "79e2acf43fc2c8a9aa9336004a601072df1c64b9e7f568499479d8babbaa8ce2",
+      "bytes": 3466,
+      "mtime": "2025-12-21T17:11:08.510884"
+    },
+    {
+      "rel_path": "trade_audit_v2.jsonl",
+      "sha256": "6009e191f0b62ffb23575dcc7dabdb3bb82c03a80fd5c3491cab43bd8c6fd889",
+      "bytes": 383,
+      "mtime": "2025-12-21T17:11:08.510978"
+    }
+  ],
+  "prev_manifest_sha256": null,
+  "manifest_sha256": "5f388d78e8bd007c60fe97098e3aa76d35e1c8dc556679be87cbf57a5f13297b"
+}

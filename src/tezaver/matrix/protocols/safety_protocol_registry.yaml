@@ -189,8 +189,14 @@ protocols:
   - mx: "MX-5230"
     name: "Rate Limit + Retry/Backoff"
     active_in: ["LIVE"]
-    status: { SNIPER: "GRAY", WAR: "GRAY", LIVE: "GRAY" }
-    evidence: { telemetry: [], artifacts: [], ui: [], tests: [] }
+    status: { SNIPER: "GREEN", WAR: "GREEN", LIVE: "GREEN" }
+    last_proof_run_id: "tests/matrix/live/test_mx_5230_resilience.py"
+    evidence:
+      telemetry:
+        ["API_CALL_RESULT", "RETRY_SCHEDULED", "CIRCUIT_OPEN", "CIRCUIT_CLOSE"]
+      artifacts: ["reports/api_health_v1.json"]
+      tests: ["tests/matrix/live/test_mx_5230_resilience.py"]
+      ui: ["PANEL_HEALTH:API_HEALTH"]
 
   - mx: "MX-5240"
     name: "Resource Exhaustion Guardrails"
@@ -201,8 +207,13 @@ protocols:
   - mx: "MX-5250"
     name: "Tamper-Evident Evidence"
     active_in: ["SNIPER", "WAR", "LIVE"]
-    status: { SNIPER: "GRAY", WAR: "GRAY", LIVE: "GRAY" }
-    evidence: { telemetry: [], artifacts: [], ui: [], tests: [] }
+    status: { SNIPER: "GREEN", WAR: "GREEN", LIVE: "GREEN" }
+    last_proof_run_id: "war_3be5da9772bd"
+    evidence:
+      telemetry: ["EVIDENCE_MANIFEST_WRITTEN"]
+      artifacts: ["reports/evidence_manifest_v1.json"]
+      tests: ["tests/matrix/evidence/test_mx_5250_manifest.py"]
+      ui: ["PANEL_HEALTH:EVIDENCE_MANIFEST"]
 
   - mx: "MX-5260"
     name: "Safety Protocol Registry + UI"

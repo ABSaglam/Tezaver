@@ -62,6 +62,8 @@ def judge_run(home: str, run_id: str, scorecard: Dict) -> Dict:
     elif run_id.startswith("live_"): mode = "LIVE"
     
     data_rep_path = get_data_report_path(mode, run_id, home)
+    integrity_rep_path = run_root / "reports" / "data_integrity_v1.json"
+
     
     if os.path.exists(data_rep_path):
         try:
@@ -75,6 +77,30 @@ def judge_run(home: str, run_id: str, scorecard: Dict) -> Dict:
              gates.append(GateVerdict("DATA_OK", "FAIL", "MISSING_RUN_SCOPED_REPORT (Corrupt)"))
     else:
         gates.append(GateVerdict("DATA_OK", "FAIL", "MISSING_RUN_SCOPED_REPORT"))
+
+    # 4.1 DATA_INTEGRITY_OK (MX-5210)
+    integrity_rep_path = run_root / "reports" / "data_integrity_v1.json"
+    if os.path.exists(integrity_rep_path):
+        try:
+            with open(integrity_rep_path) as f:
+                integrity_data = json.load(f)
+                # For WAR, integrity_data is Dict[candidate_id, report]
+                all_ok = True
+                failed_reasons = []
+                for cand_id, rep in integrity_data.items():
+                    if not rep.get("ok"):
+                        all_ok = False
+                        failed_reasons.extend(rep.get("reasons", []))
+                
+                if all_ok:
+                    gates.append(GateVerdict("DATA_INTEGRITY_OK", "PASS"))
+                else:
+                    gates.append(GateVerdict("DATA_INTEGRITY_OK", "FAIL", f"DATA_INTEGRITY_FAIL: {list(set(failed_reasons))}"))
+        except:
+            gates.append(GateVerdict("DATA_INTEGRITY_OK", "FAIL", "MISSING_DATA_INTEGRITY_REPORT (Corrupt)"))
+    else:
+        gates.append(GateVerdict("DATA_INTEGRITY_OK", "FAIL", "MISSING_DATA_INTEGRITY_REPORT"))
+
 
         
     # 5. MIN_TRADES (MXI-1140)

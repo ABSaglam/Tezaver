@@ -15,6 +15,9 @@ from tezaver.matrix.apps.incident_bundle import IncidentBundle
 from tezaver.matrix.adapters.broker_sim import SimBroker
 from tezaver.matrix.core.telemetry import normalize_event
 from tezaver.matrix.core.order_lifecycle import Order, OrderStatus, OrderLifecycleTracker
+from tezaver.matrix.live.api_resilience import ApiResilienceManager
+from tezaver.matrix.evidence.evidence_manifest import generate_manifest
+
 
 
 class LiveEngine:
@@ -57,7 +60,11 @@ class LiveEngine:
         self.tracked_orders: List[Order] = []
         self.order_timeout_s = 60.0 # Default 60s timeout
         
+        # MX-5230: API Resilience
+        self.resilience = ApiResilienceManager(self.run_id, emit_fn=self._emit_event)
+        
         # Setup output dir
+
 
         self.run_dir = self.output_dir / self.run_id
         self.run_dir.mkdir(parents=True, exist_ok=True)
@@ -146,8 +153,9 @@ class LiveEngine:
                 if order.status in (OrderStatus.SUBMITTED, OrderStatus.ACKED, OrderStatus.PARTIALLY_FILLED):
                     if current_time - order.created_ts > self.order_timeout_s:
                         self.order_tracker.timeout(order)
-                        self.registry.broker.cancel_order(order.order_id)
+                        self.resilience.call(self.registry.broker.cancel_order, order.order_id)
                         self.order_tracker.canceled(order, reason="TIMEOUT_EXPIRED")
+
 
             self.bar_count += 1
             
@@ -389,7 +397,13 @@ class LiveEngine:
         reports_dir = self.run_dir / "reports"
         reports_dir.mkdir(parents=True, exist_ok=True)
         
+        # MX-5230: API Health Report
+        api_summary = self.resilience.get_summary()
+        with open(reports_dir / "api_health_v1.json", "w") as f:
+            json.dump(api_summary, f, indent=2)
+
         # MX-5200: Order Lifecycle Report
+
         lifecycle_data = []
         for o in self.tracked_orders:
             lifecycle_data.append({
@@ -421,3 +435,17 @@ class LiveEngine:
         with open(self.run_dir / "trade_audit_v2.jsonl", "w") as f:
             for trade in self.trade_audit:
                 f.write(json.dumps(trade) + "\n")
+                
+        # MX-5250: Evidence Manifest
+        build_info = {
+            "run_id": self.run_id,
+            "engine_version": "v4",
+            "build_commit": "m25-dev",
+            "config_signature": self.plan.config_hash
+        }
+        manifest = generate_manifest(self.run_dir, "live", build_info)
+        self._emit_event("EVIDENCE_MANIFEST_WRITTEN", {
+            "path": "reports/evidence_manifest_v1.json",
+            "manifest_sha256": manifest["manifest_sha256"]
+        })
+
