@@ -1,0 +1,5 @@
+{"ts": "2025-12-21T10:53:01.924467", "kind": "WAR_START", "run_id": "war_aeffe124f256", "plan_id": "war_4eadf4eb62a6", "cell_count": 1, "symbols": ["BTCUSDT"]}
+{"ts": "2025-12-21T10:53:01.924470", "kind": "CELL_START", "run_id": "war_aeffe124f256", "candidate_id": "9015b703e41b78c5", "symbol": "BTCUSDT", "tf": "15m"}
+{"ts": "2025-12-21T10:53:01.924476", "kind": "CELL_ERROR", "run_id": "war_aeffe124f256", "candidate_id": "9015b703e41b78c5", "error": "ParquetDataPort.__init__() takes from 1 to 2 positional arguments but 3 were given"}
+{"ts": "2025-12-21T10:53:01.924765", "kind": "CANDIDATE_STATUS_UPDATED", "run_id": "war_aeffe124f256", "candidate_id": "9015b703e41b78c5", "bundle_id": "bundle_v1_1766309067", "old_status": "APPROVED_FOR_WAR", "new_status": "REJECTED_BY_WAR", "war_source": "WAR"}
+{"ts": "2025-12-21T10:53:01.924770", "kind": "WAR_END", "run_id": "war_aeffe124f256", "verdict": "FAIL", "total_trades": 0, "net_pnl": 0.0}

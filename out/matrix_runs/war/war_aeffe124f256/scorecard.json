@@ -1,0 +1,13 @@
+{
+  "total_trades": 0,
+  "net_pnl": 0.0,
+  "max_drawdown": 0.0,
+  "win_rate": 0.0,
+  "fee_cost_total": 0.0,
+  "slippage_cost_total": 0.0,
+  "risk_blocks_count": 0,
+  "symbols_active": [],
+  "scorecard_hash": "3a6a3505f5bf3c1e",
+  "by_candidate": {},
+  "by_symbol": {}
+}

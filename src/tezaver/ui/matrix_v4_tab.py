@@ -980,6 +980,24 @@ def render_war(home: str):
     registry = WarRunRegistry()
     planner = WarPlanner()
     
+    # --- W1: Diagnostics Panel ---
+    with st.expander("📊 Registry Diagnostics", expanded=False):
+        diag = planner.get_diagnostics()
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Toplam Aday", diag.candidates_total)
+            st.metric("APPROVED_FOR_WAR", diag.approved_for_war_count)
+        with col2:
+            st.caption("Status Dağılımı")
+            for status, count in diag.candidates_by_status.items():
+                color = "🟢" if "APPROVED" in status else "🟡" if "NEW" in status else "🔴"
+                st.text(f"{color} {status}: {count}")
+        with col3:
+            st.caption("Semboller")
+            for sym in diag.symbols_found[:5]:
+                st.text(f"• {sym}")
+            st.caption(f"Registry: {diag.registry_path}")
+    
     # --- Start New WAR Run ---
     with st.expander("🚀 Start New WAR Run", expanded=False):
         st.caption("APPROVED_FOR_WAR statüsündeki adayları çoklu backtest'e al")
@@ -997,20 +1015,23 @@ def render_war(home: str):
                 try:
                     plan = planner.generate_plan(max_candidates=max_candidates, seed=seed)
                     
-                    if not plan.cells:
-                        st.warning("APPROVED_FOR_WAR statüsünde aday bulunamadı.")
+                    engine = WarEngine(
+                        plan=plan,
+                        risk_limits=RiskLimits(
+                            max_total_notional=max_notional,
+                            max_concurrent_positions=max_positions
+                        ),
+                        gates=WarGates(),
+                        seed=seed
+                    )
+                    result = engine.run()
+                    
+                    # W2: Handle empty plan result
+                    if result.get("verdict") == "EMPTY_PLAN":
+                        st.warning("⚠️ APPROVED_FOR_WAR statüsünde aday bulunamadı!")
+                        st.caption("Diagnostics:")
+                        st.json(result.get("diagnostics", {}))
                     else:
-                        engine = WarEngine(
-                            plan=plan,
-                            risk_limits=RiskLimits(
-                                max_total_notional=max_notional,
-                                max_concurrent_positions=max_positions
-                            ),
-                            gates=WarGates(),
-                            seed=seed
-                        )
-                        result = engine.run()
-                        
                         st.success(f"✅ WAR Run tamamlandı: {result['run_id']}")
                         st.json({
                             "verdict": result["verdict"],
@@ -1018,6 +1039,8 @@ def render_war(home: str):
                             "net_pnl": result["scorecard"]["net_pnl"],
                             "scorecard_hash": result["scorecard"]["scorecard_hash"]
                         })
+                        # W3: Show lifecycle update
+                        st.caption(f"Candidate status güncellendi: {result['verdict']} → otomatik status")
                 except Exception as e:
                     st.error(f"WAR Run hatası: {e}")
     

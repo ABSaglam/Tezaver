@@ -1,0 +1,43 @@
+{
+  "run_id": "war_aeffe124f256",
+  "plan": {
+    "plan_id": "war_4eadf4eb62a6",
+    "created_at": "2025-12-21T10:53:01.924263",
+    "cell_count": 1,
+    "symbols": [
+      "BTCUSDT"
+    ],
+    "candidate_ids": [
+      "9015b703e41b78c5"
+    ],
+    "config_hash": "cd0279d98bc9149c",
+    "is_empty": false,
+    "diagnostics": {
+      "candidates_total": 5,
+      "candidates_by_status": {
+        "APPROVED_FOR_WAR": 1,
+        "NEW": 3,
+        "FAILED_IMPORT": 1
+      },
+      "approved_for_war_count": 1,
+      "selected_cells_count": 1,
+      "symbols_found": [
+        "UNKNOWN",
+        "BTCUSDT"
+      ],
+      "registry_path": "data/matrix/candidates_registry.jsonl"
+    }
+  },
+  "verdict": "FAIL",
+  "risk_summary": {
+    "open_positions": 0,
+    "total_notional": 0,
+    "block_count": 0,
+    "limits": {
+      "max_total_notional": 100000,
+      "max_concurrent_positions": 5,
+      "max_notional_per_symbol": 20000
+    }
+  },
+  "created_at": "2025-12-21T10:53:01.924966"
+}
