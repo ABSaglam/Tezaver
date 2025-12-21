@@ -18,8 +18,9 @@ from tezaver.matrix.adapters.data_port_parquet import ParquetDataPort
 
 class WarEngine:
     """
-    MX-2002: WarEngine
+    MX-2002 + MX-2000.3: WarEngine
     Runs multi-coin backtest with global risk limits.
+    MX-2000.3: Supports ERROR_INFRA verdict and retry-safe lifecycle.
     """
     
     def __init__(
@@ -45,6 +46,9 @@ class WarEngine:
         # Telemetry
         self.telemetry: List[Dict] = []
         self.trade_audit: List[Dict] = []
+        
+        # MX-2000.3: Cell error tracking
+        self.cell_errors: List[Dict] = []
     
     def run(self) -> Dict:
         """
@@ -97,22 +101,39 @@ class WarEngine:
         # Finalize scorecard
         self.scorecard.finalize()
         
-        # Get verdict
+        # Get verdict - check for infra errors first
         scorecard_dict = self.scorecard.to_dict()
-        verdict_report = self.judge.generate_report(scorecard_dict)
-        verdict = verdict_report["verdict"]
+        
+        # MX-2000.3: Check for cell errors before judging
+        if self.cell_errors:
+            # All cells failed with errors -> ERROR_INFRA
+            if len(self.cell_errors) == len(self.plan.cells):
+                verdict = "ERROR_INFRA"
+                verdict_report = {
+                    "verdict": "ERROR_INFRA",
+                    "reasons": [f"All {len(self.cell_errors)} cells failed with infra errors"],
+                    "cell_errors": self.cell_errors
+                }
+            else:
+                # Some cells succeeded, use normal verdict
+                verdict_report = self.judge.generate_report(scorecard_dict)
+                verdict = verdict_report["verdict"]
+        else:
+            verdict_report = self.judge.generate_report(scorecard_dict)
+            verdict = verdict_report["verdict"]
         
         # Update registry
         self.registry.update_finished(self.run_id, scorecard_dict, verdict)
         
-        # W3: Update candidate status based on verdict
+        # MX-2000.3: Update candidate status only if not ERROR_INFRA
         self._update_candidate_status(verdict)
         
         self._emit_event("WAR_END", {
             "run_id": self.run_id,
             "verdict": verdict,
             "total_trades": scorecard_dict["total_trades"],
-            "net_pnl": scorecard_dict["net_pnl"]
+            "net_pnl": scorecard_dict["net_pnl"],
+            "cell_error_count": len(self.cell_errors)
         })
         
         # Save artifacts
@@ -128,17 +149,35 @@ class WarEngine:
             "verdict_report": verdict_report,
             "duration_s": (end_ts - start_ts).total_seconds(),
             "artifacts_dir": str(self.output_dir / self.run_id),
-            "run_created": True
+            "run_created": True,
+            "cell_error_count": len(self.cell_errors)
         }
     
     def _update_candidate_status(self, verdict: str):
         """
-        W3: Update candidate status based on WAR verdict.
+        MX-2000.3: Update candidate status based on WAR verdict.
         PASS -> APPROVED_FOR_LIVE
         IMPROVE -> NEEDS_PATCH
         FAIL -> REJECTED_BY_WAR
+        ERROR_INFRA -> status retained (APPROVED_FOR_WAR) or NEEDS_RETRY
         """
         from tezaver.matrix.adapters.candidate_registry import CandidateRegistry
+        
+        # MX-2000.3: ERROR_INFRA means infra issue, not strategy issue
+        # Candidate status should be retained for retry
+        if verdict == "ERROR_INFRA":
+            for candidate_id in self.plan.candidate_ids:
+                for cell in self.plan.cells:
+                    if cell.candidate_id == candidate_id:
+                        self._emit_event("CANDIDATE_STATUS_RETAINED", {
+                            "candidate_id": candidate_id,
+                            "bundle_id": cell.bundle_id,
+                            "status": "APPROVED_FOR_WAR",
+                            "reason": "ERROR_INFRA - retry allowed",
+                            "run_id": self.run_id
+                        })
+                        break
+            return
         
         status_map = {
             "PASS": "APPROVED_FOR_LIVE",
@@ -181,16 +220,35 @@ class WarEngine:
             data_port = ParquetDataPort(cell.symbol, cell.tf)
             bars = data_port.get_bars(limit=500)  # Configurable
         except Exception as e:
-            self._emit_event("CELL_ERROR", {
+            # MX-2000.3: Track cell errors for ERROR_INFRA verdict
+            error_info = {
                 "candidate_id": cell.candidate_id,
-                "error": str(e)
-            })
+                "symbol": cell.symbol,
+                "tf": cell.tf,
+                "error_kind": getattr(e, 'error_kind', 'DATA_PORT_ERROR'),
+                "error_message": str(e)
+            }
+            self.cell_errors.append(error_info)
+            
+            self._emit_event("WAR_CELL_INFRA_ERROR", error_info)
+            return
+        
+        # MX-2000.3: Check if we got any bars
+        if not bars:
+            error_info = {
+                "candidate_id": cell.candidate_id,
+                "symbol": cell.symbol,
+                "tf": cell.tf,
+                "error_kind": "NO_DATA",
+                "error_message": f"No bars found for {cell.symbol}/{cell.tf}"
+            }
+            self.cell_errors.append(error_info)
+            self._emit_event("WAR_CELL_INFRA_ERROR", error_info)
             return
         
         # Setup broker for this cell
         broker = SimBroker(
-            initial_balance=10000.0,
-            fee_rate=0.001,
+            fee_pct=0.001,
             slippage_pct=0.0005
         )
         
@@ -264,9 +322,13 @@ class WarEngine:
                     self.risk_limiter.close_position(cell.symbol)
                     position_open = False
         
+        # Get trade count for this candidate
+        candidate_score = self.scorecard.by_candidate.get(cell.candidate_id)
+        trade_count = candidate_score.trades if candidate_score else 0
+        
         self._emit_event("CELL_END", {
             "candidate_id": cell.candidate_id,
-            "trades": self.scorecard.by_candidate.get(cell.candidate_id, {})
+            "trades_count": trade_count
         })
     
     def _emit_event(self, kind: str, data: Dict):
