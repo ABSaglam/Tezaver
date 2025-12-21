@@ -1,0 +1,9 @@
+{
+  "candidate_id": "BTCUSDT_15m_v1_2025_12_21T04_52_14_949667_00_00",
+  "stage": "NEW",
+  "last_run_id": "run_sniper_7cd7ab73_1766294784",
+  "updated_ts": 1766294790,
+  "flags": {
+    "needs_fix": true
+  }
+}

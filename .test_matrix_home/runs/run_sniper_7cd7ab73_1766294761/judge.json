@@ -1,0 +1,32 @@
+{
+  "run_id": "run_sniper_7cd7ab73_1766294761",
+  "overall": "IMPROVE",
+  "gates": [
+    {
+      "name": "TRACE_OK",
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "name": "TELEMETRY_OK",
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "name": "NO_BLOCKS",
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "name": "DATA_OK",
+      "status": "IMPROVE",
+      "reason": "No data report found"
+    },
+    {
+      "name": "SIGNATURE_OK",
+      "status": "PASS",
+      "reason": "Implicit"
+    }
+  ],
+  "created_ts": 1766294767
+}

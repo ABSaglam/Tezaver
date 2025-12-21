@@ -69,6 +69,30 @@ def manifest_from_dict(d: dict) -> ManifestV1:
     )
 
 @dataclass
+class Rhythm:
+    summary_tr: str
+    phase_sequence: List[str]
+    tempo: Dict[str, Any]
+
+@dataclass
+class Spirit:
+    summary_tr: str
+    tags: List[str]
+    regime_hint_tr: str
+
+@dataclass
+class Meaning:
+    summary_tr: str
+    thesis_tr: str
+    invalidation_tr: str
+
+@dataclass
+class PrePattern:
+    rhythm: Rhythm
+    spirit: Spirit
+    meaning: Meaning
+
+@dataclass
 class RallyStoryV1:
     version: str
     story_id: str
@@ -81,6 +105,7 @@ class RallyStoryV1:
     quality: Dict[str, Any]
     evidence: Dict[str, Any]
     phases: List[Any] = field(default_factory=list)
+    pre_pattern: Optional[PrePattern] = None # New Semantic Layer
 
 @dataclass
 class PayloadV1:
@@ -88,7 +113,34 @@ class PayloadV1:
     compiled_stories: Dict[str, Any]
 
 def payload_from_dict(d: dict) -> PayloadV1:
-    stories = [RallyStoryV1(**s) for s in d['stories']]
+    stories = []
+    for s in d['stories']:
+        # Support optional pre_pattern mapping
+        pp_dict = s.get('pre_pattern')
+        pp = None
+        if pp_dict:
+            pp = PrePattern(
+                rhythm=Rhythm(**pp_dict['rhythm']),
+                spirit=Spirit(**pp_dict['spirit']),
+                meaning=Meaning(**pp_dict['meaning'])
+            )
+        
+        # Instantiate RallyStoryV1 manually to handle pp
+        story = RallyStoryV1(
+            version=s['version'],
+            story_id=s['story_id'],
+            symbol=s['symbol'],
+            context=s['context'],
+            entry=s['entry'],
+            target=s['target'],
+            risk=s['risk'],
+            family=s['family'],
+            quality=s['quality'],
+            evidence=s['evidence'],
+            phases=s.get('phases', []),
+            pre_pattern=pp
+        )
+        stories.append(story)
     return PayloadV1(stories=stories, compiled_stories=d['compiled_stories'])
 
 def generate_candidate_id(manifest: ManifestV1) -> str:

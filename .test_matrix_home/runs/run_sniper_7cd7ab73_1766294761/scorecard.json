@@ -1,0 +1,15 @@
+{
+  "run_id": "run_sniper_7cd7ab73_1766294761",
+  "bars_count": 70457,
+  "blocks_count": 0,
+  "trades_count": 1,
+  "total_pnl_raw": 41110.975215,
+  "fee_cost": 41.110975214999996,
+  "slippage_cost": 20.54521499999828,
+  "win_rate": 0.0,
+  "event_types": {
+    "RUN_START": 1,
+    "CYCLE_STEP": 70457,
+    "RUN_END": 1
+  }
+}

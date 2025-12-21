@@ -46,13 +46,30 @@ def render_matrix_v4():
     st.sidebar.markdown("---")
     st.sidebar.markdown("### Kategoriler")
     
+    # MXI-1160: Support programmatic redirect via session state
+    if "matrix_selected_cat" not in st.session_state:
+        st.session_state["matrix_selected_cat"] = "OPS"
+        
     category_labels = {cat[0]: f"{cat[1]}" for cat in CATEGORIES}
+    
+    # Finding current index
+    cat_keys = [c[0] for c in CATEGORIES]
+    try:
+        current_idx = cat_keys.index(st.session_state["matrix_selected_cat"])
+    except:
+        current_idx = 0
+
     selected_cat = st.sidebar.radio(
         "Kategori Seç",
-        options=[c[0] for c in CATEGORIES],
+        options=cat_keys,
+        index=current_idx,
         format_func=lambda x: category_labels[x],
-        label_visibility="collapsed"
+        label_visibility="collapsed",
+        key="matrix_cat_radio"
     )
+    # Sync if user manually clicks
+    if selected_cat != st.session_state["matrix_selected_cat"]:
+        st.session_state["matrix_selected_cat"] = selected_cat
     
     # Top Banner
     counts = ctx["counts"]
@@ -443,35 +460,82 @@ def render_candidates(home: str):
         col_m1, col_m2, col_m3 = st.columns(3)
         col_m1.metric("Resolve Rate", f"%{m.metrics.trigger_resolve_rate*100:.1f}")
         col_m2.metric("Join Coverage", f"%{m.metrics.join_coverage*100:.1f}")
-        col_m3.metric("Status", cand["status"])
+        
+        status_color = {
+            "APPROVED": "green",
+            "REJECTED": "red",
+            "TESTING": "orange",
+            "NEW": "blue"
+        }.get(cand["status"], "gray")
+        
+        col_m3.markdown(f"**Status:** :{status_color}[{cand['status']}]")
         
         with st.expander("📋 Manifest & Metrics Detayı"):
-            st.json(m.dict() if hasattr(m, 'dict') else m.__dict__) # dataclass __dict__ or pydantic dict()
+            st.json(m.__dict__ if not hasattr(m, 'dict') else m.dict())
             
         # MXI-1040: Sniper Run Button
-        if st.button("🚀 RUN SNIPER", type="primary", use_container_width=True):
+        c_btn1, c_btn2, c_btn3 = st.columns(3)
+        
+        if c_btn1.button("🚀 RUN SNIPER", type="primary", use_container_width=True):
+            registry.update_status(selected_cid, "TESTING")
             st.info(f"Sniper Run başlatılıyor: {selected_cid}")
             from tezaver.matrix.apps.run_sniper import run_sniper_stub
             run_id = run_sniper_stub(home, selected_cid)
             st.success(f"Sniper Run oluşturuldu: {run_id}")
-            # In real app we might redirect to RUNS tab
-            # st.session_state["matrix_selected_cat"] = "RUNS"
-            # st.rerun()
+            
+            # MXI-1160: Redirect to RUNS
+            st.session_state["matrix_selected_run_id"] = run_id
+            st.session_state["matrix_selected_cat"] = "RUNS"
+            st.rerun()
+
+        # Approval Process (Onay Süreci)
+        if c_btn2.button("✅ APPROVE", use_container_width=True, help="Adayı onayla ve strateji havuzuna hazırla"):
+            registry.update_status(selected_cid, "APPROVED")
+            st.success(f"Aday ONAYLANDI: {selected_cid}")
+            st.rerun()
+            
+        if c_btn3.button("❌ REJECT", use_container_width=True, help="Adayı reddet"):
+            registry.update_status(selected_cid, "REJECTED")
+            st.warning(f"Aday REDDEDİLDİ: {selected_cid}")
+            st.rerun()
 
         st.subheader("📖 Rally Stories (V1)")
-        stories_df = []
         for s in p.stories:
-            stories_df.append({
-                "story_id": s.story_id,
-                "trigger": s.entry.get("trigger", ""),
-                "source": s.entry.get("trigger_source", ""),
-                "entry": s.entry.get("entry_price", 0),
-                "risk (SL %)": s.risk.get("stop_loss_pct", 0),
-                "levels (S/R)": f"{s.entry.get('levels', {}).get('nearest_support', '')} / {s.entry.get('levels', {}).get('nearest_resistance', '')}",
-                "time_utc": s.entry.get("event_time_utc", "")
-            })
-        st.table(stories_df)
-        
+            with st.expander(f"🎬 Story: {s.story_id[:8]} | {s.entry.get('trigger')} @ {s.entry.get('entry_price')}"):
+                c_s1, c_s2 = st.columns([1, 1])
+                with c_s1:
+                    st.markdown(f"**Trigger:** {s.entry.get('trigger')}")
+                    st.markdown(f"**Source:** {s.entry.get('trigger_source')}")
+                    st.markdown(f"**Entry:** {s.entry.get('entry_price')}")
+                    st.markdown(f"**Time (UTC):** {s.entry.get('event_time_utc')}")
+                with c_s2:
+                    st.markdown(f"**Risk (SL %):** %{s.risk.get('stop_loss_pct', 0)}")
+                    st.markdown(f"**Support:** {s.entry.get('levels', {}).get('nearest_support')}")
+                    st.markdown(f"**Resistance:** {s.entry.get('levels', {}).get('nearest_resistance')}")
+                
+                # Semantic Layer (Pre-Pattern) - MXI-1170
+                if s.pre_pattern:
+                    st.divider()
+                    st.markdown("### 🎭 Semantic Layer (Anlamsal Katman)")
+                    t_pp1, t_pp2, t_pp3 = st.tabs(["🥁 Ritim (Rhythm)", "✨ Ruh (Spirit)", "📜 Mana (Meaning)"])
+                    
+                    with t_pp1:
+                        st.info(s.pre_pattern.rhythm.summary_tr)
+                        st.markdown("**Faz Dizilimi:** " + " ➔ ".join([f"`{p}`" for p in s.pre_pattern.rhythm.phase_sequence]))
+                        st.json(s.pre_pattern.rhythm.tempo)
+                        
+                    with t_pp2:
+                        st.success(s.pre_pattern.spirit.summary_tr)
+                        st.multiselect("Etiketler", s.pre_pattern.spirit.tags, default=s.pre_pattern.spirit.tags, disabled=True)
+                        st.warning(f"💡 {s.pre_pattern.spirit.regime_hint_tr}")
+                        
+                    with t_pp3:
+                        st.markdown(f"**Özet:** {s.pre_pattern.meaning.summary_tr}")
+                        st.markdown(f"**🎯 Tez (Thesis):** {s.pre_pattern.meaning.thesis_tr}")
+                        st.error(f"**🚫 Geçersizlik (Invalidation):** {s.pre_pattern.meaning.invalidation_tr}")
+                else:
+                    st.caption("Bu hikaye için anlamsal katman verisi bulunmuyor.")
+
         # MXI-1030: Diagnostics
         diag_path = Path(cand["bundle_path"]) / "join_diagnostics.json"
         if diag_path.exists():
@@ -481,20 +545,104 @@ def render_candidates(home: str):
                 st.json(diag_data)
 
 def render_runs(home: str):
-    """Render Runs category."""
-    st.subheader("▶️ Runs")
+    """
+    MXI-1160: Render Runs history and detail.
+    """
+    from tezaver.matrix.adapters.run_registry import RunRegistry
+    registry = RunRegistry()
     
-    runs_dir = os.path.join(home, "runs")
-    if os.path.exists(runs_dir):
-        rids = [d for d in os.listdir(runs_dir) if os.path.isdir(os.path.join(runs_dir, d))]
+    all_runs = registry.list_all()
+    if not all_runs:
+        st.info("Henüz gerçekleştirilmiş run yok.")
+        return
         
-        if rids:
-            for rid in rids[:20]:  # Show last 20
-                st.text(f"▶️ {rid}")
+    df = pd.DataFrame(all_runs)
+    
+    # Filter
+    with st.expander("🔍 Filtreler"):
+        f1, f2 = st.columns(2)
+        sel_sym = f1.multiselect("Sembol", df["symbol"].unique())
+        sel_verd = f2.multiselect("Verdict", df["verdict"].unique())
+        
+    if sel_sym: df = df[df["symbol"].isin(sel_sym)]
+    if sel_verd: df = df[df["verdict"].isin(sel_verd)]
+    
+    # List Table
+    st.subheader("📜 Run Geçmişi")
+    st.dataframe(df.sort_values("created_at", ascending=False), use_container_width=True, hide_index=True)
+    
+    # Detail Selection
+    st.divider()
+    
+    default_run = st.session_state.get("matrix_selected_run_id", "")
+    run_ids = df["run_id"].tolist()
+    idx = 0
+    if default_run in run_ids:
+        idx = run_ids.index(default_run)
+        
+    selected_rid = st.selectbox("Run Detayı Seç:", run_ids, index=idx)
+    if selected_rid:
+        st.session_state["matrix_selected_run_id"] = selected_rid
+        render_run_detail(home, selected_rid)
+
+def render_run_detail(home: str, run_id: str):
+    """
+    MXI-1160: Detailed view of a single Sniper Run.
+    """
+    st.header(f"🏁 Run Detail: {run_id}")
+    
+    run_dir = os.path.join(home, "runs", run_id)
+    if not os.path.exists(run_dir):
+        st.error("Run dizini bulunamadı.")
+        return
+        
+    # Columns for high level stats
+    j_path = os.path.join(run_dir, "judge.json")
+    if os.path.exists(j_path):
+        with open(j_path) as f: judge = json.load(f)
+        verdict = judge.get("overall", "UNKNOWN")
+        v_color = "green" if verdict == "PASS" else "red" if verdict == "FAIL" else "orange"
+        st.subheader(f"Verdict: :{v_color}[{verdict}]")
+    
+    t1, t2, t3 = st.tabs(["🛡️ Gates & Jury", "📊 Scorecard", "📜 Telemetry & Audit"])
+    
+    with t1:
+        g_path = os.path.join(run_dir, "gates.json")
+        if os.path.exists(g_path):
+            with open(g_path) as f: gates = json.load(f)
+            for g in gates:
+                icon = "✅" if g.get("allow") else "❌"
+                st.write(f"{icon} **{g.get('name')}**: {g.get('reason','')}")
         else:
-            st.info("Henüz run yok")
-    else:
-        st.info("runs klasörü yok")
+            st.info("Gates verisi yok.")
+            
+    with t2:
+        sc_path = os.path.join(run_dir, "scorecard.json")
+        if os.path.exists(sc_path):
+            with open(sc_path) as f: sc = json.load(f)
+            st.json(sc)
+            
+            # Metrics Breakdown (MXI-1130)
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Total Trades", sc.get("trades_count", 0))
+            c2.metric("PnL Raw", f"{sc.get('total_pnl_raw', 0):.2f}")
+            c3.metric("Fee Cost", f"{sc.get('fee_cost', 0):.4f}")
+        else:
+            st.info("Scorecard yok.")
+            
+    with t3:
+        # Last 50 events
+        ev_path = os.path.join(run_dir, "events.ndjson")
+        if os.path.exists(ev_path):
+            with open(ev_path) as f:
+                lines = f.readlines()[-50:]
+            for line in reversed(lines):
+                try:
+                    e = json.loads(line)
+                    st.text(f"{e.get('ts')} | {e.get('event_type')} | {e.get('payload', {}).get('decision','')}")
+                except: pass
+        else:
+            st.info("Events bulunamadı.")
 
 def render_registry(home: str):
     """Render Registry category."""

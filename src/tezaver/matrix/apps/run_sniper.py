@@ -98,61 +98,92 @@ def run_sniper_once(home: str, candidate_id: str, bars_path: str) -> dict:
         return {"run_id": rid, "error": str(e), "status": "FAIL"}
 def run_sniper_stub(home: str, candidate_id: str) -> str:
     """
-    MXI-1040: Stub Sniper Run implementation.
-    TR: Sahte Sniper çalışması (Stub). UI akışını test etmek için kanal üretir.
+    MXI-1100: Real Sniper Run implementation.
+    TR: Gerçek Sniper backtest akışı. Stub yerine gerçek motoru çalıştırır.
     """
-    import os
-    import json
-    import time
-    from datetime import datetime
-    import hashlib
+    from tezaver.matrix.adapters.candidate_registry import CandidateRegistry
+    from tezaver.matrix.adapters.bundle_source_local import LocalBundleSource
+    from tezaver.matrix.adapters.data_port_parquet import ParquetDataPort
+    from tezaver.matrix.adapters.broker_sim import SimBroker
+    from tezaver.matrix.adapters.store_run_fs import FileRunStore
+    from tezaver.matrix.adapters.run_registry import RunRegistry
+    from tezaver.matrix.core.sniper_strategy import SniperStrategy
+    from tezaver.matrix.core.cycle_engine import run_cycle
+    from tezaver.matrix.core.trace import TraceIds
+    from tezaver.matrix.core.gates import RiskGateConfig, GovernanceConfig
+    from pathlib import Path
+
+    registry = CandidateRegistry()
+    cand_data = registry.get(candidate_id)
+    if not cand_data:
+        raise ValueError(f"Candidate not found in registry: {candidate_id}")
     
-    run_id = f"run_sniper_{int(time.time())}"
-    run_dir = os.path.join(home, "runs", run_id)
-    os.makedirs(run_dir, exist_ok=True)
+    source = LocalBundleSource()
+    manifest, payload = source.load_bundle(Path(cand_data["bundle_path"]))
     
-    # 1. Telemetry logs (MXI-1040)
-    telemetry_path = os.path.join(run_dir, "telemetry.ndjson")
+    # 1. Setup Ports
+    # Use standard coin_cells for parquet data
+    data_port = ParquetDataPort(base_path="coin_cells")
+    broker_port = SimBroker(fee_pct=0.001, slippage_pct=0.0005)
+    store_port = FileRunStore(home)
+    run_reg = RunRegistry()
     
-    events = [
-        {
-            "ts": datetime.now().isoformat(),
-            "event_type": "RUN_STARTED",
-            "run_id": run_id,
-            "trace": {"candidate_id": candidate_id, "engine_version": "v4-stub"},
-            "payload": {"msg": "Sniper run started from candidate"}
-        },
-        {
-            "ts": datetime.now().isoformat(),
-            "event_type": "RUN_FINISHED",
-            "run_id": run_id,
-            "trace": {"candidate_id": candidate_id},
-            "payload": {"verdict": "PASS", "pnl": 0.05}
-        },
-        {
-            "ts": datetime.now().isoformat(),
-            "event_type": "REPORT_CREATED",
-            "run_id": run_id,
-            "trace": {"candidate_id": candidate_id},
-            "payload": {"report_path": "judge.json"}
-        }
-    ]
+    # 2. Config & Strategy
+    strategy = SniperStrategy(payload)
+    risk_cfg = RiskGateConfig()
+    gov_cfg = GovernanceConfig(allowlist=[manifest.symbol])
     
-    with open(telemetry_path, "w") as f:
-        for e in events:
-            f.write(json.dumps(e) + "\n")
+    trace = TraceIds(
+        engine_version="v4-sniper-real",
+        data_fingerprint=manifest.fingerprints.data_fingerprint,
+        config_signature=manifest.fingerprints.config_signature
+    )
+    
+    # 3. Execution (Real Cycle)
+    run_id = f"run_sniper_{candidate_id[:8]}_{int(time.time())}"
+    
+    meta = run_cycle(
+        symbol=manifest.symbol,
+        timeframe=manifest.tf,
+        candidate_build_ts=manifest.export_time_utc,
+        trace_ids=trace,
+        data=data_port,
+        broker=broker_port,
+        store=store_port,
+        risk_cfg=risk_cfg,
+        gov_cfg=gov_cfg,
+        home=home,
+        strategy=strategy,
+        run_profile="SNIPER",
+        run_id=run_id
+    )
+    
+    # 4. Finalize & Register (MXI-1160)
+    # Re-load judge/scorecard results for registry
+    from tezaver.matrix.core.jury import compute_scorecard
+    scorecard = compute_scorecard(home, run_id)
+    
+    judgement_path = Path(home) / "runs" / run_id / "judge.json"
+    verdict = "UNKNOWN"
+    if judgement_path.exists():
+        with open(judgement_path) as f:
+            verdict = json.load(f).get("overall", "UNKNOWN")
             
-    # 2. Evidence (Kanıtlar)
-    judge_data = {
-        "run_id": run_id,
-        "candidate_id": candidate_id,
-        "overall": "PASS",
-        "pnl_pct": 5.2,
-        "trade_count": 1,
-        "msg": "STUB RUN COMPLETE (SUCCESS)"
-    }
-    with open(os.path.join(run_dir, "judge.json"), "w") as f:
-        json.dump(judge_data, f, indent=2)
+    run_reg.register_run(
+        run_id=run_id,
+        candidate_id=candidate_id,
+        symbol=manifest.symbol,
+        tf=manifest.tf,
+        scorecard=scorecard,
+        verdict=verdict
+    )
+    
+    # MXI-1150: Telemetry copy
+    import shutil
+    events_path = Path(home) / "runs" / run_id / "events.ndjson"
+    telemetry_path = Path(home) / "runs" / run_id / "telemetry.ndjson"
+    if events_path.exists():
+        shutil.copy(events_path, telemetry_path)
         
     return run_id
 

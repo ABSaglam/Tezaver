@@ -18,7 +18,18 @@ class Order:
     symbol: str
     side: str
     qty: float
+    limit_price: float = 0.0
     status: OrderStatus = OrderStatus.NEW
+    
+    # Fill metrics (MXI-1120)
+    fill_price: float = 0.0
+    fill_qty: float = 0.0
+    fee_cost: float = 0.0
+    slippage_cost: float = 0.0
+    
+    # Time info
+    created_ts: float = 0.0
+    updated_ts: float = 0.0
 
 class OrderLifecycleTracker:
     def submit(self, order: Order) -> None:
