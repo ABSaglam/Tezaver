@@ -183,8 +183,13 @@ protocols:
   - mx: "MX-5220"
     name: "Timebase Standard"
     active_in: ["SNIPER", "WAR", "LIVE"]
-    status: { SNIPER: "GRAY", WAR: "GRAY", LIVE: "GRAY" }
-    evidence: { telemetry: [], artifacts: [], ui: [], tests: [] }
+    status: { SNIPER: "GREEN", WAR: "GREEN", LIVE: "GREEN" }
+    last_proof_run_id: "war_3f0f1c0622f9"
+    evidence:
+      telemetry: ["TIMEBASE_REPORT"]
+      artifacts: ["reports/timebase_v1.json"]
+      tests: ["tests/matrix/ops/test_mx_5220_timebase.py"]
+      ui: ["PANEL_HEALTH:TIMEBASE"]
 
   - mx: "MX-5230"
     name: "Rate Limit + Retry/Backoff"
@@ -201,8 +206,13 @@ protocols:
   - mx: "MX-5240"
     name: "Resource Exhaustion Guardrails"
     active_in: ["LIVE"]
-    status: { SNIPER: "GRAY", WAR: "GRAY", LIVE: "GRAY" }
-    evidence: { telemetry: [], artifacts: [], ui: [], tests: [] }
+    status: { SNIPER: "GREEN", WAR: "GREEN", LIVE: "GREEN" }
+    last_proof_run_id: "war_0c5e3f4a56d9" # Updated below
+    evidence:
+      telemetry: ["RESOURCE_GUARD_CHECK", "RESOURCE_GUARD_TRIPPED"]
+      artifacts: ["reports/resource_health_v1.json"]
+      tests: ["tests/matrix/ops/test_mx_5240_resource_guard.py"]
+      ui: ["PANEL_HEALTH:RESOURCE_HEALTH"]
 
   - mx: "MX-5250"
     name: "Tamper-Evident Evidence"
@@ -226,3 +236,22 @@ protocols:
         ui: ["OPS/PANEL_HEALTH"],
         tests: ["test_safety_registry.py"],
       }
+
+  - mx: "MX-5270"
+    name: "Safety Sweep + Safety Certificate"
+    active_in: ["SNIPER", "WAR", "LIVE"]
+    status: { SNIPER: "GREEN", WAR: "GREEN", LIVE: "GREEN" }
+    last_proof_run_id: "war_dc1968f54ef7"
+    evidence:
+      telemetry: ["SAFETY_CERTIFICATE_WRITTEN"]
+      artifacts:
+        [
+          "reports/safety_certificate_v1.json",
+          "reports/safety_certificate_v1.md",
+        ]
+      tests: ["tests/matrix/ops/test_mx_5270_safety.py"]
+      ui:
+        [
+          "OPS/PANEL_HEALTH:SAFETY_CERTIFICATE",
+          "RELEASE_TAB:SAFETY_CERTIFICATE",
+        ]

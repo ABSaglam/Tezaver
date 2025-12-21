@@ -1,0 +1,36 @@
+{
+  "run_id": "war_3eb59be02100",
+  "plan": {
+    "plan_id": "pilot_plan_001",
+    "created_at": "2025-12-21T17:46:43.853054",
+    "cell_count": 1,
+    "symbols": [
+      "BTCUSDT"
+    ],
+    "candidate_ids": [
+      "pilot_cand_001"
+    ],
+    "config_hash": "pilot_hash_123",
+    "is_empty": false,
+    "diagnostics": {
+      "candidates_total": 0,
+      "candidates_by_status": {},
+      "approved_for_war_count": 1,
+      "selected_cells_count": 1,
+      "symbols_found": [],
+      "registry_path": ""
+    }
+  },
+  "verdict": "FAIL",
+  "risk_summary": {
+    "open_positions": 0,
+    "total_notional": 0,
+    "block_count": 0,
+    "limits": {
+      "max_total_notional": 100000.0,
+      "max_concurrent_positions": 5,
+      "max_notional_per_symbol": 20000.0
+    }
+  },
+  "created_at": "2025-12-21T17:46:44.085613"
+}

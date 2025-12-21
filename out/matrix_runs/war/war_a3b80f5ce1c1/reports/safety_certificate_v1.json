@@ -1,0 +1,331 @@
+{
+  "version": "safety_certificate_v1",
+  "ts": "2025-12-21T18:06:31.832912",
+  "run_id": "war_a3b80f5ce1c1",
+  "engine_version": "v4",
+  "build_commit": "unknown",
+  "config_signature": "unknown",
+  "results": {
+    "verdict": "FAIL",
+    "active_stage": "WAR",
+    "counts": {
+      "GREEN": 2,
+      "YELLOW": 6,
+      "RED": 1,
+      "GRAY": 9,
+      "LOCKED": 0
+    },
+    "blockers": [
+      {
+        "mx": "MX-5100",
+        "name": "Closed-bar Only Lock",
+        "declared_status": "RED",
+        "effective_status": "RED",
+        "evidence_ok": false,
+        "missing_summary": "tests:3, telemetry:1",
+        "reason": "Safety protocol MX-5100 is RED"
+      }
+    ],
+    "warnings": [
+      {
+        "mx": "MX-5120",
+        "name": "Exit & Real PnL v1 (SL/TP/TimeStop + PnL sanity)",
+        "declared_status": "GREEN",
+        "effective_status": "YELLOW",
+        "evidence_ok": false,
+        "missing_summary": "telemetry:1",
+        "reason": "Evidence drift detected (missing proof)"
+      },
+      {
+        "mx": "MX-5130",
+        "name": "Idempotency / Duplicate-order Shield",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5130 is GRAY"
+      },
+      {
+        "mx": "MX-5140",
+        "name": "Restart Reconciliation",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5140 is GRAY"
+      },
+      {
+        "mx": "MX-5160",
+        "name": "Emergency Kill Switch + Safe Mode",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5160 is GRAY"
+      },
+      {
+        "mx": "MX-5170",
+        "name": "Proof Bundle Packager",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5170 is GRAY"
+      },
+      {
+        "mx": "MX-5180",
+        "name": "Trust Score / Noise Filter",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5180 is GRAY"
+      },
+      {
+        "mx": "MX-5190",
+        "name": "Release Train Gates",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5190 is GRAY"
+      },
+      {
+        "mx": "MX-5200",
+        "name": "Order Lifecycle Prod-Grade v1",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5200 is GRAY"
+      },
+      {
+        "mx": "MX-5210",
+        "name": "Market Data Integrity & Anti-Lookahead",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5210 is GRAY"
+      },
+      {
+        "mx": "MX-5220",
+        "name": "Timebase Standard",
+        "declared_status": "GREEN",
+        "effective_status": "YELLOW",
+        "evidence_ok": false,
+        "missing_summary": "artifacts:1, telemetry:1",
+        "reason": "Evidence drift detected (missing proof)"
+      },
+      {
+        "mx": "MX-5230",
+        "name": "Rate Limit + Retry/Backoff",
+        "declared_status": "GREEN",
+        "effective_status": "YELLOW",
+        "evidence_ok": false,
+        "missing_summary": "artifacts:1, telemetry:4",
+        "reason": "Evidence drift detected (missing proof)"
+      },
+      {
+        "mx": "MX-5240",
+        "name": "Resource Exhaustion Guardrails",
+        "declared_status": "GREEN",
+        "effective_status": "YELLOW",
+        "evidence_ok": false,
+        "missing_summary": "telemetry:1",
+        "reason": "Evidence drift detected (missing proof)"
+      },
+      {
+        "mx": "MX-5250",
+        "name": "Tamper-Evident Evidence",
+        "declared_status": "GREEN",
+        "effective_status": "YELLOW",
+        "evidence_ok": false,
+        "missing_summary": "telemetry:1",
+        "reason": "Evidence drift detected (missing proof)"
+      },
+      {
+        "mx": "MX-5260",
+        "name": "Safety Protocol Registry + UI",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": false,
+        "missing_summary": "tests:1",
+        "reason": "Safety protocol MX-5260 is GRAY"
+      },
+      {
+        "mx": "MX-5270",
+        "name": "Safety Sweep + Safety Certificate",
+        "declared_status": "GREEN",
+        "effective_status": "YELLOW",
+        "evidence_ok": false,
+        "missing_summary": "artifacts:2, telemetry:1",
+        "reason": "Evidence drift detected (missing proof)"
+      }
+    ],
+    "protocols": [
+      {
+        "mx": "MX-5100",
+        "name": "Closed-bar Only Lock",
+        "declared_status": "RED",
+        "effective_status": "RED",
+        "evidence_ok": false,
+        "missing_summary": "tests:3, telemetry:1",
+        "reason": "Safety protocol MX-5100 is RED"
+      },
+      {
+        "mx": "MX-5110",
+        "name": "DataReport v1 + DATA_OK run-scoped fix",
+        "declared_status": "GREEN",
+        "effective_status": "GREEN",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": ""
+      },
+      {
+        "mx": "MX-5120",
+        "name": "Exit & Real PnL v1 (SL/TP/TimeStop + PnL sanity)",
+        "declared_status": "GREEN",
+        "effective_status": "YELLOW",
+        "evidence_ok": false,
+        "missing_summary": "telemetry:1",
+        "reason": "Evidence drift detected (missing proof)"
+      },
+      {
+        "mx": "MX-5130",
+        "name": "Idempotency / Duplicate-order Shield",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5130 is GRAY"
+      },
+      {
+        "mx": "MX-5140",
+        "name": "Restart Reconciliation",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5140 is GRAY"
+      },
+      {
+        "mx": "MX-5150",
+        "name": "Telemetry Schema Unification",
+        "declared_status": "GREEN",
+        "effective_status": "GREEN",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": ""
+      },
+      {
+        "mx": "MX-5160",
+        "name": "Emergency Kill Switch + Safe Mode",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5160 is GRAY"
+      },
+      {
+        "mx": "MX-5170",
+        "name": "Proof Bundle Packager",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5170 is GRAY"
+      },
+      {
+        "mx": "MX-5180",
+        "name": "Trust Score / Noise Filter",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5180 is GRAY"
+      },
+      {
+        "mx": "MX-5190",
+        "name": "Release Train Gates",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5190 is GRAY"
+      },
+      {
+        "mx": "MX-5200",
+        "name": "Order Lifecycle Prod-Grade v1",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5200 is GRAY"
+      },
+      {
+        "mx": "MX-5210",
+        "name": "Market Data Integrity & Anti-Lookahead",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": true,
+        "missing_summary": "",
+        "reason": "Safety protocol MX-5210 is GRAY"
+      },
+      {
+        "mx": "MX-5220",
+        "name": "Timebase Standard",
+        "declared_status": "GREEN",
+        "effective_status": "YELLOW",
+        "evidence_ok": false,
+        "missing_summary": "artifacts:1, telemetry:1",
+        "reason": "Evidence drift detected (missing proof)"
+      },
+      {
+        "mx": "MX-5230",
+        "name": "Rate Limit + Retry/Backoff",
+        "declared_status": "GREEN",
+        "effective_status": "YELLOW",
+        "evidence_ok": false,
+        "missing_summary": "artifacts:1, telemetry:4",
+        "reason": "Evidence drift detected (missing proof)"
+      },
+      {
+        "mx": "MX-5240",
+        "name": "Resource Exhaustion Guardrails",
+        "declared_status": "GREEN",
+        "effective_status": "YELLOW",
+        "evidence_ok": false,
+        "missing_summary": "telemetry:1",
+        "reason": "Evidence drift detected (missing proof)"
+      },
+      {
+        "mx": "MX-5250",
+        "name": "Tamper-Evident Evidence",
+        "declared_status": "GREEN",
+        "effective_status": "YELLOW",
+        "evidence_ok": false,
+        "missing_summary": "telemetry:1",
+        "reason": "Evidence drift detected (missing proof)"
+      },
+      {
+        "mx": "MX-5260",
+        "name": "Safety Protocol Registry + UI",
+        "declared_status": "GRAY",
+        "effective_status": "GRAY",
+        "evidence_ok": false,
+        "missing_summary": "tests:1",
+        "reason": "Safety protocol MX-5260 is GRAY"
+      },
+      {
+        "mx": "MX-5270",
+        "name": "Safety Sweep + Safety Certificate",
+        "declared_status": "GREEN",
+        "effective_status": "YELLOW",
+        "evidence_ok": false,
+        "missing_summary": "artifacts:2, telemetry:1",
+        "reason": "Evidence drift detected (missing proof)"
+      }
+    ]
+  }
+}

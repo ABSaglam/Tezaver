@@ -1,0 +1,51 @@
+{
+  "run_id": "war_2b51bf33e4ba",
+  "overall": "FAIL",
+  "gates": [
+    {
+      "name": "TRACE_OK",
+      "status": "FAIL",
+      "reason": "Missing trace data"
+    },
+    {
+      "name": "TELEMETRY_OK",
+      "status": "FAIL",
+      "reason": "No events found"
+    },
+    {
+      "name": "NO_BLOCKS",
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "name": "DATA_OK",
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "name": "DATA_INTEGRITY_OK",
+      "status": "PASS",
+      "reason": ""
+    },
+    {
+      "name": "MIN_TRADES",
+      "status": "FAIL",
+      "reason": "No trades executed"
+    },
+    {
+      "name": "PROFITABLE",
+      "status": "SKIP",
+      "reason": "No trades to evaluate PnL"
+    },
+    {
+      "name": "PNL_SANITY",
+      "status": "PASS",
+      "reason": "All trades within limits"
+    }
+  ],
+  "created_ts": 1766326886,
+  "scorecard_summary": {
+    "pnl": 0,
+    "trades": 0
+  }
+}

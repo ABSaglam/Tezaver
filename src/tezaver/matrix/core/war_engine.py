@@ -19,6 +19,21 @@ from tezaver.matrix.core.lookahead_guard import LookaheadProtectedList
 from tezaver.matrix.core.order_lifecycle import Order, OrderStatus, OrderLifecycleTracker
 from tezaver.matrix.data.data_integrity import validate_candles
 from tezaver.matrix.evidence.evidence_manifest import generate_manifest
+from tezaver.matrix.ops.resource_guard import ResourceGuard
+from tezaver.matrix.orders.idempotency import IdempotencyManager
+from tezaver.matrix.live.restart_reconciler import RestartReconciler
+from tezaver.matrix.live.risk_state import RiskStateManager, RiskMode
+from tezaver.matrix.ops.timebase import measure_skew, build_timebase_report
+from tezaver.matrix.evidence.proof_bundle import build_proof_bundle
+from tezaver.matrix.core.release_gate import evaluate_release_gate
+from tezaver.matrix.release.release_report import write_release_report
+
+
+
+
+
+
+
 
 
 
@@ -62,6 +77,27 @@ class WarEngine:
         
         # MX-5210: Data Integrity Reports
         self.integrity_reports: Dict[str, Dict] = {}
+        
+        # MX-5240: Resource Guard
+        self.resource_guard = ResourceGuard()
+        self.resource_report = {}
+        
+        # MX-5160: Risk State Machine (Replaces self.safe_mode)
+        self.risk_state = RiskStateManager(self.run_id)
+
+        # MX-5220: Timebase
+        self.timebase_report = {}
+
+        
+        # MX-5130: Idempotency Shield
+        self.idem = IdempotencyManager(self.run_id)
+        
+        # MX-5140: Restart Reconciler (for pilot/compliance)
+        self.restart_reconciler = RestartReconciler()
+        self.restart_report = {}
+
+
+
 
 
     
@@ -248,8 +284,22 @@ class WarEngine:
             
             self._emit_event("WAR_CELL_INFRA_ERROR", error_info)
             return
-        
+            
+        # MX-5240: Periodic Resource Check (Check once per cell in WAR)
+        res = self.resource_guard.check_resources(self.output_dir)
+        self.resource_report = res
+        if not res["ok"]:
+            self.risk_state.enter_safe_mode("RESOURCE_PRESSURE")
+            self._emit_event("RESOURCE_GUARD_TRIPPED", {
+                "reasons": res["reasons"],
+                "metrics": res["metrics"]
+            })
+
+        else:
+            self._emit_event("RESOURCE_GUARD_CHECK", {"metrics": res["metrics"]})
+
         # MX-2000.3: Check if we got any bars
+
         if not bars:
             error_info = {
                 "candidate_id": cell.candidate_id,
@@ -298,9 +348,44 @@ class WarEngine:
                     entry_ts = ts
                     notional = 1000.0 # Standard $1000 notional
                     qty = notional / entry_price
-                    position_open = True
+
                     
+                    # MX-5160: Risk Check (Emergency Kill Switch)
+                    allowed, reason = self.risk_state.can_place_order("OPEN")
+                    if not allowed:
+                        self._emit_event("NEW_ORDER_BLOCKED", {
+                            "candidate_id": cell.candidate_id,
+                            "symbol": cell.symbol,
+                            "reason": reason,
+                            "mode": self.risk_state.mode.value
+                        })
+                        continue
+
+                    position_open = True
+
+                    
+                    # MX-5130: Idempotency Check
+                    idem_key = self.idem.build_key(
+                        symbol=cell.symbol,
+                        tf=cell.tf,
+                        strategy_id="WAR_SIM_V1",
+                        signal_ts=ts,
+                        intent="OPEN",
+                        side=side
+                    )
+                    
+                    if not self.idem.check_and_mark(idem_key, {"symbol": cell.symbol, "qty": qty}):
+                        self._emit_event("DUPLICATE_ORDER_BLOCKED", {
+                            "candidate_id": cell.candidate_id,
+                            "symbol": cell.symbol,
+                            "idem_key": idem_key,
+                            "reason": "IDEMPOTENCY"
+                        })
+                        position_open = False
+                        continue
+
                     # MX-5200: Order Lifecycle Start
+
                     order = Order(
                         order_id=f"ord_{cell.candidate_id}_{ts}",
                         symbol=cell.symbol,
@@ -486,6 +571,26 @@ class WarEngine:
         with open(reports_dir / "order_lifecycle_v1.json", "w") as f:
             json.dump(lifecycle_data, f, indent=2)
             
+        # MX-5240: Resource Report
+        with open(reports_dir / "resource_health_v1.json", "w") as f:
+            json.dump(self.resource_report, f, indent=2)
+
+        # MX-5130: Idempotency Report
+        self.idem.save_report(reports_dir / "idempotency_keys_v1.json")
+
+        # MX-5140: Restart Reconcile Report
+        import dataclasses
+        if self.restart_report:
+            with open(reports_dir / "restart_reconcile_v1.json", "w") as f:
+                json.dump(dataclasses.asdict(self.restart_report), f, indent=2)
+
+        # MX-5220: Timebase Report
+        if self.timebase_report:
+            with open(reports_dir / "timebase_v1.json", "w") as f:
+                json.dump(self.timebase_report, f, indent=2)
+
+
+            
         # MX-5210: Data Integrity Report
         with open(reports_dir / "data_integrity_v1.json", "w") as f:
             json.dump(self.integrity_reports, f, indent=2)
@@ -529,4 +634,33 @@ class WarEngine:
             "path": "reports/evidence_manifest_v1.json",
             "manifest_sha256": manifest["manifest_sha256"]
         })
+        
+        # MX-5170: Proof Bundle Packager
+        bundle_meta = build_proof_bundle(run_dir)
+        self._emit_event("PROOF_BUNDLE_WRITTEN", bundle_meta)
+
+        # MX-5190: Release Train Gates
+        if self.plan.candidate_ids:
+            home = str(run_dir.parent.parent.parent) 
+            # For multi-coin, we evaluate the first candidate for the run-scoped report
+            gate_res = evaluate_release_gate(home, self.plan.candidate_ids[0])
+            write_release_report(run_dir, gate_res)
+            self._emit_event("RELEASE_REPORT_CREATED", {"ok": gate_res["ok"]})
+
+        # MX-5270: Safety Sweep + Safety Certificate
+        from tezaver.matrix.ops.safety_sweep import run_safety_sweep
+        from tezaver.matrix.ops.safety_certificate import write_safety_certificate
+        import os as os_env # Avoid shadowing
+        
+        active_stage = os_env.getenv("TEZAVER_STAGE", "WAR")
+        sweep_res = run_safety_sweep(str(run_dir), active_stage)
+        write_safety_certificate(str(run_dir), sweep_res)
+        self._emit_event("SAFETY_CERTIFICATE_WRITTEN", {
+            "verdict": sweep_res["verdict"],
+            "blockers_count": len(sweep_res["blockers"]),
+            "active_stage": active_stage
+        })
+
+
+
 

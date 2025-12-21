@@ -17,6 +17,19 @@ from tezaver.matrix.core.telemetry import normalize_event
 from tezaver.matrix.core.order_lifecycle import Order, OrderStatus, OrderLifecycleTracker
 from tezaver.matrix.live.api_resilience import ApiResilienceManager
 from tezaver.matrix.evidence.evidence_manifest import generate_manifest
+from tezaver.matrix.live.restart_reconciler import RestartReconciler
+from tezaver.matrix.live.risk_state import RiskStateManager, RiskMode
+from tezaver.matrix.ops.timebase import measure_skew, build_timebase_report
+from tezaver.matrix.evidence.proof_bundle import build_proof_bundle
+from tezaver.matrix.core.release_gate import evaluate_release_gate
+from tezaver.matrix.release.release_report import write_release_report
+
+
+
+
+
+
+
 
 
 
@@ -63,7 +76,28 @@ class LiveEngine:
         # MX-5230: API Resilience
         self.resilience = ApiResilienceManager(self.run_id, emit_fn=self._emit_event)
         
+        # MX-5240: Resource Guard
+        self.resource_guard = ResourceGuard()
+        self.resource_report = {}
+        
+        # MX-5160: Risk State Machine (Replaces self.safe_mode)
+        self.risk_state = RiskStateManager(self.run_id)
+        if safe_mode:
+            self.risk_state.enter_safe_mode("USER_MANUAL")
+
+        
+        # MX-5140: Restart Reconciler
+        self.restart_reconciler = RestartReconciler()
+        self.restart_report = {}
+        
+        # MX-5220: Timebase
+        self.timebase_report = {}
+
+
+
+
         # Setup output dir
+
 
 
         self.run_dir = self.output_dir / self.run_id
@@ -87,14 +121,54 @@ class LiveEngine:
         # Reconciliation check
         recon_result = self.reconciliation.check(self.run_id)
         if recon_result.safe_mode_required:
-            self.safe_mode = True
+            self.risk_state.enter_safe_mode("RECON_LOCAL_INCONSISTENT")
             self._emit_event("LIVE_SAFE_MODE_ENABLED", {
                 "reason": "reconciliation_error",
                 "issues": recon_result.issues
             })
+
         
         # Add reconciliation telemetry
         self.telemetry.extend(self.reconciliation.get_telemetry())
+        
+        # MX-5140: Restart Reconciliation (Exchange vs Local)
+        self._emit_event("RESTART_RECONCILE_BEGIN", {"run_id": self.run_id})
+        
+        # Build expected lists for v1
+        expected_orders = [o.order_id for o in self.tracked_orders]
+        expected_symbols = [c.symbol for c in self.plan.cells]
+        
+        restart_res = self.restart_reconciler.reconcile(
+            broker=self.registry.broker,
+            run_id=self.run_id,
+            expected_orders=expected_orders,
+            expected_symbols=expected_symbols
+        )
+        self.restart_report = restart_res
+        
+        if restart_res.unknown_orders:
+            self._emit_event("OPEN_ORDERS_FOUND", {"count": len(restart_res.unknown_orders)})
+        if restart_res.orphan_positions:
+            self._emit_event("ORPHAN_POSITION_FOUND", {"count": len(restart_res.orphan_positions)})
+            
+        for action in restart_res.actions_taken:
+            self._emit_event("RECON_ACTION_TAKEN", {"action": action})
+            
+        if not restart_res.ok:
+            self.risk_state.enter_safe_mode("RECON_EXCHANGE_INCONSISTENT")
+            self._emit_event("LIVE_SAFE_MODE_ENABLED", {
+                "reason": "restart_reconciliation_inconsistency",
+                "report": restart_res.status
+            })
+
+            
+        self._emit_event("RESTART_RECONCILE_END", {"status": restart_res.status})
+
+        # MX-5220: Timebase Standard
+        skew = measure_skew(self.registry.broker.get_server_time)
+        self.timebase_report = build_timebase_report(self.run_id, skew)
+        self._emit_event("TIMEBASE_REPORT", self.timebase_report)
+
         
         # Register run
         self.registry.register(
@@ -103,8 +177,9 @@ class LiveEngine:
             cells=self.plan.cells,
             symbols=self.plan.symbols,
             config_hash=self.plan.config_hash,
-            safe_mode=self.safe_mode
+            safe_mode=self.risk_state.mode != RiskMode.NORMAL
         )
+
         
         self._emit_event("LIVE_START", {
             "run_id": self.run_id,
@@ -162,7 +237,24 @@ class LiveEngine:
             # Heartbeat
             self.registry.update_heartbeat(self.run_id, self.bar_count, self.trade_count)
 
-            
+            # MX-5240: Periodic Resource Check (Check every 10 bars)
+            if self.bar_count % 10 == 0:
+                res = self.resource_guard.check_resources(self.output_dir)
+                self.resource_report = res
+                if not res["ok"]:
+                    self.risk_state.enter_safe_mode("RESOURCE_PRESSURE")
+                    self._emit_event("RESOURCE_GUARD_TRIPPED", {
+                        "reasons": res["reasons"],
+                        "metrics": res["metrics"]
+                    })
+
+                else:
+                    self._emit_event("RESOURCE_GUARD_CHECK", {"metrics": res["metrics"]})
+
+            # MX-5230: API Circuit Check
+            if self.resilience.get_summary()["circuit_state"] == "OPEN":
+                self.risk_state.enter_safe_mode("API_CIRCUIT_OPEN")
+
             # Max bars check (for testing)
             if max_bars and self.bar_count >= max_bars:
                 break
@@ -181,13 +273,17 @@ class LiveEngine:
         if not bar:
             return
         
-        # SAFE_MODE: no new orders
-        if self.safe_mode:
-            self._emit_event("CELL_SKIP_SAFE_MODE", {
+        # MX-5160: Risk Check
+        allowed, reason = self.risk_state.can_place_order("OPEN")
+        if not allowed:
+            self._emit_event("NEW_ORDER_BLOCKED", {
                 "candidate_id": cell.candidate_id,
-                "symbol": cell.symbol
+                "symbol": cell.symbol,
+                "reason": reason,
+                "mode": self.risk_state.mode.value
             })
             return
+
         
         # Simplified trading logic
         broker = SimBroker(fee_pct=0.001, slippage_pct=0.0005)
@@ -218,7 +314,28 @@ class LiveEngine:
                     "bar_index_entry": self.bar_count
                 }
                 
+                # MX-5130: Idempotency Check
+                idem_key = self.idem.build_key(
+                    symbol=symbol,
+                    tf=cell.tf,
+                    strategy_id="LIVE_SIM_V1",
+                    signal_ts=ts,
+                    intent="OPEN",
+                    side=side
+                )
+                
+                if not self.idem.check_and_mark(idem_key, {"symbol": symbol, "qty": qty}):
+                    self._emit_event("DUPLICATE_ORDER_BLOCKED", {
+                        "candidate_id": cell.candidate_id,
+                        "symbol": symbol,
+                        "idem_key": idem_key,
+                        "reason": "IDEMPOTENCY"
+                    })
+                    del self.open_positions[symbol]
+                    return
+
                 # MX-5200: Lifecycle Track
+
                 o = Order(
                     order_id=f"ord_{cell.candidate_id}_{ts}",
                     symbol=symbol,
@@ -264,7 +381,13 @@ class LiveEngine:
                 exit_reason = "CYCLE"
                 
             if exit_reason:
+                # MX-5160: Check if CLOSE is allowed
+                allowed, reason = self.risk_state.can_place_order("CLOSE")
+                if not allowed:
+                    continue
+                
                 # Real PnL
+
                 gross_pnl = (exit_price - entry_price) * qty if side == "LONG" else (entry_price - exit_price) * qty
                 fee = (entry_price * qty + exit_price * qty) * 0.001
                 slippage = abs(gross_pnl) * 0.0005
@@ -402,7 +525,27 @@ class LiveEngine:
         with open(reports_dir / "api_health_v1.json", "w") as f:
             json.dump(api_summary, f, indent=2)
 
+        # MX-5240: Resource Report
+        with open(reports_dir / "resource_health_v1.json", "w") as f:
+            json.dump(self.resource_report, f, indent=2)
+
+        # MX-5130: Idempotency Report
+        self.idem.save_report(reports_dir / "idempotency_keys_v1.json")
+
+        # MX-5140: Restart Reconcile Report
+        import dataclasses
+        if self.restart_report:
+            with open(reports_dir / "restart_reconcile_v1.json", "w") as f:
+                json.dump(dataclasses.asdict(self.restart_report), f, indent=2)
+
+        # MX-5220: Timebase Report
+        if self.timebase_report:
+            with open(reports_dir / "timebase_v1.json", "w") as f:
+                json.dump(self.timebase_report, f, indent=2)
+
+
         # MX-5200: Order Lifecycle Report
+
 
         lifecycle_data = []
         for o in self.tracked_orders:
@@ -448,4 +591,29 @@ class LiveEngine:
             "path": "reports/evidence_manifest_v1.json",
             "manifest_sha256": manifest["manifest_sha256"]
         })
+        
+        # MX-5170: Proof Bundle Packager
+        bundle_meta = build_proof_bundle(self.run_dir)
+        self._emit_event("PROOF_BUNDLE_WRITTEN", bundle_meta)
+
+        # MX-5190: Release Train Gates
+        if self.plan.candidate_ids:
+            home = str(self.run_dir.parent.parent.parent)
+            gate_res = evaluate_release_gate(home, self.plan.candidate_ids[0], active_stage="LIVE")
+            write_release_report(self.run_dir, gate_res)
+            self._emit_event("RELEASE_REPORT_CREATED", {"ok": gate_res["ok"]})
+
+        # MX-5270: Safety Sweep + Safety Certificate
+        from tezaver.matrix.ops.safety_sweep import run_safety_sweep
+        from tezaver.matrix.ops.safety_certificate import write_safety_certificate
+        
+        sweep_res = run_safety_sweep(str(self.run_dir), "LIVE")
+        write_safety_certificate(str(self.run_dir), sweep_res)
+        self._emit_event("SAFETY_CERTIFICATE_WRITTEN", {
+            "verdict": sweep_res["verdict"],
+            "blockers_count": len(sweep_res["blockers"]),
+            "active_stage": "LIVE"
+        })
+
+
 

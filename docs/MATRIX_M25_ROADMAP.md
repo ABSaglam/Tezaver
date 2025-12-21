@@ -41,14 +41,11 @@ Bu yol haritası, mevcut Tezaver yapısını **M25 Üçlü Güç Doktrini**'ne t
     *   `cloud_page.py` arayüzünü yeni `UnifiedEngine` ve veri yapılarına göre (ExecutionReport formatı değişeceği için) güncelle.
     *   Log ekranını yeni formata uygun hale getir.
 
-## Faz 7: Güvenlik ve Protokol Harmonizasyonu (MX-5260)
-*   [ ] **MX-5200 Order Lifecycle Prod-Grade v1:** Emir yaşam döngüsü takibi ve sertleştirme.
-*   [ ] **MX-5210 Market Data Integrity & Anti-Lookahead:** Veri tutarlılığı ve lookahead koruması.
-*   [ ] **MX-5220 Timebase Standard (Clock Skew / Monotonic):** Zaman damgası standartlaştırma.
-*   [ ] **MX-5230 Rate Limit + Retry/Backoff + API Error Taxonomy:** API hata yönetimi ve hız sınırlandırma.
-*   [ ] **MX-5240 Resource Exhaustion Guardrails:** Bellek ve kaynak kullanım koruması.
-*   [ ] **MX-5250 Tamper-Evident Evidence (Hash-chain Manifest):** Değiştirilemez kanıt zinciri.
-*   [ ] **MX-5260 Safety Protocol Registry + UI Table + Release Gate integration:** Merkezi güvenlik sicili ve UI entegrasyonu.
+## Faz 8: Safety Sweep & Certification (Final Closure) (MX-5270)
+*   [ ] **MX-5270 Safety Sweep & Certificate:** Tüm protokollerin kanıt ve durum kontrolü, sertifika üretimi ve UI PASS/FAIL göstergesi.
+
+---
+
 
 
 ---

@@ -1,0 +1,66 @@
+{
+  "run_id": "war_db4aec8ab235",
+  "engine_version": "v4",
+  "build_commit": "m25-dev",
+  "config_signature": "pilot_hash_123",
+  "data_fingerprint": "5fd629b81457d2eba37c8d3bad23d6f3",
+  "ts": "2025-12-21T17:38:25.909724",
+  "artifacts": [
+    {
+      "rel_path": "report.json",
+      "sha256": "3a93811ad5a89b242c4e96a647bb68c0e93919b94536649e1ffb17a5eaf5b16f",
+      "bytes": 819,
+      "mtime": "2025-12-21T17:38:25.908099"
+    },
+    {
+      "rel_path": "reports/data_integrity_v1.json",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "bytes": 2,
+      "mtime": "2025-12-21T17:38:25.896957"
+    },
+    {
+      "rel_path": "reports/data_report_v1.json",
+      "sha256": "8ee625c92456342e41829f5134b572b3eaf96f0e0a14510c268caf2027bb313e",
+      "bytes": 411,
+      "mtime": "2025-12-21T17:38:25.896059"
+    },
+    {
+      "rel_path": "reports/idempotency_keys_v1.json",
+      "sha256": "8a7bf61c0601ca0c7d75ad5fb138aa4803369ad4d008464ed36f3757cb8de9fc",
+      "bytes": 393,
+      "mtime": "2025-12-21T17:38:25.896841"
+    },
+    {
+      "rel_path": "reports/order_lifecycle_v1.json",
+      "sha256": "334359b1cea8e9f02d60d29ef2fc285f91fe59dc6cf4fb36cb05aeff88d5ab28",
+      "bytes": 665,
+      "mtime": "2025-12-21T17:38:25.896431"
+    },
+    {
+      "rel_path": "reports/resource_health_v1.json",
+      "sha256": "7670e22a44c25e1d742685f566b4f8d91a88bd8f7f32cc72b422ca72de5cf5fe",
+      "bytes": 251,
+      "mtime": "2025-12-21T17:38:25.896719"
+    },
+    {
+      "rel_path": "scorecard.json",
+      "sha256": "c93bba4e7dbffcda91b32e3694d214a72ac4e6111c2e6ec15e7dd9ee42462dbb",
+      "bytes": 469,
+      "mtime": "2025-12-21T17:38:25.908419"
+    },
+    {
+      "rel_path": "telemetry.ndjson",
+      "sha256": "c3b99243fcf42fa9dcfb53f1ccfd25643bd2d4770fe233232fe72de60f98b082",
+      "bytes": 3733,
+      "mtime": "2025-12-21T17:38:25.908591"
+    },
+    {
+      "rel_path": "trade_audit_v2.jsonl",
+      "sha256": "63ffe6b2c8ff3cab143c6252775f29232bd19b6564e721c2da94140a92867846",
+      "bytes": 383,
+      "mtime": "2025-12-21T17:38:25.908690"
+    }
+  ],
+  "prev_manifest_sha256": "4c130753003f4a34c4363d3a2c8e1614c1bbdb245fef3fca8c001654c4f5351a",
+  "manifest_sha256": "40302e9e2dfe2c5ea06f89f66542d0164554aa03e403587dc861108a0799cdd6"
+}

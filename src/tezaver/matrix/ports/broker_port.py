@@ -9,3 +9,15 @@ class BrokerPort(Protocol):
     def cancel_order(self, order_id: str) -> None:
         """Requests cancellation of an order."""
         ...
+
+    def get_open_orders(self) -> list[dict]:
+        """Returns a list of open orders from the exchange."""
+        ...
+
+    def get_positions(self) -> list[dict]:
+        """Returns a list of current open positions from the exchange."""
+        ...
+
+    def get_server_time(self) -> int:
+        """Returns exchange server time in milliseconds."""
+        ...

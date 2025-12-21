@@ -544,6 +544,60 @@ def render_release(home: str):
                     
                 st.json(result)
 
+                # MX-5190: Release Report Preview
+                run_dir = Path(home) / "out" / "matrix_runs" / "war" # Simplified for preview
+                # Actually, we should probably look for reports/release_report_v1.json
+                # But evaluate_release_gate already gives the latest state.
+                # Let's show the report if a run exists for this cid.
+                latest_report = None
+                runs_folder = Path(home) / "out" / "matrix_runs" / "war"
+                if runs_folder.exists():
+                    for d in sorted(runs_folder.iterdir(), key=os.path.getmtime, reverse=True):
+                        rep_path = d / "reports" / "release_report_v1.json"
+                        if rep_path.exists():
+                            with open(rep_path) as f:
+                                r_data = json.load(f)
+                                if r_data.get("run_id") == d.name: # Simple match
+                                    latest_report = r_data
+                                    break
+                
+                if latest_report:
+                    st.divider()
+                    st.subheader("📄 Latest Release Report (Run-scoped)")
+                    st.json(latest_report)
+
+                # MX-5270: Safety Certificate Preview
+                latest_cert = None
+                if runs_folder.exists():
+                    for d in sorted(runs_folder.iterdir(), key=os.path.getmtime, reverse=True):
+                        cert_path = d / "reports" / "safety_certificate_v1.json"
+                        if cert_path.exists():
+                            with open(cert_path) as f:
+                                latest_cert = json.load(f)
+                                latest_cert["_run_id"] = d.name
+                                break
+                
+                if latest_cert:
+                    st.divider()
+                    st.subheader("🧾 Latest Safety Certificate (Run-scoped)")
+                    cert_res = latest_cert.get("results", {})
+                    verdict = cert_res.get("verdict", "UNKNOWN")
+                    blockers = cert_res.get("blockers", [])
+                    warnings = cert_res.get("warnings", [])
+                    
+                    if verdict == "PASS":
+                        st.success(f"✅ SAFETY: ALL GREEN (stage={cert_res.get('active_stage', 'N/A')})")
+                    else:
+                        st.error(f"❌ SAFETY: BLOCKED ({len(blockers)} blockers)")
+                        for b in blockers:
+                            st.write(f"- **{b['mx']}**: {b['name']} ({b['reason']})")
+                    
+                    if warnings:
+                        with st.expander(f"⚠️ {len(warnings)} Warnings"):
+                            for w in warnings:
+                                st.write(f"- **{w['mx']}**: {w['name']}")
+
+
             except Exception as e:
                 st.error(f"Error: {e}")
 
@@ -1044,6 +1098,30 @@ def render_panel_health(home: str):
     # MX-5250: Evidence Manifest
     render_evidence_summary(home)
 
+    # MX-5170: Proof Bundle
+    render_proof_bundle_summary(home)
+
+    # MX-5240: Resource Health
+    render_resource_summary(home)
+
+    # MX-5130: Idempotency Shield
+    render_idempotency_summary(home)
+
+    # MX-5140: Restart Reconcile
+    render_restart_reconcile_summary(home)
+
+    # MX-5270: Safety Certificate
+    render_safety_certificate_summary(home)
+
+
+    # MX-5160: Risk Mode
+    render_risk_mode_summary(home)
+
+    # MX-5220: Timebase
+    render_timebase_summary(home)
+
+
+
 
 
 
@@ -1098,7 +1176,18 @@ def render_safety_protocols(home: str):
     from tezaver.matrix.protocols.safety_registry import SafetyProtocolRegistry
     try:
         registry = SafetyProtocolRegistry()
-        rows = registry.get_ui_rows()
+        
+        # Find latest run for drift check context
+        import os
+        from pathlib import Path
+        latest_run_dir = None
+        runs_root = Path(home) / "out" / "matrix_runs" / "war"
+        if runs_root.exists():
+            runs = [d for d in runs_root.iterdir() if d.is_dir()]
+            if runs:
+                latest_run_dir = str(sorted(runs, key=os.path.getmtime, reverse=True)[0])
+            
+        rows = registry.get_ui_rows(latest_run_dir)
         
         if registry.cloud_locked:
             st.info("☁️ **Cloud Locked:** Bulut çalışma zamanı korumaları şu an için devredışı/deferred.")
@@ -1108,6 +1197,7 @@ def render_safety_protocols(home: str):
             use_container_width=True,
             hide_index=True
         )
+
     except Exception as e:
         st.error(f"Safety Registry yüklenemedi: {e}")
         st.info("PyYAML yüklü mü? `pip install PyYAML` deneyin.")
@@ -1877,5 +1967,301 @@ def render_evidence_summary(home: str):
         st.info("No evidence manifests found.")
 
 
+def render_resource_summary(home: str):
+    """MX-5240: Render Resource Health status."""
+
+    st.subheader("🧯 Resource Health")
+    
+    # Scan Latest War Run for Resource Report
+    runs_dir = Path(home) / "out" / "matrix_runs" / "war"
+    latest_report = None
+    
+    if runs_dir.exists():
+        run_paths = sorted(runs_dir.glob("*"), key=os.path.getmtime, reverse=True)
+        for rp in run_paths:
+            res_path = rp / "reports" / "resource_health_v1.json"
+            if res_path.exists():
+                try:
+                    with open(res_path) as f:
+                        latest_report = json.load(f)
+                        latest_report["run_id"] = rp.name
+                        break
+                except: pass
+                
+    if latest_report:
+        c1, c2, c3 = st.columns(3)
+        ok = latest_report.get("ok", False)
+        metrics = latest_report.get("metrics", {})
+        
+        if ok:
+            c1.metric("Status", "HEALTHY ✅")
+        else:
+            c1.metric("Status", "TRIPPED 🚨")
+            st.error(f"Alerts: {', '.join(latest_report.get('reasons', []))}")
+            
+        c2.metric("Disk Free", f"{metrics.get('disk_free_mb', 0)} MB")
+        c3.metric("RAM (RSS)", f"{metrics.get('rss_mb', 0)} MB")
+        
+        if not ok:
+            st.info(f"Safe mode triggered in run {latest_report['run_id']}")
+    else:
+        st.metric("Resource Health", "N/A")
+        st.info("No resource health reports found.")
+
+
+def render_idempotency_summary(home: str):
+    """MX-5130: Render Idempotency Shield status."""
+
+    st.subheader("🛡️ Idempotency Shield")
+    
+    # Scan Latest War Run for Idempotency Report
+    runs_dir = Path(home) / "out" / "matrix_runs" / "war"
+    latest_report = None
+    
+    if runs_dir.exists():
+        run_paths = sorted(runs_dir.glob("*"), key=os.path.getmtime, reverse=True)
+        for rp in run_paths:
+            idem_path = rp / "reports" / "idempotency_keys_v1.json"
+            if idem_path.exists():
+                try:
+                    with open(idem_path) as f:
+                        latest_report = json.load(f)
+                        latest_report["run_id"] = rp.name
+                        break
+                except: pass
+                
+    if latest_report:
+        col1, col2 = st.columns(2)
+        summary = latest_report.get("summary", {})
+        blocked = summary.get("blocked_count", 0)
+        
+        if blocked == 0:
+            col1.metric("Duplicates Blocked", "0 ✅")
+        else:
+            col1.metric("Duplicates Blocked", f"{blocked} 🛡️")
+            st.warning(f"Detected and blocked {blocked} duplicate orders in {latest_report['run_id']}")
+            
+        col2.metric("Unique Signal Keys", summary.get("unique_orders_count", 0))
+    else:
+        st.metric("Idempotency", "N/A")
+        st.info("No idempotency reports found.")
+
+
+def render_restart_reconcile_summary(home: str):
+    """MX-5140: Render Restart Reconciliation status."""
+    st.subheader("🔄 Restart Reconcile")
+    
+    # Scan Latest Live Run for Reconcile Report
+    runs_dir = Path(home) / "out" / "matrix_runs" / "live"
+    latest_report = None
+    
+    if runs_dir.exists():
+        run_paths = sorted(runs_dir.glob("*"), key=os.path.getmtime, reverse=True)
+        for rp in run_paths:
+            recon_path = rp / "reports" / "restart_reconcile_v1.json"
+            if recon_path.exists():
+                try:
+                    with open(recon_path) as f:
+                        latest_report = json.load(f)
+                        latest_report["run_id"] = rp.name
+                        break
+                except: pass
+                
+    if latest_report:
+        col1, col2 = st.columns(2)
+        status = latest_report.get("status", "UNKNOWN")
+        
+        if status == "SUCCESS":
+            col1.metric("Status", "CLEAN ✨")
+        else:
+            col1.metric("Status", f"{status} ⚠️")
+            
+        actions = latest_report.get("actions_taken", [])
+        col2.metric("Actions", len(actions))
+        
+        if actions:
+            with st.expander("📝 Actions Taken"):
+                for act in actions:
+                    st.write(f"- {act}")
+                    
+        if latest_report.get("unknown_orders"):
+            st.warning(f"Found {len(latest_report['unknown_orders'])} unknown orders on exchange.")
+    else:
+        st.metric("Restart Reconcile", "N/A")
+        st.info("No restart reconciliation reports found.")
+
+
+def render_risk_mode_summary(home: str):
+    """MX-5160: Render Emergency Mode / Risk State."""
+    st.subheader("🚨 Emergency Mode")
+    
+    # Scan Latest Live/War Run for Telemetry or Logic
+    runs_dir_live = Path(home) / "out" / "matrix_runs" / "live"
+    runs_dir_war = Path(home) / "out" / "matrix_runs" / "war"
+    
+    # For UI demo, we'll try to find any run and peek at registry or telemetry
+    latest_run = None
+    if runs_dir_live.exists():
+        run_paths = sorted(runs_dir_live.glob("*"), key=os.path.getmtime, reverse=True)
+        if run_paths: latest_run = run_paths[0]
+        
+    if not latest_run and runs_dir_war.exists():
+        run_paths = sorted(runs_dir_war.glob("*"), key=os.path.getmtime, reverse=True)
+        if run_paths: latest_run = run_paths[0]
+
+    if latest_run:
+        # Ideally we'd have a run_mode_v1.json, but for now we look at general status
+        col1, col2 = st.columns(2)
+        # Placeholder for real state (in v1 we just show if any NEW_ORDER_BLOCKED happened)
+        telemetry_path = latest_run / "telemetry.ndjson"
+        mode = "NORMAL"
+        reasons = []
+        
+        if telemetry_path.exists():
+            try:
+                with open(telemetry_path) as f:
+                    for line in f:
+                        ev = json.loads(line)
+                        if ev.get("event_type") == "LIVE_SAFE_MODE_ENABLED":
+                            mode = "SAFE_MODE"
+                            reasons.append(ev.get("reason", "UNKNOWN"))
+                        if ev.get("event_type") == "NEW_ORDER_BLOCKED":
+                            mode = "SAFE_MODE"
+                            reasons.append(ev.get("reason", "POLICY_ENFORCED"))
+            except: pass
+
+        if mode == "NORMAL":
+            col1.metric("Current Mode", "NORMAL 🟢")
+        elif mode == "SAFE_MODE":
+            col1.metric("Current Mode", "SAFE 🟡")
+        else:
+            col1.metric("Current Mode", "HALTED 🔴")
+            
+        if reasons:
+            st.error(f"Active Block Reasons: {', '.join(set(reasons))}")
+    else:
+        st.metric("Emergency Mode", "N/A")
+
+
+def render_timebase_summary(home: str):
+    """MX-5220: Render Timebase status."""
+    st.subheader("⏱️ Timebase")
+    
+    # Scan Latest Live Run for Timebase Report
+    runs_dir = Path(home) / "out" / "matrix_runs" / "live"
+    latest_report = None
+    
+    if runs_dir.exists():
+        run_paths = sorted(runs_dir.glob("*"), key=os.path.getmtime, reverse=True)
+        for rp in run_paths:
+            report_path = rp / "reports" / "timebase_v1.json"
+            if report_path.exists():
+                try:
+                    with open(report_path) as f:
+                        latest_report = json.load(f)
+                        latest_report["run_id"] = rp.name
+                        break
+                except: pass
+                
+    if latest_report:
+        col1, col2, col3 = st.columns(3)
+        skew = latest_report.get("exchange_offset_ms", 0)
+        
+        if abs(skew) < 100:
+            col1.metric("Clock Skew", f"{skew}ms ✨")
+        else:
+            col1.metric("Clock Skew", f"{skew}ms ⚠️")
+            
+        col2.metric("Monotonic", "OK ✅" if latest_report.get("monotonic_ok") else "FAIL ❌")
+        col3.metric("Network", f"{latest_report.get('network_delay_ms', 0)}ms")
+        
+        st.caption(f"Last sync: {latest_report.get('ts')}")
+    else:
+        st.metric("Timebase", "N/A")
+        st.info("No timebase reports found.")
+
+
+def render_proof_bundle_summary(home: str):
+    """MX-5170: Render Proof Bundle status."""
+    st.subheader("📦 Proof Bundle")
+    
+    # Scan Latest Live Run for Bundle Metadata
+    runs_dir = Path(home) / "out" / "matrix_runs" / "live"
+    latest_metadata = None
+    
+    if runs_dir.exists():
+        run_paths = sorted(runs_dir.glob("*"), key=os.path.getmtime, reverse=True)
+        for rp in run_paths:
+            meta_path = rp / "proof_bundle" / "bundle_metadata_v1.json"
+            if meta_path.exists():
+                try:
+                    with open(meta_path) as f:
+                        latest_metadata = json.load(f)
+                        latest_metadata["run_id"] = rp.name
+                        break
+                except: pass
+                
+    if latest_metadata:
+        col1, col2 = st.columns(2)
+        count = latest_metadata.get("artifact_count", 0)
+        size_kb = round(latest_metadata.get("total_bytes", 0) / 1024, 1)
+        
+        col1.metric("Artifacts", count)
+        col2.metric("Bundle Size", f"{size_kb} KB")
+        
+        bundle_path = latest_metadata.get("bundle_path", "N/A")
+        st.code(f"Path: {bundle_path}", language="bash")
+        
+        st.caption(f"Packaged at: {latest_metadata.get('bundle_ts')}")
+    else:
+        st.metric("Proof Bundle", "N/A")
+        st.info("No proof bundles found. Ensure run is complete.")
+
+
+def render_safety_certificate_summary(home: str):
+    """MX-5270: Render Safety Certificate status badge."""
+    st.divider()
+    st.subheader("🧾 Safety Certificate")
+    
+    from pathlib import Path
+    import os
+    import json
+    
+    # Scan Latest WAR run for certificate
+    runs_dir = Path(home) / "out" / "matrix_runs" / "war"
+    latest_cert = None
+    
+    if runs_dir.exists():
+        run_paths = sorted([d for d in runs_dir.iterdir() if d.is_dir()], key=os.path.getmtime, reverse=True)
+        for rp in run_paths:
+            cert_path = rp / "reports" / "safety_certificate_v1.json"
+            if cert_path.exists():
+                try:
+                    with open(cert_path) as f:
+                        latest_cert = json.load(f)
+                        latest_cert["_run_id"] = rp.name
+                        break
+                except: pass
+                
+    if latest_cert:
+        cert_res = latest_cert.get("results", {})
+        verdict = cert_res.get("verdict", "UNKNOWN")
+        blockers_count = len(cert_res.get("blockers", []))
+        active_stage = cert_res.get("active_stage", "N/A")
+        
+        col1, col2, col3 = st.columns(3)
+        
+        if verdict == "PASS":
+            col1.success(f"✅ ALL GREEN")
+        else:
+            col1.error(f"❌ BLOCKED")
+        
+        col2.metric("Blockers", blockers_count)
+        col3.metric("Stage", active_stage)
+        
+        st.caption(f"Run: `{latest_cert.get('_run_id')}` | Generated: {latest_cert.get('ts')}")
+    else:
+        st.metric("Safety Certificate", "N/A")
+        st.info("No safety certificates found. Ensure run is complete.")
 
 

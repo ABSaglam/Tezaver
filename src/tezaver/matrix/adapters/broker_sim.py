@@ -46,3 +46,16 @@ class SimBroker(BrokerPort):
         # Sim cancel: always success if tracked... 
         # But this sim is stateless regarding open orders.
         pass
+
+    def get_open_orders(self) -> list[dict]:
+        """Sim context: no open orders by default."""
+        return []
+
+    def get_positions(self) -> list[dict]:
+        """Sim context: no positions by default."""
+        return []
+
+    def get_server_time(self) -> int:
+        """Sim context: returns local time in ms."""
+        import time
+        return int(time.time() * 1000)

@@ -1,0 +1,60 @@
+{
+  "run_id": "war_d86148ca6436",
+  "engine_version": "v4",
+  "build_commit": "m25-dev",
+  "config_signature": "pilot_hash_123",
+  "data_fingerprint": "5fd629b81457d2eba37c8d3bad23d6f3",
+  "ts": "2025-12-21T17:16:16.762100",
+  "artifacts": [
+    {
+      "rel_path": "report.json",
+      "sha256": "9c699bf3ddd2d346d822b5ec69f9950421810cf4eb7597c6d06eb4a744889186",
+      "bytes": 819,
+      "mtime": "2025-12-21T17:16:16.760699"
+    },
+    {
+      "rel_path": "reports/data_integrity_v1.json",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "bytes": 2,
+      "mtime": "2025-12-21T17:16:16.749641"
+    },
+    {
+      "rel_path": "reports/data_report_v1.json",
+      "sha256": "6c6316d7056c5d0edbde5456ebc93c6c51f6954137d9641ed2d18b08c627cebd",
+      "bytes": 411,
+      "mtime": "2025-12-21T17:16:16.749048"
+    },
+    {
+      "rel_path": "reports/order_lifecycle_v1.json",
+      "sha256": "0dcdf63e68410914664313b0aefa4d430b9cc0737ae43acb58d6b067c55bfb8e",
+      "bytes": 665,
+      "mtime": "2025-12-21T17:16:16.749268"
+    },
+    {
+      "rel_path": "reports/resource_health_v1.json",
+      "sha256": "b9320f122d3d46a9cf97627866df1e269e5d3080c0f953c695b6115fe4643f72",
+      "bytes": 252,
+      "mtime": "2025-12-21T17:16:16.749545"
+    },
+    {
+      "rel_path": "scorecard.json",
+      "sha256": "c93bba4e7dbffcda91b32e3694d214a72ac4e6111c2e6ec15e7dd9ee42462dbb",
+      "bytes": 469,
+      "mtime": "2025-12-21T17:16:16.760866"
+    },
+    {
+      "rel_path": "telemetry.ndjson",
+      "sha256": "ab818d9c1d090ae777cc81842108320019a4c64da3e7d9345a3c3873d2f769e6",
+      "bytes": 3734,
+      "mtime": "2025-12-21T17:16:16.761021"
+    },
+    {
+      "rel_path": "trade_audit_v2.jsonl",
+      "sha256": "69dd5629ab303f63e59d510314fd58efd6dca76d2be018b7bc0637a51d3abb2c",
+      "bytes": 383,
+      "mtime": "2025-12-21T17:16:16.761116"
+    }
+  ],
+  "prev_manifest_sha256": "5f388d78e8bd007c60fe97098e3aa76d35e1c8dc556679be87cbf57a5f13297b",
+  "manifest_sha256": "f9d79b31759ced213270c1f9cffec67f5ba071671aea22e96e31c735a8fb7bb0"
+}

@@ -1,0 +1,16 @@
+{
+  "run_id": "war_a3b80f5ce1c1",
+  "ts": "2025-12-21T15:06:31.802674Z",
+  "version": "v1",
+  "overall_ok": false,
+  "active_stage": "WAR",
+  "assumed_stage": true,
+  "blocking_protocols": [
+    "Safety Registry Connection",
+    "Sniper PASS",
+    "War PASS",
+    "Live APPROVED"
+  ],
+  "warnings": [],
+  "summary": "Release Blocked by 4 critical issues"
+}
