@@ -1,0 +1,104 @@
+=============================================================
+             CORE SUITE REPORT — v1.0
+=============================================================
+Generated: 2025-12-21T18:45:00
+
+1) REPO SNAPSHOT
+   HEAD: b1251347807a5e4399372b0b3da2a5766e401c6b
+   Branch: matrix_rebuild_v4
+   Dirty Files:
+     M src/tezaver/matrix/protocols/safety_protocol_registry.yaml
+     M pyproject.toml (markers added)
+     M tests/matrix/test_*.py (7 files with @pytest.mark.core)
+   Test Files: 218
+
+2) MX-9101: MARKER INFRASTRUCTURE
+   Config File: pyproject.toml
+   Markers Added:
+     - core: blocking tests (must be 100% green)
+     - legacy: migrated later (fixtures/api mismatch)
+   
+   Core Tests Tagged (7):
+     - test_release_gate_pass.py
+     - test_telemetry_schema.py
+     - test_order_lifecycle.py
+     - test_live_v1.py::test_live_engine_with_fake_feed
+     - test_run_sniper_cli.py
+     - test_run_war_cli.py
+     - test_run_sniper_uses_config_signature.py
+
+3) CORE RUN COMMAND + OUTPUT
+   Command: pytest -q tests/matrix -m core
+   Result: 7 failed, 213 deselected in 1.31s
+
+4) FAIL ANALYSIS
+
+== FAIL #1 ==
+Test: test_live_v1.py::test_live_engine_with_fake_feed
+Root Cause: NAMEERROR_IMPORT
+Detail: LiveEngine.start() method does not exist (only .run())
+Fix Direction: Update test to use engine.run() instead of engine.start()
+
+== FAIL #2 ==
+Test: test_order_lifecycle.py::test_lifecycle_happy_path
+Root Cause: API_SIGNATURE_MISMATCH
+Detail: tracker.fill() signature changed (expects different args)
+Fix Direction: Update fill() call to match new signature
+
+== FAIL #3 ==
+Test: test_release_gate_pass.py::test_release_gate_pass
+Root Cause: RELEASE_GATE_RULESET
+Detail: res["ok"] returns N/A, not True. Safety registry check fails first.
+Fix Direction: Mock safety registry or adjust test setup
+
+== FAIL #4 ==
+Test: test_run_sniper_cli.py::test_run_sniper_cli
+Root Cause: FIXTURE_MISMATCH
+Detail: Exit code 2 (CLI args mismatch or import failure)
+Fix Direction: Update CLI invocation to match new arg structure
+
+== FAIL #5 ==
+Test: test_run_sniper_uses_config_signature.py
+Root Cause: FIXTURE_MISMATCH
+Detail: run_sniper_once() returns different structure
+Fix Direction: Update test expectations to new return format
+
+== FAIL #6 ==
+Test: test_run_war_cli.py::test_run_war_cli
+Root Cause: FIXTURE_MISMATCH
+Detail: war_sessions dir not created; uses out/matrix_runs/sniper instead
+Fix Direction: Update test to look in correct output directory
+
+== FAIL #7 ==
+Test: test_telemetry_schema.py::test_telemetry_valid
+Root Cause: TELEMETRY_SCHEMA_CONTRACT
+Detail: validate_event_dict() now returns True for valid events (not errors list)
+Fix Direction: Invert assertion logic: assert validate_event_dict(e) == True
+
+5) EVIDENCE PATHS
+   out/matrix_runs/war/war_e80e98d0009b/ (WAR seal)
+   out/matrix_runs/war/war_8cc4bc1597bb/ (SNIPER seal)
+   out/matrix_runs/war/war_ef816a39419b/ (LIVE seal)
+
+6) FINAL SNAPSHOT
+   HEAD: b1251347807a5e4399372b0b3da2a5766e401c6b
+   Modified: pyproject.toml, 7 test files (marker decorators)
+
+7) SUMMARY
+   Core Suite: 0/7 PASSED (0%)
+   Root Causes:
+     - 2x NAMEERROR/API_SIGNATURE_MISMATCH
+     - 3x FIXTURE_MISMATCH
+     - 1x RELEASE_GATE_RULESET
+     - 1x TELEMETRY_SCHEMA_CONTRACT
+
+   Priority Fixes:
+     1. test_telemetry_schema (easy: flip assertion)
+     2. test_order_lifecycle (easy: update fill() call)
+     3. test_live_v1 (easy: .start() → .run())
+     4. test_release_gate_pass (medium: mock registry)
+     5. CLI tests (medium: update fixture paths/args)
+
+=============================================================
+                 END OF CORE SUITE REPORT
+=============================================================
