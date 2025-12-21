@@ -23,6 +23,7 @@ CATEGORIES = [
     ("REHEARSAL", "✅ Rehearsal", "Go/No-Go kontrol listesi"),
     ("CANDIDATES", "📋 Candidates", "Strateji adayları"),
     ("RUNS", "▶️ Runs", "Çalıştırma geçmişi"),
+    ("WAR", "⚔️ WAR", "Multi-coin backtest"),
     ("PANEL_HEALTH", "🏥 Panel Health", "Bundle ve registry sağlık durumu"),
     ("MAINTENANCE", "🔧 Maintenance", "Bakım ve temizlik araçları"),
     ("REGISTRY", "📚 Registry", "Cloud strateji kaydı"),
@@ -113,6 +114,8 @@ def render_matrix_v4():
         render_candidates(home)
     elif selected_cat == "RUNS":
         render_runs(home)
+    elif selected_cat == "WAR":
+        render_war(home)
     elif selected_cat == "PANEL_HEALTH":
         render_panel_health(home)
     elif selected_cat == "MAINTENANCE":
@@ -957,3 +960,153 @@ def render_maintenance(home: str):
         
         st.success(f"✅ Registry yeniden oluşturuldu: {imported} OK, {failed} failed.")
         st.rerun()
+
+
+# ============================================================================
+# MX-2040: WAR UI Panel
+# ============================================================================
+
+def render_war(home: str):
+    """MX-2040: Render WAR panel for multi-coin backtest runs."""
+    from tezaver.ui.ui_guard import render_data_sources_box
+    render_data_sources_box()
+    
+    from tezaver.matrix.adapters.war_run_registry import WarRunRegistry
+    from tezaver.matrix.apps.war_planner import WarPlanner
+    from tezaver.matrix.core.war_engine import WarEngine
+    from tezaver.matrix.core.risk_limiter import RiskLimits
+    from tezaver.matrix.core.war_judge import WarGates
+    
+    registry = WarRunRegistry()
+    planner = WarPlanner()
+    
+    # --- Start New WAR Run ---
+    with st.expander("🚀 Start New WAR Run", expanded=False):
+        st.caption("APPROVED_FOR_WAR statüsündeki adayları çoklu backtest'e al")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            max_candidates = st.number_input("Max Candidates", 1, 20, 5)
+            seed = st.number_input("Seed (Determinism)", 1, 99999, 42)
+        with col2:
+            max_notional = st.number_input("Max Total Notional", 1000, 1000000, 100000)
+            max_positions = st.number_input("Max Concurrent Positions", 1, 20, 5)
+        
+        if st.button("⚔️ Start WAR Run", type="primary"):
+            with st.spinner("WAR run başlatılıyor..."):
+                try:
+                    plan = planner.generate_plan(max_candidates=max_candidates, seed=seed)
+                    
+                    if not plan.cells:
+                        st.warning("APPROVED_FOR_WAR statüsünde aday bulunamadı.")
+                    else:
+                        engine = WarEngine(
+                            plan=plan,
+                            risk_limits=RiskLimits(
+                                max_total_notional=max_notional,
+                                max_concurrent_positions=max_positions
+                            ),
+                            gates=WarGates(),
+                            seed=seed
+                        )
+                        result = engine.run()
+                        
+                        st.success(f"✅ WAR Run tamamlandı: {result['run_id']}")
+                        st.json({
+                            "verdict": result["verdict"],
+                            "total_trades": result["scorecard"]["total_trades"],
+                            "net_pnl": result["scorecard"]["net_pnl"],
+                            "scorecard_hash": result["scorecard"]["scorecard_hash"]
+                        })
+                except Exception as e:
+                    st.error(f"WAR Run hatası: {e}")
+    
+    st.divider()
+    
+    # --- WAR Runs List ---
+    st.subheader("📋 WAR Runs")
+    
+    all_runs = registry.list_all()
+    if not all_runs:
+        st.info("Henüz WAR run yok. Yukarıdan yeni bir run başlatın.")
+        return
+    
+    df = pd.DataFrame(all_runs)
+    
+    # Display columns
+    display_cols = ["run_id", "verdict", "started_at"]
+    if "scorecard_summary" in df.columns:
+        df["trades"] = df["scorecard_summary"].apply(lambda x: x.get("total_trades", 0) if x else 0)
+        df["net_pnl"] = df["scorecard_summary"].apply(lambda x: x.get("net_pnl", 0) if x else 0)
+        display_cols.extend(["trades", "net_pnl"])
+    
+    # Add candidate/symbol counts
+    if "candidate_ids" in df.columns:
+        df["candidates"] = df["candidate_ids"].apply(lambda x: len(x) if x else 0)
+        display_cols.append("candidates")
+    if "symbols" in df.columns:
+        df["symbols_count"] = df["symbols"].apply(lambda x: len(x) if x else 0)
+        display_cols.append("symbols_count")
+    
+    st.dataframe(
+        df[display_cols].sort_values("started_at", ascending=False),
+        use_container_width=True,
+        hide_index=True
+    )
+    
+    st.divider()
+    
+    # --- Run Detail ---
+    st.subheader("🔍 Run Detail")
+    selected_run_id = st.selectbox("Run Seç:", df["run_id"].tolist())
+    
+    if selected_run_id:
+        run = registry.get(selected_run_id)
+        if run:
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                verdict = run.get("verdict", "?")
+                color = "🟢" if verdict == "PASS" else "🟡" if verdict == "IMPROVE" else "🔴"
+                st.metric("Verdict", f"{color} {verdict}")
+            with col2:
+                summary = run.get("scorecard_summary", {})
+                st.metric("Total Trades", summary.get("total_trades", 0))
+            with col3:
+                st.metric("Net PnL", f"{summary.get('net_pnl', 0):.2f}")
+            
+            # Scorecard hash
+            st.caption(f"Scorecard Hash: `{summary.get('scorecard_hash', 'N/A')}`")
+            
+            # Candidates in run
+            with st.expander("📋 Candidates"):
+                cands = run.get("candidate_ids", [])
+                for c in cands:
+                    st.text(f"• {c}")
+            
+            # Symbols in run
+            with st.expander("💱 Symbols"):
+                syms = run.get("symbols", [])
+                for s in syms:
+                    st.text(f"• {s}")
+            
+            # Load full artifacts if available
+            artifacts_dir = Path(f"out/matrix_runs/war/{selected_run_id}")
+            if artifacts_dir.exists():
+                with st.expander("📊 Full Scorecard"):
+                    scorecard_path = artifacts_dir / "scorecard.json"
+                    if scorecard_path.exists():
+                        with open(scorecard_path) as f:
+                            sc = json.load(f)
+                        st.json(sc)
+                
+                with st.expander("📜 Telemetry Preview (Son 20)"):
+                    tele_path = artifacts_dir / "telemetry.ndjson"
+                    if tele_path.exists():
+                        with open(tele_path) as f:
+                            lines = f.readlines()[-20:]
+                        for line in lines:
+                            try:
+                                e = json.loads(line)
+                                st.text(f"{e.get('kind', '')} | {e.get('candidate_id', '')}")
+                            except:
+                                pass
