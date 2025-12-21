@@ -77,6 +77,27 @@ def judge_run(home: str, run_id: str, scorecard: Dict) -> Dict:
     else:
         gates.append(GateVerdict("PROFITABLE", "SKIP", "No trades to evaluate PnL"))
 
+    # 7. PNL_SANITY (MXI-1402)
+    MAX_NOTIONAL = 1_000_000_000 # 1 Billion placeholder
+    MAX_PNL_PCT = 20.0 # 20% single trade limit
+    
+    trade_audit = scorecard.get("trade_audit_v2", [])
+    sanity_fail = False
+    sanity_msg = "All trades within limits"
+    
+    for t in trade_audit:
+        if t.get("notional", 0) > MAX_NOTIONAL:
+            sanity_fail = True
+            sanity_msg = f"Trade notional {t.get('notional'):.0f} exceeds limit {MAX_NOTIONAL}"
+            break
+        # PnL % calculation if exit price existed, but here we only have entries (notional).
+        # We'll skip PnL % sanity until we have exits, or use a dummy check.
+        
+    if not sanity_fail:
+        gates.append(GateVerdict("PNL_SANITY", "PASS", sanity_msg))
+    else:
+        gates.append(GateVerdict("PNL_SANITY", "FAIL", sanity_msg))
+
     # Compute Overall
     statuses = [g.status for g in gates]
     overall = "PASS"

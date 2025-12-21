@@ -462,13 +462,34 @@ def render_candidates(home: str):
         col_m2.metric("Join Coverage", f"%{m.metrics.join_coverage*100:.1f}")
         
         status_color = {
-            "APPROVED": "green",
+            "APPROVED_FOR_WAR": "green",
             "REJECTED": "red",
+            "NEEDS_PATCH": "orange",
             "TESTING": "orange",
             "NEW": "blue"
         }.get(cand["status"], "gray")
         
         col_m3.markdown(f"**Status:** :{status_color}[{cand['status']}]")
+        
+        # MXI-1300: Lifecycle Box
+        with st.container(border=True):
+            st.markdown("### 🔄 Candidate Lifecycle")
+            from tezaver.matrix.adapters.run_registry import RunRegistry
+            run_reg = RunRegistry()
+            all_runs = run_reg.list_all()
+            # Find last run for this candidate
+            cand_runs = [r for r in all_runs if r.get("candidate_id") == selected_cid]
+            cand_runs.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+            last_run = cand_runs[0] if cand_runs else None
+            
+            l1, l2, l3 = st.columns(3)
+            l1.markdown(f"**Current Status:**\n:{status_color}[{cand['status']}]")
+            if last_run:
+                l2.markdown(f"**Last Verdict:**\n{last_run.get('verdict')}")
+                l3.markdown(f"**Last Run ID:**\n`{last_run.get('run_id')}`")
+            else:
+                l2.markdown("**Last Verdict:**\nNone")
+                l3.markdown("**Last Run ID:**\nNone")
         
         with st.expander("📋 Manifest & Metrics Detayı"):
             st.json(m.__dict__ if not hasattr(m, 'dict') else m.dict())
@@ -604,14 +625,14 @@ def render_run_detail(home: str, run_id: str):
         v_color = "green" if verdict == "PASS" else "red" if verdict == "FAIL" else "orange"
         st.subheader(f"Verdict: :{v_color}[{verdict}]")
     
-    t1, t2, t3 = st.tabs(["🛡️ Gates & Jury", "📊 Scorecard", "📜 Telemetry & Audit"])
+    t1, t2, t3, t4 = st.tabs(["🛡️ Gates & Jury", "📊 Scorecard", "📜 Telemetry & Audit", "💰 Trade Audit"])
     
     with t1:
         g_path = os.path.join(run_dir, "gates.json")
         if os.path.exists(g_path):
             with open(g_path) as f: gates = json.load(f)
             for g in gates:
-                icon = "✅" if g.get("allow") else "❌"
+                icon = "✅" if g.get("status") == "PASS" else "❌" if g.get("status") == "FAIL" else "⚠️"
                 st.write(f"{icon} **{g.get('name')}**: {g.get('reason','')}")
         else:
             st.info("Gates verisi yok.")
@@ -634,7 +655,7 @@ def render_run_detail(home: str, run_id: str):
         # Last 50 events
         ev_path = os.path.join(run_dir, "events.ndjson")
         if os.path.exists(ev_path):
-            with open(ev_path) as f:
+            with open(ev_path, "r", encoding="utf-8") as f:
                 lines = f.readlines()[-50:]
             for line in reversed(lines):
                 try:
@@ -643,6 +664,23 @@ def render_run_detail(home: str, run_id: str):
                 except: pass
         else:
             st.info("Events bulunamadı.")
+
+    with t4:
+        # MXI-1401: Trade Audit Tab
+        sc_path = os.path.join(run_dir, "scorecard.json")
+        if os.path.exists(sc_path):
+            with open(sc_path) as f: sc = json.load(f)
+            audit = sc.get("trade_audit_v2", [])
+            if audit:
+                st.subheader("🏁 Trade Execution Audit (V2)")
+                audit_df = pd.DataFrame(audit)
+                # Reorder/Rename columns for better UX
+                cols = ["ts", "side", "qty", "limit_price", "fill_price", "fee", "slippage", "notional"]
+                st.dataframe(audit_df[cols] if all(c in audit_df.columns for c in cols) else audit_df, use_container_width=True)
+            else:
+                st.info("İşlem kaydı (audit) bulunamadı.")
+        else:
+            st.info("Scorecard yok.")
 
 def render_registry(home: str):
     """Render Registry category."""

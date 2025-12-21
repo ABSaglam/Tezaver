@@ -3,6 +3,7 @@ import sys
 import os
 import json
 import time
+from datetime import datetime
 
 from tezaver.matrix.core.cycle_engine import run_cycle
 from tezaver.matrix.adapters.candidate_store_fs import FileCandidateStore
@@ -113,7 +114,7 @@ def run_sniper_stub(home: str, candidate_id: str) -> str:
     from tezaver.matrix.core.gates import RiskGateConfig, GovernanceConfig
     from pathlib import Path
 
-    registry = CandidateRegistry()
+    registry = CandidateRegistry(registry_path=os.path.join(home, "candidates_registry.jsonl"))
     cand_data = registry.get(candidate_id)
     if not cand_data:
         raise ValueError(f"Candidate not found in registry: {candidate_id}")
@@ -158,7 +159,7 @@ def run_sniper_stub(home: str, candidate_id: str) -> str:
         run_id=run_id
     )
     
-    # 4. Finalize & Register (MXI-1160)
+    # 4. Finalize & Register (MXI-1160, MXI-1300)
     # Re-load judge/scorecard results for registry
     from tezaver.matrix.core.jury import compute_scorecard
     scorecard = compute_scorecard(home, run_id)
@@ -177,10 +178,35 @@ def run_sniper_stub(home: str, candidate_id: str) -> str:
         scorecard=scorecard,
         verdict=verdict
     )
+
+    # MXI-1300: Lifecycle Status Update Hook
+    verdict_to_status = {
+        "PASS": "APPROVED_FOR_WAR",
+        "IMPROVE": "NEEDS_PATCH",
+        "FAIL": "REJECTED"
+    }
+    new_status = verdict_to_status.get(verdict)
+    if new_status:
+        registry.update_status(candidate_id, new_status)
+        
+        # Emit Status Updated Telemetry Event
+        status_event = {
+            "ts": datetime.now().isoformat(),
+            "event_type": "CANDIDATE_STATUS_UPDATED",
+            "run_id": run_id,
+            "payload": {
+                "candidate_id": candidate_id,
+                "old_status": cand_data.get("status"),
+                "new_status": new_status,
+                "verdict": verdict
+            }
+        }
+        events_path = Path(home) / "runs" / run_id / "events.ndjson"
+        with open(events_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(status_event) + "\n")
     
-    # MXI-1150: Telemetry copy
+    # MXI-1150: Telemetry copy (refresh it after adding status update)
     import shutil
-    events_path = Path(home) / "runs" / run_id / "events.ndjson"
     telemetry_path = Path(home) / "runs" / run_id / "telemetry.ndjson"
     if events_path.exists():
         shutil.copy(events_path, telemetry_path)

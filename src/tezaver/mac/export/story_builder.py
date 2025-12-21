@@ -67,11 +67,22 @@ class RallyStoryBuilder:
         p_stat = self._match_pattern_stats(trigger_info['trigger'], pattern_stats)
         family = self._match_family(event_row.get('rally_bucket'), families)
         
+        # MACX-2300: Pre-Pattern Fill (Deterministic)
+        pre_pattern = self._build_pre_pattern(
+            event_row=event_row,
+            trigger_info=trigger_info,
+            regime=regime,
+            shock=shock,
+            levels_data=levels_data,
+            sl_data=sl_data
+        )
+
         # Story v1.1.2
         story = {
             "version": "1.1.2",
             "story_id": f"{symbol}_{event_row.get('event_tf', '15m')}_{event_time_utc.strftime('%Y%m%d_%H%M')}",
             "symbol": symbol,
+            "pre_pattern": pre_pattern, # MACX-2300
             "context": {
                 "timeframe": event_row.get('event_tf', '15m'),
                 "regime": regime.get('regime'),
@@ -302,6 +313,68 @@ class RallyStoryBuilder:
             "support_strength": supports[0]['strength_score'] if supports else None,
             "nearest_resistance": resistances[0]['level_price'] if resistances else None,
             "resistance_strength": resistances[0]['strength_score'] if resistances else None
+        }
+
+    def _build_pre_pattern(self, event_row: pd.Series, trigger_info: Dict, regime: Dict, shock: Dict, levels_data: Dict, sl_data: Dict) -> Dict:
+        """MACX-2300: Orchestrates deterministic semantic layer generation."""
+        return {
+            "rhythm": self._build_rhythm(event_row),
+            "spirit": self._build_spirit(event_row, trigger_info, regime, shock),
+            "meaning": self._build_meaning(trigger_info, regime, levels_data, sl_data)
+        }
+
+    def _build_rhythm(self, event_row: pd.Series) -> Dict:
+        """MACX-2301: Temporal and phase semantics."""
+        bars_total = int(event_row.get('bars_total', 0))
+        bars_to_peak = int(event_row.get('bars_to_peak', 0))
+        
+        # Deterministic summary
+        speed = "hızlı" if bars_to_peak < 10 else "istikrarlı" if bars_to_peak < 30 else "yavaş"
+        summary = f"Bu ralli {bars_total} barlık bir pencerede, {bars_to_peak} barda zirveye ulaşan {speed} bir ritim sergiledi."
+        
+        return {
+            "summary_tr": summary,
+            "phase_sequence": ["Hazırlık", "Kıvılcım", "Kopuş", "Nefes", "Devam"], # Default for V1
+            "tempo": {
+                "summary_tr": f"Hız: {speed}",
+                "bars_total": bars_total,
+                "bars_to_peak": bars_to_peak
+            }
+        }
+
+    def _build_spirit(self, event_row: pd.Series, trigger_info: Dict, regime: Dict, shock: Dict) -> Dict:
+        """MACX-2302: Market regime and 'spirit' tags."""
+        regime_val = regime.get('regime', 'UNKNOWN')
+        tags = ["samimiyet", "ahenk"]
+        if regime_val == "TREND":
+            tags.append("güçlü_akış")
+        elif regime_val == "RANGE":
+            tags.append("tepki_alımı")
+            
+        shock_freq = shock.get('shock_freq', 0)
+        risk_level = "düşük" if shock_freq < 0.05 else "orta" if shock_freq < 0.15 else "yüksek"
+        
+        summary = f"Piyasa şu an {regime_val} rejiminde. {risk_level} şok riski barındıran bir spirit izleniyor."
+        
+        return {
+            "summary_tr": summary,
+            "tags": tags,
+            "regime_hint_tr": f"Rejim: {regime_val}, Şok Riski: {risk_level}"
+        }
+
+    def _build_meaning(self, trigger_info: Dict, regime: Dict, levels_data: Dict, sl_data: Dict) -> Dict:
+        """MACX-2303: Thesis and Invalidation rules."""
+        trigger = trigger_info.get('trigger', 'unknown')
+        support = levels_data.get('nearest_support', 'bulunamadı')
+        sl_pct = sl_data.get('stop_loss_pct', 0)
+        
+        thesis = f"Tetikleyici={trigger} ve rejim={regime.get('regime')} desteğiyle ralli devamı beklenir."
+        invalidation = f"Ana destek ({support}) altı kapanış veya %{sl_pct:.2f} stop seviyesinin kırılması hikâyeyi bozar."
+        
+        return {
+            "summary_tr": "Stratejik işlem tezi ve risk limitleri.",
+            "thesis_tr": thesis,
+            "invalidation_tr": invalidation
         }
 
     def _match_pattern_stats(self, trigger: str, pattern_stats: List[Dict]) -> Optional[Dict]:
