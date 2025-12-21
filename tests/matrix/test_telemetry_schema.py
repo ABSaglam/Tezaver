@@ -1,6 +1,8 @@
+import pytest
 from tezaver.matrix.core.telemetry import validate_event_dict, validate_ndjson_lines
 import json
 
+@pytest.mark.core
 def test_telemetry_valid():
     e = {
         "ts": 123, "event_type": "TEST", "run_id": "r1", 

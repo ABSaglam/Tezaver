@@ -68,6 +68,10 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short"
+markers = [
+    "core: blocking tests (must be 100% green)",
+    "legacy: migrated later (fixtures/api mismatch)",
+]
 
 [tool.black]
 line-length = 100

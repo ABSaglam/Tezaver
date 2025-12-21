@@ -3,7 +3,9 @@ import json
 import subprocess
 import sys
 import shutil
+import pytest
 
+@pytest.mark.core
 def test_run_war_cli(tmp_path):
     home = tmp_path
     c_dir = home / "candidates"

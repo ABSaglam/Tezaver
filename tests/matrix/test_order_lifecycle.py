@@ -3,6 +3,7 @@ from tezaver.matrix.core.order_lifecycle import (
 )
 import pytest
 
+@pytest.mark.core
 def test_lifecycle_happy_path():
     tracker = OrderLifecycleTracker()
     o = Order("1", "BTC", "BUY", 1.0)

@@ -3,6 +3,7 @@ import json
 import pytest
 from tezaver.matrix.core.release_gate import evaluate_release_gate
 
+@pytest.mark.core
 def test_release_gate_pass(tmp_path):
     home = str(tmp_path)
     cid = "C_PASS"

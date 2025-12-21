@@ -3,6 +3,7 @@ MX-3000: LIVE v1 Integration Tests
 Tests for LivePlanner, LiveEngine, Reconciliation, IncidentBundle.
 """
 import sys
+import pytest
 sys.path.append("src")
 
 
@@ -110,6 +111,7 @@ def test_incident_bundle():
     print(f"SUCCESS: IncidentBundle creates evidence bundle at {incident_dir}")
 
 
+@pytest.mark.core
 def test_live_engine_with_fake_feed():
     """LiveEngine should run with fake bar feed."""
     from tezaver.matrix.apps.live_planner import LivePlanner, LivePlan, LiveCell, LiveDiagnostics

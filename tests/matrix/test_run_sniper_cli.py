@@ -2,7 +2,9 @@ import os
 import json
 import subprocess
 import sys
+import pytest
 
+@pytest.mark.core
 def test_run_sniper_cli(tmp_path):
     home = tmp_path
     

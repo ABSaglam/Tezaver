@@ -3,6 +3,7 @@ import json
 import pytest
 from tezaver.matrix.apps.run_sniper import run_sniper_once
 
+@pytest.mark.core
 def test_run_sniper_uses_config_signature(tmp_path):
     home = str(tmp_path)
     os.environ["TEZAVER_MATRIX_HOME"] = home
