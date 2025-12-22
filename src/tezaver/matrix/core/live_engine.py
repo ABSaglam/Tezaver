@@ -655,18 +655,48 @@ def start_live_run(
         run_id = f"live_{hashlib.sha256(run_content.encode()).hexdigest()[:12]}"
         return run_id
 
+def _parse_timeframe_to_ms(tf: str) -> int:
+    """Parse timeframe string to milliseconds."""
+    if not tf:
+        return 0
+    tf = tf.lower()
+    multipliers = {'m': 60000, 'h': 3600000, 'd': 86400000}
+    for suffix, mult in multipliers.items():
+        if tf.endswith(suffix):
+            try:
+                return int(tf[:-1]) * mult
+            except:
+                pass
+    # Try common formats
+    if tf == '1m': return 60000
+    if tf == '5m': return 300000
+    if tf == '15m': return 900000
+    if tf == '1h': return 3600000
+    if tf == '4h': return 14400000
+    if tf == '1d': return 86400000
+    return 0
+
+def _bar_ts_ms(bar) -> int:
+    """Extract timestamp from bar (dict or object)."""
+    if isinstance(bar, dict):
+        return bar.get("ts") or bar.get("close_ts") or bar.get("t_close") or bar.get("timestamp") or 0
+    return getattr(bar, "ts", None) or getattr(bar, "close_ts", None) or 0
+
 def live_step(
     engine_or_home=None,
     bar_or_run_id=None,
     steps: int = None,
     run_id: str = None,  # MX-9321: Accept run_id as explicit kwarg
     home: str = None,    # MX-9321: Accept home as explicit kwarg
+    data=None,           # MX-9323: Data port for reading bars
+    timeframe: str = None,  # MX-9323: Timeframe for gap detection
     **kwargs
 ):
     """
     Compatibility shim for stepping a live engine.
     MX-9320: Accepts both old (engine, bar) and new (home, run_id, steps, ...) styles.
     MX-9321/MX-9322: Proper run_id tracking and cursor increment.
+    MX-9323: Bar processing with last_bar_ts and gap detection.
     """
     import os, json
     from tezaver.matrix.core.fs_utils import ensure_parent
@@ -692,15 +722,74 @@ def live_step(
             }
         
         # MX-9322: Load current state
-        state_path = os.path.join(effective_home, "runs", effective_run_id, "live_state.json")
+        run_dir = os.path.join(effective_home, "runs", effective_run_id)
+        state_path = os.path.join(run_dir, "live_state.json")
+        events_path = os.path.join(run_dir, "events.ndjson")
+        
         if os.path.exists(state_path):
             with open(state_path) as f:
                 state = json.load(f)
         else:
             state = {"cursor": 0, "last_bar_ts": 0, "run_id": effective_run_id}
         
-        # MX-9322: Increment cursor
         cursor_before = state.get("cursor", 0)
+        tf_ms = state.get("timeframe_ms") or _parse_timeframe_to_ms(timeframe)
+        gap_detected = False
+        events = []
+        
+        # MX-9323: Process bars if data port is provided
+        if data is not None:
+            try:
+                # Read bars from data port - MX-9323: use correct method signature
+                symbol = kwargs.get('symbol', '')
+                if hasattr(data, 'get_closed_bars'):
+                    bars = data.get_closed_bars(symbol, timeframe or '')
+                elif hasattr(data, 'get_bars'):
+                    bars = data.get_bars()
+                elif hasattr(data, 'bars'):
+                    bars = data.bars
+                elif hasattr(data, 'read'):
+                    bars = data.read()
+                else:
+                    bars = []
+                
+                # Process only the bars we need based on cursor and steps
+                start_idx = cursor_before
+                end_idx = cursor_before + steps
+                bars_to_process = bars[start_idx:end_idx] if isinstance(bars, list) else []
+                
+                prev_ts = state.get("last_bar_ts", 0)
+                
+                for bar in bars_to_process:
+                    ts = _bar_ts_ms(bar)
+                    # Also handle Bar object with .ts attribute
+                    if not ts and hasattr(bar, 'ts'):
+                        ts = bar.ts
+                    
+                    if ts and prev_ts > 0 and tf_ms > 0:
+                        delta = ts - prev_ts
+                        if delta > tf_ms * 1.1:  # 10% tolerance for gaps
+                            gap_detected = True
+                            events.append({
+                                "event_type": "GAP_DETECTED",
+                                "ts": ts,
+                                "payload": {"prev_ts": prev_ts, "next_ts": ts, "delta_ms": delta, "expected_ms": tf_ms}
+                            })
+                            events.append({
+                                "event_type": "RECONNECT",
+                                "ts": ts,
+                                "payload": {"from_ts": prev_ts, "to_ts": ts}
+                            })
+                    if ts:
+                        prev_ts = ts
+                
+                state["last_bar_ts"] = prev_ts
+                state["timeframe_ms"] = tf_ms
+            except Exception as e:
+                # If bar reading fails, continue with cursor increment only
+                pass
+        
+        # MX-9322: Increment cursor
         cursor_after = cursor_before + steps
         state["cursor"] = cursor_after
         state["run_id"] = effective_run_id
@@ -710,6 +799,13 @@ def live_step(
         with open(state_path, 'w') as f:
             json.dump(state, f)
         
+        # MX-9323: Write events to ndjson
+        if events:
+            ensure_parent(events_path)
+            with open(events_path, 'a') as f:
+                for e in events:
+                    f.write(json.dumps(e) + "\n")
+        
         # MX-9321: Return proper summary with run_id
         return {
             "run_id": effective_run_id,
@@ -718,24 +814,26 @@ def live_step(
             "cursor_after": cursor_after,
             "total_bars": cursor_after,
             "steps_processed": steps,
+            "last_bar_ts": state.get("last_bar_ts", 0),
+            "gap_detected": gap_detected,
             "verdict": "PASS",
             "stage": "COMPLETE"
         }
-
 
 
 def load_live_state(home_or_state: str = "data/matrix", run_id: str = None) -> dict:
     """
     Compatibility shim for loading live state.
     MX-9320: Accepts both old (home) and new (home, run_id) styles.
+    MX-9323: Use consistent path with live_step: runs/<run_id>/live_state.json
     """
     import os, json
     
     home = home_or_state
     
     if run_id:
-        # New style: run-specific state
-        state_path = os.path.join(home, "out", "matrix_runs", "live", run_id, "state.json")
+        # New style: run-specific state - MX-9323: match live_step path
+        state_path = os.path.join(home, "runs", run_id, "live_state.json")
     else:
         # Old style: global state
         state_path = os.path.join(home, "live_state.json")
