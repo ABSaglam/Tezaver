@@ -21,6 +21,7 @@ def normalize_event(
     
     event = {
         "event_type": final_type,
+        "kind": final_type,  # MX-9340: Backward compat for tests reading e.get("kind")
         "ts": datetime.now().isoformat(),
         "run_id": run_id,
         "engine_version": f"v{__version__}",
