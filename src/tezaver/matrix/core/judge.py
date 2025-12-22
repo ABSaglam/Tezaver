@@ -160,7 +160,10 @@ def judge_run(home: str, run_id: str, scorecard: Dict) -> Dict:
     }
     
     # MXI-1150: Generate report.json
+    # MX-9300: Ensure parent directory exists before writing
+    from tezaver.matrix.core.fs_utils import ensure_parent
     report_path = run_root / "report.json"
+    ensure_parent(report_path)
     with open(report_path, "w", encoding="utf-8") as f:
 
         json.dump(result, f, indent=2)
