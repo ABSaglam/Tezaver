@@ -15,6 +15,7 @@ import streamlit as st
 from datetime import timedelta
 
 from tezaver.core import coin_cell_paths
+from tezaver.core.dataframe_utils import ensure_open_time, safe_merge_features
 
 
 @dataclass
@@ -114,6 +115,14 @@ def load_history_data(symbol: str, timeframe: str) -> Optional[pd.DataFrame]:
             df['open_time'] = pd.to_datetime(df['datetime'])
         elif 'timestamp' in df.columns:
             df['open_time'] = pd.to_datetime(df['timestamp'], unit='ms')
+        elif 'ts' in df.columns:
+            df['open_time'] = pd.to_datetime(df['ts'], unit='s')
+
+        # Ensure volume column exists
+        if 'vol' in df.columns:
+            df = df.rename(columns={'vol': 'volume'})
+        elif 'Volume' in df.columns:
+            df = df.rename(columns={'Volume': 'volume'})
         
         return df
     except Exception as e:
@@ -538,6 +547,7 @@ def render_rally_event_chart(
     bars_to_peak: int,
     window_before: int = 30,
     window_after: int = 20,
+    debug: bool = False,
 ) -> None:
     """
     Renders candlestick chart around a rally event with event highlight and bars_to_peak shaded region.
@@ -558,31 +568,28 @@ def render_rally_event_chart(
         
         if df_history is None or df_history.empty:
             st.warning(f"{symbol} için {timeframe} tarihsel veri bulunamadı.")
+            if debug:
+                 st.error("Debug: df_history is None or empty. Check data loader.")
             return
+
+        # FORCE RENDER / DEBUG INFO
+        if debug:
+             st.markdown(f"**Debug Mode ({timeframe})**")
+             st.write(f"Bars: {len(df_history)} rows")
+             st.write(f"Event Time: {event_time}")
+             st.write(df_history.head())
         
         # Merge features if available
         if df_features is not None and not df_features.empty:
-            # Robust timezone normalization
-            try:
-                # Ensure datetime and remove timezone for history
-                df_history['open_time'] = pd.to_datetime(df_history['open_time'], errors='coerce')
-                if df_history['open_time'].dt.tz is not None:
-                    df_history['open_time'] = df_history['open_time'].dt.tz_localize(None)
-                
-                # Ensure datetime and remove timezone for features
-                df_features['open_time'] = pd.to_datetime(df_features['open_time'], errors='coerce')
-                if df_features['open_time'].dt.tz is not None:
-                    df_features['open_time'] = df_features['open_time'].dt.tz_localize(None)
-                    
-                df = pd.merge(
-                    df_history,
-                    df_features[['open_time', 'rsi', 'rsi_ema']],
-                    on='open_time',
-                    how='left'
-                )
-            except Exception as e:
-                st.warning(f"Feature merge failed (gösterim devam ediyor): {e}")
-                df = df_history
+            df, diag = safe_merge_features(df_history, df_features)
+            
+            # Show debug info only if issues or debug mode
+            if diag['mode'] == 'fallback':
+                st.warning(f"Feature merge failed: {diag['msg']} (Bars={diag['bars_len']}, Feats={diag['feats_len']}) - Rendering price only.")
+            elif diag['mode'] == 'asof':
+                # Optional info
+                # st.info(f"Features merged using ASOF (Exact match failed). Matches: {diag['asof_matches']}")
+                pass
         else:
             df = df_history
         
@@ -697,19 +704,20 @@ def render_rally_event_chart(
         )
         
         # Volume bars (Row 2)
-        colors = [DEFAULT_INDICATOR_SETTINGS['volume']['up_color'] if close >= open else DEFAULT_INDICATOR_SETTINGS['volume']['down_color'] 
-                  for close, open in zip(df_window['close'], df_window['open'])]
-        
-        fig.add_trace(
-            go.Bar(
-                x=df_window['open_time'],
-                y=df_window['volume'],
-                name="Volume",
-                marker_color=colors,
-                opacity=0.5
-            ),
-            row=2, col=1
-        )
+        if 'volume' in df_window.columns:
+            colors = [DEFAULT_INDICATOR_SETTINGS['volume']['up_color'] if close >= open else DEFAULT_INDICATOR_SETTINGS['volume']['down_color'] 
+                      for close, open in zip(df_window['close'], df_window['open'])]
+            
+            fig.add_trace(
+                go.Bar(
+                    x=df_window['open_time'],
+                    y=df_window['volume'],
+                    name="Volume",
+                    marker_color=colors,
+                    opacity=0.5
+                ),
+                row=2, col=1
+            )
         
         # Event vertical line - use explicit integer for indexing
         event_window_idx = int(event_idx - wide_start_idx)
@@ -1608,11 +1616,13 @@ def render_universal_chart(
         ), row=1, col=1)
 
         # 2. Volume
-        colors = ['#089981' if c >= o else '#F23645' for c, o in zip(df_window['close'], df_window['open'])]
-        fig.add_trace(go.Bar(
-            x=df_window['open_time'], y=df_window['volume'],
-            name="Volume", marker_color=colors, opacity=0.5
-        ), row=2, col=1)
+        if 'volume' in df_window.columns:
+            colors = ['#089981' if c >= o else '#F23645' for c, o in zip(df_window['close'], df_window['open'])]
+            fig.add_trace(go.Bar(
+                x=df_window['open_time'], y=df_window['volume'],
+                name="Volume", marker_color=colors, opacity=0.5
+            ), row=2, col=1)
+
 
         # 3. MACD
         if 'macd' in df_window.columns:
@@ -1666,6 +1676,9 @@ def render_universal_chart(
              fig.update_xaxes(range=[initial_start, initial_end], row=4, col=1)
 
         st.plotly_chart(fig, use_container_width=True)
+        
+        if debug:
+            st.success("Chart rendered (st.plotly_chart called)")
 
     except Exception as e:
         st.error(f"Grafik hatası: {e}")

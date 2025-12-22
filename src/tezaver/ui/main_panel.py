@@ -13,7 +13,7 @@ from datetime import datetime
 project_root = Path(__file__).resolve().parents[3]
 src_path = project_root / "src"
 if str(src_path) not in sys.path:
-    sys.path.append(str(src_path))
+    sys.path.insert(0, str(src_path))
 
 from tezaver.core import state_store
 from tezaver.core import system_state
@@ -26,6 +26,7 @@ from tezaver.ui.rally_radar_tab import render_rally_radar_tab
 from tezaver.ui.rally_quality_tab import render_rally_quality_tab
 from tezaver.ui.rally_families_tab import render_rally_families_tab
 from tezaver.ui.kartal_goz_tab import render_kartal_goz_tab
+from tezaver.ui.ony_tab import render_ony_page
 # LEGACY_SIM_LAB_DISABLED: eski Coin/Sim Lab UI tamamen devre dışı
 # from tezaver.ui.sim_lab_tab import render_sim_lab_tab
 from tezaver.ui.risk_cards import render_risk_tab
@@ -388,7 +389,7 @@ def render_coin_detail_page(symbol: str):
         with sub_tabs[0]:
             render_kartal_goz_tab(symbol)
         with sub_tabs[1]:
-            render_fast15_lab_tab(symbol)
+            render_time_labs_tab(symbol, "15m")
         with sub_tabs[2]:
             render_time_labs_tab(symbol, "1h")
         with sub_tabs[3]:
@@ -636,6 +637,7 @@ def main():
                 "🏠 Ana Sayfa", 
                 "📊 Piyasa Özeti", 
                 "👁️ Insight Panel", 
+                "🎯 ONY Stüdyo",
                 "💾 Veri Merkezi", 
                 "⚙️ Sistem Paneli"
             ]
@@ -694,6 +696,7 @@ def main():
             if current_nav == "🏠 Ana Sayfa": render_home_page()
             elif current_nav == "📊 Piyasa Özeti": render_market_summary_page()
             elif current_nav == "👁️ Insight Panel": render_insight_tab()
+            elif current_nav == "🎯 ONY Stüdyo": render_ony_page()
             elif current_nav == "💾 Veri Merkezi": render_data_health_page()
             elif current_nav == "⚙️ Sistem Paneli": 
                 from tezaver.ui.subpages.system_dashboard import render_system_dashboard

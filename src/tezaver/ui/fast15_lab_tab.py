@@ -132,6 +132,8 @@ def render_fast15_lab_tab(symbol: str) -> None:
     from tezaver.core.config import format_date_tr, to_turkey_time
     from tezaver.ui.chart_area import render_rally_event_chart
     
+    RENDER_PATH = "fast15_lab_tab:render_fast15_lab_tab -> chart_area:render_rally_event_chart"
+    
     # Determine label
     tf_label = "15 Dakika"
     timeframe = "15m"
@@ -241,6 +243,11 @@ def render_fast15_lab_tab(symbol: str) -> None:
     
     with col_snap:
         st.markdown("#### Bir Olay Seçin")
+        
+        # Debug Toggle
+        debug_mode = st.checkbox("Debug (Rally 15m)", key=f"f15_debug_{symbol}")
+        if debug_mode:
+            st.caption(f"Path: {RENDER_PATH}")
         
         # Sort by most recent
         display_df = filtered_df.sort_values("event_time", ascending=False).head(50)
@@ -368,6 +375,7 @@ def render_fast15_lab_tab(symbol: str) -> None:
                 timeframe="15m",
                 event_time=sel_dt_tz,
                 bars_to_peak=int(sel_event['bars_to_peak']),
+                debug=debug_mode,
             )
         except Exception as e:
             st.error(f"Grafik oluşturulurken hata: {e}")
