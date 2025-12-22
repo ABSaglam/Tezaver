@@ -160,8 +160,6 @@ def render_matrix_v4():
         return "(Seçim yok)"
     
     # ===== SIDEBAR: 9 Main Headings =====
-    st.sidebar.markdown("### Ana Menü")
-    
     for item in MAIN_HEADINGS:
         main_key = item[0]
         main_label = item[1]

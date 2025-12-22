@@ -49,3 +49,11 @@ backups/
 *.zip
 !data/bulut_rules/
 .tezaver_matrix/
+
+# Artifacts (runtime outputs)
+out/matrix_runs/
+out/matrix_runs/**
+brain/
+brain/**
+.tezaver_bus/
+.tezaver_bus/**
