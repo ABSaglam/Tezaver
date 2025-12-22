@@ -81,30 +81,32 @@ def test_registry_upsert():
         registry = CandidateRegistry(registry_path=str(reg_path))
         
         # First upsert - should create
+        # MX-9310: bundle_id is primary key for get/upsert
         registry.upsert(
-            candidate_id="test_cid",
+            bundle_id="bundle1",
             symbol="BTCUSDT",
             tf="15m",
-            bundle_id="bundle1",
             bundle_path="/path/to/bundle",
-            metrics={"trigger_resolve_rate": 0.9, "join_coverage": 0.8}
+            metrics={"trigger_resolve_rate": 0.9, "join_coverage": 0.8},
+            candidate_id="test_cid"
         )
         
-        cand = registry.get("test_cid")
+        # MX-9310: get() uses bundle_id as key
+        cand = registry.get("bundle1")
         assert cand["status"] == "NEW"
         assert cand["resolve_rate"] == 0.9
         
-        # Second upsert - should update
+        # Second upsert - should update (same bundle_id)
         registry.upsert(
-            candidate_id="test_cid",
+            bundle_id="bundle1",
             symbol="BTCUSDT",
             tf="15m",
-            bundle_id="bundle1_updated",
             bundle_path="/path/to/bundle_updated",
-            metrics={"trigger_resolve_rate": 0.95, "join_coverage": 0.85}
+            metrics={"trigger_resolve_rate": 0.95, "join_coverage": 0.85},
+            candidate_id="test_cid"
         )
         
-        cand = registry.get("test_cid")
+        cand = registry.get("bundle1")
         assert cand["resolve_rate"] == 0.95
         assert cand["status"] == "NEW"  # Status preserved
         print("SUCCESS: Registry upsert works correctly")

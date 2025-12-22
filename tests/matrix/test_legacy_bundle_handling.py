@@ -59,7 +59,8 @@ def test_legacy_bundle_no_crash():
             detected_version="0.0.0"
         )
         
-        cand = registry.get("test_legacy")
+        # MX-9310: get() uses bundle_id as key, not candidate_id
+        cand = registry.get("legacy_test")
         assert cand["status"] == "FAILED_IMPORT"
         assert cand["reason"] == "UNSUPPORTED_BUNDLE_VERSION"
         print("SUCCESS: Legacy bundle registered as FAILED_IMPORT with reason")

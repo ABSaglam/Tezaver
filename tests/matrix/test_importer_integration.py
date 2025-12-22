@@ -45,9 +45,10 @@ def test_importer_and_registry_flow():
     assert entry["status"] == "NEW"
     
     # 4. Persistence Test
+    # MX-9310: get() uses bundle_id as key
     registry2 = CandidateRegistry(registry_path=test_registry_path)
     assert len(registry2.list_all()) == 1
-    assert registry2.get(cid)["symbol"] == manifest.symbol
+    assert registry2.get(manifest.bundle_id)["symbol"] == manifest.symbol
     
     print("Integration test PASSED")
 
