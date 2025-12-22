@@ -38,6 +38,45 @@ def evaluate_release_gate(home: str, candidate_id: str, active_stage: Optional[s
             else:
                 warnings.append(code)
 
+    # --- Helper: Find Runs (MX-9350: moved before SafetyRegistry block) ---
+    def find_runs(profile: str) -> List[Dict]:
+        matches = []
+        base_dirs = [
+            os.path.join(home, "runs"),
+            os.path.join(home, "out", "matrix_runs", profile.lower())
+        ]
+        
+        for runs_dir in base_dirs:
+            if not os.path.exists(runs_dir): continue
+            for rid in os.listdir(runs_dir):
+                rdir = os.path.join(runs_dir, rid)
+                if not os.path.isdir(rdir): continue
+                m_path = os.path.join(rdir, "meta.json")
+                j_path = os.path.join(rdir, "judge.json")
+                report_path = os.path.join(rdir, "report.json")
+                
+                meta = {}
+                if os.path.exists(m_path):
+                    with open(m_path) as f: meta = json.load(f)
+                elif os.path.exists(report_path):
+                    with open(report_path) as f: meta = json.load(f)
+                
+                if meta:
+                    if meta.get("run_profile", "").upper() == profile.upper() or \
+                       profile.lower() in rdir.lower():
+                        
+                        found_id = meta.get("candidate", {}).get("candidate_id") or \
+                                   meta.get("plan", {}).get("candidate_id")
+                                   
+                        if found_id == candidate_id:
+                            judge = {}
+                            if os.path.exists(j_path):
+                                with open(j_path) as f: judge = json.load(f)
+                            elif meta.get("verdict"):
+                                judge = {"overall": meta.get("verdict")}
+                                
+                            matches.append({"meta": meta, "judge": judge, "run_id": rid})
+        return matches
 
     # RG-00: Safety Registry Check (MX-5260 integration)
     try:
@@ -71,50 +110,6 @@ def evaluate_release_gate(home: str, candidate_id: str, active_stage: Optional[s
                 add_check(p["mx"], p["name"], True, f"Safety Protocol {p['mx']} is GREEN")
     except Exception as e:
         add_check("SR-FAIL", "Safety Registry Connection", False, str(e), "CRITICAL")
-
-
-    # --- Helper: Find Runs ---
-    def find_runs(profile: str) -> List[Dict]:
-        matches = []
-        # Support both 'runs' and 'out/matrix_runs/<profile>'
-        base_dirs = [
-            os.path.join(home, "runs"),
-            os.path.join(home, "out", "matrix_runs", profile.lower())
-        ]
-        
-        for runs_dir in base_dirs:
-            if not os.path.exists(runs_dir): continue
-            for rid in os.listdir(runs_dir):
-                rdir = os.path.join(runs_dir, rid)
-                if not os.path.isdir(rdir): continue
-                m_path = os.path.join(rdir, "meta.json")
-                j_path = os.path.join(rdir, "judge.json")
-                report_path = os.path.join(rdir, "report.json")
-                
-                # Try meta.json or report.json
-                meta = {}
-                if os.path.exists(m_path):
-                    with open(m_path) as f: meta = json.load(f)
-                elif os.path.exists(report_path):
-                    with open(report_path) as f: meta = json.load(f)
-                
-                if meta:
-                    # Check profile (case insensitive)
-                    if meta.get("run_profile", "").upper() == profile.upper() or \
-                       profile.lower() in rdir.lower():
-                        
-                        found_id = meta.get("candidate", {}).get("candidate_id") or \
-                                   meta.get("plan", {}).get("candidate_id")
-                                   
-                        if found_id == candidate_id:
-                            judge = {}
-                            if os.path.exists(j_path):
-                                with open(j_path) as f: judge = json.load(f)
-                            elif meta.get("verdict"): # WarEngine v2 style
-                                judge = {"overall": meta.get("verdict")}
-                                
-                            matches.append({"meta": meta, "judge": judge, "run_id": rid})
-        return matches
 
     # RG-01: SNIPER PASS
     sniper_runs = find_runs("SNIPER")
