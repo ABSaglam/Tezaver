@@ -35,6 +35,14 @@ class SniperAnnotation:
     # V2 Workflow fields
     status: SniperStatus = "PENDING"
     label: SniperLabel = "UNCERTAIN"
+    
+    # Normalize v1 fields (backward compatible)
+    normalized_entry_bar_offset: Optional[int] = None
+    normalized_entry_ts: Optional[str] = None
+    snap_reason: Optional[str] = None
+    snap_distance_bars: Optional[int] = None
+    snap_confidence: Optional[float] = None
+    snap_algo_version: Optional[str] = None
 
     @staticmethod
     def from_dict(data: Dict[str, Any]) -> "SniperAnnotation":
@@ -51,6 +59,13 @@ class SniperAnnotation:
             # V2 fields with backward compatibility defaults
             status=data.get("status", "PENDING"),
             label=data.get("label", "UNCERTAIN"),
+            # Normalize v1 fields (backward compatible: None if missing)
+            normalized_entry_bar_offset=data.get("normalized_entry_bar_offset"),
+            normalized_entry_ts=data.get("normalized_entry_ts"),
+            snap_reason=data.get("snap_reason"),
+            snap_distance_bars=data.get("snap_distance_bars"),
+            snap_confidence=data.get("snap_confidence"),
+            snap_algo_version=data.get("snap_algo_version"),
         )
 
     def to_dict(self) -> Dict[str, Any]:

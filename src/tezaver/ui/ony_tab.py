@@ -22,6 +22,7 @@ from tezaver.sniper.sniper_annotations import (
 )
 from tezaver.ui.chart_area import render_sniper_studio_chart
 from tezaver.core import coin_cell_paths
+from tezaver.rally.normalize_engine import normalize_entry, NormalizeResult
 
 
 # =============================================================================
@@ -138,6 +139,28 @@ def _get_available_symbols() -> List[str]:
         return sorted(symbols) if symbols else ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
     except:
         return ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
+
+
+def apply_normalize_to_annotation(annotation: SniperAnnotation, norm_result: NormalizeResult) -> SniperAnnotation:
+    """
+    Apply normalize result to annotation.
+    
+    Args:
+        annotation: SniperAnnotation instance
+        norm_result: NormalizeResult from normalize_entry()
+    
+    Returns:
+        Updated annotation
+    """
+    annotation.entry_bar_offset = norm_result.entry_offset_out
+    annotation.normalized_entry_bar_offset = norm_result.entry_offset_out
+    annotation.normalized_entry_ts = norm_result.entry_ts_iso
+    annotation.snap_reason = norm_result.snap_reason
+    annotation.snap_distance_bars = norm_result.snap_distance_bars
+    annotation.snap_confidence = norm_result.snap_confidence
+    annotation.snap_algo_version = norm_result.snap_algo_version
+    
+    return annotation
 
 
 # =============================================================================
@@ -290,6 +313,137 @@ def render_ony_studio():
             )
         else:
             exit_offset = None
+    
+    # --- NORMALIZE ENTRY ---
+    st.markdown("---")
+    st.markdown("### 🧲 Normalize Entry (Auto-Snap)")
+    
+    col_norm_btn, col_apply_reset = st.columns([1, 1])
+    
+    with col_norm_btn:
+        if st.button("🧲 Normalize (Entry)", key="ony_normalize_btn", use_container_width=True):
+            try:
+                # Parse event_time
+                event_time_ts = pd.to_datetime(event_time)
+                
+                # Call normalize_entry
+                norm_result = normalize_entry(
+                    symbol=symbol,
+                    timeframe=timeframe,
+                    event_time=event_time_ts,
+                    entry_bar_offset=entry_offset
+                )
+                
+                # Store in session_state
+                st.session_state["ony_norm_result"] = norm_result.to_dict()
+                st.success("✅ Normalize computed successfully!")
+            except FileNotFoundError as e:
+                st.error(f"❌ History data not found: {e}")
+            except Exception as e:
+                st.error(f"❌ Normalize error: {e}")
+                import traceback
+                st.code(traceback.format_exc())
+    
+    # Display normalize result if available
+    if "ony_norm_result" in st.session_state:
+        norm_result_dict = st.session_state["ony_norm_result"]
+        
+        with st.expander("📊 Normalize Result", expanded=True):
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.metric("Entry Offset (in)", norm_result_dict["entry_offset_in"])
+                st.metric("Entry Offset (out)", norm_result_dict["entry_offset_out"])
+            
+            with col2:
+                st.metric("Snap Distance", f"{norm_result_dict['snap_distance_bars']} bars")
+                st.metric("Snap Confidence", f"{norm_result_dict['snap_confidence']:.2f}")
+            
+            with col3:
+                st.caption("**Normalized Entry TS:**")
+                st.code(norm_result_dict["entry_ts_iso"])
+                st.caption("**Snap Reason:**")
+                st.info(norm_result_dict["snap_reason"])
+        
+        # Apply and Reset buttons
+        with col_apply_reset:
+            col_apply, col_reset = st.columns(2)
+            
+            with col_apply:
+                if st.button("✅ Apply", key="ony_apply_normalize", use_container_width=True, type="primary"):
+                    # Create NormalizeResult from dict
+                    from tezaver.rally.normalize_engine import NormalizeResult
+                    norm_result_obj = NormalizeResult(**norm_result_dict)
+                    
+                    # Load or create annotation
+                    ann = repo.get_one(symbol, timeframe, event_id)
+                    if ann is None:
+                        ann = SniperAnnotation(
+                            symbol=symbol,
+                            timeframe=timeframe,
+                            event_id=event_id,
+                            entry_bar_offset=entry_offset,
+                            note=note,
+                            status=status,
+                            label=label,
+                        )
+                    
+                    # Apply normalize
+                    ann = apply_normalize_to_annotation(ann, norm_result_obj)
+                    ann.note = note  # Preserve note
+                    ann.status = status
+                    ann.label = label
+                    if exit_enabled and exit_offset:
+                        ann.exit_bar_offset = exit_offset
+                    
+                    # Save
+                    repo.append(
+                        symbol=ann.symbol,
+                        timeframe=ann.timeframe,
+                        event_id=ann.event_id,
+                        entry_bar_offset=ann.entry_bar_offset,
+                        exit_bar_offset=ann.exit_bar_offset,
+                        note=ann.note,
+                        status=ann.status,
+                        label=ann.label,
+                    )
+                    
+                    st.success("✅ Normalize applied & saved!")
+                    st.rerun()
+            
+            with col_reset:
+                if st.button("↩ Reset", key="ony_reset_normalize", use_container_width=True):
+                    # Clear from session_state
+                    if "ony_norm_result" in st.session_state:
+                        del st.session_state["ony_norm_result"]
+                    
+                    # Clear from annotation if exists
+                    ann = repo.get_one(symbol, timeframe, event_id)
+                    if ann:
+                        ann.normalized_entry_bar_offset = None
+                        ann.normalized_entry_ts = None
+                        ann.snap_reason = None
+                        ann.snap_distance_bars = None
+                        ann.snap_confidence = None
+                        ann.snap_algo_version = None
+                        
+                        repo.append(
+                            symbol=ann.symbol,
+                            timeframe=ann.timeframe,
+                            event_id=ann.event_id,
+                            entry_bar_offset=ann.entry_bar_offset,
+                            exit_bar_offset=ann.exit_bar_offset,
+                            note=ann.note,
+                            status=ann.status,
+                            label=ann.label,
+                        )
+                    
+                    st.success("↩ Normalize reset!")
+                    st.rerun()
+    
+    # Show normalized badge if annotation has normalized data
+    if existing_ann and existing_ann.normalized_entry_ts:
+        st.info(f"✅ Normalized: {existing_ann.snap_reason} | TS: {existing_ann.normalized_entry_ts}")
     
     # --- STATUS & LABEL ---
     st.markdown("---")
