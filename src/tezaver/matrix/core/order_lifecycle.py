@@ -47,9 +47,9 @@ class OrderLifecycleTracker:
         self.emit_fn = emit_fn
 
     def _update_state(self, order: Order, new_status: OrderStatus, reason: str = "", extra: Dict = None):
+        # MX-9370: Raise ValueError on invalid transition from terminal state
         if order.is_terminal():
-            # Terminal states are idempotent for sanity
-            return
+            raise ValueError(f"INVALID_TRANSITION:{order.status.name}->{new_status.name}")
 
         old_status = order.status
         order.status = new_status
