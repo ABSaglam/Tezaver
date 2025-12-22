@@ -442,6 +442,9 @@ def cloud_runtime_tick(home: str, ticks: int = 1, steps_per_strategy: int = 10) 
     active_strats = list_active_strategies(home)
     
     strategy_results = {}
+    events_written = 0  # MX-9330: Track events written
+    broker_cfg = {"mode": "PAPER"}  # MX-9330: Initialize to avoid UnboundLocalError
+    risk_cfg = {"paused": False}  # MX-9330: Initialize to avoid UnboundLocalError
     
     for t in range(ticks):
         tick_ts = int(time.time() * 1000)
@@ -484,7 +487,8 @@ def cloud_runtime_tick(home: str, ticks: int = 1, steps_per_strategy: int = 10) 
         })
         
         # General Tick Event
-        append_runtime_event(home, crid, {"ts": tick_ts, "type": "CLOUD_TICK", "tick_seq": state["total_ticks"] + 1})
+        append_runtime_event(home, crid, {"ts": tick_ts, "type": "CLOUD_TICK", "tick_seq": state["total_ticks"] + 1, "strategy_id": active_strats[0] if active_strats else None})
+        events_written += 1  # MX-9330: Count CLOUD_TICK event
         
         # Process Strategies
         for sid in active_strats:
@@ -527,6 +531,7 @@ def cloud_runtime_tick(home: str, ticks: int = 1, steps_per_strategy: int = 10) 
         "cloud_run_id": crid,
         "ticks_processed": ticks,
         "active_strategies": len(active_strats),
+        "events_written": events_written,  # MX-9330: Add missing key
         "state": state,
         "latest_strategy_results": strategy_results,
         "risk_paused": risk_cfg.get("paused", False),
