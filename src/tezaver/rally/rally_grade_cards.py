@@ -24,6 +24,42 @@ GRADE_THRESHOLDS = {
 MIN_SAMPLE_PER_GRADE = 3  # 3'ten az ise "yetersiz örnek" say
 
 
+def compute_tier_from_gain_pct(gain_pct: float) -> Optional[str]:
+    """
+    Canonical tier computation from future_max_gain_pct.
+    
+    This is the SINGLE SOURCE OF TRUTH for tier thresholds.
+    All other tier computations should use this function.
+    
+    Args:
+        gain_pct: Gain percentage as decimal (e.g., 0.30 for 30%)
+    
+    Returns:
+        Uppercase tier name ("DIAMOND", "GOLD", "SILVER", "BRONZE") or None if too low
+    
+    Thresholds:
+        - DIAMOND: >= 30%
+        - GOLD:    >= 20%
+        - SILVER:  >= 10%
+        - BRONZE:  >= 5%
+        - None:    < 5% (excluded from all tiers)
+    """
+    if pd.isna(gain_pct) or gain_pct is None:
+        return None
+    
+    if gain_pct >= GRADE_THRESHOLDS["Diamond"]:
+        return "DIAMOND"
+    elif gain_pct >= GRADE_THRESHOLDS["Gold"]:
+        return "GOLD"
+    elif gain_pct >= GRADE_THRESHOLDS["Silver"]:
+        return "SILVER"
+    elif gain_pct >= GRADE_THRESHOLDS["Bronze"]:
+        return "BRONZE"
+    else:
+        return None  # Too low, exclude from all tiers
+
+
+
 @dataclass
 class GradeSummary:
     """Summary statistics for a specific grade (Diamond/Gold/Silver/Bronze)."""

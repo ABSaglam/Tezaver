@@ -129,3 +129,61 @@ class TestTierFiltering:
         
         # Verify unknown/too-low events are excluded
         assert "6" not in df_filtered['event_id'].values, "Event 6 (too low gain) should be filtered out"
+
+
+class TestCanonicalTierSync:
+    """Test that ONY wrapper matches canonical tier implementation."""
+    
+    def test_canonical_tier_sync(self):
+        """
+        Verify ONY's compute_tier_from_gain() produces identical results
+        to the canonical compute_tier_from_gain_pct() from rally_grade_cards.
+        
+        This test prevents threshold drift between ONY and canonical source.
+        """
+        from src.tezaver.rally.rally_grade_cards import compute_tier_from_gain_pct
+        from src.tezaver.ui.ony_tab import compute_tier_from_gain
+        
+        # Test boundary values
+        test_cases = [
+            # (gain_pct, expected_tier)
+            (0.50, "DIAMOND"),  # Well above diamond
+            (0.30, "DIAMOND"),  # Exact diamond boundary
+            (0.299, "GOLD"),    # Just below diamond
+            (0.25, "GOLD"),     # Mid-gold
+            (0.20, "GOLD"),     # Exact gold boundary
+            (0.199, "SILVER"),  # Just below gold
+            (0.15, "SILVER"),   # Mid-silver
+            (0.10, "SILVER"),   # Exact silver boundary
+            (0.099, "BRONZE"),  # Just below silver
+            (0.07, "BRONZE"),   # Mid-bronze
+            (0.05, "BRONZE"),   # Exact bronze boundary
+            (0.049, None),      # Just below bronze (excluded)
+            (0.03, None),       # Too low
+            (0.00, None),       # Zero
+        ]
+        
+        for gain, expected in test_cases:
+            canonical_result = compute_tier_from_gain_pct(gain)
+            ony_result = compute_tier_from_gain(gain)
+            
+            assert canonical_result == expected, \
+                f"Canonical: gain={gain} should produce {expected}, got {canonical_result}"
+            assert ony_result == expected, \
+                f"ONY: gain={gain} should produce {expected}, got {ony_result}"
+            assert canonical_result == ony_result, \
+                f"DRIFT DETECTED: canonical={canonical_result} != ony={ony_result} at gain={gain}"
+    
+    def test_canonical_tier_null_handling(self):
+        """Verify both implementations handle null/NA values identically."""
+        from src.tezaver.rally.rally_grade_cards import compute_tier_from_gain_pct
+        from src.tezaver.ui.ony_tab import compute_tier_from_gain
+        
+        canonical_none = compute_tier_from_gain_pct(None)
+        ony_none = compute_tier_from_gain(None)
+        assert canonical_none == ony_none == None
+        
+        canonical_na = compute_tier_from_gain_pct(pd.NA)
+        ony_na = compute_tier_from_gain(pd.NA)
+        assert canonical_na == ony_na == None
+

@@ -69,28 +69,29 @@ def compute_tier_from_gain(gain_pct: float) -> Optional[str]:
     """
     Compute tier from future_max_gain_pct.
     
+    WRAPPER: This function now delegates to the canonical implementation
+    in rally_grade_cards.py to prevent threshold drift.
+    
     Args:
         gain_pct: Gain percentage as decimal (e.g., 0.30 for 30%)
     
     Returns:
         Tier name or None if gain is too low
     """
-    if pd.isna(gain_pct):
-        return None
-    
-    if gain_pct >= 0.30:
-        return "DIAMOND"
-    elif gain_pct >= 0.20:
-        return "GOLD"
-    elif gain_pct >= 0.10:
-        return "SILVER"
-    elif gain_pct >= 0.05:
-        return "BRONZE"
-    else:
-        return None  # Too low, exclude from all tiers
+    from tezaver.rally.rally_grade_cards import compute_tier_from_gain_pct
+    return compute_tier_from_gain_pct(gain_pct)
 
 def _load_events_for_symbol_tf(symbol: str, timeframe: str) -> Optional[pd.DataFrame]:
-    """Load rally events from Fast15 or Time Labs depending on timeframe."""
+    """
+    Load rally events from Fast15 or Time Labs depending on timeframe.
+    
+    Dataset paths:
+    - 15m: library/fast15_rallies/{symbol}/fast15_rallies.parquet
+    - 1h:  library/time_labs/1h/{symbol}/rallies_1h.parquet
+    - 4h:  library/time_labs/4h/{symbol}/rallies_4h.parquet
+    
+    Returns DataFrame with stable event_id generation.
+    """
     try:
         if timeframe == "15m":
             path = coin_cell_paths.get_fast15_rallies_path(symbol)
@@ -110,9 +111,12 @@ def _load_events_for_symbol_tf(symbol: str, timeframe: str) -> Optional[pd.DataF
                 df["event_time"] = pd.to_datetime(df[col], errors="coerce")
                 break
         
-        # Create event_id if not exists
+        # Generate stable event_id if not exists
         if "event_id" not in df.columns:
-            df["event_id"] = df.index.astype(str)
+            # Create deterministic event_id: {symbol}_{timeframe}_{epoch_seconds}
+            df["event_id"] = df["event_time"].apply(
+                lambda dt: f"{symbol}_{timeframe}_{int(dt.timestamp())}" if pd.notna(dt) else None
+            )
         
         # Sort by time descending (newest first)
         df = df.sort_values("event_time", ascending=False).reset_index(drop=True)
