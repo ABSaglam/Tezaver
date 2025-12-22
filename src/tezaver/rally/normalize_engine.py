@@ -79,6 +79,14 @@ def find_event_bar_index(df_history: pd.DataFrame, event_time: pd.Timestamp) -> 
     
     Returns the last bar where open_time <= event_time.
     """
+    # Ensure event_time and df timestamps have compatible timezones
+    if df_history['open_time'].dt.tz is not None and event_time.tz is None:
+        # History is timezone-aware, event_time is naive → localize event_time to UTC
+        event_time = event_time.tz_localize('UTC')
+    elif df_history['open_time'].dt.tz is None and event_time.tz is not None:
+        # History is naive, event_time is aware → remove timezone from event_time
+        event_time = event_time.tz_localize(None)
+    
     mask = df_history['open_time'] <= event_time
     matching_indices = df_history[mask].index.tolist()
     
