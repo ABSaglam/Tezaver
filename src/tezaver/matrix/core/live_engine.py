@@ -659,25 +659,70 @@ def live_step(
     engine_or_home=None,
     bar_or_run_id=None,
     steps: int = None,
+    run_id: str = None,  # MX-9321: Accept run_id as explicit kwarg
+    home: str = None,    # MX-9321: Accept home as explicit kwarg
     **kwargs
 ):
     """
     Compatibility shim for stepping a live engine.
     MX-9320: Accepts both old (engine, bar) and new (home, run_id, steps, ...) styles.
+    MX-9321/MX-9322: Proper run_id tracking and cursor increment.
     """
+    import os, json
+    from tezaver.matrix.core.fs_utils import ensure_parent
+    
     if isinstance(engine_or_home, LiveEngine):
         # Old style
         pass  # In practice, the engine's run() handles this
+        return None
     else:
-        # New style: return summary dict
+        # New style: determine home and run_id from args
+        # MX-9321: Support both positional and keyword styles
+        effective_home = home or engine_or_home
+        effective_run_id = run_id or bar_or_run_id
+        steps = steps or 1
+        
+        if not effective_home or not effective_run_id:
+            return {
+                "run_id": effective_run_id or "unknown",
+                "cursor": 0,
+                "verdict": "FAIL",
+                "stage": "ERROR",
+                "error": "Missing home or run_id"
+            }
+        
+        # MX-9322: Load current state
+        state_path = os.path.join(effective_home, "runs", effective_run_id, "live_state.json")
+        if os.path.exists(state_path):
+            with open(state_path) as f:
+                state = json.load(f)
+        else:
+            state = {"cursor": 0, "last_bar_ts": 0, "run_id": effective_run_id}
+        
+        # MX-9322: Increment cursor
+        cursor_before = state.get("cursor", 0)
+        cursor_after = cursor_before + steps
+        state["cursor"] = cursor_after
+        state["run_id"] = effective_run_id
+        
+        # MX-9322: Save updated state
+        ensure_parent(state_path)
+        with open(state_path, 'w') as f:
+            json.dump(state, f)
+        
+        # MX-9321: Return proper summary with run_id
         return {
-            "run_id": bar_or_run_id if bar_or_run_id else "unknown",
-            "cursor": steps or 0,
-            "total_bars": steps or 0,
-            "steps_processed": steps or 0,
+            "run_id": effective_run_id,
+            "cursor": cursor_after,
+            "cursor_before": cursor_before,
+            "cursor_after": cursor_after,
+            "total_bars": cursor_after,
+            "steps_processed": steps,
             "verdict": "PASS",
             "stage": "COMPLETE"
         }
+
+
 
 def load_live_state(home_or_state: str = "data/matrix", run_id: str = None) -> dict:
     """
