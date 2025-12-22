@@ -43,7 +43,8 @@ def evaluate_release_gate(home: str, candidate_id: str, active_stage: Optional[s
     try:
         registry = SafetyProtocolRegistry()
         for p in registry.protocols:
-            status = registry.get_overall_for_active(p["mx"], active_stage)
+            # MX-9350: get_overall_for_active only takes protocol_mx arg
+            status = registry.get_overall_for_active(p["mx"])
             
             # Check for existing run to validate run-scoped evidence
             # This is tricky because evaluate_release_gate is often called standalone.
