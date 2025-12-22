@@ -23,6 +23,7 @@ from tezaver.matrix.ops.timebase import measure_skew, build_timebase_report
 from tezaver.matrix.evidence.proof_bundle import build_proof_bundle
 from tezaver.matrix.core.release_gate import evaluate_release_gate
 from tezaver.matrix.release.release_report import write_release_report
+from tezaver.matrix.ops.resource_guard import ResourceGuard
 
 
 

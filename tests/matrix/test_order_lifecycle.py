@@ -5,7 +5,7 @@ import pytest
 
 @pytest.mark.core
 def test_lifecycle_happy_path():
-    tracker = OrderLifecycleTracker()
+    tracker = OrderLifecycleTracker(run_id="test_run_1")  # New API requires run_id
     o = Order("1", "BTC", "BUY", 1.0)
     
     tracker.submit(o)
@@ -14,7 +14,7 @@ def test_lifecycle_happy_path():
     tracker.ack(o)
     assert o.status == OrderStatus.ACKED
     
-    tracker.fill(o, 1.0, True)
+    tracker.fill(o, fill_price=1.0)  # Updated: new signature is fill(order, fill_price=None)
     assert o.status == OrderStatus.FILLED
 
 def test_fault_injection_timeout():
@@ -23,7 +23,7 @@ def test_fault_injection_timeout():
     assert o.status == OrderStatus.TIMEOUT
 
 def test_invalid_transition():
-    tracker = OrderLifecycleTracker()
+    tracker = OrderLifecycleTracker(run_id="test_run_3")  # New API requires run_id
     o = Order("3", "BTC", "BUY", 1.0)
     # Cannot ack NEW order (tracker logic check missing in sample code but good practice)
     # The sample implementation 'submit' checks state.
