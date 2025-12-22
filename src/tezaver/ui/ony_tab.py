@@ -314,6 +314,26 @@ def render_ony_studio():
         else:
             exit_offset = None
     
+    # --- STATUS & LABEL ---
+    st.markdown("---")
+    st.markdown("### 📝 Durum ve Etiket")
+    
+    col_status, col_label, col_note = st.columns(3)
+    
+    with col_status:
+        status_options = ["PENDING", "APPROVED", "REJECTED", "REVIEWED"]
+        default_status_idx = status_options.index(existing_ann.status) if existing_ann and existing_ann.status in status_options else 0
+        status = st.selectbox("Durum", status_options, index=default_status_idx, key="ony_status")
+    
+    with col_label:
+        label_options = ["UNCERTAIN", "GOOD", "BAD"]
+        default_label_idx = label_options.index(existing_ann.label) if existing_ann and existing_ann.label in label_options else 0
+        label = st.selectbox("Etiket", label_options, index=default_label_idx, key="ony_label")
+    
+    with col_note:
+        default_note = existing_ann.note if existing_ann else ""
+        note = st.text_input("Not", value=default_note, key="ony_note")
+    
     # --- NORMALIZE ENTRY ---
     st.markdown("---")
     st.markdown("### 🧲 Normalize Entry (Auto-Snap)")
@@ -444,26 +464,6 @@ def render_ony_studio():
     # Show normalized badge if annotation has normalized data
     if existing_ann and existing_ann.normalized_entry_ts:
         st.info(f"✅ Normalized: {existing_ann.snap_reason} | TS: {existing_ann.normalized_entry_ts}")
-    
-    # --- STATUS & LABEL ---
-    st.markdown("---")
-    st.markdown("### 📝 Durum ve Etiket")
-    
-    col_status, col_label, col_note = st.columns(3)
-    
-    with col_status:
-        status_options = ["PENDING", "APPROVED", "REJECTED", "REVIEWED"]
-        default_status_idx = status_options.index(existing_ann.status) if existing_ann and existing_ann.status in status_options else 0
-        status = st.selectbox("Durum", status_options, index=default_status_idx, key="ony_status")
-    
-    with col_label:
-        label_options = ["UNCERTAIN", "GOOD", "BAD"]
-        default_label_idx = label_options.index(existing_ann.label) if existing_ann and existing_ann.label in label_options else 0
-        label = st.selectbox("Etiket", label_options, index=default_label_idx, key="ony_label")
-    
-    with col_note:
-        default_note = existing_ann.note if existing_ann else ""
-        note = st.text_input("Not", value=default_note, key="ony_note")
     
     # --- ACTION BUTTONS ---
     st.markdown("---")

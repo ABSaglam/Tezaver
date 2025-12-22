@@ -43,6 +43,30 @@ class SniperAnnotation:
     snap_distance_bars: Optional[int] = None
     snap_confidence: Optional[float] = None
     snap_algo_version: Optional[str] = None
+    
+    # ONY v1.2: Manual/Suggested/Approved workflow
+    manual_entry_bar_offset: Optional[int] = None
+    manual_exit_bar_offset: Optional[int] = None
+    
+    suggested_entry_bar_offset: Optional[int] = None
+    suggested_exit_bar_offset: Optional[int] = None
+    
+    approved_entry_bar_offset: Optional[int] = None
+    approved_exit_bar_offset: Optional[int] = None
+    approved_entry_ts: Optional[str] = None
+    approved_exit_ts: Optional[str] = None
+    
+    # Snap metadata (entry)
+    snap_reason_entry: Optional[str] = None
+    snap_distance_entry: Optional[int] = None
+    snap_confidence_entry: Optional[float] = None
+    snap_algo_version_entry: Optional[str] = None
+    
+    # Snap metadata (exit)
+    snap_reason_exit: Optional[str] = None
+    snap_distance_exit: Optional[int] = None
+    snap_confidence_exit: Optional[float] = None
+    snap_algo_version_exit: Optional[str] = None
 
     @staticmethod
     def from_dict(data: Dict[str, Any]) -> "SniperAnnotation":
@@ -66,6 +90,23 @@ class SniperAnnotation:
             snap_distance_bars=data.get("snap_distance_bars"),
             snap_confidence=data.get("snap_confidence"),
             snap_algo_version=data.get("snap_algo_version"),
+            # ONY v1.2 fields (backward compatible: None if missing)
+            manual_entry_bar_offset=data.get("manual_entry_bar_offset"),
+            manual_exit_bar_offset=data.get("manual_exit_bar_offset"),
+            suggested_entry_bar_offset=data.get("suggested_entry_bar_offset"),
+            suggested_exit_bar_offset=data.get("suggested_exit_bar_offset"),
+            approved_entry_bar_offset=data.get("approved_entry_bar_offset"),
+            approved_exit_bar_offset=data.get("approved_exit_bar_offset"),
+            approved_entry_ts=data.get("approved_entry_ts"),
+            approved_exit_ts=data.get("approved_exit_ts"),
+            snap_reason_entry=data.get("snap_reason_entry"),
+            snap_distance_entry=data.get("snap_distance_entry"),
+            snap_confidence_entry=data.get("snap_confidence_entry"),
+            snap_algo_version_entry=data.get("snap_algo_version_entry"),
+            snap_reason_exit=data.get("snap_reason_exit"),
+            snap_distance_exit=data.get("snap_distance_exit"),
+            snap_confidence_exit=data.get("snap_confidence_exit"),
+            snap_algo_version_exit=data.get("snap_algo_version_exit"),
         )
 
     def to_dict(self) -> Dict[str, Any]:
