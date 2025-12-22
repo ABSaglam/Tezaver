@@ -57,16 +57,24 @@ def compute_scorecard(home: str, run_id: str) -> Dict:
                             "symbol": order.get("symbol"),
                             "side": order.get("side"),
                             "qty": qty,
-                            "entry_price": l_price, # assumed entry
-                            "exit_price": f_price,  # assumed fill
+                            "entry_price": l_price,
+                            "exit_price": f_price,
                             "fee": fee,
                             "slippage": slip,
-                            "net_pnl": 0.0, # Will be filled if paired or dummy calc
+                            "net_pnl": 0.0,
                             "exit_reason": "FILLED"
                         }
-                        # For single-order audit, we can't easily calc net_pnl without exit,
-                        # but we fix the bug where notional was treated as pnl.
                         trade_audit.append(audit_entry)
+                
+                # MX-9360: Also count BAR events for bars_count
+                if etype == "BAR":
+                    bars_count += 1
+                
+                # MX-9360: Count DECISION and BLOCK events for legacy scorecard
+                if etype == "DECISION":
+                    event_counts["decisions"] = event_counts.get("decisions", 0) + 1
+                if etype == "BLOCK":
+                    blocks_count += 1
 
             except:
                 continue
@@ -80,12 +88,13 @@ def compute_scorecard(home: str, run_id: str) -> Dict:
         "run_id": run_id,
         "bars_count": bars_count,
         "blocks_count": blocks_count,
+        "decisions_count": event_counts.get("decisions", 0),  # MX-9360
+        "incidents_count": 0,  # MX-9360: No incidents tracking yet
         "trades_count": total_trades,
         "total_pnl_raw": total_pnl_raw, 
         "fee_cost": fee_cost,
         "slippage_cost": slippage_cost,
-        "trade_audit_v2": trade_audit, # MXI-1401
-
+        "trade_audit_v2": trade_audit,
         "win_rate": 0.0,
         "event_types": dict(event_counts)
     }
