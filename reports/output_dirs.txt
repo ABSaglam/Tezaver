@@ -1,0 +1,6 @@
+./.tezaver_bus/artifacts
+./out
+./out/matrix_candidates
+./out/matrix_candidates/_failed
+./out/matrix_candidates/_legacy/_failed
+./reports
