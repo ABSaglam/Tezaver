@@ -638,6 +638,7 @@ def main():
                 "📊 Piyasa Özeti", 
                 "👁️ Insight Panel", 
                 "🎯 ONY Stüdyo",
+                "🏭 Dökümhane",
                 "💾 Veri Merkezi", 
                 "⚙️ Sistem Paneli"
             ]
@@ -697,6 +698,9 @@ def main():
             elif current_nav == "📊 Piyasa Özeti": render_market_summary_page()
             elif current_nav == "👁️ Insight Panel": render_insight_tab()
             elif current_nav == "🎯 ONY Stüdyo": render_ony_page()
+            elif current_nav == "🏭 Dökümhane":
+                from tezaver.ui.foundry_tab import render_foundry_page
+                render_foundry_page()
             elif current_nav == "💾 Veri Merkezi": render_data_health_page()
             elif current_nav == "⚙️ Sistem Paneli": 
                 from tezaver.ui.subpages.system_dashboard import render_system_dashboard

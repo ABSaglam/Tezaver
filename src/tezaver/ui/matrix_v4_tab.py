@@ -62,6 +62,7 @@ NAV_MAP = {
         ("Koşular (Tümü)", "RUNS", None, False, "Tüm modlardaki koşu geçmişini gösterir."),
         ("Raporlar", "REPORTS", None, False, "WAR, LIVE ve Cloud run raporlarını özetler."),
         ("Olaylar (Kanıt Paketleri)", "INCIDENTS", None, False, "Block, exception ve data gap olaylarını listeler."),
+        ("📦 Bundles", "BUNDLES", None, False, "ApprovedRallyBundle paketlerini listeler."),
     ],
     "OPS": [
         ("Bakım", "MAINTENANCE", None, False, "Cache temizleme, legacy cleanup ve registry rebuild araçları."),
@@ -290,6 +291,8 @@ def render_matrix_v4():
         render_reports(home)
     elif route_key == "INCIDENTS":
         render_incidents(home)
+    elif route_key == "BUNDLES":
+        render_bundles(home)
     elif route_key == "MAINTENANCE":
         render_maintenance(home)
     elif route_key == "MIGRATION":
@@ -1819,6 +1822,66 @@ def render_incidents(home: str):
                         st.text(f"{e.get('event_type', e.get('kind', ''))} | {e.get('ts', '')[:19]}")
                     except:
                         pass
+
+def render_bundles(home: str):
+    """MX-4A: Render ApprovedRallyBundle panel for Matrix."""
+    st.subheader("📦 ApprovedRallyBundle v1")
+    st.caption("Dökümhane tarafından üretilen onaylı paketler")
+    
+    try:
+        from tezaver.matrix.bundles.bundle_loader_v1 import load_all_bundles
+        from tezaver.matrix.bundles.bundle_registry import BundleRegistry
+        
+        # Load bundles
+        registry = BundleRegistry()
+        bundles = load_all_bundles(registry=registry)
+        
+        # Show counts
+        counts = registry.counts()
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Total", counts.get("total", 0))
+        with col2:
+            st.metric("✅ Loaded OK", counts.get("loaded_ok", 0))
+        with col3:
+            st.metric("❌ Rejected", counts.get("rejected", 0))
+        with col4:
+            st.metric("📥 Discovered", counts.get("discovered", 0))
+        
+        if not bundles:
+            st.info("Henüz ApprovedRallyBundle yok. Önce ONY'de approve edip Dökümhane'de paketleyin.")
+            return
+        
+        # Build table data
+        table_data = []
+        for b in bundles:
+            if b.manifest:
+                table_data.append({
+                    "Symbol": b.manifest.symbol,
+                    "TF": b.manifest.timeframe,
+                    "Event ID": b.manifest.event_id[:30] + "..." if len(b.manifest.event_id) > 30 else b.manifest.event_id,
+                    "QC Score": b.manifest.qc_score,
+                    "Tier": b.manifest.tier or "UNKNOWN",
+                    "Status": b.status,
+                    "Reason": b.reject_reason or "-"
+                })
+            else:
+                table_data.append({
+                    "Symbol": "-",
+                    "TF": "-",
+                    "Event ID": "-",
+                    "QC Score": "-",
+                    "Tier": "-",
+                    "Status": b.status,
+                    "Reason": b.reject_reason or "-"
+                })
+        
+        if table_data:
+            df = pd.DataFrame(table_data)
+            st.dataframe(df, use_container_width=True)
+        
+    except Exception as e:
+        st.error(f"Bundle yükleme hatası: {e}")
 
 def render_closedbar_health(home: str):
     """MX-5100: Render Closed-bar Health status."""
