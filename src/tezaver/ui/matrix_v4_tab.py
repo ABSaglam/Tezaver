@@ -2267,6 +2267,83 @@ def render_reports(home: str):
         else:
             st.caption("No Replacement Report")
 
+    # Pool Execution (Phase 4 - SIM v0)
+    st.divider()
+    st.subheader("🌊 Pool Execution (SIM v0)")
+    st.caption("Order Intents & Simulated Execution")
+    
+    # Kill Switch Status (Phase 5B)
+    if 'selected_run_path' in locals() and selected_run_path:
+        state_dir = selected_run_path / "state"
+        ks_path = state_dir / "pool_kill_switch_state_v1.json"
+        if ks_path.exists():
+            with open(ks_path) as f:
+                ks_data = json.load(f)
+            if ks_data.get("triggered"):
+                st.error(f"🛑 **Kill Switch ACTIVE** (reason: {ks_data.get('reason', 'N/A')})")
+            else:
+                st.success("✅ Kill Switch OFF")
+        else:
+            st.info("ℹ️ Kill Switch: Default OFF")
+
+    if 'selected_run_path' in locals() and selected_run_path:
+        reports_dir = selected_run_path / "reports"
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Order Intents
+            intents_path = reports_dir / "pool_order_intents_v1.json"
+            if intents_path.exists():
+                with st.expander("📋 Order Intents", expanded=False):
+                    with open(intents_path) as f:
+                        data = json.load(f)
+                        st.metric("Court Verdict", data.get("court_verdict", "N/A"))
+                        st.metric("Opens", data.get("intents_open", 0))
+                        st.metric("Closes", data.get("intents_close", 0))
+                        st.json(data)
+            else:
+                st.caption("No Order Intents")
+        
+        with col2:
+            # SIM Result
+            sim_path = reports_dir / "pool_execution_sim_result_v0.json"
+            if sim_path.exists():
+                with st.expander("🎯 SIM Result", expanded=False):
+                    with open(sim_path) as f:
+                        data = json.load(f)
+                        st.metric("Planned", data.get("planned", 0))
+                        st.metric("Executed (SIM)", data.get("executed_sim", 0))
+                        st.json(data)
+            else:
+                st.caption("No SIM Result")
+
+    # Portfolio Snapshot v2 (Phase 5A)
+    st.divider()
+    st.subheader("🌊 Portfolio Snapshot v2")
+    st.caption("Real/SIM portfolio state")
+    
+    if 'selected_run_path' in locals() and selected_run_path:
+        reports_dir = selected_run_path / "reports"
+        snapshot_path = reports_dir / "pool_portfolio_snapshot_v2.json"
+        
+        if snapshot_path.exists():
+            with open(snapshot_path) as f:
+                data = json.load(f)
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Open Now", data.get("open_now", 0))
+            with col2:
+                st.metric("Capacity", data.get("capacity", 0))
+            with col3:
+                st.metric("Source", data.get("source", "N/A"))
+            
+            with st.expander("📄 Full Snapshot", expanded=False):
+                st.json(data)
+        else:
+            st.caption("No Portfolio Snapshot v2")
+
 def render_incidents(home: str):
     """MX-FINAL-0401: Render Incidents page for evidence bundles."""
     from tezaver.ui.ui_guard import render_data_sources_box
