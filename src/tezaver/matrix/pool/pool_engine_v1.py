@@ -646,3 +646,66 @@ def run_pool_phase2d_restart_reconcile(
         "verdict": verdict,
         "changed": drift["changed"]
     }
+
+
+def run_pool_phase3b_replacement(
+    stage: str,
+    run_id: str,
+    trace_ctx: Dict[str, str],
+    open_positions: List[Dict[str, Any]],
+    selected_items: List["PoolSelectionItemV1"],
+    capacity: int,
+    open_now: int,
+    max_open_positions: int,
+    reconcile_verdict: str,
+    config: Optional[Dict[str, Any]] = None,
+    kill_switch_triggered: bool = False,
+    risk_limiter_triggered: bool = False
+) -> Dict[str, Any]:
+    """
+    Execute Pool Phase 3B: Replacement evaluation (DRY-RUN).
+    
+    Args:
+        stage: Run stage
+        run_id: Run ID
+        trace_ctx: Context for determinism
+        open_positions: Current open positions list
+        selected_items: Selected intents from Phase 2B
+        capacity: Current capacity
+        open_now: Number of open positions
+        max_open_positions: Maximum position limit
+        reconcile_verdict: Restart reconcile verdict
+        config: Replacement config
+        kill_switch_triggered: Kill switch state
+        risk_limiter_triggered: Risk limiter state
+        
+    Returns:
+        Summary dict
+    """
+    from tezaver.matrix.pool.replacement_engine_v1 import evaluate_replacement
+    
+    report = evaluate_replacement(
+        run_id=run_id,
+        stage=stage,
+        trace_ctx=trace_ctx,
+        open_positions=open_positions,
+        selected_intents=selected_items,
+        capacity=capacity,
+        open_now=open_now,
+        max_open_positions=max_open_positions,
+        reconcile_verdict=reconcile_verdict,
+        kill_switch_triggered=kill_switch_triggered,
+        risk_limiter_triggered=risk_limiter_triggered,
+        config=config
+    )
+    
+    reports_dir = resolve_reports_dir(stage, run_id)
+    path = reports_dir / "pool_replacement_report_v1.json"
+    write_report_json(path, report.to_dict())
+    
+    return {
+        "status": "OK",
+        "report_path": str(path),
+        "verdict": report.verdict,
+        "skip_reason": report.skip_reason
+    }
