@@ -95,8 +95,11 @@ class TradeIntentV1:
     created_ts_iso: str
     reason: str # "OK", "SKIPPED_..."
     qc_score: int
+    proposed_notional: float = 0.0
     tier: Optional[str] = None
     entry_ts_iso: Optional[str] = None
+    scenario_id: Optional[str] = None
+    narrative: Optional[Dict[str, Any]] = None
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -109,8 +112,11 @@ class TradeIntentV1:
             "created_ts_iso": self.created_ts_iso,
             "reason": self.reason,
             "qc_score": self.qc_score,
+            "proposed_notional": self.proposed_notional,
             "tier": self.tier,
-            "entry_ts_iso": self.entry_ts_iso
+            "entry_ts_iso": self.entry_ts_iso,
+            "scenario_id": self.scenario_id,
+            "narrative": self.narrative
         }
 
 @dataclass
@@ -184,8 +190,10 @@ class PoolSelectionItemV1:
     tier: Optional[str]
     trigger_type: str
     exit_policy: str
+    proposed_notional: float
     rank_score: float
     rank_reason: str # "qc+tier"
+    scenario_id: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -194,11 +202,13 @@ class PoolSelectionItemV1:
             "timeframe": self.timeframe,
             "bundle_id": self.bundle_id,
             "qc_score": self.qc_score,
+            "proposed_notional": self.proposed_notional,
             "tier": self.tier,
             "trigger_type": self.trigger_type,
             "exit_policy": self.exit_policy,
             "rank_score": self.rank_score,
-            "rank_reason": self.rank_reason
+            "rank_reason": self.rank_reason,
+            "scenario_id": self.scenario_id
         }
 
 @dataclass

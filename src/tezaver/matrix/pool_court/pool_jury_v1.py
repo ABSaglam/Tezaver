@@ -77,13 +77,35 @@ def build_pool_scorecard(
         key_notes.append("MISSING_REPORT:pool_selection")
     
     # 5. Risk
-    risk = _read_json_safe(reports_dir / "pool_risk_report_v1.json")
-    allowed_count = risk.get("allowed_count", 0)
-    blocked_count = risk.get("blocked_count", 0)
-    # Phase 5B.1: Read kill_switch from risk report
-    kill_switch_info = risk.get("kill_switch", {})
-    kill_switch_triggered = kill_switch_info.get("triggered", False)
-    if not risk:
+    # 5. Risk (Phase 6A.3: Priority V2, Fallback V1)
+    risk_v2_path = reports_dir / "pool_risk_report_v2.json"
+    risk_v1_path = reports_dir / "pool_risk_report_v1.json"
+    
+    blocked_reasons_count = {}
+    limits = {}
+    allowed_count = 0
+    blocked_count = 0
+    kill_switch_triggered = False
+    
+    if risk_v2_path.exists():
+        risk_data = _read_json_safe(risk_v2_path)
+        blocked_reasons_count = risk_data.get("blocked_reasons_count", {})
+        limits = risk_data.get("limits", {})
+        allowed_count = risk_data.get("allowed_count", 0)
+        blocked_count = risk_data.get("blocked_count", 0)
+        kill_switch_triggered = risk_data.get("kill_switch", {}).get("triggered", False)
+    elif risk_v1_path.exists():
+        risk_data = _read_json_safe(risk_v1_path)
+        allowed_count = risk_data.get("allowed_count", 0)
+        blocked_count = risk_data.get("blocked_count", 0)
+        # Phase 5B.1 fallback
+        ks_info = risk_data.get("kill_switch", {}) # Might differ in v1 structure, let's check
+        # Actually V1 structure had kill_switch_triggered at root or inside?
+        # Let's support both common patterns. Early phases put it at root.
+        kill_switch_triggered = risk_data.get("kill_switch_triggered", False)
+        if not kill_switch_triggered:
+             kill_switch_triggered = risk_data.get("kill_switch", {}).get("triggered", False)
+    else:
         evidence_ok = False
         key_notes.append("MISSING_REPORT:pool_risk")
     

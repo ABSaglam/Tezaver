@@ -24,6 +24,7 @@ from tezaver.matrix.pool.pool_reports_v1 import (
     write_report_json,
     now_iso
 )
+from tezaver.matrix.pool.pool_risk_limiter_v1 import DEFAULT_NOTIONAL_PER_TRADE
 from tezaver.matrix.pool.portfolio_provider_v1 import PortfolioProviderV1
 from tezaver.matrix.pool.pool_selector_v1 import select_topk
 
@@ -156,7 +157,11 @@ def build_intents(
                 created_ts_iso=now_iso(),
                 reason=reason,
                 qc_score=m.qc_score,
-                tier=m.tier
+                proposed_notional=0.0,
+                tier=m.tier,
+                entry_ts_iso=None,
+                scenario_id=m.scenario_id,
+                narrative=m.narrative
             )
             intents.append(intent)
             skipped_reasons[reason] += 1
@@ -181,8 +186,11 @@ def build_intents(
             created_ts_iso=now_iso(),
             reason="OK",
             qc_score=m.qc_score,
+            proposed_notional=float(policy.get("notional", DEFAULT_NOTIONAL_PER_TRADE)),
             tier=m.tier,
-            entry_ts_iso=None # Pending execution
+            entry_ts_iso=None, # Pending execution
+            scenario_id=m.scenario_id,
+            narrative=m.narrative
         )
         intents.append(intent)
         
@@ -453,48 +461,168 @@ def run_pool_phase2c(
         "per_coin_max_notional": DEFAULT_PER_COIN_MAX_NOTIONAL
     }
     
-    # 1. Risk Evaluation
-    risk_items, blocked_reasons = evaluate_risk(
-        selected_items, registry,
-        global_limits=limits,
-        kill_switch_triggered=kill_switch_triggered,
-        risk_limiter_triggered=risk_limiter_triggered
+    # --- Phase 6A.3 Wiring: Risk Limiter V1 ---
+    from tezaver.matrix.pool.pool_risk_limiter_v1 import (
+        apply_limits,
+        build_risk_report_v2,
+        DEFAULT_GLOBAL_NOTIONAL_CAP,
+        DEFAULT_PER_COIN_NOTIONAL_CAP
     )
+    from tezaver.matrix.pool.portfolio_provider_v2 import PortfolioProviderV2
+    from tezaver.matrix.pool.pool_models_v1 import PoolRiskItemV1
+
+    # 1. Prepare Portfolio State (V2)
+    try:
+        from tezaver.matrix.pool.portfolio_state_store_sim_v1 import load_state_v2
+        st_v2 = load_state_v2(stage, run_id, home_dir=None)
+        portfolio_open_notional = st_v2.totals.notional_open
+        portfolio_open_now = st_v2.totals.open_positions
+        coin_open_notional = {}
+        for p in st_v2.positions:
+            if p.status == "OPEN":
+                sym = p.symbol
+                coin_open_notional[sym] = coin_open_notional.get(sym, 0.0) + p.notional_entry
+    except Exception:
+        portfolio_open_notional = 0.0
+        portfolio_open_now = 0
+        coin_open_notional = {}
+
+    # 2. Config Limits
+    global_cap_val = limits.get("max_total_notional") or DEFAULT_GLOBAL_NOTIONAL_CAP
+    per_coin_cap_val = limits.get("per_coin_max_notional") or DEFAULT_PER_COIN_NOTIONAL_CAP
+
+    # 3. Apply Limits
+    limiter_intents = []
+    for item in selected_items:
+        limiter_intents.append({
+            "intent_id": item.intent_id,
+            "symbol": item.symbol,
+            "rank_score": item.rank_score,
+            "notional": item.proposed_notional,
+            "original_item": item 
+        })
+        
+    limit_result = apply_limits(
+        selected_intents=limiter_intents,
+        portfolio_open_notional=portfolio_open_notional,
+        coin_open_notional=coin_open_notional,
+        global_notional_cap=global_cap_val,
+        per_coin_notional_cap=per_coin_cap_val,
+        kill_switch_triggered=kill_switch_triggered
+    )
+
+    # 4. Generate Reports
+    # V2 Report
+    ks_dict = {"triggered": kill_switch_triggered}
     
-    allowed_items = [r for r in risk_items if r.verdict == "ALLOW"]
-    blocked_items = [r for r in risk_items if r.verdict == "BLOCK"]
+    # Clean up results for JSON report (remove original_item object)
+    def _clean_for_json(items):
+        clean = []
+        for i in items:
+            c = i.copy()
+            if "original_item" in c:
+                del c["original_item"]
+            clean.append(c)
+        return clean
+        
+    report_v2 = build_risk_report_v2(
+        run_id=run_id,
+        stage=stage,
+        selected_intents=_clean_for_json(limiter_intents),
+        limit_result=limit_result, # limit_result.allowed/blocked still have original_item
+        portfolio_open_notional=portfolio_open_notional,
+        portfolio_open_now=portfolio_open_now,
+        global_notional_cap=global_cap_val,
+        per_coin_notional_cap=per_coin_cap_val,
+        kill_switch=ks_dict
+    )
+    # limit_result has raw lists with original_item, we need to clean them in the report object
+    # Re-assign cleaned lists to report object
+    report_v2.allowed = _clean_for_json(limit_result.allowed)
+    report_v2.blocked = _clean_for_json(limit_result.blocked)
     
-    total_proposed = sum(r.proposed_notional for r in risk_items)
-    total_allowed = sum(r.proposed_notional for r in allowed_items)
+    write_report_json(reports_dir / "pool_risk_report_v2.json", report_v2.to_dict())
+
+    # Map to V1 for backward compat
+    allowed_items = []
+    for d in limit_result.allowed:
+        orig = d["original_item"]
+        allowed_items.append(PoolRiskItemV1(
+            intent_id=orig.intent_id,
+            symbol=orig.symbol,
+            timeframe=orig.timeframe,
+            bundle_id=orig.bundle_id,
+            # PoolRiskItemV1 does not store rank_score apparently
+            qc_score=orig.qc_score,
+            tier=orig.tier,
+            proposed_notional=orig.proposed_notional,
+            risk_units=0.0, # Dummy
+            stop_type=orig.exit_policy, # Using exit_policy as stop_type
+            stop_value=None,
+            risk_flags=[],
+            verdict="ALLOW",
+            block_reason=None
+        ))
+        
+    blocked_items = []
+    for d in limit_result.blocked:
+        orig = d["original_item"]
+        reason = d.get("reason", "RISK_LIMIT")
+        blocked_items.append(PoolRiskItemV1(
+            intent_id=orig.intent_id,
+            symbol=orig.symbol,
+            timeframe=orig.timeframe,
+            bundle_id=orig.bundle_id,
+            # PoolRiskItemV1 does not store rank_score
+            qc_score=orig.qc_score,
+            tier=orig.tier,
+            proposed_notional=orig.proposed_notional,
+            risk_units=0.0,
+            stop_type=orig.exit_policy,
+            stop_value=None,
+            risk_flags=[],
+            verdict="BLOCK",
+            block_reason=reason
+        ))
+
+    total_proposed = sum(i.proposed_notional for i in (allowed_items + blocked_items))
+    total_allowed = sum(i.proposed_notional for i in allowed_items)
     
-    risk_report = PoolRiskReportV1(
+    risk_items_all = allowed_items + blocked_items
+
+    risk_report_v1 = PoolRiskReportV1(
         run_id=run_id,
         stage=stage,
         engine_version=ev,
         data_fingerprint=df,
         config_signature=cs,
         built_ts_iso=now_iso(),
-        selection_run_id=run_id,  # Same run
+        selection_run_id=run_id,
         selected_count=len(selected_items),
         allowed_count=len(allowed_items),
         blocked_count=len(blocked_items),
         total_proposed_notional=total_proposed,
         total_allowed_notional=total_allowed,
         global_limits=limits,
-        kill_switch={"enabled": True, "triggered": kill_switch_triggered, "reason": "KILL_SWITCH" if kill_switch_triggered else None},
-        risk_limiter={"enabled": True, "triggered": risk_limiter_triggered, "reason": "GLOBAL_RISK_LIMIT" if risk_limiter_triggered else None},
-        items=risk_items,
-        blocked_reasons_count=blocked_reasons
+        kill_switch={"triggered": kill_switch_triggered},
+        risk_limiter={"triggered": limit_result.blocked_reasons_count.get("GLOBAL_NOTIONAL_CAP", 0) > 0},
+        items=risk_items_all, # Assuming V1 uses 'items' list now
+        blocked_reasons_count=limit_result.blocked_reasons_count
     )
-    
-    write_report_json(reports_dir / "pool_risk_report_v1.json", risk_report.to_dict())
+    write_report_json(reports_dir / "pool_risk_report_v1.json", risk_report_v1.to_dict())
+
+    # Build execution inputs for next steps (allowed/blocked list)
+    # Pipeline expects these lists, so we return them or put in summary
+    # The return dict below uses len() but pipeline might use these objects if we pass them.
+    # Actually run_pool_pipeline pass context via return.
+    # But wait, pool_execute_sim_v0.py (Phase 4) runs on intents.
     
     # 2. Execution Plan (DRY-RUN)
     plan_items: List[PoolExecutionPlanItemV1] = []
     per_tf: Dict[str, int] = defaultdict(int)
     per_tier: Dict[str, int] = defaultdict(int)
     
-    for r in risk_items:
+    for r in risk_items_all:
         if r.verdict == "ALLOW":
             item = PoolExecutionPlanItemV1(
                 intent_id=r.intent_id,
@@ -550,7 +678,10 @@ def run_pool_phase2c(
         "reports_dir": str(reports_dir),
         "allowed": len(allowed_items),
         "blocked": len(blocked_items),
-        "mode": "DRY_RUN"
+        "allowed_count": len(allowed_items), # Legacy compat
+        "blocked_count": len(blocked_items), # Legacy compat
+        "mode": "DRY_RUN",
+        "kill_switch": kill_switch_triggered
     }
 
 

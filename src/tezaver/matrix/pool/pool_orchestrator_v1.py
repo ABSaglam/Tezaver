@@ -74,6 +74,7 @@ def run_pool_evidence_bundle(
     kill_switch = opts.get("kill_switch_triggered", False)
     risk_limiter = opts.get("risk_limiter_triggered", False)
     max_positions = opts.get("max_open_positions", 20)
+    global_limits = opts.get("global_limits")
     closed_bars = opts.get("closed_bars", {"15m": now_iso(), "1h": now_iso(), "4h": now_iso()})
     
     results = {"stage": stage, "run_id": run_id, "phases": {}}
@@ -96,6 +97,7 @@ def run_pool_evidence_bundle(
     # Phase 2C: Risk & Execution Plan (DRY-RUN)
     res_2c = run_pool_phase2c(
         stage, run_id, trace_ctx, selected_items, registry,
+        global_limits=global_limits,
         kill_switch_triggered=kill_switch,
         risk_limiter_triggered=risk_limiter
     )

@@ -15,6 +15,7 @@ from tezaver.foundry.models import QCReport
 from tezaver.foundry.bundle_models import ApprovedRallyBundleManifest
 from tezaver.foundry import bundle_io
 from tezaver.rally.rally_grade_cards import compute_tier_from_gain_pct
+from tezaver.rally.rally_narrative_engine import analyze_scenario, SCENARIO_DEFINITIONS
 from tezaver.core import coin_cell_paths
 
 
@@ -111,6 +112,19 @@ def package_event(
     bundle_id = f"{symbol}_{timeframe}_{event_id}"
     event_time_iso = pd.to_datetime(event_row.get('event_time')).isoformat() if pd.notna(event_row.get('event_time')) else ""
     
+    # Analyze Narrative / Scenario
+    try:
+        scenario_id = analyze_scenario(event_row)
+        scenario_def = SCENARIO_DEFINITIONS.get(scenario_id, SCENARIO_DEFINITIONS["SCENARIO_NEUTRAL"])
+        narrative = {
+            "label": scenario_def["label"],
+            "desc": scenario_def["desc"],
+            "risk": scenario_def["risk"]
+        }
+    except Exception as e:
+        scenario_id = "SCENARIO_NEUTRAL"
+        narrative = SCENARIO_DEFINITIONS["SCENARIO_NEUTRAL"]
+
     manifest = ApprovedRallyBundleManifest(
         bundle_id=bundle_id,
         symbol=symbol,
@@ -120,7 +134,9 @@ def package_event(
         tier=tier,
         approved=approved,
         qc=qc_dict,
-        pointers=pointers
+        pointers=pointers,
+        scenario_id=scenario_id,
+        narrative=narrative
     )
     
     # Prepare event row dict (minimal fields)

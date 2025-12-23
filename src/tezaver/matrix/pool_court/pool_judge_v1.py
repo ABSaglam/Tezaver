@@ -66,12 +66,32 @@ def judge_pool(
         gates.append(PoolGateResultV1("RESTART_RECONCILE_OK", "FAIL", f"Drift detected: {scorecard.restart_reconcile_verdict}"))
         suggested_actions.extend(["ENTER_SAFE_MODE", "RECONCILE_POSITIONS"])
     
-    # Gate 3: RISK_OK
-    if scorecard.blocked_count == 0:
-        gates.append(PoolGateResultV1("RISK_OK", "PASS", "No blocked intents"))
+    # Gate 3: RISK_OK (Granular - Phase 6A.3)
+    # 3a. GLOBAL_RISK_OK
+    reason_counts = scorecard.blocked_reasons_count
+    if reason_counts.get("GLOBAL_NOTIONAL_CAP", 0) > 0:
+        gates.append(PoolGateResultV1("GLOBAL_RISK_OK", "IMPROVE", f"Global cap blocks: {reason_counts['GLOBAL_NOTIONAL_CAP']}"))
+        suggested_actions.append("INCREASE_GLOBAL_CAP")
     else:
-        gates.append(PoolGateResultV1("RISK_OK", "IMPROVE", f"Blocked intents: {scorecard.blocked_count}"))
-        suggested_actions.append("TIGHTEN_POLICY_OR_FILTER")
+        gates.append(PoolGateResultV1("GLOBAL_RISK_OK", "PASS", "Global cap OK"))
+        
+    # 3b. PER_COIN_RISK_OK
+    per_coin_blocks = reason_counts.get("PER_COIN_CAP", 0)
+    if per_coin_blocks > 0:
+        gates.append(PoolGateResultV1("PER_COIN_RISK_OK", "IMPROVE", f"Per-coin blocks: {per_coin_blocks}"))
+    else:
+        gates.append(PoolGateResultV1("PER_COIN_RISK_OK", "PASS", "Per-coin caps OK"))
+
+    # 3c. RISK_OK (Generic catch-all for other reasons)
+    # Valid reasons: RISK_LIMIT (generic), MISSING_POLICY, etc.
+    # We filter out KILL_SWITCH (handled by Gate 0) and already handled above
+    other_blocks = scorecard.blocked_count - (reason_counts.get("KILL_SWITCH", 0) + 
+                                              reason_counts.get("GLOBAL_NOTIONAL_CAP", 0) + 
+                                              reason_counts.get("PER_COIN_CAP", 0))
+    if other_blocks > 0:
+        gates.append(PoolGateResultV1("RISK_OK", "IMPROVE", f"Other blocks: {other_blocks}"))
+    else:
+        gates.append(PoolGateResultV1("RISK_OK", "PASS", "No other blocks"))
     
     # Gate 4: MIN_ACTIVITY
     if scorecard.selected_count >= 1:

@@ -21,6 +21,8 @@ TIER_SCORE_BONUS = {
     "UNKNOWN": 0.0
 }
 
+STORY_SCORE_BONUS = 50.0 # High priority for narrative-driven story packs
+
 def compute_rank_score(intent: TradeIntentV1) -> float:
     """
     Compute ranking score for an intent.
@@ -28,7 +30,13 @@ def compute_rank_score(intent: TradeIntentV1) -> float:
     """
     base_score = float(intent.qc_score or 0)
     tier_bonus = TIER_SCORE_BONUS.get(intent.tier, 0.0)
-    return base_score + tier_bonus
+    
+    # Story/Narrative Bonus
+    story_bonus = 0.0
+    if intent.scenario_id and intent.scenario_id != "SCENARIO_NEUTRAL":
+        story_bonus = STORY_SCORE_BONUS
+        
+    return base_score + tier_bonus + story_bonus
 
 def select_topk(
     intents_ok: List[TradeIntentV1], 
@@ -66,8 +74,10 @@ def select_topk(
             tier=i.tier,
             trigger_type=i.trigger_type,
             exit_policy=i.exit_policy,
+            proposed_notional=i.proposed_notional,
             rank_score=score,
-            rank_reason="qc+tier"
+            rank_reason="qc+tier+story",
+            scenario_id=i.scenario_id
         )
         candidates.append(item)
         

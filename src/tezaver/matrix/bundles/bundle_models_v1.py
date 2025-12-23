@@ -48,6 +48,10 @@ class ApprovedRallyBundleManifestV1:
     trigger_spec_v1: Optional[Dict[str, Any]] = None
     policy_spec_v1: Optional[Dict[str, Any]] = None
     
+    # Optional - Narrative / Story
+    scenario_id: Optional[str] = None
+    narrative: Optional[Dict[str, Any]] = None
+    
     @staticmethod
     def from_dict(data: Dict[str, Any]) -> "ApprovedRallyBundleManifestV1":
         """
@@ -148,7 +152,9 @@ class ApprovedRallyBundleManifestV1:
             pointers=pointers,
             trace=trace,
             trigger_spec_v1=trigger_spec,
-            policy_spec_v1=policy_spec
+            policy_spec_v1=policy_spec,
+            scenario_id=data.get("scenario_id"),
+            narrative=data.get("narrative")
         )
 
 

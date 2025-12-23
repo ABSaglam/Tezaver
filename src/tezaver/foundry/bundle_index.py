@@ -48,9 +48,11 @@ def scan_bundles(root_dir: str = ".tezaver_matrix/approved_bundles_v1") -> pd.Da
                 "qc_score": manifest.get("qc", {}).get("score", 0),
                 "event_time_iso": manifest.get("event_time_iso", ""),
                 "approved_entry_ts": manifest.get("approved", {}).get("entry_ts", ""),
-                "approved_exit_ts": manifest.get("approved", {}).get("exit_ts", ""),
+                "build_ts_iso": manifest.get("build_ts_iso", ""),
                 "bundle_dir": str(manifest_file.parent),
-                "bundle_id": manifest.get("bundle_id", "")
+                "bundle_id": manifest.get("bundle_id", ""),
+                "scenario_id": manifest.get("scenario_id", "SCENARIO_NEUTRAL"),
+                "narrative": manifest.get("narrative", {})
             }
             
             bundles.append(bundle_info)

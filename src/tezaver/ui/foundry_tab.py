@@ -84,7 +84,7 @@ def render_foundry_page():
         return
     
     # Display table (without bundle_dir column for cleaner view)
-    display_cols = ["symbol", "timeframe", "tier", "qc_score", "qc_verdict", "event_time_iso", "event_id"]
+    display_cols = ["symbol", "timeframe", "tier", "qc_score", "qc_verdict", "scenario_id", "event_time_iso", "event_id"]
     st.dataframe(df_filtered[display_cols], use_container_width=True, height=300)
     
     # Bundle selection for detail view
@@ -114,8 +114,9 @@ def render_foundry_page():
         bundle_files = load_bundle_files(bundle_dir)
         
         # Display in tabs
-        tab1, tab2, tab3, tab4, tab5 = st.tabs([
+        tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
             "📋 Manifest",
+            "📖 Story",
             "📝 Annotation",
             "✅ QC Report",
             "📊 Event Row",
@@ -127,26 +128,37 @@ def render_foundry_page():
                 st.json(bundle_files["manifest"])
             else:
                 st.warning("manifest.json not found")
-        
+
         with tab2:
+            manifest = bundle_files["manifest"]
+            if manifest and "narrative" in manifest:
+                nar = manifest["narrative"]
+                st.markdown(f"### {nar.get('label', 'Unknown Story')}")
+                st.info(nar.get('desc', 'No description'))
+                st.write(f"**Scenario ID:** {manifest.get('scenario_id')}")
+                st.write(f"**Risk Level:** {nar.get('risk', 'Medium')}")
+            else:
+                st.info("No story/narrative data in this bundle.")
+        
+        with tab3:
             if bundle_files["annotation"]:
                 st.json(bundle_files["annotation"])
             else:
                 st.warning("annotation.json not found")
         
-        with tab3:
+        with tab4:
             if bundle_files["qc_report"]:
                 st.json(bundle_files["qc_report"])
             else:
                 st.warning("qc_report.json not found")
         
-        with tab4:
+        with tab5:
             if bundle_files["event_row"]:
                 st.json(bundle_files["event_row"])
             else:
                 st.warning("event_row.json not found")
         
-        with tab5:
+        with tab6:
             if bundle_files["price_window"] is not None and not bundle_files["price_window"].empty:
                 df_price = bundle_files["price_window"]
                 st.write(f"**Window:** {len(df_price)} bars")

@@ -45,6 +45,10 @@ class ApprovedRallyBundleManifest:
     # Expected keys:
     #   annotation_path, event_dataset_path, history_path
     
+    # Narrative / Story metadata
+    scenario_id: Optional[str] = None
+    narrative: Optional[Dict[str, Any]] = None  # label, desc, risk
+    
     # Build trace
     trace: Optional[Dict[str, str]] = None
     build_ts_iso: str = field(default_factory=lambda: datetime.utcnow().isoformat())
@@ -67,6 +71,8 @@ class ApprovedRallyBundleManifest:
             approved=data.get("approved", {}),
             qc=data.get("qc", {}),
             pointers=data.get("pointers", {}),
+            scenario_id=data.get("scenario_id"),
+            narrative=data.get("narrative"),
             trace=data.get("trace"),
             build_ts_iso=data.get("build_ts_iso", "")
         )

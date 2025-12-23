@@ -33,6 +33,7 @@ from tezaver.ui.risk_cards import render_risk_tab
 from tezaver.ui.pattern_story_view import render_pattern_story_panel, PatternStoryKey
 from tezaver.ui.explanation_cards import TRIGGER_LABELS_TR
 from tezaver.ui.data_health_tab import render_data_health_page
+from tezaver.ui.sniper_lab_tab import render_sniper_lab_page
 import plotly.graph_objects as go
 
 # --- HELPER FUNCTIONS ---
@@ -639,6 +640,7 @@ def main():
                 "👁️ Insight Panel", 
                 "🎯 ONY Stüdyo",
                 "🏭 Dökümhane",
+                "🧪 Sniper Lab",
                 "💾 Veri Merkezi", 
                 "⚙️ Sistem Paneli"
             ]
@@ -701,6 +703,8 @@ def main():
             elif current_nav == "🏭 Dökümhane":
                 from tezaver.ui.foundry_tab import render_foundry_page
                 render_foundry_page()
+            elif current_nav == "🧪 Sniper Lab":
+                render_sniper_lab_page()
             elif current_nav == "💾 Veri Merkezi": render_data_health_page()
             elif current_nav == "⚙️ Sistem Paneli": 
                 from tezaver.ui.subpages.system_dashboard import render_system_dashboard

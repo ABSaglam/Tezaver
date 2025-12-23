@@ -2099,17 +2099,45 @@ def render_reports(home: str):
         col1, col2 = st.columns(2)
         
         with col1:
-            # Risk Report
-            risk_path = reports_dir / "pool_risk_report_v1.json"
-            if risk_path.exists():
-                with st.expander("⚠️ Risk Report", expanded=False):
-                    with open(risk_path) as f:
+            # Risk Report (Prioritize V2)
+            risk_v2_path = reports_dir / "pool_risk_report_v2.json"
+            risk_v1_path = reports_dir / "pool_risk_report_v1.json"
+            
+            if risk_v2_path.exists():
+                 with st.expander("🛡️ Risk Report V2", expanded=False):
+                    with open(risk_v2_path) as f:
+                        data = json.load(f)
+                        st.json(data)
+                        
+                        st.divider()
+                        # V2 Metrics
+                        c1, c2, c3 = st.columns(3)
+                        c1.metric("Allowed", data.get("allowed_count", 0))
+                        c2.metric("Blocked", data.get("blocked_count", 0))
+                        # Limit usage
+                        limits = data.get("limits", {})
+                        pf = data.get("portfolio", {})
+                        if limits and pf:
+                            usage = pf.get("notional_open", 0)
+                            cap = limits.get("global_notional_cap", 1)
+                            pct = (usage / cap) * 100 if cap else 0
+                            c3.metric("Global Cap", f"{pct:.1f}%")
+                            
+                        # Blocked Reasons
+                        reasons = data.get("blocked_reasons_count", {})
+                        if reasons:
+                            st.caption("Blocked Reasons:")
+                            st.write(reasons)
+
+            elif risk_v1_path.exists():
+                with st.expander("⚠️ Risk Report V1", expanded=False):
+                    with open(risk_v1_path) as f:
                         data = json.load(f)
                         st.json(data)
                         st.metric("Allowed", data.get("allowed_count", 0))
                         st.metric("Blocked", data.get("blocked_count", 0))
             else:
-                st.caption("No Risk Report")
+                 st.caption("No Risk Report")
         
         with col2:
             # Execution Summary
@@ -2272,19 +2300,43 @@ def render_reports(home: str):
     st.subheader("🌊 Pool Execution (SIM v0)")
     st.caption("Order Intents & Simulated Execution")
     
-    # Kill Switch Status (Phase 5B)
+    # Kill Switch Status (Phase 5B) + UI Toggle Button
     if 'selected_run_path' in locals() and selected_run_path:
         state_dir = selected_run_path / "state"
         ks_path = state_dir / "pool_kill_switch_state_v1.json"
+        
+        # Read current state
+        ks_active = False
         if ks_path.exists():
             with open(ks_path) as f:
                 ks_data = json.load(f)
-            if ks_data.get("triggered"):
+            ks_active = ks_data.get("triggered", False)
+        
+        # Display status and toggle button
+        col_ks1, col_ks2 = st.columns([3, 1])
+        with col_ks1:
+            if ks_active:
                 st.error(f"🛑 **Kill Switch ACTIVE** (reason: {ks_data.get('reason', 'N/A')})")
             else:
                 st.success("✅ Kill Switch OFF")
-        else:
-            st.info("ℹ️ Kill Switch: Default OFF")
+        
+        with col_ks2:
+            if ks_active:
+                # Show deactivate button
+                if st.button("🟢 Deactivate", key="ks_deactivate", type="secondary"):
+                    state_dir.mkdir(parents=True, exist_ok=True)
+                    ks_new = {"triggered": False, "reason": "ui_deactivate", "ts": datetime.now().isoformat()}
+                    with open(ks_path, "w") as f:
+                        json.dump(ks_new, f, indent=2)
+                    st.rerun()
+            else:
+                # Show activate button (RED, dangerous)
+                if st.button("🔴 KILL SWITCH", key="ks_activate", type="primary"):
+                    state_dir.mkdir(parents=True, exist_ok=True)
+                    ks_new = {"triggered": True, "reason": "ui_panic", "ts": datetime.now().isoformat()}
+                    with open(ks_path, "w") as f:
+                        json.dump(ks_new, f, indent=2)
+                    st.rerun()
 
     if 'selected_run_path' in locals() and selected_run_path:
         reports_dir = selected_run_path / "reports"

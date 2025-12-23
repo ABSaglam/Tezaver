@@ -36,7 +36,9 @@ class PoolJuryScorecardV1:
     planned_total_notional: float
     restart_reconcile_verdict: str  # "OK"|"NEEDS_SAFE_MODE"|"UNKNOWN"
     kill_switch_triggered: bool  # Phase 5B.1
-    key_notes: List[str]
+    blocked_reasons_count: Dict[str, int] = field(default_factory=dict)  # Phase 6A.3
+    limits: Dict[str, Any] = field(default_factory=dict)  # Phase 6A.3
+    key_notes: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -56,6 +58,8 @@ class PoolJuryScorecardV1:
             "planned_total_notional": self.planned_total_notional,
             "restart_reconcile_verdict": self.restart_reconcile_verdict,
             "kill_switch_triggered": self.kill_switch_triggered,
+            "blocked_reasons_count": self.blocked_reasons_count,
+            "limits": self.limits,
             "key_notes": self.key_notes
         }
 
