@@ -71,6 +71,7 @@ addopts = "-v --tb=short"
 markers = [
     "core: blocking tests (must be 100% green)",
     "legacy: migrated later (fixtures/api mismatch)",
+    "golden_e2e: end-to-end golden path tests",
 ]
 
 [tool.black]
