@@ -398,5 +398,157 @@ def run_pool_phase2b(
         "status": "OK",
         "reports_dir": str(reports_dir),
         "capacity": capacity,
-        "selected": len(selected_items)
+        "selected": len(selected_items),
+        "selected_items": selected_items  # Pass for Phase 2C
+    }
+
+
+def run_pool_phase2c(
+    stage: str,
+    run_id: str,
+    trace_ctx: Dict[str, str],
+    selected_items: List["PoolSelectionItemV1"],
+    registry: BundleRegistry,
+    global_limits: Optional[Dict[str, Any]] = None,
+    kill_switch_triggered: bool = False,
+    risk_limiter_triggered: bool = False
+) -> Dict[str, Any]:
+    """
+    Execute Pool Phase 2C: Risk Evaluation & Dry-Run Execution Plan.
+    NO ACTUAL ORDERS ARE PLACED.
+    
+    Args:
+        stage: Run stage
+        run_id: Run ID
+        trace_ctx: Context for determinism
+        selected_items: List of selected intents from Phase 2B
+        registry: Bundle registry for manifest lookup
+        global_limits: Risk limits configuration
+        kill_switch_triggered: Emergency stop flag
+        risk_limiter_triggered: Global risk limit flag
+        
+    Returns:
+        Summary dict
+    """
+    from tezaver.matrix.pool.pool_models_v1 import (
+        PoolSelectionItemV1,
+        PoolRiskReportV1,
+        PoolExecutionPlanItemV1,
+        PoolExecutionSummaryV1
+    )
+    from tezaver.matrix.pool.pool_risk_engine_v1 import (
+        evaluate_risk,
+        DEFAULT_MAX_TOTAL_NOTIONAL,
+        DEFAULT_PER_COIN_MAX_NOTIONAL
+    )
+    
+    ev = trace_ctx.get("engine_version", "v1.0.0")
+    df = trace_ctx.get("data_fingerprint", "UNKNOWN")
+    cs = trace_ctx.get("config_signature", "UNKNOWN")
+    reports_dir = resolve_reports_dir(stage, run_id)
+    
+    limits = global_limits or {
+        "max_open_positions": 20,
+        "max_total_notional": DEFAULT_MAX_TOTAL_NOTIONAL,
+        "per_coin_max_notional": DEFAULT_PER_COIN_MAX_NOTIONAL
+    }
+    
+    # 1. Risk Evaluation
+    risk_items, blocked_reasons = evaluate_risk(
+        selected_items, registry,
+        global_limits=limits,
+        kill_switch_triggered=kill_switch_triggered,
+        risk_limiter_triggered=risk_limiter_triggered
+    )
+    
+    allowed_items = [r for r in risk_items if r.verdict == "ALLOW"]
+    blocked_items = [r for r in risk_items if r.verdict == "BLOCK"]
+    
+    total_proposed = sum(r.proposed_notional for r in risk_items)
+    total_allowed = sum(r.proposed_notional for r in allowed_items)
+    
+    risk_report = PoolRiskReportV1(
+        run_id=run_id,
+        stage=stage,
+        engine_version=ev,
+        data_fingerprint=df,
+        config_signature=cs,
+        built_ts_iso=now_iso(),
+        selection_run_id=run_id,  # Same run
+        selected_count=len(selected_items),
+        allowed_count=len(allowed_items),
+        blocked_count=len(blocked_items),
+        total_proposed_notional=total_proposed,
+        total_allowed_notional=total_allowed,
+        global_limits=limits,
+        kill_switch={"enabled": True, "triggered": kill_switch_triggered, "reason": "KILL_SWITCH" if kill_switch_triggered else None},
+        risk_limiter={"enabled": True, "triggered": risk_limiter_triggered, "reason": "GLOBAL_RISK_LIMIT" if risk_limiter_triggered else None},
+        items=risk_items,
+        blocked_reasons_count=blocked_reasons
+    )
+    
+    write_report_json(reports_dir / "pool_risk_report_v1.json", risk_report.to_dict())
+    
+    # 2. Execution Plan (DRY-RUN)
+    plan_items: List[PoolExecutionPlanItemV1] = []
+    per_tf: Dict[str, int] = defaultdict(int)
+    per_tier: Dict[str, int] = defaultdict(int)
+    
+    for r in risk_items:
+        if r.verdict == "ALLOW":
+            item = PoolExecutionPlanItemV1(
+                intent_id=r.intent_id,
+                symbol=r.symbol,
+                timeframe=r.timeframe,
+                bundle_id=r.bundle_id,
+                action="PLACE_ORDER",
+                side="BUY",
+                order_type="MARKET",
+                notional=r.proposed_notional,
+                policy_exit=r.stop_type,
+                notes=["dry_run"]
+            )
+            per_tf[r.timeframe] += 1
+            per_tier[r.tier or "UNKNOWN"] += 1
+        else:
+            item = PoolExecutionPlanItemV1(
+                intent_id=r.intent_id,
+                symbol=r.symbol,
+                timeframe=r.timeframe,
+                bundle_id=r.bundle_id,
+                action="SKIP_BLOCKED",
+                side="BUY",
+                order_type="MARKET",
+                notional=0.0,
+                policy_exit=r.stop_type,
+                notes=["blocked", r.block_reason or "UNKNOWN"]
+            )
+        plan_items.append(item)
+    
+    exec_summary = PoolExecutionSummaryV1(
+        run_id=run_id,
+        stage=stage,
+        engine_version=ev,
+        data_fingerprint=df,
+        config_signature=cs,
+        built_ts_iso=now_iso(),
+        selection_run_id=run_id,
+        risk_run_id=run_id,
+        planned_orders=len(allowed_items),
+        skipped_orders=len(blocked_items),
+        planned_total_notional=total_allowed,
+        per_timeframe_counts=dict(per_tf),
+        per_tier_counts=dict(per_tier),
+        plan=plan_items,
+        mode="DRY_RUN"
+    )
+    
+    write_report_json(reports_dir / "pool_execution_summary_v1.json", exec_summary.to_dict())
+    
+    return {
+        "status": "OK",
+        "reports_dir": str(reports_dir),
+        "allowed": len(allowed_items),
+        "blocked": len(blocked_items),
+        "mode": "DRY_RUN"
     }

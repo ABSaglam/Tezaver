@@ -2088,6 +2088,41 @@ def render_reports(home: str):
             else:
                  st.caption("No Selection Report")
 
+    # Pool Reports (Phase 2C)
+    st.divider()
+    st.subheader("🌊 Pool Reports (Phase 2C)")
+    st.caption("Risk Evaluation & Dry-Run Execution Plan")
+    
+    if 'selected_run_path' in locals() and selected_run_path:
+        reports_dir = selected_run_path / "reports"
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Risk Report
+            risk_path = reports_dir / "pool_risk_report_v1.json"
+            if risk_path.exists():
+                with st.expander("⚠️ Risk Report", expanded=False):
+                    with open(risk_path) as f:
+                        data = json.load(f)
+                        st.json(data)
+                        st.metric("Allowed", data.get("allowed_count", 0))
+                        st.metric("Blocked", data.get("blocked_count", 0))
+            else:
+                st.caption("No Risk Report")
+        
+        with col2:
+            # Execution Summary
+            exec_path = reports_dir / "pool_execution_summary_v1.json"
+            if exec_path.exists():
+                with st.expander("📋 Execution Summary (DRY-RUN)", expanded=False):
+                    with open(exec_path) as f:
+                        data = json.load(f)
+                        st.json(data)
+                        st.metric("Planned Orders", data.get("planned_orders", 0))
+                        st.metric("Mode", data.get("mode", "N/A"))
+            else:
+                st.caption("No Execution Summary")
 
 def render_incidents(home: str):
     """MX-FINAL-0401: Render Incidents page for evidence bundles."""

@@ -242,3 +242,225 @@ class PoolSelectionReportV1:
             "skipped": self.skipped,
             "selection_policy_v1": self.selection_policy_v1
         }
+
+# ============================================================
+# Phase 2C: Risk and Execution Models
+# ============================================================
+
+@dataclass
+class PoolRiskItemV1:
+    """Risk evaluation for a single selected intent."""
+    intent_id: str
+    symbol: str
+    timeframe: str
+    bundle_id: str
+    qc_score: int
+    tier: Optional[str]
+    proposed_notional: float
+    risk_units: float  # Normalized risk measure
+    stop_type: str     # "ATR"|"FIXED"|"TRAILING"|"NONE"
+    stop_value: Optional[float]
+    risk_flags: List[str]
+    verdict: str       # "ALLOW"|"BLOCK"
+    block_reason: Optional[str]
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "intent_id": self.intent_id,
+            "symbol": self.symbol,
+            "timeframe": self.timeframe,
+            "bundle_id": self.bundle_id,
+            "qc_score": self.qc_score,
+            "tier": self.tier,
+            "proposed_notional": self.proposed_notional,
+            "risk_units": self.risk_units,
+            "stop_type": self.stop_type,
+            "stop_value": self.stop_value,
+            "risk_flags": self.risk_flags,
+            "verdict": self.verdict,
+            "block_reason": self.block_reason
+        }
+
+@dataclass
+class PoolRiskReportV1:
+    """Report on risk evaluation for selected intents."""
+    run_id: str
+    stage: str
+    engine_version: str
+    data_fingerprint: str
+    config_signature: str
+    built_ts_iso: str
+    selection_run_id: str
+    selected_count: int
+    allowed_count: int
+    blocked_count: int
+    total_proposed_notional: float
+    total_allowed_notional: float
+    global_limits: Dict[str, Any]
+    kill_switch: Dict[str, Any]
+    risk_limiter: Dict[str, Any]
+    items: List[PoolRiskItemV1]
+    blocked_reasons_count: Dict[str, int]
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "run_id": self.run_id,
+            "stage": self.stage,
+            "engine_version": self.engine_version,
+            "data_fingerprint": self.data_fingerprint,
+            "config_signature": self.config_signature,
+            "built_ts_iso": self.built_ts_iso,
+            "selection_run_id": self.selection_run_id,
+            "selected_count": self.selected_count,
+            "allowed_count": self.allowed_count,
+            "blocked_count": self.blocked_count,
+            "total_proposed_notional": self.total_proposed_notional,
+            "total_allowed_notional": self.total_allowed_notional,
+            "global_limits": self.global_limits,
+            "kill_switch": self.kill_switch,
+            "risk_limiter": self.risk_limiter,
+            "items": [i.to_dict() for i in self.items],
+            "blocked_reasons_count": self.blocked_reasons_count
+        }
+
+@dataclass
+class PoolExecutionPlanItemV1:
+    """Execution plan for a single intent (dry-run)."""
+    intent_id: str
+    symbol: str
+    timeframe: str
+    bundle_id: str
+    action: str        # "PLACE_ORDER"|"SKIP_BLOCKED"
+    side: str          # "BUY"
+    order_type: str    # "MARKET"
+    notional: float
+    policy_exit: str   # ATR/FIXED/TRAILING
+    notes: List[str]
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "intent_id": self.intent_id,
+            "symbol": self.symbol,
+            "timeframe": self.timeframe,
+            "bundle_id": self.bundle_id,
+            "action": self.action,
+            "side": self.side,
+            "order_type": self.order_type,
+            "notional": self.notional,
+            "policy_exit": self.policy_exit,
+            "notes": self.notes
+        }
+
+@dataclass
+class PoolExecutionSummaryV1:
+    """Execution summary report (dry-run)."""
+    run_id: str
+    stage: str
+    engine_version: str
+    data_fingerprint: str
+    config_signature: str
+    built_ts_iso: str
+    selection_run_id: str
+    risk_run_id: str
+    planned_orders: int
+    skipped_orders: int
+    planned_total_notional: float
+    per_timeframe_counts: Dict[str, int]
+    per_tier_counts: Dict[str, int]
+    plan: List[PoolExecutionPlanItemV1]
+    mode: str  # "DRY_RUN"
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "run_id": self.run_id,
+            "stage": self.stage,
+            "engine_version": self.engine_version,
+            "data_fingerprint": self.data_fingerprint,
+            "config_signature": self.config_signature,
+            "built_ts_iso": self.built_ts_iso,
+            "selection_run_id": self.selection_run_id,
+            "risk_run_id": self.risk_run_id,
+            "planned_orders": self.planned_orders,
+            "skipped_orders": self.skipped_orders,
+            "planned_total_notional": self.planned_total_notional,
+            "per_timeframe_counts": self.per_timeframe_counts,
+            "per_tier_counts": self.per_tier_counts,
+            "plan": [p.to_dict() for p in self.plan],
+            "mode": self.mode
+        }
+
+# ============================================================
+# Phase 2D: Arm State and Reconcile Models
+# ============================================================
+
+@dataclass
+class LiveArmStateReportV1:
+    """LIVE arm state report for durability proof."""
+    run_id: str
+    stage: str
+    engine_version: str
+    data_fingerprint: str
+    config_signature: str
+    built_ts_iso: str
+    arm_id: str
+    armed: bool
+    arm_reason: str  # "BUNDLE_ARMED"|"MANUAL_ARM"|"DISARMED"
+    bundle_id: Optional[str]
+    symbol: Optional[str]
+    timeframe: Optional[str]
+    qc_score: Optional[int]
+    tier: Optional[str]
+    notes: List[str]
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "run_id": self.run_id,
+            "stage": self.stage,
+            "engine_version": self.engine_version,
+            "data_fingerprint": self.data_fingerprint,
+            "config_signature": self.config_signature,
+            "built_ts_iso": self.built_ts_iso,
+            "arm_id": self.arm_id,
+            "armed": self.armed,
+            "arm_reason": self.arm_reason,
+            "bundle_id": self.bundle_id,
+            "symbol": self.symbol,
+            "timeframe": self.timeframe,
+            "qc_score": self.qc_score,
+            "tier": self.tier,
+            "notes": self.notes
+        }
+
+@dataclass
+class RestartReconcileReportV1:
+    """Restart reconcile report for drift detection."""
+    run_id: str
+    stage: str
+    engine_version: str
+    data_fingerprint: str
+    config_signature: str
+    built_ts_iso: str
+    reconcile_id: str
+    before: Dict[str, Any]  # {"open_positions_count": int, "positions": list}
+    after: Dict[str, Any]   # {"open_positions_count": int, "positions": list}
+    drift: Dict[str, Any]   # {"changed": bool, "delta_count": int, "missing_ids": list, "extra_ids": list}
+    source: Dict[str, Any]  # {"provider": str, "details": str}
+    verdict: str            # "OK"|"NEEDS_SAFE_MODE"
+    suggested_actions: List[str]
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "run_id": self.run_id,
+            "stage": self.stage,
+            "engine_version": self.engine_version,
+            "data_fingerprint": self.data_fingerprint,
+            "config_signature": self.config_signature,
+            "built_ts_iso": self.built_ts_iso,
+            "reconcile_id": self.reconcile_id,
+            "before": self.before,
+            "after": self.after,
+            "drift": self.drift,
+            "source": self.source,
+            "verdict": self.verdict,
+            "suggested_actions": self.suggested_actions
+        }
