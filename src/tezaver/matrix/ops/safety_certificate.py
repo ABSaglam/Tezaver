@@ -75,6 +75,26 @@ def generate_md_report(cert: Dict) -> str:
             lines.append(f"- **{w['mx']}**: {w['name']} ({w['reason']})")
         lines.append("")
         
+    # Pool Evidence Section (MX-Phase0.2)
+    pool_ev = res.get("pool_evidence")
+    if pool_ev:
+        status_emoji = {
+            "OK": "✅",
+            "MISSING": "❌",
+            "SKIPPED": "⏭️",
+            "ERROR": "⚠️"
+        }.get(pool_ev["status"], "❓")
+        
+        lines.append(f"## Pool Evidence: {status_emoji} {pool_ev['status']}")
+        lines.append(f"_{pool_ev['summary']}_")
+        
+        if pool_ev["missing_ids"]:
+            lines.append("")
+            lines.append("**Missing Artifacts:**")
+            for m in pool_ev["missing_ids"]:
+                lines.append(f"- {m}")
+        lines.append("")
+        
     lines.extend([
         "## Protocol Details",
         "| MX | Protocol | Declared | Effective | Evidence OK | Missing |",

@@ -85,11 +85,67 @@ def run_safety_sweep(run_dir: str, active_stage: str) -> Dict:
     # PASS only if 0 REDs
     verdict = "PASS" if counts["RED"] == 0 else "FAIL"
     
+    
+    # MX-Phase 0.2: Pool Evidence Check
+    # This must be non-blocking for now if pool is not enabled.
+    # Where to get pool_enabled? 
+    # Option 1: Env var TEZAVER_POOL_ENABLED
+    # Option 2: Check for markers in run_dir/meta.json or similar?
+    # For NON-BREAKING implementation, let's default to looking for a specific marker file OR meta config.
+    
+    pool_enabled = False
+    try:
+        import os
+        import json
+        meta_path = os.path.join(run_dir, "meta.json")
+        if os.path.exists(meta_path):
+             with open(meta_path, 'r') as f:
+                 meta = json.load(f)
+                 # Check config or pool specific fields
+                 if meta.get("config", {}).get("pool_enabled"):
+                     pool_enabled = True
+                 # Also check for pool report which implies pool was active
+                 elif os.path.exists(os.path.join(run_dir, "reports", "pool_universe_report_v1.json")):
+                     pool_enabled = True
+    except:
+        pass
+        
+    # Check Env var override
+    import os
+    if os.getenv("TEZAVER_POOL_ENABLED") == "1":
+        pool_enabled = True
+
+    # Use run_id from path or meta?
+    # run_dir usually like .../run_id
+    run_id = os.path.basename(run_dir)
+    
+    pool_evidence_result = registry.check_pool_evidence_contract(
+        run_dir=run_dir,
+        stage=active_stage,
+        run_id=run_id,
+        pool_enabled=pool_enabled
+    )
+    
+    # If pool enabled and missing, add to warnings? Or just report it separately?
+    # Request says: pool_enabled true and missing var ise: MISSING + warnings increment
+    if pool_evidence_result["status"] == "MISSING":
+        # We treat Missing Pool Evidence as a WARNING for now (Phase 0.2), 
+        # later might become BLOCKER (RED).
+        warnings.append({
+            "mx": "POOL-CONTRACT",
+            "name": "Pool Evidence Contract",
+            "reason": f"Missing artifacts: {len(pool_evidence_result['missing_ids'])}",
+            "details": pool_evidence_result["missing_ids"]
+        })
+        # Note: Do not increment 'counts' dict because this is not a protocol in the registry logic yet,
+        # it's an auxiliary check.
+
     return {
         "verdict": verdict,
         "active_stage": active_stage,
         "counts": counts,
         "blockers": blockers,
         "warnings": warnings,
-        "protocols": protocols_evaluated
+        "protocols": protocols_evaluated,
+        "pool_evidence": pool_evidence_result
     }

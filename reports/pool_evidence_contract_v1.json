@@ -1,0 +1,163 @@
+{
+    "version": "pool_evidence_contract_v1",
+    "principles": [
+        "run_scoped",
+        "no_latest_json",
+        "deterministic_trace",
+        "tamper_evident"
+    ],
+    "artifacts": [
+        {
+            "artifact_id": "pool_universe_report_v1",
+            "stages": [
+                "WAR",
+                "LIVE"
+            ],
+            "path_pattern": "out/matrix_runs/<stage>/<run_id>/reports/pool_universe_report_v1.json",
+            "required_fields": [
+                "run_id",
+                "engine_version",
+                "data_fingerprint",
+                "config_signature",
+                "cells_total",
+                "cells_by_tf",
+                "universe_hash"
+            ],
+            "source_module": "tezaver.matrix.pool.universe",
+            "drift_checker_required": true
+        },
+        {
+            "artifact_id": "pool_tick_report_v1",
+            "stages": [
+                "WAR",
+                "LIVE"
+            ],
+            "path_pattern": "out/matrix_runs/<stage>/<run_id>/reports/pool_tick_report_v1.json",
+            "required_fields": [
+                "run_id",
+                "ticks_processed",
+                "tick_rate_avg",
+                "lag_ms_avg",
+                "dropped_ticks"
+            ],
+            "source_module": "tezaver.matrix.pool.tick_engine",
+            "drift_checker_required": true
+        },
+        {
+            "artifact_id": "pool_intents_report_v1",
+            "stages": [
+                "WAR",
+                "LIVE"
+            ],
+            "path_pattern": "out/matrix_runs/<stage>/<run_id>/reports/pool_intents_report_v1.json",
+            "required_fields": [
+                "run_id",
+                "total_intents",
+                "intent_types",
+                "intent_success_rate"
+            ],
+            "source_module": "tezaver.matrix.pool.intent_engine",
+            "drift_checker_required": true
+        },
+        {
+            "artifact_id": "pool_selection_report_v1",
+            "stages": [
+                "WAR",
+                "LIVE"
+            ],
+            "path_pattern": "out/matrix_runs/<stage>/<run_id>/reports/pool_selection_report_v1.json",
+            "required_fields": [
+                "run_id",
+                "candidates_evaluated",
+                "candidates_selected",
+                "capacity_utilization_pct",
+                "selection_logic_hash"
+            ],
+            "source_module": "tezaver.matrix.pool.selector",
+            "drift_checker_required": true
+        },
+        {
+            "artifact_id": "pool_portfolio_snapshot_v1",
+            "stages": [
+                "WAR",
+                "LIVE"
+            ],
+            "path_pattern": "out/matrix_runs/<stage>/<run_id>/reports/pool_portfolio_snapshot_v1.json",
+            "required_fields": [
+                "run_id",
+                "balance_start",
+                "balance_end",
+                "total_exposure",
+                "margin_level"
+            ],
+            "source_module": "tezaver.matrix.pool.portfolio",
+            "drift_checker_required": true
+        },
+        {
+            "artifact_id": "pool_risk_report_v1",
+            "stages": [
+                "WAR",
+                "LIVE"
+            ],
+            "path_pattern": "out/matrix_runs/<stage>/<run_id>/reports/pool_risk_report_v1.json",
+            "required_fields": [
+                "run_id",
+                "risk_checks_total",
+                "risk_blocks",
+                "max_drawdown_session",
+                "kill_switch_triggered"
+            ],
+            "source_module": "tezaver.matrix.pool.risk",
+            "drift_checker_required": true
+        },
+        {
+            "artifact_id": "pool_execution_summary_v1",
+            "stages": [
+                "WAR",
+                "LIVE"
+            ],
+            "path_pattern": "out/matrix_runs/<stage>/<run_id>/reports/pool_execution_summary_v1.json",
+            "required_fields": [
+                "run_id",
+                "orders_submitted",
+                "fills",
+                "fill_rate_pct",
+                "slippage_avg"
+            ],
+            "source_module": "tezaver.matrix.pool.execution",
+            "drift_checker_required": true
+        },
+        {
+            "artifact_id": "live_arm_state_report_v1",
+            "stages": [
+                "LIVE"
+            ],
+            "path_pattern": "out/matrix_runs/live/<run_id>/reports/live_arm_state_report_v1.json",
+            "required_fields": [
+                "run_id",
+                "armed_at_ts",
+                "arm_config_hash",
+                "safety_checks_passed"
+            ],
+            "source_module": "tezaver.matrix.pool.arm",
+            "drift_checker_required": true
+        },
+        {
+            "artifact_id": "restart_reconcile_report_v1",
+            "stages": [
+                "WAR",
+                "LIVE"
+            ],
+            "path_pattern": "out/matrix_runs/<stage>/<run_id>/reports/restart_reconcile_report_v1.json",
+            "required_fields": [
+                "run_id",
+                "boot_ts",
+                "bundles_reconciled",
+                "state_restored"
+            ],
+            "reference_mx": "MX-5140",
+            "source_module": "tezaver.matrix.bootstrap.reconcile_bundles_v1",
+            "drift_checker_required": true
+        }
+    ]
+}

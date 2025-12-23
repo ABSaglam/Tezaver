@@ -4,6 +4,7 @@ Manages the single-source-of-truth for safety protocols and their statuses.
 """
 import yaml
 import os
+import json
 from enum import Enum
 from typing import List, Dict, Any, Optional
 
@@ -203,6 +204,135 @@ class SafetyProtocolRegistry:
         if evidence.get("telemetry"): parts.append(f"📡 {len(evidence['telemetry'])}")
         if evidence.get("tests"): parts.append(f"🧪 {len(evidence['tests'])}")
         if evidence.get("artifacts"): parts.append(f"📄 {len(evidence['artifacts'])}")
-        if evidence.get("ui"): parts.append(f"🖥️ {len(evidence['ui'])}")
-        return " ".join(parts) if parts else "No evidence"
+    def check_pool_evidence_contract(
+        self,
+        run_dir: str,
+        stage: str,
+        run_id: str,
+        pool_enabled: bool = False
+    ) -> Dict[str, Any]:
+        """
+        MX-Phase0.2: Validates the Pool Evidence Contract.
+
+        Args:
+            run_dir: Absolute path to the run directory
+            stage: Active stage (SNIPER/WAR/LIVE)
+            run_id: Run identifier
+            pool_enabled: Signal to enable check. If False, returns SKIPPED.
+
+        Returns:
+            Dict containing status, missing_ids, checked_ids, summary
+        """
+        if not pool_enabled:
+            return {
+                "status": "SKIPPED",
+                "missing_ids": [],
+                "checked_ids": [],
+                "summary": "Pool not enabled for this run"
+            }
+
+        # Locate contract file relative to project root
+        # safety_registry.py is in src/tezaver/matrix/protocols
+        # contract is in reports/pool_evidence_contract_v1.json (root/reports)
+        
+        # Path logic: currently self.path is .../protocols/safety_protocol_registry.yaml
+        # Root is 4 levels up: src/tezaver/matrix/protocols -> matrix/protocols -> tezaver/matrix -> tezaver -> src -> root
+        # Wait, self.path is /Users/alisaglam/TezaverMac/src/tezaver/matrix/protocols/safety_protocol_registry.yaml
+        # Root (/Users/alisaglam/TezaverMac) is 5 levels up?
+        # Let's count dirs:
+        # 1. protocols
+        # 2. matrix
+        # 3. tezaver
+        # 4. src
+        # 5. TezaverMac (Root)
+        
+        project_root = self.path
+        for _ in range(5):
+            project_root = os.path.dirname(project_root)
+            
+        contract_path = os.path.join(project_root, "reports", "pool_evidence_contract_v1.json")
+        
+        if not os.path.exists(contract_path):
+             return {
+                "status": "MISSING",
+                "missing_ids": ["pool_evidence_contract_v1.json"],
+                "checked_ids": [],
+                "summary": "Contract definition file missing"
+            }
+
+        try:
+            with open(contract_path, "r", encoding="utf-8") as f:
+                contract = json.load(f)
+        except Exception as e:
+            return {
+                "status": "ERROR",
+                "missing_ids": [],
+                "checked_ids": [],
+                "summary": f"Failed to parse contract: {e}"
+            }
+
+        missing_ids = []
+        checked_ids = []
+        
+        # Normalize stage for comparison (WAR/LIVE)
+        stage_norm = stage.upper()
+        stage_path_comp = stage.lower()
+
+        for art in contract.get("artifacts", []):
+            art_id = art["artifact_id"]
+            if stage_norm not in art.get("stages", []):
+                continue
+                
+            checked_ids.append(art_id)
+            
+            # Resolve path pattern
+            # Pattern: out/matrix_runs/<stage>/<run_id>/reports/...
+            # We already have run_dir which should be out/matrix_runs/<stage>/<run_id>
+            # But wait, run_dir passed to this function might be valid or might be None/partial.
+            # Usually run_dir passed to safety_sweep is the absolute path to the run folder.
+            # The pattern in JSON is relative-ish but "out/matrix_runs/..." is from root.
+            # We should look inside run_dir because run_dir IS the <run_id> folder.
+            
+            # The pattern is: out/matrix_runs/<stage>/<run_id>/reports/filename.json
+            # run_dir is: .../out/matrix_runs/war/run_123
+            # So we just need to look for 'reports/filename.json' inside run_dir?
+            # Let's check the pattern end.
+            
+            pattern = art["path_pattern"]
+            # Extract filename part: reports/pool_universe_report_v1.json
+            # We can robustly assume artifacts are in run_dir/reports/ usually, 
+            # but let's try to follow the pattern concept if we can.
+            # Actually, standardizing on run_dir is safer as run_dir might be elsewhere during tests or replay.
+            
+            # Simple header: "path_pattern": "out/matrix_runs/<stage>/<run_id>/reports/pool_universe_report_v1.json"
+            filename = os.path.basename(pattern)
+            # We assume it is in reports/ subdir as per convention
+            target_path = os.path.join(run_dir, "reports", filename)
+            
+            if not os.path.exists(target_path):
+                missing_ids.append(f"{art_id} (File Missing)")
+                continue
+                
+            # Content Check
+            if art.get("required_fields"):
+                try:
+                    with open(target_path, "r", encoding="utf-8") as tf:
+                        data = json.load(tf)
+                        for field in art["required_fields"]:
+                            if field not in data:
+                                missing_ids.append(f"{art_id} (Missing Field: {field})")
+                                break # One missing field is enough to fail this artifact
+                except Exception as e:
+                    missing_ids.append(f"{art_id} (Corrupt JSON: {e})")
+                    
+        status = "OK" if not missing_ids else "MISSING"
+        summary = "All artifacts present" if status == "OK" else f"Missing {len(missing_ids)} artifacts"
+        
+        return {
+            "status": status,
+            "missing_ids": missing_ids,
+            "checked_ids": checked_ids,
+            "summary": summary,
+            "contract_version": contract.get("version", "unknown")
+        }
 

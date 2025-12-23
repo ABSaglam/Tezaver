@@ -40,8 +40,13 @@ class ApprovedRallyBundleManifestV1:
     tier: Optional[str] = None
     
     # Optional - Pointers and trace
+    # Optional - Pointers and trace
     pointers: Optional[Dict[str, str]] = None
     trace: Optional[Dict[str, str]] = None
+    
+    # Optional - V2 Specs (Phase 1)
+    trigger_spec_v1: Optional[Dict[str, Any]] = None
+    policy_spec_v1: Optional[Dict[str, Any]] = None
     
     @staticmethod
     def from_dict(data: Dict[str, Any]) -> "ApprovedRallyBundleManifestV1":
@@ -109,6 +114,23 @@ class ApprovedRallyBundleManifestV1:
         pointers = data.get("pointers")
         trace = data.get("trace")
         
+        # Extract V2 Specs
+        trigger_spec = data.get("trigger_spec_v1")
+        policy_spec = data.get("policy_spec_v1")
+        
+        # Validate V2 Specs if present
+        if trigger_spec:
+            if not isinstance(trigger_spec, dict):
+                 raise ValueError("MANIFEST_INVALID: trigger_spec_v1 must be a dict")
+            if "type" not in trigger_spec:
+                 raise ValueError("MANIFEST_INVALID: trigger_spec_v1 missing 'type'")
+                 
+        if policy_spec:
+            if not isinstance(policy_spec, dict):
+                 raise ValueError("MANIFEST_INVALID: policy_spec_v1 must be a dict")
+            if "exit_policy" not in policy_spec:
+                 raise ValueError("MANIFEST_INVALID: policy_spec_v1 missing 'exit_policy'")
+        
         return ApprovedRallyBundleManifestV1(
             bundle_version=bundle_version,
             bundle_id=data["bundle_id"],
@@ -124,7 +146,9 @@ class ApprovedRallyBundleManifestV1:
             approved_exit_ts=approved_exit_ts,
             tier=tier,
             pointers=pointers,
-            trace=trace
+            trace=trace,
+            trigger_spec_v1=trigger_spec,
+            policy_spec_v1=policy_spec
         )
 
 

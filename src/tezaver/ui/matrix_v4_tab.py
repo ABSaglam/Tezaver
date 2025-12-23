@@ -598,6 +598,21 @@ def render_release(home: str):
                             for w in warnings:
                                 st.write(f"- **{w['mx']}**: {w['name']}")
 
+                    # MX-Phase 0.2: Pool Evidence UI
+                    pool_ev = cert_res.get("pool_evidence")
+                    if pool_ev:
+                        status = pool_ev.get("status", "UNKNOWN")
+                        if status == "SKIPPED":
+                            st.caption(f"pool_evidence: {status}")
+                        elif status == "OK":
+                            st.success(f"✅ Pool Evidence: OK ({pool_ev.get('summary')})")
+                        else:
+                            st.warning(f"⚠️ Pool Evidence: {status} ({pool_ev.get('summary')})")
+                            if pool_ev.get("missing_ids"):
+                                with st.expander("Missing Artifacts"):
+                                    for m in pool_ev["missing_ids"]:
+                                        st.write(f"- {m}")
+
 
             except Exception as e:
                 st.error(f"Error: {e}")
@@ -2054,11 +2069,22 @@ def render_bundles(home: str):
         table_data = []
         for b in bundles:
             if b.manifest:
+                # Trigger / Policy (Phase 1)
+                trigger_type = "N/A"
+                if b.manifest.trigger_spec_v1:
+                    trigger_type = b.manifest.trigger_spec_v1.get("type", "UNKNOWN")
+                
+                exit_policy = "N/A"
+                if b.manifest.policy_spec_v1:
+                    exit_policy = b.manifest.policy_spec_v1.get("exit_policy", "UNKNOWN")
+                    
                 table_data.append({
                     "Symbol": b.manifest.symbol,
                     "TF": b.manifest.timeframe,
                     "Event ID": b.manifest.event_id[:30] + "..." if len(b.manifest.event_id) > 30 else b.manifest.event_id,
                     "QC Score": b.manifest.qc_score,
+                    "Trigger": trigger_type,
+                    "Policy": exit_policy,
                     "Tier": b.manifest.tier or "UNKNOWN",
                     "Status": b.status,
                     "Reason": b.reject_reason or "-"
