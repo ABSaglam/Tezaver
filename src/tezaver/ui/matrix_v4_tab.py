@@ -2161,6 +2161,54 @@ def render_reports(home: str):
             else:
                 st.caption("No Reconcile Report")
 
+    # Pool Court (Phase 3A)
+    st.divider()
+    st.subheader("⚖️ Pool Court")
+    st.caption("Evidence Evaluation & Verdict")
+    
+    if 'selected_run_path' in locals() and selected_run_path:
+        reports_dir = selected_run_path / "reports"
+        
+        # Scorecard
+        scorecard_path = reports_dir / "pool_scorecard_v1.json"
+        verdict_path = reports_dir / "pool_court_verdict_v1.json"
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if scorecard_path.exists():
+                with st.expander("📋 Scorecard", expanded=False):
+                    with open(scorecard_path) as f:
+                        data = json.load(f)
+                        st.json(data)
+                        st.metric("Evidence OK", "Yes" if data.get("evidence_ok") else "No")
+                        st.metric("Selected", data.get("selected_count", 0))
+            else:
+                st.caption("No Scorecard")
+        
+        with col2:
+            if verdict_path.exists():
+                with st.expander("🔨 Verdict", expanded=True):
+                    with open(verdict_path) as f:
+                        data = json.load(f)
+                        verdict = data.get("verdict", "N/A")
+                        color = {"PASS": "green", "IMPROVE": "orange", "FAIL": "red"}.get(verdict, "gray")
+                        st.markdown(f"### :{color}[{verdict}]")
+                        st.caption(data.get("summary", ""))
+                        
+                        # Gates table
+                        gates = data.get("gates", [])
+                        if gates:
+                            import pandas as pd
+                            df = pd.DataFrame(gates)
+                            st.dataframe(df, use_container_width=True)
+                        
+                        actions = data.get("suggested_actions", [])
+                        if actions:
+                            st.warning("Suggested Actions: " + ", ".join(actions))
+            else:
+                st.caption("No Verdict")
+
 def render_incidents(home: str):
     """MX-FINAL-0401: Render Incidents page for evidence bundles."""
     from tezaver.ui.ui_guard import render_data_sources_box

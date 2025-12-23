@@ -464,3 +464,75 @@ class RestartReconcileReportV1:
             "verdict": self.verdict,
             "suggested_actions": self.suggested_actions
         }
+
+# ============================================================
+# Phase 3B: Replacement Models
+# ============================================================
+
+@dataclass
+class PoolReplacementCandidateV1:
+    """Replacement candidate details."""
+    replace_out_pos_id: str
+    replace_out_symbol: str
+    replace_out_timeframe: Optional[str]
+    replace_out_score: float
+    replace_in_intent_id: str
+    replace_in_symbol: str
+    replace_in_timeframe: str
+    replace_in_bundle_id: str
+    replace_in_rank_score: float
+    delta_score: float
+    reason: str  # "BONUS_BETTER_THAN_WORST"
+    requires_human_confirm: bool
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "replace_out_pos_id": self.replace_out_pos_id,
+            "replace_out_symbol": self.replace_out_symbol,
+            "replace_out_timeframe": self.replace_out_timeframe,
+            "replace_out_score": self.replace_out_score,
+            "replace_in_intent_id": self.replace_in_intent_id,
+            "replace_in_symbol": self.replace_in_symbol,
+            "replace_in_timeframe": self.replace_in_timeframe,
+            "replace_in_bundle_id": self.replace_in_bundle_id,
+            "replace_in_rank_score": self.replace_in_rank_score,
+            "delta_score": self.delta_score,
+            "reason": self.reason,
+            "requires_human_confirm": self.requires_human_confirm
+        }
+
+@dataclass
+class PoolReplacementReportV1:
+    """Replacement analysis report."""
+    run_id: str
+    stage: str
+    engine_version: str
+    data_fingerprint: str
+    config_signature: str
+    built_ts_iso: str
+    enabled: bool
+    capacity: int
+    open_now: int
+    max_open_positions: int
+    considered_intents: int
+    verdict: str  # "NONE"|"SUGGESTED"|"SKIPPED"
+    skip_reason: Optional[str]  # "DISABLED"|"CAPACITY_AVAILABLE"|...
+    candidate: Optional[PoolReplacementCandidateV1]
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "run_id": self.run_id,
+            "stage": self.stage,
+            "engine_version": self.engine_version,
+            "data_fingerprint": self.data_fingerprint,
+            "config_signature": self.config_signature,
+            "built_ts_iso": self.built_ts_iso,
+            "enabled": self.enabled,
+            "capacity": self.capacity,
+            "open_now": self.open_now,
+            "max_open_positions": self.max_open_positions,
+            "considered_intents": self.considered_intents,
+            "verdict": self.verdict,
+            "skip_reason": self.skip_reason,
+            "candidate": self.candidate.to_dict() if self.candidate else None
+        }
