@@ -100,6 +100,7 @@ class TradeIntentV1:
     entry_ts_iso: Optional[str] = None
     scenario_id: Optional[str] = None
     narrative: Optional[Dict[str, Any]] = None
+    bundle_certification: str = "candidate"  # "candidate" | "certified" | "demoted"
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -116,7 +117,8 @@ class TradeIntentV1:
             "tier": self.tier,
             "entry_ts_iso": self.entry_ts_iso,
             "scenario_id": self.scenario_id,
-            "narrative": self.narrative
+            "narrative": self.narrative,
+            "bundle_certification": self.bundle_certification
         }
 
 @dataclass
@@ -194,6 +196,7 @@ class PoolSelectionItemV1:
     rank_score: float
     rank_reason: str # "qc+tier"
     scenario_id: Optional[str] = None
+    bundle_certification: str = "candidate"
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -208,7 +211,8 @@ class PoolSelectionItemV1:
             "exit_policy": self.exit_policy,
             "rank_score": self.rank_score,
             "rank_reason": self.rank_reason,
-            "scenario_id": self.scenario_id
+            "scenario_id": self.scenario_id,
+            "bundle_certification": self.bundle_certification
         }
 
 @dataclass

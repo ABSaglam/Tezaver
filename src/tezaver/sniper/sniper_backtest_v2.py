@@ -16,18 +16,8 @@ from datetime import datetime
 from tezaver.core import coin_cell_paths
 from tezaver.foundry.bundle_index import load_bundle_files
 
-@dataclass
-class TradeResultV2:
-    """Result of a single simulated trade."""
-    bundle_id: str
-    symbol: str
-    entry_ts: str
-    exit_ts: Optional[str]
-    entry_price: float
-    exit_price: float
-    pnl_pct: float
-    duration_bars: int
-    status: str # SUCCESS | HIT_SL | HIT_TP | TIMEOUT
+from tezaver.sniper.sniper_backtest import run_sniper_backtest_from_trade_ids
+from tezaver.sniper.sniper_ids import make_trade_id
 
 @dataclass
 class SniperBacktestReportV2:
@@ -37,9 +27,9 @@ class SniperBacktestReportV2:
     timeframe: str
     total_trades: int
     win_rate: float
-    avg_pnl: float
-    profit_factor: float
-    trades: List[TradeResultV2] = field(default_factory=list)
+    pnl_pct: float
+    max_drawdown: float
+    trades: List[Dict[str, Any]] = field(default_factory=list)
     feedback: List[str] = field(default_factory=list)
     suggested_params: Dict[str, Any] = field(default_factory=dict)
     ts: str = field(default_factory=lambda: datetime.utcnow().isoformat())
@@ -47,133 +37,97 @@ class SniperBacktestReportV2:
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
 
-def run_backtest_bundle(bundle_dir: str) -> Optional[TradeResultV2]:
-    """
-    Simulates a single trade based on bundle's approved entry and price window.
-    """
-    bundle_data = load_bundle_files(bundle_dir)
-    manifest = bundle_data["manifest"]
-    price_df = bundle_data["price_window"]
-    
-    if manifest is None or price_df is None or price_df.empty:
-        return None
-        
-    symbol = manifest["symbol"]
-    entry_ts = manifest["approved"]["entry_ts"]
-    
-    # Simple simulation: 
-    # v1: Use approved_exit_ts if exists, else look for max gain in the window
-    exit_ts = manifest["approved"].get("exit_ts")
-    
-    # Convert ts to match df format
-    price_df['open_time'] = pd.to_datetime(price_df['open_time'])
-    entry_dt = pd.to_datetime(entry_ts)
-    
-    # Normalize timezones
-    if price_df['open_time'].dt.tz is not None and entry_dt.tz is None:
-        entry_dt = entry_dt.tz_localize('UTC')
-    elif price_df['open_time'].dt.tz is None and entry_dt.tz is not None:
-        entry_dt = entry_dt.tz_localize(None)
-
-    entry_row = price_df[price_df['open_time'] == entry_dt]
-    if entry_row.empty:
-        # Try finding nearest
-        entry_row = price_df[price_df['open_time'] >= entry_dt].head(1)
-        
-    if entry_row.empty:
-        return None
-        
-    entry_price = entry_row.iloc[0]['close']
-    entry_idx = entry_row.index[0]
-    
-    if exit_ts:
-        exit_dt = pd.to_datetime(exit_ts)
-        # Normalize exit_dt
-        if price_df['open_time'].dt.tz is not None and exit_dt.tz is None:
-            exit_dt = exit_dt.tz_localize('UTC')
-        elif price_df['open_time'].dt.tz is None and exit_dt.tz is not None:
-            exit_dt = exit_dt.tz_localize(None)
-
-        exit_row = price_df[price_df['open_time'] == exit_dt]
-        if exit_row.empty:
-            exit_row = price_df.iloc[-1:] # Fallback to last bar
-    else:
-        # No approved exit? Sniper finds best exit in window for feedback
-        # Search for max high after entry
-        future_df = price_df.loc[entry_idx+1:]
-        if future_df.empty:
-            exit_row = price_df.loc[entry_idx:entry_idx]
-        else:
-            best_idx = future_df['high'].idxmax()
-            exit_row = future_df.loc[best_idx:best_idx]
-
-    exit_price = exit_row.iloc[0]['close']
-    exit_ts = exit_row.iloc[0]['open_time'].isoformat()
-    
-    pnl = (exit_price / entry_price - 1) * 100
-    duration = int(exit_row.index[0] - entry_idx)
-    
-    return TradeResultV2(
-        bundle_id=manifest["bundle_id"],
-        symbol=symbol,
-        entry_ts=entry_ts,
-        exit_ts=exit_ts,
-        entry_price=entry_price,
-        exit_price=exit_price,
-        pnl_pct=pnl,
-        duration_bars=duration,
-        status="SUCCESS" if pnl > 0 else "FAIL"
-    )
-
 def analyze_pack_performance(scenario_id: str, bundles_root: str = ".tezaver_matrix/approved_bundles_v1") -> SniperBacktestReportV2:
     """
-    Runs backtest for all bundles in a story pack.
+    Runs professional backtest for all bundles in a story pack using Matrix Sniper engine.
     """
     from tezaver.foundry.bundle_index import scan_bundles
     df = scan_bundles(bundles_root)
     
+    if df.empty or "scenario_id" not in df.columns:
+        return SniperBacktestReportV2(scenario_id, "N/A", "N/A", 0, 0, 0, 0)
+        
     pack_df = df[df["scenario_id"] == scenario_id]
     if pack_df.empty:
         return SniperBacktestReportV2(scenario_id, "N/A", "N/A", 0, 0, 0, 0)
         
-    trades = []
+    # Collect trade_ids from bundles
+    trade_ids = []
+    symbol = pack_df.iloc[0]["symbol"]
+    timeframe = pack_df.iloc[0]["timeframe"]
+    
+    # Load analytics dataset to resolve true trade_ids (which include event_idx + ts)
+    from tezaver.sniper.sniper_backtest import _get_sniper_entries_path
+    from tezaver.sniper.sniper_ids import ensure_trade_id_column
+    
+    analytics_path = _get_sniper_entries_path(symbol, timeframe)
+    if not analytics_path.exists():
+        report = SniperBacktestReportV2(scenario_id, symbol, timeframe, 0, 0, 0, 0)
+        report.feedback.append(f"Analitik veri seti bulunamadı: {analytics_path}")
+        return report
+    
+    analytics_df = pd.read_parquet(analytics_path)
+    # Normalize event_time to string for robust comparison (YYYY-MM-DD HH:MM:SS)
+    if "event_time" in analytics_df.columns:
+        analytics_df["event_time_str"] = pd.to_datetime(analytics_df["event_time"]).dt.strftime("%Y-%m-%d %H:%M:%S")
+    
+    analytics_df = ensure_trade_id_column(analytics_df)
+    
+    trade_ids = []
     for _, row in pack_df.iterrows():
-        res = run_backtest_bundle(row["bundle_dir"])
-        if res:
-            trades.append(res)
+        bundle_event_id = str(row["event_id"])
+        bundle_ts_str = pd.to_datetime(row["event_time_iso"]).strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Try finding the trade_id in analytics_df
+        match = analytics_df[analytics_df["trade_id"].str.contains(bundle_event_id, na=False)]
+        
+        if match.empty and "event_time_str" in analytics_df.columns:
+            # Fallback: match by normalized timestamp string
+            match = analytics_df[analytics_df["event_time_str"] == bundle_ts_str]
             
-    if not trades:
-         return SniperBacktestReportV2(scenario_id, "N/A", "N/A", 0, 0, 0, 0)
+        if not match.empty:
+            trade_ids.append(match.iloc[0]["trade_id"])
+            
+    if not trade_ids:
+         report = SniperBacktestReportV2(scenario_id, symbol, timeframe, 0, 0, 0, 0)
+         report.feedback.append("Bundle'lar analitik veri setinde eşleştirilemedi.")
+         return report
+    
+    # Run Arena-grade backtest
+    try:
+        results = run_sniper_backtest_from_trade_ids(
+            symbol=symbol,
+            timeframe=timeframe,
+            selected_trade_ids=trade_ids,
+            risk=0.01,
+            tp_pct=0.08,
+            sl_pct=0.03,
+            max_horizon_bars=20
+        )
+    except Exception as e:
+        # Fallback for missing datasets etc.
+        report = SniperBacktestReportV2(scenario_id, symbol, timeframe, 0, 0, 0, 0)
+        report.feedback.append(f"Backtest hatası: {str(e)}")
+        return report
          
-    pnls = [t.pnl_pct for t in trades]
-    wins = [1 for t in trades if t.pnl_pct > 0]
-    losses = [t.pnl_pct for t in trades if t.pnl_pct < 0]
-    
-    win_rate = len(wins) / len(trades) * 100
-    avg_pnl = np.mean(pnls)
-    
-    gross_profit = sum([t.pnl_pct for t in trades if t.pnl_pct > 0])
-    gross_loss = abs(sum(losses)) if losses else 1.0
-    profit_factor = gross_profit / gross_loss
-    
     report = SniperBacktestReportV2(
         scenario_id=scenario_id,
-        symbol=trades[0].symbol,
-        timeframe=pack_df.iloc[0]["timeframe"],
-        total_trades=len(trades),
-        win_rate=win_rate,
-        avg_pnl=avg_pnl,
-        profit_factor=profit_factor,
-        trades=trades
+        symbol=symbol,
+        timeframe=timeframe,
+        total_trades=results["trades"],
+        win_rate=results["win_rate"],
+        pnl_pct=results["pnl_pct"],
+        max_drawdown=results["max_drawdown_pct"],
+        trades=results["ledger"]
     )
     
-    # Generate Feedback
-    if avg_pnl < 5.0:
-        report.feedback.append("Ortalama kazanç düşük. Giriş barı (entry_offset) çok geç olabilir.")
-        report.suggested_params["entry_offset_delta"] = -2
-    elif win_rate < 50:
-        report.feedback.append("Başarı oranı düşük. Bu hikaye için daha sıkı bir Stop Loss veya farklı bir normalizasyon dene.")
+    # Generate Feedback based on professional results
+    if report.pnl_pct < 1.0:
+        report.feedback.append("Performans zayıf. Desenler arası zaman farkı (interval) optimize edilmeli.")
+        report.suggested_params["notional_multiplier"] = 0.5
+    elif report.win_rate < 40:
+        report.feedback.append("Başarı oranı çok düşük. Bu hikaye için filtreler (entry_filters) çok gevşek olabilir.")
     else:
-        report.feedback.append("Hikaye başarılı görünüyor. War aşamasına geçilebilir.")
+        report.feedback.append("Profesyonel backtest sonuçları başarılı. Matrix War havuzuna güvenle sürülebilir.")
 
     return report

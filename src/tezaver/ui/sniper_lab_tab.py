@@ -11,10 +11,15 @@ from pathlib import Path
 import plotly.graph_objects as go
 
 from tezaver.foundry.bundle_packer_v2 import load_pack
-from tezaver.sniper.sniper_backtest_v2 import analyze_pack_performance
+from tezaver.foundry.bundle_packer_v2 import load_pack
 
 def render_sniper_lab_page():
     """Main render function for Sniper Lab tab."""
+    import importlib
+    import tezaver.sniper.sniper_backtest_v2
+    importlib.reload(tezaver.sniper.sniper_backtest_v2)
+    from tezaver.sniper.sniper_backtest_v2 import analyze_pack_performance
+    
     st.title("🧪 Sniper Lab - Backtest & Refinement")
     st.caption("Dökümhane Hikaye Paketlerini test et ve geri bildirim al.")
 
@@ -40,10 +45,10 @@ def render_sniper_lab_page():
         # Metrics Row
         st.markdown("---")
         col1, col2, col3, col4 = st.columns(4)
-        col1.metric("Toplam İşlem", report["total_trades"])
-        col2.metric("Başarı Oranı", f"{report['win_rate']:.1f}%")
-        col3.metric("Ort. P&L", f"{report['avg_pnl']:.2f}%")
-        col4.metric("Profit Factor", f"{report['profit_factor']:.2f}")
+        col1.metric("Toplam İşlem", report.get("total_trades", 0))
+        col2.metric("Başarı Oranı", f"{report.get('win_rate', 0):.1f}%")
+        col3.metric("Toplam P&L", f"{report.get('pnl_pct', 0):.2f}%")
+        col4.metric("Max Drawdown", f"{report.get('max_drawdown', 0):.2f}%")
 
         # Feedback Area
         st.markdown("### 💡 Sniper Geri Bildirimi")
@@ -55,20 +60,47 @@ def render_sniper_lab_page():
 
         # Trades Table
         st.markdown("---")
-        st.markdown("### 📋 İşlem Detayları")
+        st.markdown("### 📋 İşlem Geçmişi (Ledger)")
         trades_df = pd.DataFrame(report["trades"])
         if not trades_df.empty:
-            st.dataframe(trades_df[["bundle_id", "entry_ts", "exit_ts", "pnl_pct", "status"]], use_container_width=True)
+            # Table
+            display_df = trades_df.copy()
+            # Clean up for display
+            if "pnl_eff_pct" in display_df.columns:
+                 display_df = display_df.rename(columns={"pnl_eff_pct": "PnL %", "exit_reason": "Çıkış Nedeni", "equity_after": "Sermaye"})
+            
+            st.dataframe(display_df[["trade_id", "PnL %", "Çıkış Nedeni", "Sermaye"]], use_container_width=True)
 
-            # P&L Chart
+            # P&L & Equity Chart
             fig = go.Figure()
+            
+            # Bar chart for P&L
             fig.add_trace(go.Bar(
-                x=trades_df["bundle_id"],
-                y=trades_df["pnl_pct"],
-                marker_color=trades_df["pnl_pct"].apply(lambda x: 'green' if x > 0 else 'red'),
-                name="P&L %"
+                x=trades_df.index,
+                y=trades_df["pnl_eff_pct"],
+                marker_color=trades_df["pnl_eff_pct"].apply(lambda x: '#26a69a' if x > 0 else '#ef5350'),
+                name="İşlem Bazlı P&L (%)",
+                yaxis="y"
             ))
-            fig.update_layout(title="Hiyerarşik P&L Dağılımı", template="plotly_dark", height=300)
+            
+            # Line chart for Equity
+            fig.add_trace(go.Scatter(
+                x=trades_df.index,
+                y=trades_df["equity_after"],
+                mode='lines+markers',
+                name="Sermaye Eğrisi",
+                line=dict(color='#ff9800', width=3),
+                yaxis="y2"
+            ))
+
+            fig.update_layout(
+                title="Performans Analizi (Arena Mode)",
+                template="plotly_dark",
+                height=450,
+                hovermode='x unified',
+                yaxis=dict(title="PnL %", side="left"),
+                yaxis2=dict(title="Equity", side="right", overlaying="y", showgrid=False)
+            )
             st.plotly_chart(fig, use_container_width=True)
         
         # Approve for WAR button

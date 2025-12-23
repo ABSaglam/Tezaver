@@ -80,6 +80,8 @@ def _generate_intent_id(symbol: str, tf: str, bundle_id: str, tick_ts: str, trig
     raw = f"{symbol}|{tf}|{bundle_id}|{tick_ts}|{trigger}|{policy}"
     return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
+from tezaver.matrix.sniper.certification_registry import CertificationRegistry, STAGE_CANDIDATE
+
 def build_intents(
     universe_cells: List[PoolUniverseCellV1],
     tick_ts_iso: str,
@@ -101,17 +103,12 @@ def build_intents(
     intents = []
     skipped_reasons = defaultdict(int)
     
+    # Load Certification Registry
+    cert_registry = CertificationRegistry()
+    
     for cell in universe_cells:
-        # 1. Check if cell's timeframe has a closed bar in this tick
-        #    If not, we might still process it? Prompt says "Closed-bar Tick".
-        #    Usually we only trigger if the TF bar just closed.
-        #    The prompt says "Closed-bar only: Tick sadece BAR_CLOSED ile çalışır."
-        #    Let's assume we check if cell.timeframe is in closed_bars.
-        
+        # ...
         if cell.timeframe not in closed_bars:
-            # Not a trigger moment for this cell
-            # We don't counting this as skipped in the intent report usually, or do we?
-            # "intents_skipped" usually refers to logic failures (missing specs etc.)
             continue
             
         # 2. Check best bundle
@@ -125,6 +122,7 @@ def build_intents(
             continue
             
         m = bundle.manifest
+        bundle_cert = cert_registry.get_bundle_stage(m.bundle_id)
         
         # 3. Check V2 Specs
         trigger = m.trigger_spec_v1
@@ -134,12 +132,6 @@ def build_intents(
             reason = "SKIPPED_NO_SPECS"
             if not trigger: reason = "SKIPPED_NO_TRIGGER"
             if not policy: reason = "SKIPPED_NO_POLICY"
-            if not trigger and not policy: reason = "SKIPPED_NO_SPECS"
-            
-            # Record failed/skipped intent
-            # We still create an intent object to record decision, but with reason != OK
-            # Wait, TradeIntentV1 has a reason field.
-            # "intent yine kayda girebilir ama created sayılmasın."
             
             # Generate ID for tracking even if skipped
             intent_id = _generate_intent_id(
@@ -161,7 +153,8 @@ def build_intents(
                 tier=m.tier,
                 entry_ts_iso=None,
                 scenario_id=m.scenario_id,
-                narrative=m.narrative
+                narrative=m.narrative,
+                bundle_certification=bundle_cert
             )
             intents.append(intent)
             skipped_reasons[reason] += 1
@@ -190,7 +183,8 @@ def build_intents(
             tier=m.tier,
             entry_ts_iso=None, # Pending execution
             scenario_id=m.scenario_id,
-            narrative=m.narrative
+            narrative=m.narrative,
+            bundle_certification=bundle_cert
         )
         intents.append(intent)
         
@@ -367,13 +361,14 @@ def run_pool_phase2b(
             non_eligible_skipped.append({"intent_id": i.intent_id, "reason": i.reason})
             
     # 3. Selection (Top-K)
-    selected_items, overflow_skipped = select_topk(intents_ok, capacity)
+    k = snapshot_report.capacity
+    selected_items, selector_skipped = select_topk(intents_ok, k, engine_stage=stage)
     
-    # Aggregate skipped
-    if overflow_skipped:
-        skipped_reasons["SKIPPED_OVERFLOW"] += len(overflow_skipped)
+    # 4. Aggregate Skips & Reasons
+    for sk in selector_skipped:
+        skipped_reasons[sk["reason"]] += 1
         
-    all_skipped = non_eligible_skipped + overflow_skipped
+    all_skipped_list = non_eligible_skipped + selector_skipped
     
     selection_report = PoolSelectionReportV1(
         run_id=run_id,
@@ -388,10 +383,10 @@ def run_pool_phase2b(
         intents_considered=len(intents_input),
         intents_eligible=len(intents_ok),
         selected_count=len(selected_items),
-        skipped_count=len(all_skipped),
+        skipped_count=len(all_skipped_list),
         skipped_reasons_count=dict(skipped_reasons),
         selected=selected_items,
-        skipped=all_skipped,
+        skipped=all_skipped_list,
         selection_policy_v1={
             "algorithm": "TOPK",
             "score": "qc+tier",

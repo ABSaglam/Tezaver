@@ -87,15 +87,18 @@ def package_event(
         "exit_ts": getattr(annotation, 'approved_exit_ts', None)
     }
     
+    # Determine identifying ID for the manifest (must match parquet for backtest)
+    orig_id = str(event_row.get('event_id', event_row.get('event_idx', event_id)))
+
     # Build QC dict
     qc_dict = {
         "verdict": qc_report.qc_verdict,
-        "score": qc_report.qc_score,
+        "score": qc_report.score,
         "report_path": f"../../../qc_reports/{symbol}/{timeframe}/qc_{event_id}.json"
     }
     
     # Build pointers (relative paths)
-    annotation_path = repo._get_file_path(symbol, timeframe)
+    annotation_path = repo._file_path(symbol, timeframe)
     event_dataset_path = _get_event_dataset_path(symbol, timeframe)
     history_path = coin_cell_paths.get_history_file(symbol, timeframe)
     
@@ -109,7 +112,7 @@ def package_event(
     price_window_df = _extract_price_window(symbol, timeframe, event_row.get('event_time'))
     
     # Build manifest
-    bundle_id = f"{symbol}_{timeframe}_{event_id}"
+    bundle_id = f"{symbol}_{timeframe}_{orig_id}"
     event_time_iso = pd.to_datetime(event_row.get('event_time')).isoformat() if pd.notna(event_row.get('event_time')) else ""
     
     # Analyze Narrative / Scenario
@@ -129,7 +132,7 @@ def package_event(
         bundle_id=bundle_id,
         symbol=symbol,
         timeframe=timeframe,
-        event_id=event_id,
+        event_id=orig_id,
         event_time_iso=event_time_iso,
         tier=tier,
         approved=approved,
@@ -218,8 +221,31 @@ def _load_event_row(symbol: str, timeframe: str, event_id: str) -> Optional[pd.S
         if 'event_time' in df.columns:
             df['event_time'] = pd.to_datetime(df['event_time'], errors='coerce')
         
-        # Try exact match first
-        matches = df[df['event_id'] == event_id]
+        # Determine ID column
+        id_col = None
+        for c in ["event_id", "event_idx", "entry_id"]:
+            if c in df.columns:
+                id_col = c
+                break
+        
+        matches = pd.DataFrame()
+        if id_col:
+            # Try match by ID (handling potential type mismatch like int vs str)
+            try:
+                val = type(df[id_col].iloc[0])(event_id)
+                matches = df[df[id_col] == val]
+            except:
+                matches = df[df[id_col].astype(str) == str(event_id)]
+        
+        # Fallback: Try matching event_id AS event_time if no matches found
+        if matches.empty and 'event_time' in df.columns:
+            try:
+                # If event_id looks like a timestamp, try matching
+                target_dt = pd.to_datetime(event_id)
+                matches = df[df['event_time'] == target_dt]
+            except:
+                pass
+                
         if not matches.empty:
             return matches.iloc[0]
         

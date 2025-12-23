@@ -125,6 +125,13 @@ def run_pool_evidence_bundle(
         res_2d_arm = run_pool_phase2d_live_arm(stage, run_id, trace_ctx, arm_state)
         results["phases"]["2d_live_arm"] = res_2d_arm
     
+    # Phase 2E: Promotion Check (Only for WAR stage)
+    if stage.lower() == "war":
+        from tezaver.matrix.sniper.promotion_manager import PromotionManager
+        pm = PromotionManager()
+        pm.process_run(stage, run_id)
+        results["promotion_check"] = "OK"
+
     results["status"] = "OK"
     results["reports_dir"] = str(resolve_reports_dir(stage, run_id))
     

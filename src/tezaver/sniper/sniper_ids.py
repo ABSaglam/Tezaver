@@ -59,7 +59,7 @@ def ensure_trade_id_column(df: pd.DataFrame) -> pd.DataFrame:
     
     # Find event id column
     id_col = None
-    for c in ["event_id", "entry_id"]:
+    for c in ["event_id", "entry_id", "event_idx"]:
         if c in df.columns:
             id_col = c
             break

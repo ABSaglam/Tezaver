@@ -13,7 +13,7 @@ import pandas as pd
 
 def scan_bundles(root_dir: str = ".tezaver_matrix/approved_bundles_v1") -> pd.DataFrame:
     """
-    Scan all bundle manifests and create inventory DataFrame.
+    Scan all bundle manifests and create inventory DataFrame. (v2.1 - force refresh)
     
     Args:
         root_dir: Root directory for bundles
@@ -51,8 +51,8 @@ def scan_bundles(root_dir: str = ".tezaver_matrix/approved_bundles_v1") -> pd.Da
                 "build_ts_iso": manifest.get("build_ts_iso", ""),
                 "bundle_dir": str(manifest_file.parent),
                 "bundle_id": manifest.get("bundle_id", ""),
-                "scenario_id": manifest.get("scenario_id", "SCENARIO_NEUTRAL"),
-                "narrative": manifest.get("narrative", {})
+                "scenario_id": manifest.get("scenario_id") or "SCENARIO_NEUTRAL",
+                "narrative": manifest.get("narrative") or {}
             }
             
             bundles.append(bundle_info)
@@ -61,10 +61,20 @@ def scan_bundles(root_dir: str = ".tezaver_matrix/approved_bundles_v1") -> pd.Da
             continue
     
     if not bundles:
-        return pd.DataFrame()
+        return pd.DataFrame(columns=[
+            "symbol", "timeframe", "event_id", "tier", "qc_verdict", 
+            "qc_score", "event_time_iso", "approved_entry_ts", 
+            "build_ts_iso", "bundle_dir", "bundle_id", "scenario_id", "narrative"
+        ])
     
     # Create DataFrame
     df = pd.DataFrame(bundles)
+    
+    # SAFE SCHEMA ENFORCEMENT: Always ensure scenario_id exists before sorting or returning
+    if "scenario_id" not in df.columns:
+        df["scenario_id"] = "SCENARIO_NEUTRAL"
+    if "narrative" not in df.columns:
+        df["narrative"] = {}
     
     # Sort by qc_score desc, then event_time desc
     df = df.sort_values(

@@ -38,32 +38,64 @@ def compute_rank_score(intent: TradeIntentV1) -> float:
         
     return base_score + tier_bonus + story_bonus
 
+from tezaver.matrix.sniper.certification_registry import (
+    STAGE_CANDIDATE, STAGE_SNIPER_PASSED, STAGE_LIVE_CERTIFIED, STAGE_DEMOTED
+)
+
 def select_topk(
     intents_ok: List[TradeIntentV1], 
-    k: int
+    k: int,
+    engine_stage: str = "WAR"
 ) -> Tuple[List[PoolSelectionItemV1], List[Dict[str, str]]]:
     """
-    Deterministically select Top-K intents.
+    Deterministically select Top-K intents with Stage-based Certification Filtering.
+    
+    Filtering Rules (3-Stage Hierarchy):
+    - LIVE Stage: Requires STAGE_LIVE_CERTIFIED.
+    - WAR Stage: Requires STAGE_SNIPER_PASSED (or LIVE_CERTIFIED).
+    - SNIPER Stage: Accepts STAGE_CANDIDATE (and above).
     
     Sorting Rules:
     1. Rank Score (DESC)
     2. Intent ID (ASC) - Tie breaker
-    
-    Args:
-        intents_ok: List of eligible intents (reason="OK")
-        k: Capacity limit
-        
-    Returns:
-        (selected_items, skipped_overflow_list)
     """
     if k <= 0:
-        # No capacity, skip all
         skipped = [{"intent_id": i.intent_id, "reason": "SKIPPED_OVERFLOW"} for i in intents_ok]
         return [], skipped
 
-    # 1. Transform to selectable items with score
-    candidates = []
+    # 1. Component Filter: Stage-based certification
+    eligible_intents = []
+    skipped_certification = []
+    
+    stage = engine_stage.upper()
+    
     for i in intents_ok:
+        cert = i.bundle_certification
+        is_live_ready = (cert == STAGE_LIVE_CERTIFIED)
+        is_war_ready = (cert in [STAGE_SNIPER_PASSED, STAGE_LIVE_CERTIFIED])
+        
+        # Rule 1: LIVE Stage -> Must be Live Certified
+        if stage == "LIVE" and not is_live_ready:
+            skipped_certification.append({"intent_id": i.intent_id, "reason": "SKIPPED_NOT_LIVE_READY"})
+            continue
+            
+        # Rule 2: WAR Stage -> Must be Sniper Passed (or already Live Certified)
+        if stage == "WAR" and not is_war_ready:
+            # Note: Candidates are NOT allowed in WAR anymore. They must pass Sniper first.
+            skipped_certification.append({"intent_id": i.intent_id, "reason": "SKIPPED_NOT_SNIPER_PASSED"})
+            continue
+            
+        # Rule 3: SNIPER Stage -> Allows Candidates (Optimization Loop)
+        # Any demoted bundle is generally skipped unless we have a 'retrain' logic
+        if cert == STAGE_DEMOTED:
+             skipped_certification.append({"intent_id": i.intent_id, "reason": "SKIPPED_DEMOTED"})
+             continue
+            
+        eligible_intents.append(i)
+
+    # 2. Transform to selectable items with score
+    candidates = []
+    for i in eligible_intents:
         score = compute_rank_score(i)
         item = PoolSelectionItemV1(
             intent_id=i.intent_id,
@@ -77,18 +109,21 @@ def select_topk(
             proposed_notional=i.proposed_notional,
             rank_score=score,
             rank_reason="qc+tier+story",
-            scenario_id=i.scenario_id
+            scenario_id=i.scenario_id,
+            bundle_certification=i.bundle_certification
         )
         candidates.append(item)
         
-    # 2. Sort Deterministically
-    # -score for DESC, intent_id for ASC
+    # 3. Sort Deterministically
     candidates.sort(key=lambda x: (-x.rank_score, x.intent_id))
     
-    # 3. Slice
+    # 4. Slice
     selected = candidates[:k]
     overflow = candidates[k:]
     
     skipped_overflow = [{"intent_id": x.intent_id, "reason": "SKIPPED_OVERFLOW"} for x in overflow]
     
-    return selected, skipped_overflow
+    # Combine skips
+    all_skipped = skipped_certification + skipped_overflow
+    
+    return selected, all_skipped
