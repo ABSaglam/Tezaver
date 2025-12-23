@@ -17,7 +17,8 @@ def create_bundle_directory(
     symbol: str,
     timeframe: str,
     event_id: str,
-    output_root: str = ".tezaver_matrix/approved_bundles_v1"
+    output_root: str = ".tezaver_matrix/approved_bundles_v1",
+    folder_name: Optional[str] = None
 ) -> Path:
     """
     Create bundle directory structure.
@@ -25,13 +26,17 @@ def create_bundle_directory(
     Args:
         symbol: Trading pair symbol
         timeframe: Timeframe (15m, 1h, 4h)
-        event_id: Event identifier
+        event_id: Event identifier (used as fallback for folder name)
         output_root: Root directory for bundles
+        folder_name: Optional explicit folder name (e.g. BTC-15m-GOLD-01)
     
     Returns:
         Path to created bundle directory
     """
-    bundle_dir = Path(output_root) / symbol / timeframe / event_id
+    # Use explicit folder name if provided, else valid event_id
+    target_name = folder_name if folder_name else event_id
+    
+    bundle_dir = Path(output_root) / symbol / timeframe / target_name
     bundle_dir.mkdir(parents=True, exist_ok=True)
     return bundle_dir
 

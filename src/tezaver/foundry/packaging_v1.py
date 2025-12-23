@@ -16,6 +16,8 @@ from tezaver.foundry.bundle_models import ApprovedRallyBundleManifest
 from tezaver.foundry import bundle_io
 from tezaver.rally.rally_grade_cards import compute_tier_from_gain_pct
 from tezaver.rally.rally_narrative_engine import analyze_scenario, SCENARIO_DEFINITIONS
+from tezaver.rally.rally_narrative_engine import analyze_scenario, SCENARIO_DEFINITIONS
+from tezaver.foundry.naming_service import BundleNamingService
 from tezaver.core import coin_cell_paths
 
 
@@ -76,8 +78,16 @@ def package_event(
     else:
         tier = "UNKNOWN"
     
-    # Create bundle directory
-    bundle_dir = bundle_io.create_bundle_directory(symbol, timeframe, event_id, output_root)
+    # Generate Standard Bundle ID (e.g., BTC-15m-GOLD-01)
+    naming = BundleNamingService(output_root)
+    # Check for special tags in narrative/qc if needed, for now use Tier
+    # Future: if qc_report has 'special_tag' etc.
+    std_bundle_id = naming.generate_id(symbol, timeframe, tier)
+    
+    # Create bundle directory with Standard ID
+    bundle_dir = bundle_io.create_bundle_directory(
+        symbol, timeframe, event_id, output_root, folder_name=std_bundle_id
+    )
     
     # Build approved dict
     approved = {
@@ -129,7 +139,7 @@ def package_event(
         narrative = SCENARIO_DEFINITIONS["SCENARIO_NEUTRAL"]
 
     manifest = ApprovedRallyBundleManifest(
-        bundle_id=bundle_id,
+        bundle_id=std_bundle_id,  # Use Standard ID (e.g. BTC-15m-GOLD-01)
         symbol=symbol,
         timeframe=timeframe,
         event_id=orig_id,
