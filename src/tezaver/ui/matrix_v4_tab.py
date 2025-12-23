@@ -1712,12 +1712,81 @@ def render_sniper(home: str):
     st.subheader("🎯 Sniper Runs")
     st.caption("Sniper mode run geçmişi ve detayları")
     
+    # --- Run from Bundle Section ---
+    with st.expander("📦 Run from Bundle", expanded=True):
+        st.caption("LOADED_OK durumundaki ApprovedRallyBundle'lardan Sniper run başlat")
+        
+        try:
+            from tezaver.matrix.bundles.bundle_loader_v1 import load_all_bundles
+            from tezaver.matrix.bundles.bundle_registry import BundleRegistry
+            from tezaver.matrix.sniper.sniper_bundle_adapter_v1 import start_sniper_from_bundle
+            
+            # Load bundles
+            registry = BundleRegistry()
+            load_all_bundles(registry=registry)
+            loaded_bundles = registry.list(status="LOADED_OK")
+            
+            if not loaded_bundles:
+                st.warning("⚠️ LOADED_OK durumunda bundle yok.")
+                st.caption("Önce ONY'de approve edip Dökümhane'de paketleyin.")
+            else:
+                # Create bundle options map
+                bundle_options = {
+                    f"{b.manifest.symbol}/{b.manifest.timeframe} - {b.manifest.bundle_id[:20]}...": b
+                    for b in loaded_bundles if b.manifest
+                }
+                
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    selected_label = st.selectbox(
+                        "Bundle Seç",
+                        list(bundle_options.keys()),
+                        key="sniper_bundle_select"
+                    )
+                
+                with col2:
+                    st.write("")  # Spacer
+                    st.write("")  # Spacer
+                    run_clicked = st.button("▶ Run Sniper", type="primary", key="run_sniper_from_bundle")
+                
+                if run_clicked and selected_label:
+                    selected_bundle = bundle_options[selected_label]
+                    
+                    with st.spinner("Sniper run başlatılıyor..."):
+                        result = start_sniper_from_bundle(selected_bundle)
+                    
+                    if result["status"] == "STARTED":
+                        st.success(f"✅ Sniper run başlatıldı: `{result['run_id']}`")
+                        st.json({
+                            "bundle_id": result["config"]["bundle_id"],
+                            "symbol": result["config"]["symbol"],
+                            "timeframe": result["config"]["timeframe"],
+                            "qc_score": result["config"]["qc_score"],
+                            "exit_missing": result["config"]["exit_missing"]
+                        })
+                        
+                        # Show telemetry
+                        if result["telemetry"]:
+                            with st.expander("📜 Telemetry", expanded=False):
+                                for event in result["telemetry"]:
+                                    st.code(json.dumps(event, indent=2))
+                    else:
+                        st.error(f"❌ Hata: {result['error']}")
+                        
+        except Exception as e:
+            st.error(f"Bundle yükleme hatası: {e}")
+    
+    st.divider()
+    
+    # --- Run History Section ---
+    st.subheader("📜 Run Geçmişi")
+    
     # List sniper runs from runs directory
     runs_dir = Path("out/matrix_runs/sniper")
     
     if not runs_dir.exists():
         st.info("Henüz Sniper run yok.")
-        st.caption("Candidates sayfasından Run Sniper ile başlatabilirsiniz.")
+        st.caption("Candidates sayfasından veya yukarıdaki 'Run from Bundle' ile başlatabilirsiniz.")
         return
     
     runs = sorted(runs_dir.iterdir(), reverse=True)[:20]
