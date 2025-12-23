@@ -2124,6 +2124,43 @@ def render_reports(home: str):
             else:
                 st.caption("No Execution Summary")
 
+    # Pool Reports (Phase 2D)
+    st.divider()
+    st.subheader("🌊 Pool Reports (Phase 2D)")
+    st.caption("LIVE Arm State & Restart Reconcile")
+    
+    if 'selected_run_path' in locals() and selected_run_path:
+        reports_dir = selected_run_path / "reports"
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # LIVE Arm State
+            arm_path = reports_dir / "live_arm_state_report_v1.json"
+            if arm_path.exists():
+                with st.expander("🔫 LIVE Arm State", expanded=False):
+                    with open(arm_path) as f:
+                        data = json.load(f)
+                        st.json(data)
+                        st.metric("Armed", "Yes" if data.get("armed") else "No")
+                        st.metric("Reason", data.get("arm_reason", "N/A"))
+            else:
+                st.caption("No Arm State Report")
+        
+        with col2:
+            # Restart Reconcile
+            reconcile_path = reports_dir / "restart_reconcile_report_v1.json"
+            if reconcile_path.exists():
+                with st.expander("🔄 Restart Reconcile", expanded=False):
+                    with open(reconcile_path) as f:
+                        data = json.load(f)
+                        st.json(data)
+                        st.metric("Verdict", data.get("verdict", "N/A"))
+                        drift = data.get("drift", {})
+                        st.metric("Drift", "Yes" if drift.get("changed") else "No")
+            else:
+                st.caption("No Reconcile Report")
+
 def render_incidents(home: str):
     """MX-FINAL-0401: Render Incidents page for evidence bundles."""
     from tezaver.ui.ui_guard import render_data_sources_box

@@ -552,3 +552,97 @@ def run_pool_phase2c(
         "blocked": len(blocked_items),
         "mode": "DRY_RUN"
     }
+
+
+def run_pool_phase2d_live_arm(
+    stage: str,
+    run_id: str,
+    trace_ctx: Dict[str, str],
+    arm_state: Dict[str, Any]
+) -> Dict[str, Any]:
+    """
+    Execute Pool Phase 2D: Write LIVE arm state report.
+    
+    Args:
+        stage: Run stage (should be "live")
+        run_id: Run ID
+        trace_ctx: Context for determinism
+        arm_state: Arm state configuration
+        
+    Returns:
+        Summary dict
+    """
+    from tezaver.matrix.pool.live_arm_state_v1 import write_live_arm_state_report
+    
+    path = write_live_arm_state_report(stage, run_id, trace_ctx, arm_state)
+    
+    return {
+        "status": "OK",
+        "report_path": path,
+        "armed": arm_state.get("armed", False)
+    }
+
+
+def run_pool_phase2d_restart_reconcile(
+    stage: str,
+    run_id: str,
+    trace_ctx: Dict[str, str],
+    before_provider,
+    after_provider
+) -> Dict[str, Any]:
+    """
+    Execute Pool Phase 2D: Restart reconcile report.
+    
+    Args:
+        stage: Run stage
+        run_id: Run ID
+        trace_ctx: Context for determinism
+        before_provider: OpenPositionsProviderV1 for before state
+        after_provider: OpenPositionsProviderV1 for after state
+        
+    Returns:
+        Summary dict
+    """
+    from tezaver.matrix.pool.pool_models_v1 import RestartReconcileReportV1
+    from tezaver.matrix.pool.reconcile_engine_v1 import (
+        reconcile_positions_on_restart,
+        generate_reconcile_id
+    )
+    
+    ev = trace_ctx.get("engine_version", "v1.0.0")
+    df = trace_ctx.get("data_fingerprint", "UNKNOWN")
+    cs = trace_ctx.get("config_signature", "UNKNOWN")
+    reports_dir = resolve_reports_dir(stage, run_id)
+    
+    before_snap = before_provider.snapshot()
+    after_snap = after_provider.snapshot()
+    
+    drift, verdict, suggested_actions = reconcile_positions_on_restart(before_snap, after_snap)
+    
+    reconcile_id = generate_reconcile_id(run_id, before_snap["count"], after_snap["count"])
+    
+    report = RestartReconcileReportV1(
+        run_id=run_id,
+        stage=stage,
+        engine_version=ev,
+        data_fingerprint=df,
+        config_signature=cs,
+        built_ts_iso=now_iso(),
+        reconcile_id=reconcile_id,
+        before={"open_positions_count": before_snap["count"], "positions": before_snap["positions"]},
+        after={"open_positions_count": after_snap["count"], "positions": after_snap["positions"]},
+        drift=drift,
+        source={"provider": before_snap.get("source", "unknown"), "details": after_snap.get("source", "unknown")},
+        verdict=verdict,
+        suggested_actions=suggested_actions
+    )
+    
+    path = reports_dir / "restart_reconcile_report_v1.json"
+    write_report_json(path, report.to_dict())
+    
+    return {
+        "status": "OK",
+        "report_path": str(path),
+        "verdict": verdict,
+        "changed": drift["changed"]
+    }
