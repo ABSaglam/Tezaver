@@ -2314,9 +2314,32 @@ def render_reports(home: str):
                         data = json.load(f)
                         st.metric("Planned", data.get("planned", 0))
                         st.metric("Executed (SIM)", data.get("executed_sim", 0))
+                        st.metric("Skipped (Idempotent)", data.get("skipped_idempotent", 0))
                         st.json(data)
             else:
                 st.caption("No SIM Result")
+            
+            # Idempotency Report (Phase 5C)
+            idemp_path = reports_dir / "pool_idempotency_report_v1.json"
+            if idemp_path.exists():
+                with st.expander("🛡️ Idempotency", expanded=False):
+                    with open(idemp_path) as f:
+                        idemp_data = json.load(f)
+                        st.metric("Keys Total", idemp_data.get("keys_total_after", 0))
+                        st.metric("Blocked", idemp_data.get("skipped_idempotent", 0))
+                        st.json(idemp_data)
+            
+            # SIM Fill Report (Phase 6A.1)
+            fill_path = reports_dir / "pool_sim_fill_report_v1.json"
+            if fill_path.exists():
+                with st.expander("💰 SIM Fills (Fee+Slip)", expanded=False):
+                    with open(fill_path) as f:
+                        fill_data = json.load(f)
+                        totals = fill_data.get("totals", {})
+                        st.metric("Total Fee", f"{totals.get('fee_cost', 0):.4f}")
+                        st.metric("Total Slippage", f"{totals.get('slippage_cost', 0):.4f}")
+                        st.metric("Fills", fill_data.get("fills_total", 0))
+                        st.json(fill_data)
 
     # Portfolio Snapshot v2 (Phase 5A)
     st.divider()

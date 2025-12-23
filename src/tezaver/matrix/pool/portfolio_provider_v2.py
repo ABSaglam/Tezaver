@@ -86,12 +86,11 @@ class PortfolioProviderV2:
         run_id: str,
         max_open_positions: int
     ) -> PortfolioSnapshotV2:
-        """Get snapshot from SIM state."""
-        from tezaver.matrix.pool.portfolio_state_store_sim_v1 import load_sim_state
+        """Get snapshot from SIM state v2."""
+        from tezaver.matrix.pool.portfolio_state_store_sim_v1 import load_state_v2
         
-        state = load_sim_state(stage, run_id, self.home_dir)
-        open_positions = state.get("open_positions", [])
-        open_orders = state.get("open_orders", [])
+        state_v2 = load_state_v2(stage, run_id, self.home_dir)
+        open_positions = [p.to_dict() for p in state_v2.positions if p.status == "OPEN"]
         open_now = len(open_positions)
         capacity = max(0, max_open_positions - open_now)
         
@@ -103,7 +102,7 @@ class PortfolioProviderV2:
             open_now=open_now,
             capacity=capacity,
             open_positions=open_positions,
-            open_orders=open_orders,
+            open_orders=[],
             source="SIM_STATE"
         )
     

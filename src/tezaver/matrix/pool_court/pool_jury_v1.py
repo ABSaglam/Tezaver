@@ -80,6 +80,9 @@ def build_pool_scorecard(
     risk = _read_json_safe(reports_dir / "pool_risk_report_v1.json")
     allowed_count = risk.get("allowed_count", 0)
     blocked_count = risk.get("blocked_count", 0)
+    # Phase 5B.1: Read kill_switch from risk report
+    kill_switch_info = risk.get("kill_switch", {})
+    kill_switch_triggered = kill_switch_info.get("triggered", False)
     if not risk:
         evidence_ok = False
         key_notes.append("MISSING_REPORT:pool_risk")
@@ -122,5 +125,6 @@ def build_pool_scorecard(
         planned_orders=planned_orders,
         planned_total_notional=planned_total_notional,
         restart_reconcile_verdict=restart_reconcile_verdict,
+        kill_switch_triggered=kill_switch_triggered,
         key_notes=key_notes
     )

@@ -35,6 +35,7 @@ class PoolJuryScorecardV1:
     planned_orders: int
     planned_total_notional: float
     restart_reconcile_verdict: str  # "OK"|"NEEDS_SAFE_MODE"|"UNKNOWN"
+    kill_switch_triggered: bool  # Phase 5B.1
     key_notes: List[str]
 
     def to_dict(self) -> Dict[str, Any]:
@@ -54,6 +55,7 @@ class PoolJuryScorecardV1:
             "planned_orders": self.planned_orders,
             "planned_total_notional": self.planned_total_notional,
             "restart_reconcile_verdict": self.restart_reconcile_verdict,
+            "kill_switch_triggered": self.kill_switch_triggered,
             "key_notes": self.key_notes
         }
 

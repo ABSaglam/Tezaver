@@ -43,6 +43,13 @@ def judge_pool(
     gates: List[PoolGateResultV1] = []
     suggested_actions: List[str] = []
     
+    # Gate 0: KILL_SWITCH_OFF (Phase 5B.1 - HARD BLOCK)
+    if not scorecard.kill_switch_triggered:
+        gates.append(PoolGateResultV1("KILL_SWITCH_OFF", "PASS", "Kill switch not active"))
+    else:
+        gates.append(PoolGateResultV1("KILL_SWITCH_OFF", "FAIL", "KILL_SWITCH_ACTIVE"))
+        suggested_actions.append("DISABLE_KILL_SWITCH")
+    
     # Gate 1: POOL_EVIDENCE_OK
     if scorecard.evidence_ok:
         gates.append(PoolGateResultV1("POOL_EVIDENCE_OK", "PASS", "All evidence present"))
