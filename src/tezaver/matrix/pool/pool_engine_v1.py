@@ -709,3 +709,52 @@ def run_pool_phase3b_replacement(
         "verdict": report.verdict,
         "skip_reason": report.skip_reason
     }
+
+
+def run_pool_phase3c_replacement_plan(
+    stage: str,
+    run_id: str,
+    trace_ctx: Dict[str, str],
+    replacement_report: Dict[str, Any],
+    reconcile_report: Dict[str, Any],
+    bundle_registry = None,
+    config: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    """
+    Execute Pool Phase 3C: Build replacement plan.
+    
+    Args:
+        stage: Run stage
+        run_id: Run ID
+        trace_ctx: Context for determinism
+        replacement_report: Phase 3B replacement report
+        reconcile_report: Phase 2D reconcile report
+        bundle_registry: Bundle registry
+        config: {"default_notional": float}
+        
+    Returns:
+        Summary dict
+    """
+    from tezaver.matrix.pool.replacement_plan_engine_v1 import build_replacement_plan
+    
+    report = build_replacement_plan(
+        run_id=run_id,
+        stage=stage,
+        trace_ctx=trace_ctx,
+        replacement_report=replacement_report,
+        reconcile_report=reconcile_report,
+        bundle_registry=bundle_registry,
+        config=config
+    )
+    
+    reports_dir = resolve_reports_dir(stage, run_id)
+    path = reports_dir / "pool_replacement_plan_v1.json"
+    write_report_json(path, report.to_dict())
+    
+    return {
+        "status": "OK",
+        "report_path": str(path),
+        "replacement_verdict": report.replacement_verdict,
+        "has_plan": report.close_plan is not None,
+        "skip_reason": report.skip_reason
+    }

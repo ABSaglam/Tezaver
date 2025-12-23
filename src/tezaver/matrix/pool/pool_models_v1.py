@@ -536,3 +536,87 @@ class PoolReplacementReportV1:
             "skip_reason": self.skip_reason,
             "candidate": self.candidate.to_dict() if self.candidate else None
         }
+
+# ============================================================
+# Phase 3C: Replacement Plan Models
+# ============================================================
+
+@dataclass
+class PoolClosePlanItemV1:
+    """Plan item for closing a position."""
+    action: str  # "CLOSE_POSITION"
+    pos_id: str
+    symbol: str
+    close_mode: str  # "MARKET_DRYRUN"|"LIMIT_DRYRUN"
+    reason: str
+    notes: List[str]
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "action": self.action,
+            "pos_id": self.pos_id,
+            "symbol": self.symbol,
+            "close_mode": self.close_mode,
+            "reason": self.reason,
+            "notes": self.notes
+        }
+
+@dataclass
+class PoolOpenPlanItemV1:
+    """Plan item for opening a position."""
+    action: str  # "OPEN_POSITION"
+    intent_id: str
+    bundle_id: str
+    symbol: str
+    timeframe: str
+    notional: float
+    open_mode: str  # "MARKET_DRYRUN"|"LIMIT_DRYRUN"
+    policy_spec: Optional[Dict[str, Any]]
+    notes: List[str]
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "action": self.action,
+            "intent_id": self.intent_id,
+            "bundle_id": self.bundle_id,
+            "symbol": self.symbol,
+            "timeframe": self.timeframe,
+            "notional": self.notional,
+            "open_mode": self.open_mode,
+            "policy_spec": self.policy_spec,
+            "notes": self.notes
+        }
+
+@dataclass
+class PoolReplacementPlanReportV1:
+    """Atomic replacement plan report."""
+    run_id: str
+    stage: str
+    engine_version: str
+    data_fingerprint: str
+    config_signature: str
+    built_ts_iso: str
+    enabled: bool
+    replacement_verdict: str  # "NONE"|"SUGGESTED"|"SKIPPED"
+    requires_human_confirm: bool
+    close_plan: Optional[PoolClosePlanItemV1]
+    open_plan: Optional[PoolOpenPlanItemV1]
+    atomic_order: List[str]  # ["CLOSE_POSITION","OPEN_POSITION"]
+    skip_reason: Optional[str]
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "run_id": self.run_id,
+            "stage": self.stage,
+            "engine_version": self.engine_version,
+            "data_fingerprint": self.data_fingerprint,
+            "config_signature": self.config_signature,
+            "built_ts_iso": self.built_ts_iso,
+            "enabled": self.enabled,
+            "replacement_verdict": self.replacement_verdict,
+            "requires_human_confirm": self.requires_human_confirm,
+            "close_plan": self.close_plan.to_dict() if self.close_plan else None,
+            "open_plan": self.open_plan.to_dict() if self.open_plan else None,
+            "atomic_order": self.atomic_order,
+            "skip_reason": self.skip_reason
+        }

@@ -2209,6 +2209,64 @@ def render_reports(home: str):
             else:
                 st.caption("No Verdict")
 
+    # Replacement (Phase 3B)
+    st.divider()
+    st.subheader("♻️ Replacement (DRY-RUN)")
+    st.caption("Position replacement suggestions (bonus, requires human confirmation)")
+    
+    if 'selected_run_path' in locals() and selected_run_path:
+        reports_dir = selected_run_path / "reports"
+        replace_path = reports_dir / "pool_replacement_report_v1.json"
+        
+        if replace_path.exists():
+            with open(replace_path) as f:
+                data = json.load(f)
+            
+            verdict = data.get("verdict", "N/A")
+            enabled = data.get("enabled", False)
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Enabled", "Yes" if enabled else "No")
+                st.metric("Verdict", verdict)
+            with col2:
+                st.metric("Capacity", data.get("capacity", 0))
+                if verdict == "SKIPPED":
+                    st.info(f"Skip Reason: {data.get('skip_reason', 'N/A')}")
+            
+            if verdict == "SUGGESTED":
+                candidate = data.get("candidate", {})
+                st.success(f"💡 Replace OUT: **{candidate.get('replace_out_symbol')}** (score={candidate.get('replace_out_score')}) → "
+                          f"Replace IN: **{candidate.get('replace_in_symbol')}** intent {candidate.get('replace_in_intent_id')[:8]} "
+                          f"(score={candidate.get('replace_in_rank_score')}, delta={candidate.get('delta_score')})")
+                st.warning("⚠️ Requires human confirmation")
+            
+            with st.expander("📄 Full Report", expanded=False):
+                st.json(data)
+            
+            # Replacement Plan (Phase 3C)
+            plan_path = reports_dir / "pool_replacement_plan_v1.json"
+            if plan_path.exists():
+                with open(plan_path) as f:
+                    plan_data = json.load(f)
+                
+                st.markdown("---")
+                st.markdown("### 📋 Replacement Plan")
+                
+                if plan_data.get("close_plan") and plan_data.get("open_plan"):
+                    close = plan_data["close_plan"]
+                    opn = plan_data["open_plan"]
+                    st.success(f"**Atomic Plan:** Close `{close.get('pos_id')}` ({close.get('symbol')}) "
+                              f"→ Open intent `{opn.get('intent_id')[:8]}` ({opn.get('symbol')}/{opn.get('timeframe')}, notional={opn.get('notional')})")
+                    st.warning("⚠️ HUMAN CONFIRM REQUIRED")
+                    
+                    with st.expander("📦 Plan Details", expanded=False):
+                        st.json(plan_data)
+                else:
+                    st.info(f"No plan (skip_reason: {plan_data.get('skip_reason', 'N/A')})")
+        else:
+            st.caption("No Replacement Report")
+
 def render_incidents(home: str):
     """MX-FINAL-0401: Render Incidents page for evidence bundles."""
     from tezaver.ui.ui_guard import render_data_sources_box
