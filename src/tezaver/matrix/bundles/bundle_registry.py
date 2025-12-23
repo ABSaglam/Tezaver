@@ -40,6 +40,17 @@ class BundleRegistry:
         if status:
             return [b for b in self._bundles if b.status == status]
         return self._bundles.copy()
+
+    def list_loaded_bundles(self) -> List[LoadedBundle]:
+        """List all LOADED_OK bundles."""
+        return self.list(status="LOADED_OK")
+
+    def get(self, bundle_id: str) -> Optional[LoadedBundle]:
+        """Get a bundle by ID (returns first match if duplicates exist)."""
+        for b in self._bundles:
+            if b.manifest and b.manifest.bundle_id == bundle_id:
+                return b
+        return None
     
     def counts(self) -> Dict[str, int]:
         """

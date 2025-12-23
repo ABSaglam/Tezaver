@@ -1999,6 +1999,94 @@ def render_reports(home: str):
                 st.text(f"{rp.parent.name} | mode: {data.get('mode', '?')} | trades: {data.get('trade_count', '?')}")
         else:
             st.info("Cloud rapor bulunamadı")
+            
+    # Pool Reports (Phase 2A)
+    st.divider()
+    st.subheader("🌊 Pool Reports (Phase 2A)")
+    
+    # Simple Run Selector
+    runs_root = Path(home) / "out" / "matrix_runs"
+    all_runs = []
+    if runs_root.exists():
+        for stage_dir in runs_root.iterdir():
+            if stage_dir.is_dir():
+                for run_dir in stage_dir.iterdir():
+                    if run_dir.is_dir():
+                        all_runs.append((run_dir.name, run_dir))
+    
+    all_runs.sort(key=lambda x: os.path.getmtime(x[1]), reverse=True)
+    
+    if not all_runs:
+        st.info("No runs found.")
+    else:
+        selected_run_name = st.selectbox("Select Run", [r[0] for r in all_runs], key="pool_rep_run")
+        selected_run_path = next((r[1] for r in all_runs if r[0] == selected_run_name), None)
+        
+        if selected_run_path:
+            reports_dir = selected_run_path / "reports"
+            
+            # 1. Universe
+            uni_path = reports_dir / "pool_universe_report_v1.json"
+            if uni_path.exists():
+                with st.expander("🌌 Pool Universe Report", expanded=False):
+                    with open(uni_path) as f:
+                        st.json(json.load(f))
+            else:
+                st.caption("No Universe Report")
+                
+            # 2. Tick
+            tick_path = reports_dir / "pool_tick_report_v1.json"
+            if tick_path.exists():
+                with st.expander("⏱️ Pool Tick Report", expanded=False):
+                    with open(tick_path) as f:
+                        st.json(json.load(f))
+            else:
+                st.caption("No Tick Report")
+                
+            # 3. Intents
+            int_path = reports_dir / "pool_intents_report_v1.json"
+            if int_path.exists():
+                with st.expander("🎯 Pool Intents Report", expanded=False):
+                    with open(int_path) as f:
+                        st.json(json.load(f))
+            else:
+                st.caption("No Intents Report")
+
+    # Pool Reports (Phase 2B)
+    st.divider()
+    st.subheader("🌊 Pool Reports (Phase 2B)")
+    st.caption("Snapshot, Capacity & Selection")
+    
+    if 'selected_run_path' in locals() and selected_run_path:
+        reports_dir = selected_run_path / "reports"
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+             # 1. Portfolio Snapshot
+            snap_path = reports_dir / "pool_portfolio_snapshot_v1.json"
+            if snap_path.exists():
+                with st.expander("💼 Portfolio Snapshot", expanded=False):
+                    with open(snap_path) as f:
+                        data = json.load(f)
+                        st.json(data)
+                        st.metric("Open Now", data.get("open_now", 0))
+                        st.metric("Capacity", data.get("capacity", 0))
+            else:
+                st.caption("No Snapshot Report")
+        
+        with col2:
+            # 2. Selection
+            sel_path = reports_dir / "pool_selection_report_v1.json"
+            if sel_path.exists():
+                with st.expander("✅ Selection Report", expanded=False):
+                     with open(sel_path) as f:
+                        data = json.load(f)
+                        st.json(data)
+                        st.metric("Eligible", data.get("intents_eligible", 0))
+                        st.metric("Selected", data.get("selected_count", 0))
+            else:
+                 st.caption("No Selection Report")
 
 
 def render_incidents(home: str):

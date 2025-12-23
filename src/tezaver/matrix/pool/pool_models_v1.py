@@ -142,3 +142,103 @@ class PoolIntentsReportV1:
             "intents": [i.to_dict() for i in self.intents],
             "skipped_reasons_count": self.skipped_reasons_count
         }
+
+@dataclass
+class PoolPortfolioSnapshotV1:
+    """Snapshot of open positions and capacity check."""
+    run_id: str
+    stage: str
+    engine_version: str
+    data_fingerprint: str
+    config_signature: str
+    built_ts_iso: str
+    max_open_positions: int
+    open_now: int
+    capacity: int
+    open_positions: List[Dict[str, Any]] # Minimal Position info
+    source: str # e.g. "provider:stub"
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "run_id": self.run_id,
+            "stage": self.stage,
+            "engine_version": self.engine_version,
+            "data_fingerprint": self.data_fingerprint,
+            "config_signature": self.config_signature,
+            "built_ts_iso": self.built_ts_iso,
+            "max_open_positions": self.max_open_positions,
+            "open_now": self.open_now,
+            "capacity": self.capacity,
+            "open_positions": self.open_positions,
+            "source": self.source
+        }
+
+@dataclass
+class PoolSelectionItemV1:
+    """An intent that has been evaluated for selection."""
+    intent_id: str
+    symbol: str
+    timeframe: str
+    bundle_id: str
+    qc_score: int
+    tier: Optional[str]
+    trigger_type: str
+    exit_policy: str
+    rank_score: float
+    rank_reason: str # "qc+tier"
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "intent_id": self.intent_id,
+            "symbol": self.symbol,
+            "timeframe": self.timeframe,
+            "bundle_id": self.bundle_id,
+            "qc_score": self.qc_score,
+            "tier": self.tier,
+            "trigger_type": self.trigger_type,
+            "exit_policy": self.exit_policy,
+            "rank_score": self.rank_score,
+            "rank_reason": self.rank_reason
+        }
+
+@dataclass
+class PoolSelectionReportV1:
+    """Report on the selection process."""
+    run_id: str
+    stage: str
+    engine_version: str
+    data_fingerprint: str
+    config_signature: str
+    built_ts_iso: str
+    max_open_positions: int
+    open_now: int
+    capacity: int
+    intents_considered: int
+    intents_eligible: int # reason=="OK"
+    selected_count: int
+    skipped_count: int
+    skipped_reasons_count: Dict[str, int]
+    selected: List[PoolSelectionItemV1]
+    skipped: List[Dict[str, str]] # {"intent_id":..., "reason":...}
+    selection_policy_v1: Dict[str, Any] # Algo config
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "run_id": self.run_id,
+            "stage": self.stage,
+            "engine_version": self.engine_version,
+            "data_fingerprint": self.data_fingerprint,
+            "config_signature": self.config_signature,
+            "built_ts_iso": self.built_ts_iso,
+            "max_open_positions": self.max_open_positions,
+            "open_now": self.open_now,
+            "capacity": self.capacity,
+            "intents_considered": self.intents_considered,
+            "intents_eligible": self.intents_eligible,
+            "selected_count": self.selected_count,
+            "skipped_count": self.skipped_count,
+            "skipped_reasons_count": self.skipped_reasons_count,
+            "selected": [s.to_dict() for s in self.selected],
+            "skipped": self.skipped,
+            "selection_policy_v1": self.selection_policy_v1
+        }
