@@ -1394,6 +1394,70 @@ def render_war(home: str):
                 st.text(f"• {sym}")
             st.caption(f"Registry: {diag.registry_path}")
     
+    # --- Run from Bundle (WAR) ---
+    with st.expander("📦 Run from Bundle (WAR)", expanded=True):
+        st.caption("LOADED_OK durumundaki ApprovedRallyBundle'lardan WAR run başlat")
+        
+        try:
+            from tezaver.matrix.bundles.bundle_loader_v1 import load_all_bundles
+            from tezaver.matrix.bundles.bundle_registry import BundleRegistry
+            from tezaver.matrix.bundles.bundle_run_context_v1 import start_war_from_bundle
+            
+            # Load bundles
+            bundle_registry = BundleRegistry()
+            load_all_bundles(registry=bundle_registry)
+            loaded_bundles = bundle_registry.list(status="LOADED_OK")
+            
+            if not loaded_bundles:
+                st.warning("⚠️ LOADED_OK durumunda bundle yok.")
+                st.caption("Önce ONY'de approve edip Dökümhane'de paketleyin.")
+            else:
+                # Create bundle options map
+                bundle_options = {
+                    f"{b.manifest.symbol}/{b.manifest.timeframe} - {b.manifest.bundle_id[:20]}...": b
+                    for b in loaded_bundles if b.manifest
+                }
+                
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    selected_label = st.selectbox(
+                        "Bundle Seç",
+                        list(bundle_options.keys()),
+                        key="war_bundle_select"
+                    )
+                
+                with col2:
+                    st.write("")  # Spacer
+                    st.write("")  # Spacer
+                    run_clicked = st.button("▶ Run WAR", type="primary", key="run_war_from_bundle")
+                
+                if run_clicked and selected_label:
+                    selected_bundle = bundle_options[selected_label]
+                    
+                    with st.spinner("WAR run başlatılıyor..."):
+                        result = start_war_from_bundle(selected_bundle)
+                    
+                    if result["status"] == "STARTED":
+                        st.success(f"✅ WAR run başlatıldı: `{result['run_id']}`")
+                        st.json({
+                            "bundle_id": result["context"]["bundle_id"],
+                            "symbol": result["context"]["symbol"],
+                            "timeframe": result["context"]["timeframe"],
+                            "qc_score": result["context"]["qc_score"],
+                            "exit_missing": result["context"]["exit_missing"]
+                        })
+                        
+                        # Show telemetry
+                        if result["telemetry"]:
+                            with st.expander("📜 Telemetry", expanded=False):
+                                for event in result["telemetry"]:
+                                    st.code(json.dumps(event, indent=2))
+                    else:
+                        st.error(f"❌ Hata: {result['error']}")
+                        
+        except Exception as e:
+            st.error(f"Bundle yükleme hatası: {e}")
+    
     # --- Start New WAR Run ---
     with st.expander("🚀 Start New WAR Run", expanded=False):
         st.caption("APPROVED_FOR_WAR statüsündeki adayları çoklu backtest'e al")
@@ -1590,6 +1654,71 @@ def render_live(home: str):
             st.caption("Semboller")
             for sym in diag.symbols_found[:5]:
                 st.text(f"• {sym}")
+    
+    # --- Arm from Bundle (LIVE) ---
+    with st.expander("📦 Arm from Bundle (LIVE)", expanded=True):
+        st.caption("LOADED_OK durumundaki ApprovedRallyBundle'lardan LIVE arm (trade logic'e dokunmaz)")
+        
+        try:
+            from tezaver.matrix.bundles.bundle_loader_v1 import load_all_bundles
+            from tezaver.matrix.bundles.bundle_registry import BundleRegistry
+            from tezaver.matrix.bundles.bundle_run_context_v1 import arm_live_from_bundle
+            
+            # Load bundles
+            bundle_registry = BundleRegistry()
+            load_all_bundles(registry=bundle_registry)
+            loaded_bundles = bundle_registry.list(status="LOADED_OK")
+            
+            if not loaded_bundles:
+                st.warning("⚠️ LOADED_OK durumunda bundle yok.")
+                st.caption("Önce ONY'de approve edip Dökümhane'de paketleyin.")
+            else:
+                # Create bundle options map
+                bundle_options = {
+                    f"{b.manifest.symbol}/{b.manifest.timeframe} - {b.manifest.bundle_id[:20]}...": b
+                    for b in loaded_bundles if b.manifest
+                }
+                
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    selected_label = st.selectbox(
+                        "Bundle Seç",
+                        list(bundle_options.keys()),
+                        key="live_bundle_select"
+                    )
+                
+                with col2:
+                    st.write("")  # Spacer
+                    st.write("")  # Spacer
+                    arm_clicked = st.button("🟢 Arm LIVE", type="primary", key="arm_live_from_bundle")
+                
+                if arm_clicked and selected_label:
+                    selected_bundle = bundle_options[selected_label]
+                    
+                    with st.spinner("LIVE arm yapılıyor..."):
+                        result = arm_live_from_bundle(selected_bundle)
+                    
+                    if result["status"] == "ARMED":
+                        st.success(f"✅ LIVE armed: `{result['arm_id']}`")
+                        st.json({
+                            "bundle_id": result["context"]["bundle_id"],
+                            "symbol": result["context"]["symbol"],
+                            "timeframe": result["context"]["timeframe"],
+                            "qc_score": result["context"]["qc_score"],
+                            "entry_ts": result["context"]["entry_ts"],
+                            "exit_missing": result["context"]["exit_missing"]
+                        })
+                        
+                        # Show telemetry
+                        if result["telemetry"]:
+                            with st.expander("📜 Telemetry", expanded=False):
+                                for event in result["telemetry"]:
+                                    st.code(json.dumps(event, indent=2))
+                    else:
+                        st.error(f"❌ Hata: {result['error']}")
+                        
+        except Exception as e:
+            st.error(f"Bundle yükleme hatası: {e}")
     
     # --- Start New LIVE Run ---
     with st.expander("🚀 Start LIVE Run", expanded=False):
