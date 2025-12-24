@@ -100,7 +100,8 @@ def find_event_bar_index(df_history: pd.DataFrame, event_time: pd.Timestamp) -> 
 def find_pivot_snap_offset(
     df_history: pd.DataFrame,
     base_idx: int,
-    window_size: int = 3
+    window_size: int = 3,
+    mode: str = "HIGH"  # HIGH, LOW, CLOSE
 ) -> tuple[int, str, float]:
     """
     Find best snap offset within ±window_size bars of base_idx.
@@ -110,8 +111,11 @@ def find_pivot_snap_offset(
     
     Logic:
         - Search window: [base_idx - window_size, base_idx + window_size]
-        - Find bar with highest 'high' value (pivot high)
-        - If different from base_idx, snap to it
+        - If mode='HIGH': Snap to highest 'high'
+        - If mode='LOW': Snap to lowest 'low'
+        - If mode='CLOSE': Snap to bar (keep base unless significant structure found - simplified: keep base for now or nearest extremum)
+          * Actually for CLOSE, usually means we just want the timestamp of the base_idx, or maybe specific candle logic.
+          * For v2: We'll treat CLOSE as "Don't snap to wicks, just ensure valid bar".
     """
     start_idx = max(0, base_idx - window_size)
     end_idx = min(len(df_history) - 1, base_idx + window_size)
@@ -119,12 +123,27 @@ def find_pivot_snap_offset(
     # Extract window
     window = df_history.iloc[start_idx:end_idx+1].copy()
     
-    if 'high' not in window.columns:
-        # No high column, can't detect pivot
-        return 0, "KEEP:no_high_column", 0.50
+    target_col = 'high'
+    if mode == 'LOW':
+        target_col = 'low'
+    elif mode == 'CLOSE':
+        # For CLOSE mode, we might arguably not want to snap at all, or snap to local extremum of closes.
+        # Let's pivot on close price.
+        target_col = 'close'
     
-    # Find pivot high
-    pivot_idx_in_window = window['high'].idxmax()
+    if target_col not in window.columns:
+        # No target column
+        return 0, f"KEEP:no_{target_col}_column", 0.50
+    
+    # Find pivot
+    if mode == 'LOW':
+        pivot_idx_in_window = window[target_col].idxmin()
+    else:
+        # HIGH or CLOSE (for close we usually want max close? or just nearest? 
+        # Let's assume for CLOSE mode user wants the 'strongest' close -> Max Close for Longs?
+        # Actually, let's stick to standard pivot logic: Max for High/Close, Min for Low.
+        pivot_idx_in_window = window[target_col].idxmax()
+    
     pivot_idx_global = pivot_idx_in_window
     
     if pivot_idx_global == base_idx:
@@ -139,7 +158,7 @@ def find_pivot_snap_offset(
         # Shouldn't happen due to clipping, but defensive
         return 0, "KEEP:pivot_too_far", 0.50
     
-    reason = f"SNAP:pivot_high_window"
+    reason = f"SNAP:{mode}_window"
     confidence = 0.70 if distance <= window_size else 0.60
     
     return snap_delta, reason, confidence
@@ -149,7 +168,8 @@ def normalize_entry(
     symbol: str,
     timeframe: str,
     event_time: pd.Timestamp,
-    entry_bar_offset: int
+    entry_bar_offset: int,
+    snap_mode: str = "HIGH"
 ) -> NormalizeResult:
     """
     Normalize entry_bar_offset to timestamp with auto-snap.
@@ -159,6 +179,7 @@ def normalize_entry(
         timeframe: Timeframe (15m, 1h, 4h)
         event_time: Event timestamp
         entry_bar_offset: Bar offset from event (positive = forward)
+        snap_mode: "HIGH", "LOW" or "CLOSE"
     
     Returns:
         NormalizeResult with normalized timestamp and snap metadata
@@ -183,7 +204,7 @@ def normalize_entry(
     
     # Apply pivot snap
     snap_delta, snap_reason, snap_confidence = find_pivot_snap_offset(
-        df_history, base_idx, window_size=3
+        df_history, base_idx, window_size=3, mode=snap_mode
     )
     
     # Calculate final output offset and index

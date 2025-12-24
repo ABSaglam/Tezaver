@@ -338,6 +338,15 @@ def render_ony_studio():
     st.markdown("---")
     st.markdown("### 🧲 Normalize Entry (Auto-Snap)")
     
+    # Snap Mode Selector
+    snap_mode = st.radio(
+        "Snap Mode",
+        options=["HIGH", "LOW", "CLOSE"],
+        index=0,
+        horizontal=True,
+        help="HIGH: Snap to Highest High (Breakout)\nLOW: Snap to Lowest Low (Dip/Pullback)\nCLOSE: Snap to Candle Close"
+    )
+
     col_norm_btn, col_apply_reset = st.columns([1, 1])
     
     with col_norm_btn:
@@ -346,12 +355,13 @@ def render_ony_studio():
                 # Parse event_time
                 event_time_ts = pd.to_datetime(event_time)
                 
-                # Call normalize_entry
+                # Call normalize_entry with selected mode
                 norm_result = normalize_entry(
                     symbol=symbol,
                     timeframe=timeframe,
                     event_time=event_time_ts,
-                    entry_bar_offset=entry_offset
+                    entry_bar_offset=entry_offset,
+                    snap_mode=snap_mode
                 )
                 
                 # Store in session_state
@@ -485,8 +495,14 @@ def render_ony_studio():
             st.success(f"✅ Kayıt başarılı: {event_id}")
             st.rerun()
     
+    # Action Buttons Logic based on Current Status
+    is_already_approved = (existing_ann and existing_ann.status == "APPROVED")
+    
     with col_approve:
-        if st.button("✅ Onayla", use_container_width=True, type="primary"):
+        btn_label = "💾 Revizyonu Kaydet" if is_already_approved else "✅ Onayla (Approve)"
+        btn_key = "btn_approve_update"
+        
+        if st.button(btn_label, key=btn_key, use_container_width=True, type="primary"):
             ann = repo.append(
                 symbol=symbol,
                 timeframe=timeframe,
@@ -496,12 +512,31 @@ def render_ony_studio():
                 note=note,
                 status="APPROVED",
                 label=label,
+                # Preserve existing internal fields if needed, 
+                # or rely on repo.append logic to handle merging if it existed (repo.append usually overwrites or appends new)
+                # Ideally we want to update. repo.append in current implementation appends to list and saves. 
+                # Correct implementation: load all, replace matching event_id, save.
+                # repo.append does: load, remove old if exists, append new, save. So it acts as upsert.
             )
-            st.success(f"✅ ONAYLANDI: {event_id}")
+            
+            # Additional logic for saving normalized fields if present in session_state or ann
+            # (Previously managed via internal modification of 'existing_ann' object)
+            # Since 'repo.append' creates a NEW object, we must ensure normalized fields are carried over if we care.
+            # But the UI flow above for 'Apply' normalized modified the 'existing_ann' in memory presumably? 
+            # No, apply_normalize_to_annotation returned a new object or modified it.
+            # If we want to persist normalized fields, we should pass them to append if supported, 
+            # or we rely on the fact that repo.append creates a basic annotation. 
+            # CAUTION: append() signature in sniper_annotations might not support extra fields like normalized_*.
+            # For now, we stick to basic fields. Normalized data retention might need repo update.
+            
+            if is_already_approved:
+                st.success(f"💾 REVİZYON KAYDEDİLDİ: {event_id}")
+            else:
+                st.success(f"✅ ONAYLANDI: {event_id}")
             st.rerun()
     
     with col_reject:
-        if st.button("❌ Reddet", use_container_width=True):
+        if st.button("❌ Reddet (Reject/Revoke)", use_container_width=True):
             ann = repo.append(
                 symbol=symbol,
                 timeframe=timeframe,
@@ -591,7 +626,7 @@ def render_ony_queue():
     st.markdown("---")
     
     # --- TABS ---
-    tab_pending, tab_approved, tab_rejected = st.tabs(["🟡 PENDING", "✅ APPROVED", "❌ REJECTED"])
+    tab_approved, tab_rejected, tab_pending = st.tabs(["✅ APPROVED (Auto)", "❌ REJECTED", "🟡 PENDING (Legacy)"])
     
     def render_annotation_table(anns: List[SniperAnnotation], status_key: str):
         if not anns:
@@ -628,14 +663,14 @@ def render_ony_queue():
                 st.session_state["ony_tab_mode"] = "studio"
                 st.rerun()
     
-    with tab_pending:
-        render_annotation_table(pending, "pending")
-    
     with tab_approved:
         render_annotation_table(approved, "approved")
     
     with tab_rejected:
         render_annotation_table(rejected, "rejected")
+
+    with tab_pending:
+        render_annotation_table(pending, "pending")
 
 
 # =============================================================================

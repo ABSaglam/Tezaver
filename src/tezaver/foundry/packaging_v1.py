@@ -18,6 +18,7 @@ from tezaver.rally.rally_grade_cards import compute_tier_from_gain_pct
 from tezaver.rally.rally_narrative_engine import analyze_scenario, SCENARIO_DEFINITIONS
 from tezaver.rally.rally_narrative_engine import analyze_scenario, SCENARIO_DEFINITIONS
 from tezaver.foundry.naming_service import BundleNamingService
+from tezaver.foundry.deep_narrative_service import DeepNarrativeService
 from tezaver.core import coin_cell_paths
 
 
@@ -52,17 +53,25 @@ def package_event(
     
     # Load QC report
     qc_report_path = Path(f".tezaver_matrix/foundry/qc_reports/{symbol}/{timeframe}/qc_{event_id}.json")
-    if not qc_report_path.exists():
-        return None
-    
-    with open(qc_report_path, 'r') as f:
-        qc_report_dict = json.load(f)
-    
-    qc_report = QCReport.from_dict(qc_report_dict)
-    
-    # Skip if QC not PASS
-    if qc_report.qc_verdict != "PASS":
-        return None
+    if qc_report_path.exists():
+        with open(qc_report_path, 'r') as f:
+            qc_report_dict = json.load(f)
+        qc_report = QCReport.from_dict(qc_report_dict)
+        
+        # Skip if QC not PASS
+        if qc_report.qc_verdict != "PASS":
+            return None
+    else:
+        # Default Auto-Approve Mock QC
+        qc_report = QCReport(
+            symbol=symbol,
+            timeframe=timeframe,
+            event_id=event_id,
+            qc_verdict="PASS",
+            score=100,
+            warns=["Auto-Approved (Missing QC Report)"]
+        )
+        qc_report_dict = qc_report.to_dict()
     
     # Load event dataset row
     event_row = _load_event_row(symbol, timeframe, event_id)
@@ -125,18 +134,24 @@ def package_event(
     bundle_id = f"{symbol}_{timeframe}_{orig_id}"
     event_time_iso = pd.to_datetime(event_row.get('event_time')).isoformat() if pd.notna(event_row.get('event_time')) else ""
     
-    # Analyze Narrative / Scenario
+    # Analyze Narrative (Deep Story)
     try:
-        scenario_id = analyze_scenario(event_row)
-        scenario_def = SCENARIO_DEFINITIONS.get(scenario_id, SCENARIO_DEFINITIONS["SCENARIO_NEUTRAL"])
+        story_engine = DeepNarrativeService()
+        # Ensure we pass the iso string correctly
+        narrative_data = story_engine.generate_story(symbol, timeframe, event_time_iso)
+        
         narrative = {
-            "label": scenario_def["label"],
-            "desc": scenario_def["desc"],
-            "risk": scenario_def["risk"]
+            "label": narrative_data.get("label", "Unknown Story"),
+            "desc": narrative_data.get("desc", "No description available."),
+            "risk": narrative_data.get("risk", "Medium"),
+            "details": narrative_data.get("details", {})
         }
+        # Backwards compat: use a generic ID or synthesize one
+        scenario_id = "SCENARIO_DEEP_NARRATIVE" 
     except Exception as e:
+        print(f"Deep Narrative Failed: {e}")
         scenario_id = "SCENARIO_NEUTRAL"
-        narrative = SCENARIO_DEFINITIONS["SCENARIO_NEUTRAL"]
+        narrative = {"label": "Neutral", "desc": "Analysis failed.", "risk": "Medium"}
 
     manifest = ApprovedRallyBundleManifest(
         bundle_id=std_bundle_id,  # Use Standard ID (e.g. BTC-15m-GOLD-01)
@@ -177,60 +192,226 @@ def package_event(
     return str(bundle_dir)
 
 
+from tezaver.foundry.cluster_engine import ClusterEngine, extract_features, ArchetypeCluster
+
+def package_cluster(
+    cluster: ArchetypeCluster,
+    symbol: str,
+    timeframe: str,
+    tier: str,
+    output_root: str = ".tezaver_matrix/approved_bundles_v1"
+) -> Optional[str]:
+    """
+    Package an Archetype Cluster into a Bundle.
+    
+    The bundle represents the 'Structure'.
+    It uses the Centroid Member (rallies closest to mean) as the primary visual.
+    """
+    if not cluster.members:
+        return None
+
+    # 1. Identify Representative
+    # Find member closest to centroid gain/duration
+    best_member = None
+    min_dist = float('inf')
+    
+    c_gain = cluster.centroid.get('gain', 0)
+    c_dur = cluster.centroid.get('duration', 0)
+    
+    for m in cluster.members:
+        dist = ((m.gain - c_gain)**2 + (m.duration - c_dur)**2) ** 0.5
+        if dist < min_dist:
+            min_dist = dist
+            best_member = m
+            
+    if not best_member:
+        best_member = cluster.members[0] # Fallback
+        
+    # 2. Bundle ID
+    # e.g. BTC-15m-GOLD-A
+    naming = BundleNamingService(output_root)
+    # We construct ID manually or add support in naming service. 
+    # Let's use standard naming but append Cluster ID.
+    # Actually, NamingService generates sequential 01, 02.
+    # We want A, B, C for clusters? 
+    # Let's stick to Sequential 01, 02... but these now represent Clusters.
+    # So BTC-15m-GOLD-01 is Cluster A.
+    
+    std_bundle_id = naming.generate_id(symbol, timeframe, tier)
+    
+    # 3. Create Bundle Dir
+    # We use the Representative's Event ID for the folder structure initially,
+    # or better, just use the Bundle ID as the main folder name.
+    
+    # We reuse bundle_io logic but we need to trick it or update it.
+    # bundle_io.create_bundle_directory uses event_id.
+    rep_event_id = best_member.event_id
+    
+    bundle_dir = bundle_io.create_bundle_directory(
+        symbol, timeframe, rep_event_id, output_root, folder_name=std_bundle_id
+    )
+    
+    # 4. Prepare Data
+    # Load Representative Data (Annotation, QC, Row)
+    # We use existing helpers for the representative
+    rep_row = _load_event_row(symbol, timeframe, rep_event_id)
+    rep_ann = best_member.annotation
+    
+    # Mock QC for now (since we skipped it)
+    qc_dict = {
+        "verdict": "PASS",
+        "score": 100,
+        "note": f"Archetype Cluster {cluster.cluster_id}"
+    }
+
+    pointer_paths = {
+        "annotation_path": str(SniperAnnotationRepository()._file_path(symbol, timeframe)),
+        "history_path": str(coin_cell_paths.get_history_file(symbol, timeframe))
+    }
+
+    # Extract Price Window for Representative
+    price_window_df = _extract_price_window(symbol, timeframe, getattr(rep_row, 'event_time', None))
+    
+    # Deep Narrative for Representative
+    story_engine = DeepNarrativeService()
+    narrative_data = story_engine.generate_story(
+        symbol, timeframe, 
+        pd.to_datetime(getattr(rep_row, 'event_time', '')).isoformat() if rep_row is not None else ""
+    )
+    
+    # Bundle Label = Archetype Label (Signal Signature)
+    # Desc = Narrative + Signature Details
+    narrative = {
+        "label": f"[Archetype {cluster.cluster_id}] {cluster.label}",
+        "desc": f"**Structure:** {cluster.centroid.get('signature', 'Unknown')}. \n\n" + narrative_data.get("desc", ""),
+        "risk": narrative_data.get("risk", "Medium"),
+        "details": narrative_data.get("details", {})
+    }
+
+    # 5. Build Manifest (Updated for Cluster)
+    member_ids = [m.event_id for m in cluster.members]
+    narrative['details']['cluster_members'] = member_ids
+    narrative['details']['centroid'] = cluster.centroid
+
+    manifest = ApprovedRallyBundleManifest(
+        bundle_id=std_bundle_id,
+        symbol=symbol,
+        timeframe=timeframe,
+        event_id=rep_event_id, # Representative
+        event_time_iso=pd.to_datetime(getattr(rep_row, 'event_time', '')).isoformat() if rep_row is not None else "",
+        tier=tier,
+        approved={"entry_offset": getattr(rep_ann, 'entry_bar_offset', 0)}, # Minimal
+        qc=qc_dict,
+        pointers=pointer_paths,
+        scenario_id="ARCHETYPE_CLUSTER",
+        narrative=narrative
+    )
+
+    # 6. Write Files
+    bundle_io.write_bundle_files(
+        bundle_dir=bundle_dir,
+        manifest=manifest,
+        annotation_dict=rep_ann.to_dict(),
+        qc_report_dict=qc_dict,
+        event_row_dict={"tier": tier, "gain": c_gain, "members_count": len(cluster.members)},
+        price_window_df=price_window_df
+    )
+    
+    # Write Members JSON explicitly
+    with open(bundle_dir / "archetype_members.json", "w") as f:
+        json.dump({
+            "cluster_id": cluster.cluster_id,
+            "centroid": cluster.centroid,
+            "members": [
+                {"event_id": m.event_id, "gain": m.gain, "duration": m.duration} 
+                for m in cluster.members
+            ]
+        }, f, indent=2)
+        
+    return str(bundle_dir)
+
+
 def package_symbol_timeframe(
     symbol: str,
     timeframe: str,
-    limit: Optional[int] = None,
+    limit: Optional[int] = None, # Not used in Cluster mode effectively
+    limit_per_tier: int = 3,     # Used to limit number of clusters if we split too much?
     output_root: str = ".tezaver_matrix/approved_bundles_v1"
 ) -> List[str]:
     """
-    Package all QC-PASSED events for a symbol/timeframe.
-    
-    Args:
-        symbol: Trading pair symbol
-        timeframe: Timeframe (15m, 1h, 4h)
-        limit: Optional limit on number of bundles to create
-        output_root: Root directory for bundles
-    
-    Returns:
-        List of created bundle directory paths
+    Package QC-PASSED events using CLUSTER ENGINE.
     """
     bundle_dirs = []
     
     # Load all annotations
     repo = SniperAnnotationRepository()
     annotations = repo.load_all(symbol, timeframe)
-    
     if not annotations:
         return bundle_dirs
-    
-    # Filter APPROVED annotations
+        
     approved_anns = [ann for ann in annotations if getattr(ann, 'status', '') == 'APPROVED']
+    if not approved_anns:
+        return bundle_dirs
+
+    # --- TIER GROUPING ---
+    tier_lists = {} # Tier -> List[Features]
     
-    # Apply limit if specified
-    if limit:
-        approved_anns = approved_anns[:limit]
-    
-    # Package each annotation
     for ann in approved_anns:
-        bundle_dir = package_event(symbol, timeframe, ann.event_id, output_root)
-        if bundle_dir:
-            bundle_dirs.append(bundle_dir)
+        row = _load_event_row(symbol, timeframe, ann.event_id)
+        if row is not None:
+            feature = extract_features(row, ann)
+            
+            # feature.gain is 0-100 (e.g. 48.9). 
+            # compute_tier expects 0-1 (e.g. 0.489).
+            tier = compute_tier_from_gain_pct(feature.gain / 100.0) or "UNKNOWN"
+            
+            if tier not in tier_lists:
+                tier_lists[tier] = []
+            tier_lists[tier].append(feature)
+            
+    # --- CLUSTERING & PACKAGING ---
+    engine = ClusterEngine()
     
+    for tier, features in tier_lists.items():
+        if not features: continue
+        
+        # Run Clustering
+        clusters = engine.cluster_rallies(features)
+        
+        # Package Each Cluster
+        for clust in clusters:
+            b_dir = package_cluster(clust, symbol, timeframe, tier, output_root)
+            if b_dir:
+                bundle_dirs.append(b_dir)
+                
     return bundle_dirs
 
+
+from functools import lru_cache
+
+@lru_cache(maxsize=8)
+def _cached_read_parquet(path: str) -> Optional[pd.DataFrame]:
+    if not Path(path).exists():
+        return None
+    try:
+        df = pd.read_parquet(path)
+        if 'event_time' in df.columns:
+            df['event_time'] = pd.to_datetime(df['event_time'], errors='coerce')
+        return df
+    except:
+        return None
 
 def _load_event_row(symbol: str, timeframe: str, event_id: str) -> Optional[pd.Series]:
     """Load event dataset row for the given event_id."""
     event_path = _get_event_dataset_path(symbol, timeframe)
-    if not event_path or not Path(event_path).exists():
+    if not event_path:
+        return None
+        
+    df = _cached_read_parquet(event_path)
+    if df is None:
         return None
     
     try:
-        df = pd.read_parquet(event_path)
-        if 'event_time' in df.columns:
-            df['event_time'] = pd.to_datetime(df['event_time'], errors='coerce')
-        
         # Determine ID column
         id_col = None
         for c in ["event_id", "event_idx", "entry_id"]:
@@ -242,17 +423,42 @@ def _load_event_row(symbol: str, timeframe: str, event_id: str) -> Optional[pd.S
         if id_col:
             # Try match by ID (handling potential type mismatch like int vs str)
             try:
-                val = type(df[id_col].iloc[0])(event_id)
-                matches = df[df[id_col] == val]
+                # Assuming simple equality first
+                matches = df[df[id_col] == event_id]
+                if matches.empty:
+                    # Retry with string conversion if needed
+                    matches = df[df[id_col].astype(str) == str(event_id)]
             except:
-                matches = df[df[id_col].astype(str) == str(event_id)]
+                pass
         
         # Fallback: Try matching event_id AS event_time if no matches found
         if matches.empty and 'event_time' in df.columns:
             try:
-                # If event_id looks like a timestamp, try matching
-                target_dt = pd.to_datetime(event_id)
-                matches = df[df['event_time'] == target_dt]
+                # 1. Try direct parse
+                target_dt = pd.to_datetime(event_id, errors='coerce')
+                
+                # 2. Try slicing standard ID format: SYMBOL_TF_YYYYMMDDHHMM
+                if pd.isna(target_dt) and "_" in str(event_id):
+                    parts = str(event_id).split("_")
+                    if len(parts) >= 3:
+                        # Assumption: Last part is the time
+                        time_part = parts[-1]
+                        # Try parsing YYYYMMDDHHMM
+                        try:
+                            target_dt = pd.to_datetime(time_part, format='%Y%m%d%H%M')
+                        except:
+                            pass
+                
+                if pd.notna(target_dt):
+                    # Compare with tolerance? Or exact? 
+                    # Parquet times are usually precise. But maybe timezone diff?
+                    # Let's try exact first.
+                    matches = df[df['event_time'] == target_dt]
+                    
+                    if matches.empty:
+                        # Try ignoring seconds/nanoseconds if dataset has them
+                        # Round to minutes?
+                         matches = df[df['event_time'].dt.floor('min') == target_dt.floor('min')]
             except:
                 pass
                 

@@ -17,6 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from tezaver.rally.fast15_rally_scanner import run_fast15_scan_for_symbol
+from tezaver.ony.auto_approver import OnyAutoApprover
 from tezaver.core.config import DEFAULT_COINS
 from tezaver.core.logging_utils import get_logger
 
@@ -42,6 +43,9 @@ def main():
     
     args = parser.parse_args()
     
+    # Initialize Auto-Approver
+    approver = OnyAutoApprover()
+    
     if args.symbol:
         symbols = [args.symbol]
     else:
@@ -59,12 +63,17 @@ def main():
         logger.info(f"\n>>> Processing {symbol}...")
         
         try:
-            result = run_fast15_scan_for_symbol(symbol)
+            result = run_fast15_rally_scan_for_symbol(symbol)
             results.append(result)
             
             logger.info(f"✓ {symbol}: {result.num_events_total} events found")
             if result.num_events_by_bucket:
                 logger.info(f"  Buckets: {result.num_events_by_bucket}")
+            
+            # --- ONY AUTO-APPROVE ---
+            created_count = approver.process_symbol(symbol, "15m")
+            if created_count > 0:
+                logger.info(f"  [ONY] Auto-Approved {created_count} new events.")
         
         except FileNotFoundError as e:
             logger.warning(f"✗ {symbol}: 15m features not found, skipping")

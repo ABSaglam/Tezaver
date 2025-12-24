@@ -153,10 +153,43 @@ def render_foundry_page():
             manifest = bundle_files.get("manifest")
             if manifest and "narrative" in manifest:
                 nar = manifest["narrative"]
-                st.markdown(f"### {nar.get('label', 'Unknown Story')}")
-                st.info(nar.get('desc', 'No description'))
-                st.write(f"**Scenario ID:** {manifest.get('scenario_id')}")
-                st.write(f"**Risk Level:** {nar.get('risk', 'Medium')}")
+                details = nar.get("details", {})
+                
+                # Header: The Soul (Label)
+                st.markdown(f"### ✨ {nar.get('label', 'Unknown Archetype')}")
+                st.caption(f"Risk Level: {nar.get('risk', 'Medium')}")
+                
+                # The Story (Description)
+                st.info(nar.get('desc', 'No description available.'))
+                
+                st.markdown("---")
+                
+                # Centroid Metrics (The Structure)
+                if "centroid" in details:
+                    st.markdown("#### 🏗️ Archetype Structure (Centroid)")
+                    cent = details["centroid"]
+                    sc1, sc2, sc3 = st.columns(3)
+                    with sc1:
+                        st.metric("Avg Gain", f"{cent.get('gain', 0):.2f}%")
+                    with sc2:
+                        st.metric("Avg Duration", f"{int(cent.get('duration', 0))} bars")
+                    with sc3:
+                        st.metric("Group Size", f"{cent.get('count', 0)} members")
+                
+                # Cluster Members (The Constituents)
+                if "cluster_members" in details:
+                    members = details["cluster_members"]
+                    with st.expander(f"📦 Archetype Members ({len(members)})"):
+                        st.table(pd.DataFrame(members, columns=["Event ID"]))
+                
+                # Analysis Details
+                if "htf_trend" in details:
+                    st.markdown("---")
+                    st.markdown("#### 🧠 Deep Analysis")
+                    dc1, dc2, dc3 = st.columns(3)
+                    dc1.metric("HTF Context", details.get("htf_trend", "N/A"))
+                    dc2.metric("RSI Slope", details.get("rsi_slope", "N/A"))
+                    dc3.metric("Volume", details.get("volume", "N/A"))
             else:
                 st.info("No story/narrative data in this bundle.")
         

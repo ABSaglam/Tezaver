@@ -19,6 +19,7 @@ from tezaver.rally.time_labs_scanner import (
     run_1h_rally_scan_for_symbol,
     run_4h_rally_scan_for_symbol
 )
+from tezaver.ony.auto_approver import OnyAutoApprover
 
 logger = get_logger(__name__)
 
@@ -34,6 +35,12 @@ def run_for_symbol(symbol: str, tf: str):
             return
             
         logger.info(f"Scan complete for {symbol} ({tf}): {result.num_events_total} events found.")
+        
+        # --- ONY AUTO-APPROVE ---
+        approver = OnyAutoApprover()
+        created_count = approver.process_symbol(symbol, tf)
+        if created_count > 0:
+            logger.info(f"  [ONY] Auto-Approved {created_count} new events.")
         
     except Exception as e:
         logger.error(f"Failed to run {tf} scan for {symbol}: {e}", exc_info=True)
