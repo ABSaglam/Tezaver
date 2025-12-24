@@ -127,7 +127,8 @@ def render_foundry_page():
         selected_idx = bundle_options.index(selected_bundle_str)
         selected_bundle = df_filtered.iloc[selected_idx]
         
-        bundle_dir = selected_bundle["bundle_dir"]
+        from pathlib import Path
+        bundle_dir = Path(selected_bundle["bundle_dir"])
         
         # Load bundle files
         bundle_files = load_bundle_files(bundle_dir)
@@ -262,40 +263,6 @@ def render_foundry_page():
                 else:
                     st.write("✅ **PASSED**")
             
-            # --- 4. MANUAL SNIPER CHECK (User Request) ---
-            st.markdown("---")
-            st.markdown("#### 🔬 Manual Verification")
-            st.caption("Check bundle performance with your own hands.")
-            
-            col_run, col_res = st.columns([1, 2])
-            with col_run:
-                if st.button("▶️ Run Sniper Check", key="btn_run_sniper"):
-                    with st.spinner("Running Sniper Simulation..."):
-                        # We use scenario_id or bundle_id. analysis uses scenario_id usually for packs,
-                        # but here we might want single bundle. 
-                        # analyze_pack_performance takes scenario_id.
-                        # If bundle has scenario_id, use it. Else use bundle_id as scenario (if compatible).
-                        # CAUTION: analyze_pack_performance aggregates by scenario_id.
-                        sid = selected_bundle.get("scenario_id")
-                        if sid:
-                            report = analyze_pack_performance(sid)
-                            st.session_state["last_sniper_report"] = report
-                        else:
-                            st.error("No Scenario ID found for this bundle.")
-            
-            with col_res:
-                if "last_sniper_report" in st.session_state:
-                    rep = st.session_state["last_sniper_report"]
-                    # If report allows access to dict or attributes
-                    # Check if it matches current selection
-                    if rep.scenario_id == selected_bundle.get("scenario_id"):
-                        st.success("Sniper Result:")
-                        sub_c1, sub_c2 = st.columns(2)
-                        sub_c1.metric("Sim PnL", f"{rep.pnl_pct:.2f}%")
-                        sub_c2.metric("Sim WinRate", f"{rep.win_rate:.0%}")
-                    else:
-                        st.info("Run check to see results.")
-
             # Cert Registry Data
             cert_entry = cert_registry.data.get(selected_bundle["bundle_id"])
             if cert_entry:

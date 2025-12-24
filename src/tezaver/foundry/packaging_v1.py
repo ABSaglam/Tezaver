@@ -20,6 +20,9 @@ from tezaver.rally.rally_narrative_engine import analyze_scenario, SCENARIO_DEFI
 from tezaver.foundry.naming_service import BundleNamingService
 from tezaver.foundry.deep_narrative_service import DeepNarrativeService
 from tezaver.core import coin_cell_paths
+import time
+import uuid
+import shutil
 
 
 def package_event(
@@ -327,7 +330,34 @@ def package_cluster(
                 for m in cluster.members
             ]
         }, f, indent=2)
+    
+    # --- AUTO-PROMOTE TO MATRIX (User Request: "Direk otomatik gitsin") ---
+    try:
+        # Define Bus Path (Relative to Project Root usually, or absolute)
+        # We assume .tezaver_bus is in project root.
+        bus_root = Path(".tezaver_bus")
+        candidates_dir = bus_root / "artifacts/mac/candidates"
+        candidates_dir.mkdir(parents=True, exist_ok=True)
         
+        candidate_data = {
+            "source": "foundry_archetype_auto",
+            "promoted_at": int(time.time()),
+            "bundle_id": std_bundle_id,
+            "symbol": symbol,
+            "timeframe": timeframe,
+            "tier": tier,
+            "manifest": asdict(manifest) if hasattr(manifest, 'to_dict') else manifest.__dict__,
+            "bundle_path": str(bundle_dir.resolve())
+        }
+        
+        fname = f"{std_bundle_id}_{uuid.uuid4().hex[:6]}.json"
+        
+        with open(candidates_dir / fname, "w") as f:
+            json.dump(candidate_data, f, indent=2)
+            
+    except Exception as e:
+        print(f"[WARNING] Auto-Promotion failed for {std_bundle_id}: {e}")
+
     return str(bundle_dir)
 
 
