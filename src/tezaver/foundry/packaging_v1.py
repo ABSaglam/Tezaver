@@ -6,6 +6,7 @@ Packages QC-PASSED approved annotations into Matrix-ready bundles.
 """
 
 from typing import List, Optional, Dict, Any
+from dataclasses import asdict
 import pandas as pd
 from pathlib import Path
 import json

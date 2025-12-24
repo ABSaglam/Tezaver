@@ -101,8 +101,121 @@ def parse_tf_ms(tf: str) -> int:
     # Actually, `cloud_runtime_tick` loads it. We can pass it if we change signature.
     # Let's change `strategy_step` signature to accept `risk_config` and `risk_totals`.
     
-    # See below for signature update.
-    pass 
+
+
+def pool_step(home: str, cloud_run_id: str, stage: str, risk_cfg: dict, broker_cfg: dict) -> Dict[str, Any]:
+    """
+    Execute the Matrix Pool Court System (15m Trigger).
+    
+    Roles:
+      - Orchestrator: Gather Evidence (Defender/Prosecutor inside)
+      - Court: Judge the Evidence
+      - Idempotency: Skip if run_id already exists.
+    
+    Returns:
+       Verdict and Status.
+    """
+    from tezaver.matrix.pool.pool_orchestrator_v1 import run_pool_evidence_bundle
+    from tezaver.matrix.pool_court.pool_court_runner_v1 import run_pool_court
+    from tezaver.matrix.bundles.bundle_registry import BundleRegistry
+    from tezaver.matrix.pool.pool_reports_v1 import resolve_reports_dir
+    
+    # -- 1. 15m Tick Trigger & Run ID Generation --
+    # "closed-bar only: henüz kapanmamış bar ile karar yok."
+    # We round down current time to nearest 15m.
+    # e.g. 10:38:33 -> 10:30:00. This is the "Current Open Bar Start".
+    # The "Last Closed Bar" is 10:15:00.
+    # We assume we run ONCE per Closed Bar.
+    # So we target the candle that JUST closed.
+    
+    now_ts = int(time.time())
+    window_s = 15 * 60
+    current_window_start = (now_ts // window_s) * window_s
+    last_closed_bar_ts = current_window_start - window_s
+    
+    # Deterministic Run ID: "POOL_BTCUSDT_15m_<TS>"
+    # User said: "symbol + timeframe + last_closed_bar_ts"
+    # Scope: Single Coin (BTCUSDT) for now.
+    symbol = "BTCUSDT"
+    timeframe = "15m"
+    
+    # We use ISO format for ID to be readable? Or integer? 
+    # Integer is safer for paths.
+    run_id = f"POOL_{symbol}_{timeframe}_{last_closed_bar_ts}"
+    
+    # -- 2. Idempotency Check --
+    # Check if this run_id already has a result.
+    # resolve_reports_dir resolves to 'out/matrix_runs/<stage>/<run_id>/reports'
+    reports_dir = resolve_reports_dir(stage, run_id, home)
+    verdict_path = os.path.join(reports_dir, "pool_court_verdict_v1.json")
+    
+    if os.path.exists(verdict_path):
+        # Already run!
+        return {"status": "SKIPPED_IDEMPOTENT", "run_id": run_id}
+        
+    # -- 3. Setup Registry (Hot Reload) --
+    registry = BundleRegistry()
+    registry.discover_and_load(os.path.join(home, ".tezaver_matrix", "approved_bundles_v1"))
+    
+    # -- 4. Execution Context --
+    trace_ctx = {
+        "engine_version": "v1.0.0",
+        "data_fingerprint": f"TICK_{now_ts}",
+        "config_signature": "UNKNOWN"
+    }
+
+    # Closed bars map for Defender
+    # We MUST tell Defender that the 15m bar at `last_closed_bar_ts` is CLOSED.
+    from datetime import datetime, timezone
+    closed_iso = datetime.fromtimestamp(last_closed_bar_ts, timezone.utc).isoformat()
+    closed_bars = {"15m": closed_iso}
+    
+    try:
+        # -- 5. Orchestrator (Evidence) --
+        evidence = run_pool_evidence_bundle(
+            stage, run_id, trace_ctx, registry,
+            options={
+                "closed_bars": closed_bars,
+                "kill_switch_triggered": risk_cfg.get("paused", False),
+                "global_limits": risk_cfg
+            }
+        )
+        
+        # -- 6. Court (Verdict) --
+        verdict_res = run_pool_court(stage, run_id, trace_ctx)
+        
+        # Log to Event Stream
+        # Log to Event Stream
+        append_runtime_event(home, cloud_run_id, {
+            "ts": int(time.time()*1000), 
+            "type": "POOL_COURT_VERDICT",
+            "payload": {
+                "verdict": verdict_res["verdict"],
+                "decision_action": verdict_res.get("decision_action", "UNKNOWN"),
+                "run_id": run_id,
+                "tick_ts": last_closed_bar_ts
+            }
+        })
+        
+        # -- 7. Action Bridge (TODO: Execution) --
+        # If ALLOW, we would generate orders here.
+        
+        return {
+            "status": "OK", 
+            "verdict": verdict_res["verdict"], 
+            "decision_action": verdict_res.get("decision_action", "UNKNOWN"),
+            "run_id": run_id
+        }
+        
+    except Exception as e:
+        err = str(e)
+        append_runtime_event(home, cloud_run_id, {
+            "ts": int(time.time()*1000), 
+            "type": "POOL_ERROR", 
+            "payload": {"error": err, "run_id": run_id}
+        })
+        return {"status": "ERROR", "error": err, "run_id": run_id}
+
 
 def strategy_step(home: str, cloud_run_id: str, strategy_id: str, strategy_json: dict, steps: int, 
                   risk_config: dict = None, risk_totals: dict = None, broker_config: dict = None) -> Dict[str, Any]:
@@ -479,12 +592,18 @@ def cloud_runtime_tick(home: str, ticks: int = 1, steps_per_strategy: int = 10) 
             "payload": {"mode": broker_cfg["mode"], "exchange": broker_cfg.get("exchange")}
         })
             
+
         # 4. Compute Totals
         risk_totals = compute_totals(home, active_strats)
         append_runtime_event(home, crid, {
             "ts": tick_ts, "type": "GLOBAL_RISK_SNAPSHOT", 
             "payload": {"totals": risk_totals, "limits": risk_cfg}
         })
+        
+        # --- MATRIX COURT STEP (The Bridge) ---
+        # Run the Pool Court System (Defender/Prosecutor/Judge)
+        pool_res = pool_step(home, crid, "WAR", risk_cfg, broker_cfg)
+        # --------------------------------------
         
         # General Tick Event
         append_runtime_event(home, crid, {"ts": tick_ts, "type": "CLOUD_TICK", "tick_seq": state["total_ticks"] + 1, "strategy_id": active_strats[0] if active_strats else None})

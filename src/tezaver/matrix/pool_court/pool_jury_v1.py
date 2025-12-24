@@ -65,6 +65,7 @@ def build_pool_scorecard(
     # 3. Intents
     intents = _read_json_safe(reports_dir / "pool_intents_report_v1.json")
     intents_created = intents.get("intents_created", 0)
+    skipped_reasons_count = intents.get("skipped_reasons_count", {})
     if not intents:
         evidence_ok = False
         key_notes.append("MISSING_REPORT:pool_intents")
@@ -148,5 +149,8 @@ def build_pool_scorecard(
         planned_total_notional=planned_total_notional,
         restart_reconcile_verdict=restart_reconcile_verdict,
         kill_switch_triggered=kill_switch_triggered,
+        blocked_reasons_count=blocked_reasons_count,
+        skipped_reasons_count=skipped_reasons_count,
+        limits=limits,
         key_notes=key_notes
     )

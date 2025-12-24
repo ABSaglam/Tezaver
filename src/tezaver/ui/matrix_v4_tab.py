@@ -11,6 +11,7 @@ import json
 import pandas as pd
 from pathlib import Path
 from tezaver.ui.matrix_v4_context import build_matrix_v4_context
+from tezaver.ui.game_tab_v1 import render_game_tab
 
 # ============================================================================
 # NAVIGATION v1.0 HARDENED — Alt Başlıklar Türkçe + FIX-1/2/3
@@ -20,6 +21,7 @@ from tezaver.ui.matrix_v4_context import build_matrix_v4_context
 # Each item: (key, label, help_text)
 MAIN_HEADINGS = [
     ("DASHBOARD", "📊 Dashboard", "Genel sistem durumu, alarmlar ve yayın kontrolleri."),
+    ("GAME", "🎮 Game v1", "Deterministik Replay + Court Trace + Chart."),
     ("CANDIDATES", "📋 Candidates", "Strateji adaylarını inceleme ve onay merkezi."),
     ("SNIPER", "🎯 Sniper", "Tekil strateji testleri ve geçmişi."),
     ("WAR", "⚔️ WAR", "Çoklu coin toplu backtest ve risk analizi."),
@@ -43,12 +45,16 @@ NAV_MAP = {
         ("Yayın Kapısı", "RELEASE", None, False, "Candidate'ın yayına hazır olup olmadığını değerlendirir."),
         ("Prova (Go/No-Go)", "REHEARSAL", None, False, "Canlıya geçiş öncesi kontrol listesi ve Go/No-Go kararı."),
     ],
+    "GAME": [
+        ("🎮 Game Room", "GAME", None, False, "Deterministik Replay ve Court Trace Analizi."),
+    ],
     "CANDIDATES": [
         ("Adaylar", "CANDIDATES", None, False, "Strateji adaylarını listeler, onaylar veya reddeder."),
     ],
     "SNIPER": [
         ("Sniper", "SNIPER", None, False, "Sniper tekli backtest geçmişi ve sonuçları."),
         ("Koşular (Sniper)", "RUNS", "SNIPER", False, "Sadece Sniper modundaki koşuları filtreler."),
+        ("⏳ Time Machine", "BACKTEST", None, False, "Matrix Time Machine: 2 Yıllık Simülasyon."),
     ],
     "WAR": [
         ("WAR", "WAR", None, False, "Çoklu-coin toplu backtest paneli. Yeni WAR run başlatır."),
@@ -281,6 +287,10 @@ def render_matrix_v4():
         render_candidates(home)
     elif route_key == "SNIPER":
         render_sniper(home)
+    elif route_key == "GAME":
+        render_game_tab(home)
+    elif route_key == "CANDIDATES":
+        render_candidates_hub(home)
     elif route_key == "WAR":
         render_war(home)
     elif route_key == "LIVE":
@@ -1133,8 +1143,11 @@ def render_panel_health(home: str):
     # MX-5160: Risk Mode
     render_risk_mode_summary(home)
 
-    # MX-5220: Timebase
+    # MX-5220: Timebase Summary
     render_timebase_summary(home)
+
+
+
 
 
 
@@ -2966,5 +2979,8 @@ def render_safety_certificate_summary(home: str):
     else:
         st.metric("Safety Certificate", "N/A")
         st.info("No safety certificates found. Ensure run is complete.")
+
+
+
 
 

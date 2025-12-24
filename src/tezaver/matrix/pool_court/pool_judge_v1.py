@@ -94,25 +94,89 @@ def judge_pool(
         gates.append(PoolGateResultV1("RISK_OK", "PASS", "No other blocks"))
     
     # Gate 4: MIN_ACTIVITY
-    if scorecard.selected_count >= 1:
-        gates.append(PoolGateResultV1("MIN_ACTIVITY", "PASS", f"Selected: {scorecard.selected_count}"))
-    else:
-        gates.append(PoolGateResultV1("MIN_ACTIVITY", "WARN", "No intents selected"))
+    # Check for specific skip reasons
+    skipped_reasons = []
     
-    # Determine verdict
+    # 4a. Cert Missing
+    if scorecard.skipped_reasons_count.get("SKIPPED_NOT_CERTIFIED", 0) > 0:
+        gates.append(PoolGateResultV1("SNIPER_CERT_OK", "FAIL", "Missing or not passed (SKIPPED_NOT_CERTIFIED > 0)"))
+        skipped_reasons.append("SKIPPED_NOT_CERTIFIED")
+        suggested_actions.append("CHECK_SNIPER_CERT")
+    else:
+        # If we have intents created, then cert is implicitly OK or not required for Candidate stage (though War requires it)
+        # But if total intents created > 0, we assume Cert OK for at least some.
+        pass
+        
+    # 4b. No Activity
+    # If not certified, we already handle it. If certified but no intents (e.g. no trigger), that's also SKIP (idle)
+    if scorecard.intents_created == 0:
+         gates.append(PoolGateResultV1("MIN_ACTIVITY", "WARN", "No intents created"))
+         if "SKIPPED_NOT_CERTIFIED" not in skipped_reasons:
+             skipped_reasons.append("NO_INTENTS")
+    elif scorecard.selected_count == 0:
+         # Intents created but none selected (maybe QC fail or Strategy constraints)
+         gates.append(PoolGateResultV1("MIN_ACTIVITY", "WARN", "No intents selected"))
+         skipped_reasons.append("NO_SELECTION")
+    else:
+         gates.append(PoolGateResultV1("MIN_ACTIVITY", "PASS", f"Selected: {scorecard.selected_count}"))
+    
+    # Determine verdict and decision_action
+    
+    blocked_reasons = [k for k, v in scorecard.blocked_reasons_count.items() if v > 0]
+    
     has_fail = any(g.status == "FAIL" for g in gates)
     has_improve = any(g.status == "IMPROVE" for g in gates)
     
-    if has_fail:
+    decision_action = "SKIP" # Default to safe skip
+    verdict = "PASS" # Placeholder
+    
+    # Decision Hierarchy
+    
+    if scorecard.kill_switch_triggered:
+        decision_action = "BLOCK"
         verdict = "FAIL"
-    elif has_improve:
-        verdict = "IMPROVE"
-    else:
+        blocked_reasons.append("KILL_SWITCH_ACTIVE")
+        
+    elif has_improve or (scorecard.blocked_count > 0): # Explicit RISK FAIL mapping
+        decision_action = "BLOCK"
+        verdict = "FAIL" # User requested BLOCK => FAIL
+        # Note: 'has_improve' usually comes from RISK_OK gate being IMPROVE
+        
+    elif has_fail: 
+        # e.g. SNIPER_CERT_OK=FAIL
+        # If the FAIL is due to Cert Missing, we want decision=SKIP based on user request ("Cert Missing -> SKIP")
+        # But user also said "decision=SKIP => verdict=IMPROVE". 
+        # And "decision=BLOCK => verdict=FAIL".
+        # Let's check reasons.
+        is_cert_fail = any(g.gate_id == "SNIPER_CERT_OK" and g.status == "FAIL" for g in gates)
+        is_evidence_fail = any(g.gate_id == "POOL_EVIDENCE_OK" and g.status == "FAIL" for g in gates)
+        
+        if is_cert_fail and not is_evidence_fail:
+             decision_action = "SKIP"
+             verdict = "IMPROVE" # As per user mapping SKIP -> IMPROVE (or PASS idle? User said "verdict MUST be IMPROVE" for SKIP)
+        else:
+             decision_action = "BLOCK" # Evidence missing or other failures
+             verdict = "FAIL"
+             
+    elif scorecard.planned_orders > 0:
+        decision_action = "ALLOW"
         verdict = "PASS"
+        
+    else:
+        # No failures, no blocks, but NO ORDERS (Idle)
+        decision_action = "SKIP"
+        verdict = "IMPROVE" # User: "Idle 'PASS' olmayacak... SKIP -> IMPROVE map"
     
     # Build summary
     gate_statuses = [f"{g.gate_id}={g.status}" for g in gates]
-    summary = f"{', '.join(gate_statuses)} => {verdict}"
+    summary = f"{decision_action} ({verdict}) | Gates: {', '.join(gate_statuses)}"
+    
+    stats = {
+        "intents_created": scorecard.intents_created,
+        "selected_count": scorecard.selected_count,
+        "blocked_count": scorecard.blocked_count,
+        "planned_orders": scorecard.planned_orders
+    }
     
     return PoolCourtVerdictV1(
         run_id=scorecard.run_id,
@@ -121,9 +185,13 @@ def judge_pool(
         data_fingerprint=df,
         config_signature=cs,
         built_ts_iso=now_iso(),
+        decision_action=decision_action,
         verdict=verdict,
         gates=gates,
         summary=summary,
+        blocked_reasons=blocked_reasons,
+        skipped_reasons=skipped_reasons,
+        stats=stats,
         suggested_actions=suggested_actions,
         evidence_paths=evidence_paths or {}
     )

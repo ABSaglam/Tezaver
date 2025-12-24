@@ -37,6 +37,7 @@ class PoolJuryScorecardV1:
     restart_reconcile_verdict: str  # "OK"|"NEEDS_SAFE_MODE"|"UNKNOWN"
     kill_switch_triggered: bool  # Phase 5B.1
     blocked_reasons_count: Dict[str, int] = field(default_factory=dict)  # Phase 6A.3
+    skipped_reasons_count: Dict[str, int] = field(default_factory=dict)
     limits: Dict[str, Any] = field(default_factory=dict)  # Phase 6A.3
     key_notes: List[str] = field(default_factory=list)
 
@@ -59,6 +60,7 @@ class PoolJuryScorecardV1:
             "restart_reconcile_verdict": self.restart_reconcile_verdict,
             "kill_switch_triggered": self.kill_switch_triggered,
             "blocked_reasons_count": self.blocked_reasons_count,
+            "skipped_reasons_count": self.skipped_reasons_count,
             "limits": self.limits,
             "key_notes": self.key_notes
         }
@@ -86,9 +88,13 @@ class PoolCourtVerdictV1:
     data_fingerprint: str
     config_signature: str
     built_ts_iso: str
+    decision_action: str # "ALLOW"|"BLOCK"|"SKIP"
     verdict: str  # "PASS"|"IMPROVE"|"FAIL"
     gates: List[PoolGateResultV1]
     summary: str
+    blocked_reasons: List[str]
+    skipped_reasons: List[str]
+    stats: Dict[str, int]
     suggested_actions: List[str]
     evidence_paths: Dict[str, str]
 
@@ -100,9 +106,13 @@ class PoolCourtVerdictV1:
             "data_fingerprint": self.data_fingerprint,
             "config_signature": self.config_signature,
             "built_ts_iso": self.built_ts_iso,
+            "decision_action": self.decision_action,
             "verdict": self.verdict,
             "gates": [g.to_dict() for g in self.gates],
             "summary": self.summary,
+            "blocked_reasons": self.blocked_reasons,
+            "skipped_reasons": self.skipped_reasons,
+            "stats": self.stats,
             "suggested_actions": self.suggested_actions,
             "evidence_paths": self.evidence_paths
         }

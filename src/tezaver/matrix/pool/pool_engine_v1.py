@@ -82,61 +82,82 @@ def _generate_intent_id(symbol: str, tf: str, bundle_id: str, tick_ts: str, trig
 
 from tezaver.matrix.sniper.certification_registry import CertificationRegistry, STAGE_CANDIDATE
 
-def build_intents(
-    universe_cells: List[PoolUniverseCellV1],
-    tick_ts_iso: str,
-    closed_bars: Dict[str, str], # timeframe -> bar_ts_iso
-    registry: BundleRegistry
-) -> Tuple[List[TradeIntentV1], Dict[str, int]]:
+
+
+from tezaver.matrix.sniper.certification_registry import CertificationRegistry, STAGE_SNIPER_PASSED, STAGE_LIVE_CERTIFIED
+
+class PoolDefender:
     """
-    Generate trade intents for the current tick based on the universe and closed bars.
+    The Defender (Avukat).
     
-    Args:
-        universe_cells: Active pool universe
-        tick_ts_iso: Current tick timestamp
-        closed_bars: Map of closed bars (e.g. {"1h": "2023-01-01T10:00:00Z"})
-        registry: Bundle registry to look up specs
-        
-    Returns:
-        (List[TradeIntentV1], skipped_counts_dict)
+    Role:
+      - Defends Foundry Bundles.
+      - Submits 'TradeIntent' to Court.
+      - Checks Client Certification (Sniper Visa).
     """
-    intents = []
-    skipped_reasons = defaultdict(int)
-    
-    # Load Certification Registry
-    cert_registry = CertificationRegistry()
-    
-    for cell in universe_cells:
-        # ...
-        if cell.timeframe not in closed_bars:
-            continue
-            
-        # 2. Check best bundle
-        if not cell.best_bundle_id:
-            skipped_reasons["NO_BEST_BUNDLE"] += 1
-            continue
-            
-        bundle = registry.get(cell.best_bundle_id)
-        if not bundle or not bundle.manifest:
-            skipped_reasons["BUNDLE_NOT_FOUND"] += 1
-            continue
-            
-        m = bundle.manifest
-        bundle_cert = cert_registry.get_bundle_stage(m.bundle_id)
+    def __init__(self, registry: BundleRegistry):
+        self.registry = registry
+        self.cert_registry = CertificationRegistry()
+
+    def defend(
+        self,
+        universe_cells: List[PoolUniverseCellV1],
+        tick_ts_iso: str,
+        closed_bars: Dict[str, str],
+        stage: str = "WAR"
+    ) -> Tuple[List[TradeIntentV1], Dict[str, int]]:
+        """
+        Build Intents for the current tick (The Defense).
+        """
+        intents = []
+        skipped_reasons = defaultdict(int)
         
-        # 3. Check V2 Specs
-        trigger = m.trigger_spec_v1
-        policy = m.policy_spec_v1
-        
-        if not trigger or not policy:
-            reason = "SKIPPED_NO_SPECS"
-            if not trigger: reason = "SKIPPED_NO_TRIGGER"
-            if not policy: reason = "SKIPPED_NO_POLICY"
+        for cell in universe_cells:
+            if cell.timeframe not in closed_bars:
+                continue
+                
+            if not cell.best_bundle_id:
+                skipped_reasons["NO_BEST_BUNDLE"] += 1
+                continue
+                
+            bundle = self.registry.get(cell.best_bundle_id)
+            if not bundle or not bundle.manifest:
+                skipped_reasons["BUNDLE_NOT_FOUND"] += 1
+                continue
+                
+            m = bundle.manifest
+            bundle_cert = self.cert_registry.get_bundle_stage(m.bundle_id)
             
-            # Generate ID for tracking even if skipped
+            # --- DEFENSE GATE: SNIPER VISA CHECK ---
+            # If in WAR mode, we demand SNIPER_PASSED (or better).
+            if stage == "WAR":
+                allowed_stages = [STAGE_SNIPER_PASSED, STAGE_LIVE_CERTIFIED]
+                # Note: STAGE_CANDIDATE is NOT allowed in WAR.
+                if bundle_cert not in allowed_stages:
+                    reason = "SKIPPED_NOT_CERTIFIED"
+                    self._add_skipped_intent(intents, m, tick_ts_iso, reason, bundle_cert)
+                    skipped_reasons[reason] += 1
+                    continue
+            
+            # Check Specs
+            trigger = m.trigger_spec_v1
+            policy = m.policy_spec_v1
+            
+            if not trigger or not policy:
+                reason = "SKIPPED_NO_SPECS"
+                if not trigger: reason = "SKIPPED_NO_TRIGGER"
+                if not policy: reason = "SKIPPED_NO_POLICY"
+                self._add_skipped_intent(intents, m, tick_ts_iso, reason, bundle_cert)
+                skipped_reasons[reason] += 1
+                continue
+                
+            # Create Valid Intent
+            trigger_type = trigger.get("type", "UNKNOWN")
+            exit_policy = policy.get("exit_policy", "UNKNOWN")
+            
             intent_id = _generate_intent_id(
                 m.symbol, m.timeframe, m.bundle_id, tick_ts_iso, 
-                "NONE", "NONE"
+                trigger_type, exit_policy
             )
             
             intent = TradeIntentV1(
@@ -144,12 +165,12 @@ def build_intents(
                 symbol=m.symbol,
                 timeframe=m.timeframe,
                 bundle_id=m.bundle_id,
-                trigger_type="NONE",
-                exit_policy="NONE",
+                trigger_type=trigger_type,
+                exit_policy=exit_policy,
                 created_ts_iso=now_iso(),
-                reason=reason,
+                reason="OK",
                 qc_score=m.qc_score,
-                proposed_notional=0.0,
+                proposed_notional=float(policy.get("notional", DEFAULT_NOTIONAL_PER_TRADE)),
                 tier=m.tier,
                 entry_ts_iso=None,
                 scenario_id=m.scenario_id,
@@ -157,38 +178,49 @@ def build_intents(
                 bundle_certification=bundle_cert
             )
             intents.append(intent)
-            skipped_reasons[reason] += 1
-            continue
             
-        # 4. Create Valid Intent
-        trigger_type = trigger.get("type", "UNKNOWN")
-        exit_policy = policy.get("exit_policy", "UNKNOWN")
-        
+        return intents, skipped_reasons
+
+    def _add_skipped_intent(self, intents, m, tick_ts_iso, reason, cert):
+        """Helper to record a skipped intent."""
         intent_id = _generate_intent_id(
             m.symbol, m.timeframe, m.bundle_id, tick_ts_iso, 
-            trigger_type, exit_policy
+            "NONE", "NONE"
         )
-        
         intent = TradeIntentV1(
             intent_id=intent_id,
             symbol=m.symbol,
             timeframe=m.timeframe,
             bundle_id=m.bundle_id,
-            trigger_type=trigger_type,
-            exit_policy=exit_policy,
+            trigger_type="NONE",
+            exit_policy="NONE",
             created_ts_iso=now_iso(),
-            reason="OK",
+            reason=reason,
             qc_score=m.qc_score,
-            proposed_notional=float(policy.get("notional", DEFAULT_NOTIONAL_PER_TRADE)),
+            proposed_notional=0.0,
             tier=m.tier,
-            entry_ts_iso=None, # Pending execution
+            entry_ts_iso=None,
             scenario_id=m.scenario_id,
             narrative=m.narrative,
-            bundle_certification=bundle_cert
+            bundle_certification=cert
         )
         intents.append(intent)
-        
-    return intents, skipped_reasons
+
+
+def build_intents(
+    universe_cells: List[PoolUniverseCellV1],
+    tick_ts_iso: str,
+    closed_bars: Dict[str, str],
+    registry: BundleRegistry,
+    stage: str = "WAR"
+) -> Tuple[List[TradeIntentV1], Dict[str, int]]:
+    """
+    Legacy wrapper for PoolDefender.defend.
+    """
+    defender = PoolDefender(registry)
+    return defender.defend(universe_cells, tick_ts_iso, closed_bars, stage)
+
+
 
 def run_pool_phase2a(
     stage: str,
@@ -242,10 +274,13 @@ def run_pool_phase2a(
     tick_ts = now_iso()
     closed_bars = closed_bars_input or {}
     
-    # 3. Intents
-    intents, skipped_reasons = build_intents(universe_cells, tick_ts, closed_bars, registry)
+
+    # 3. Intents (The Defense)
+    # Pass 'stage' to allow PoolDefender to check Sniper Certification in WAR mode.
+    intents, skipped_reasons = build_intents(universe_cells, tick_ts, closed_bars, registry, stage=stage)
     
     created_count = sum(1 for i in intents if i.reason == "OK")
+
     skipped_count = len(intents) - created_count
     
     # Write Tick Report

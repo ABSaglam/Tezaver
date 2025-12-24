@@ -76,6 +76,7 @@ def run_pool_court(
     return {
         "status": "OK",
         "verdict": verdict.verdict,
+        "decision_action": verdict.decision_action,
         "scorecard_path": str(scorecard_path),
         "verdict_path": str(verdict_path),
         "reports_dir": str(reports_dir)

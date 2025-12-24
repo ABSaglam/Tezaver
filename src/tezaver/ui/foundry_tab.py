@@ -310,3 +310,4 @@ def render_foundry_page():
                 st.plotly_chart(fig, use_container_width=True)
             else:
                 st.warning("price_window.parquet not found")
+
