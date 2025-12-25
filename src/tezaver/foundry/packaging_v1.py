@@ -204,8 +204,13 @@ def package_event(
     import shutil
     try:
         # Detect Bus Root
-        home = os.environ.get("TEZAVER_BUS", os.environ.get("HOME", "."))
-        bus_inbox = Path(home) / ".tezaver_bus" / "pipeline" / "inbox"
+        home_dir = Path(os.path.expanduser("~"))
+        if "TEZAVER_BUS" in os.environ:
+             bus_root = Path(os.environ["TEZAVER_BUS"])
+        else:
+             bus_root = home_dir / ".tezaver_bus"
+             
+        bus_inbox = bus_root / "pipeline" / "inbox"
         bus_inbox.mkdir(parents=True, exist_ok=True)
         
         target_path = bus_inbox / std_bundle_id
@@ -360,8 +365,14 @@ def package_cluster(
     try:
         # Define Bus Path (Relative to Project Root usually, or absolute)
         # We assume .tezaver_bus is in project root.
-        bus_root = Path(".tezaver_bus")
-        candidates_dir = bus_root / "artifacts/mac/candidates"
+        home_dir = Path(os.path.expanduser("~"))
+        if "TEZAVER_BUS" in os.environ:
+             bus_root = Path(os.environ["TEZAVER_BUS"])
+        else:
+             bus_root = home_dir / ".tezaver_bus"
+             
+        # Candidates Inbox
+        candidates_dir = bus_root / "pipeline" / "inbox"
         candidates_dir.mkdir(parents=True, exist_ok=True)
         
         candidate_data = {

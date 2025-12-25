@@ -18,8 +18,21 @@ class LocalBundleSource:
     TR: Yerel dosya sisteminden CandidateBundle v1 paketlerini bulur ve yükler.
     """
     
-    def __init__(self, base_path: str = "out/matrix_candidates"):
-        self.base_path = Path(base_path)
+    def __init__(self, base_path: str = None):
+        if base_path:
+            self.base_path = Path(base_path)
+        else:
+            # User Request: Matrix looks ONLY where Publisher throws (Inbox)
+            # Default: ~/.tezaver_bus/pipeline/inbox
+            home = os.environ.get("TEZAVER_BUS", os.environ.get("HOME", "."))
+            # Handle if TEZAVER_BUS is just the root var or full path? 
+            # Usually TEZAVER_BUS env var might define the root.
+            # Fallback to standard home structure.
+            if "TEZAVER_BUS" in os.environ:
+                 # If env var is set, verify if it points to root or inbox. Assuming root.
+                 self.base_path = Path(os.environ["TEZAVER_BUS"]) / "pipeline" / "inbox"
+            else:
+                 self.base_path = Path(home) / ".tezaver_bus" / "pipeline" / "inbox"
 
     def discover_bundles(self) -> List[Path]:
         """Scans for all manifest.json files, excluding _legacy and _fixtures."""
@@ -53,8 +66,10 @@ class LocalBundleSource:
         with open(manifest_path, "r") as f:
             manifest_dict = json.load(f)
         
-        bundle_version = manifest_dict.get("bundle_version") or manifest_dict.get("version") or "0.0.0"
-        if not bundle_version.startswith("1.1"):
+        bundle_version = manifest_dict.get("bundle_version") or manifest_dict.get("version") or "1.0"
+        # User Request: Standardize format. Publisher emits 1.0, so we accept 1.x
+        # Allow any 1.x version
+        if not str(bundle_version).startswith("1."):
             raise UnsupportedBundleVersion(bundle_version, str(bundle_dir))
             
         from tezaver.matrix.core.candidate_v1 import manifest_from_dict, payload_from_dict

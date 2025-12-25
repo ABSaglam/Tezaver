@@ -12,6 +12,8 @@ import pandas as pd
 from pathlib import Path
 from tezaver.ui.matrix_v4_context import build_matrix_v4_context
 from tezaver.ui.game_tab_v1 import render_game_tab
+from tezaver.matrix.ingest.ingestor_v1 import MatrixIngestorV1
+from tezaver.matrix.adapters.bundle_source_local import LocalBundleSource
 
 # ============================================================================
 # NAVIGATION v1.0 HARDENED — Alt Başlıklar Türkçe + FIX-1/2/3
@@ -640,284 +642,85 @@ def render_rehearsal(home: str):
 
 def render_candidates(home: str):
     """
-    MXI-1030: Render Candidates category with detailed table and story view.
-    MXI-1040: Sniper Run integration.
-    MXI-1500: UI Guard with panel_health diagnostics.
+    Revised Candidates UI - Inbox Browser.
+    
+    Displays bundles in the Pipeline Inbox (Otoban) and allows importing them.
+    Also shows the existing Matrix Library content.
     """
-    try:
-        _render_candidates_inner(home)
-    except Exception as e:
-        st.error(f"⚠️ Panel Render Hatası: {e}")
-        st.exception(e)
-        # Show panel health summary
-        try:
-            from tezaver.matrix.apps.panel_health import run_health_check
-            health = run_health_check()
-            st.warning(f"Discovered: {health['discovered_count']}, OK: {health['imported_count']}, Failed: {health['failed_count']}")
-            if health['errors']:
-                for err in health['errors'][:3]:
-                    st.caption(f"❌ {err.get('path')}: {err.get('error')}")
-        except:
-            pass
-
-def _render_candidates_inner(home: str):
-    """Inner implementation of render_candidates."""
-    from tezaver.matrix.adapters.bundle_source_local import LocalBundleSource
-    from tezaver.matrix.adapters.candidate_registry import CandidateRegistry
+    # 1. Inbox Section (The "Otoban")
+    st.header("📥 Candidates Inbox (Otoban)")
+    st.caption(f"Waiting Area: `~/.tezaver_bus/pipeline/inbox`")
     
-    # Debug Header (MXI-1500)
-    candidates_root = os.environ.get("MATRIX_CANDIDATES_ROOT", "out/matrix_candidates")
-    with st.expander("🔧 Debug: Config", expanded=False):
-        st.caption(f"Candidates Root: `{candidates_root}`")
-        st.caption(f"CWD: `{os.getcwd()}`")
+    ingestor = MatrixIngestorV1() 
+    # LocalBundleSource defaults to Inbox now (as per recent change)
+    source = LocalBundleSource()
     
-    source = LocalBundleSource(base_path=candidates_root)
-    registry = CandidateRegistry() # Default path data/matrix/candidates_registry.jsonl
+    # Discover bundles in Inbox
+    inbox_paths = source.discover_bundles()
     
-    st.subheader("📋 Strategy Candidates (Adaylar)")
-    
-    # --- Actions bar ---
-    c1, c2 = st.columns([1, 4])
-    with c1:
-        if st.button("🔄 Local Tara & Import", use_container_width=True, help="Disk üzerindeki 'out/matrix_candidates' klasörünü tarar ve yeni adayları sisteme kaydeder."):
-            from tezaver.matrix.adapters.bundle_source_local import UnsupportedBundleVersion
-            import hashlib
+    if not inbox_paths:
+        st.info("📭 Inbox clean. No pending bundles.")
+    else:
+        st.success(f"📬 {len(inbox_paths)} bundles waiting.")
+        
+        # Table Header
+        h1, h2, h3, h4 = st.columns([3, 2, 2, 1])
+        h1.markdown("**Bundle ID**")
+        h2.markdown("**Symbol/TF**")
+        h3.markdown("**Time**")
+        h4.markdown("**Action**")
+        st.divider()
+        
+        for b_path in inbox_paths:
+            # Metadata Reading
+            bid, sym, tf, ts = b_path.name, "?", "?", "-"
+            try:
+                m_path = b_path / "manifest.json"
+                if m_path.exists():
+                    with open(m_path) as f: m = json.load(f)
+                    bid = m.get("bundle_id", bid)
+                    sym = m.get("symbol", sym)
+                    tf = m.get("timeframe", tf)
+                    ts = m.get("created_ts", ts)
+            except: pass
             
-            bundles = source.discover_bundles()
-            imported_count = 0
-            failed_count = 0
+            c1, c2, c3, c4 = st.columns([3, 2, 2, 1])
+            c1.code(bid, language="text")
+            c2.write(f"{sym} {tf}")
+            c3.write(ts)
             
-            for bdir in bundles:
+            # Import Action
+            if c4.button("📥 Import", key=f"imp_{bid}"):
                 try:
-                    manifest, _ = source.load_bundle(bdir)
-                    from tezaver.matrix.core.candidate_v1 import generate_candidate_id
-                    cid = generate_candidate_id(manifest)
-                    # PNL-1110: Use bundle_id as primary key
-                    registry.upsert(
-                        bundle_id=manifest.bundle_id,
-                        symbol=manifest.symbol,
-                        tf=manifest.tf,
-                        bundle_path=str(bdir),
-                        metrics={
-                            "trigger_resolve_rate": manifest.metrics.trigger_resolve_rate,
-                            "join_coverage": manifest.metrics.join_coverage
-                        },
-                        candidate_id=cid,
-                        fingerprints={
-                            "data_fingerprint": manifest.fingerprints.data_fingerprint,
-                            "config_signature": manifest.fingerprints.config_signature
-                        }
-                    )
-                    imported_count += 1
-                    
-                except UnsupportedBundleVersion as e:
-                    # MXI-3.1: Register legacy bundle as FAILED_IMPORT
-                    legacy_bundle_id = f"legacy_{hashlib.md5(str(bdir).encode()).hexdigest()[:12]}"
-                    registry.register(
-                        bundle_id=legacy_bundle_id,
-                        symbol="UNKNOWN",
-                        tf="UNKNOWN",
-                        bundle_path=str(bdir),
-                        metrics={},
-                        status="FAILED_IMPORT",
-                        reason="UNSUPPORTED_BUNDLE_VERSION",
-                        detected_version=e.detected_version
-                    )
-                    failed_count += 1
-                    
+                    ingestor._process_bundle(b_path)
+                    st.toast(f"Imported {bid}!", icon="✅")
+                    # Small delay to allow FS update? Rerun handles it.
+                    st.rerun()
                 except Exception as e:
-                    # MXI-3.1: Register generic failure
-                    fail_bundle_id = f"fail_{hashlib.md5(str(bdir).encode()).hexdigest()[:12]}"
-                    registry.register(
-                        bundle_id=fail_bundle_id,
-                        symbol="UNKNOWN",
-                        tf="UNKNOWN",
-                        bundle_path=str(bdir),
-                        metrics={},
-                        status="FAILED_IMPORT",
-                        reason=str(e)[:100]
-                    )
-                    failed_count += 1
-                    
-            st.rerun()
+                    st.error(f"Failed: {e}")
+            st.divider()
 
-    # --- Filters ---
-    all_cands = registry.list_all()
-    if not all_cands:
-        st.info("Kayıtlı aday yok. Lütfen 'Local Tara' butonuna basın.")
-        return
-
-    df_full = pd.DataFrame(all_cands)
-    
-    with st.expander("🔍 Filtreler", expanded=True):
-        f1, f2, f3, f4 = st.columns(4)
-        symbols = sorted(df_full["symbol"].unique().tolist())
-        tfs = sorted(df_full["tf"].unique().tolist())
-        statuses = sorted(df_full["status"].unique().tolist())
+    # 2. Library View (Separated)
+    with st.expander("📚 Matrix Library (İçeri Alınmış Adaylar)", expanded=False):
+        from tezaver.matrix.adapters.candidate_registry import CandidateRegistry
+        registry = CandidateRegistry()
+        all_cands = registry.list_all()
         
-        sel_sym = f1.multiselect("Sembol", symbols)
-        sel_tf = f2.multiselect("TF", tfs)
-        sel_stat = f3.multiselect("Durum", statuses)
-        hide_legacy = f4.checkbox("Legacy Gizle", value=True, help="FAILED_IMPORT durumundaki eski paketleri gizle")
-        
-    df = df_full.copy()
-    if sel_sym: df = df[df["symbol"].isin(sel_sym)]
-    if sel_tf: df = df[df["tf"].isin(sel_tf)]
-    if sel_stat: df = df[df["status"].isin(sel_stat)]
-    if hide_legacy: df = df[df["status"] != "FAILED_IMPORT"]
-
-    # PNL-1100: Robust columns - ensure all expected columns exist and handle missing values
-    expected_cols = ["symbol", "tf", "bundle_id", "resolve_rate", "join_coverage", "status", "reason", "created_at"]
-    for col in expected_cols:
-        if col not in df.columns:
-            df[col] = None
-    
-    # Fill missing numeric values with 0, strings with "N/A"
-    df["resolve_rate"] = df["resolve_rate"].fillna(0)
-    df["join_coverage"] = df["join_coverage"].fillna(0)
-    df["reason"] = df["reason"].fillna("—")
-    df["status"] = df["status"].fillna("UNKNOWN")
-    
-    st.dataframe(
-        df[expected_cols].sort_values("created_at", ascending=False),
-        use_container_width=True,
-        hide_index=True,
-        column_config={
-            "resolve_rate": st.column_config.NumberColumn("Resolve Rate", format="%.2f"),
-            "join_coverage": st.column_config.NumberColumn("Join Coverage", format="%.2f"),
-        }
-    )
-    
-    # --- Detail View ---
-    st.divider()
-    selected_cid = st.selectbox("Detay İncele (Aday Seç):", df["candidate_id"].tolist())
-    
-    if selected_cid:
-        cand = registry.get(selected_cid)
-        if not cand: return
-        
-        # Load full bundle
-        from pathlib import Path
-        try:
-            m, p = source.load_bundle(Path(cand["bundle_path"]))
-        except Exception as e:
-            st.error(f"Bundle yüklenemedi: {e}")
-            return
+        if not all_cands:
+            st.info("Kütüphane boş.")
+        else:
+            df = pd.DataFrame(all_cands)
+            # Select meaningful columns
+            cols = [c for c in ["symbol", "tf", "status", "created_at", "candidate_id", "join_coverage"] if c in df.columns]
             
-        # UI-B Layout
-        st.header(f"📍 {cand['symbol']} - {cand['tf']}")
-        
-        # MXI-1030: Warning banner
-        if cand["join_coverage"] < 0.80:
-            st.warning(f"⚠️ DÜŞÜK JOIN KAPSAMI: %{cand['join_coverage']*100:.1f} (Hedef > %80)")
-            
-        col_m1, col_m2, col_m3 = st.columns(3)
-        col_m1.metric("Resolve Rate", f"%{m.metrics.trigger_resolve_rate*100:.1f}")
-        col_m2.metric("Join Coverage", f"%{m.metrics.join_coverage*100:.1f}")
-        
-        status_color = {
-            "APPROVED_FOR_WAR": "green",
-            "REJECTED": "red",
-            "NEEDS_PATCH": "orange",
-            "TESTING": "orange",
-            "NEW": "blue"
-        }.get(cand["status"], "gray")
-        
-        col_m3.markdown(f"**Status:** :{status_color}[{cand['status']}]")
-        
-        # MXI-1300: Lifecycle Box
-        with st.container(border=True):
-            st.markdown("### 🔄 Candidate Lifecycle")
-            from tezaver.matrix.adapters.run_registry import RunRegistry
-            run_reg = RunRegistry()
-            all_runs = run_reg.list_all()
-            # Find last run for this candidate
-            cand_runs = [r for r in all_runs if r.get("candidate_id") == selected_cid]
-            cand_runs.sort(key=lambda x: x.get("created_at", ""), reverse=True)
-            last_run = cand_runs[0] if cand_runs else None
-            
-            l1, l2, l3 = st.columns(3)
-            l1.markdown(f"**Current Status:**\n:{status_color}[{cand['status']}]")
-            if last_run:
-                l2.markdown(f"**Last Verdict:**\n{last_run.get('verdict')}")
-                l3.markdown(f"**Last Run ID:**\n`{last_run.get('run_id')}`")
-            else:
-                l2.markdown("**Last Verdict:**\nNone")
-                l3.markdown("**Last Run ID:**\nNone")
-        
-        with st.expander("📋 Manifest & Metrics Detayı"):
-            st.json(m.__dict__ if not hasattr(m, 'dict') else m.dict())
-            
-        # MXI-1040: Sniper Run Button
-        c_btn1, c_btn2, c_btn3 = st.columns(3)
-        
-        if c_btn1.button("🚀 RUN SNIPER", type="primary", use_container_width=True, help="Seçili aday için Sniper backtestini başlatır."):
-            registry.update_status(selected_cid, "TESTING")
-            st.info(f"Sniper Run başlatılıyor: {selected_cid}")
-            from tezaver.matrix.apps.run_sniper import run_sniper_stub
-            run_id = run_sniper_stub(home, selected_cid)
-            st.success(f"Sniper Run oluşturuldu: {run_id}")
-            
-            # MXI-1160: Redirect to RUNS
-            st.session_state["matrix_selected_run_id"] = run_id
-            st.session_state["matrix_selected_cat"] = "RUNS"
-            st.rerun()
-
-        # Approval Process (Onay Süreci)
-        if c_btn2.button("✅ APPROVE", use_container_width=True, help="Adayı onayla ve strateji havuzuna hazırla"):
-            registry.update_status(selected_cid, "APPROVED")
-            st.success(f"Aday ONAYLANDI: {selected_cid}")
-            st.rerun()
-            
-        if c_btn3.button("❌ REJECT", use_container_width=True, help="Adayı reddet"):
-            registry.update_status(selected_cid, "REJECTED")
-            st.warning(f"Aday REDDEDİLDİ: {selected_cid}")
-            st.rerun()
-
-        st.subheader("📖 Rally Stories (V1)")
-        for s in p.stories:
-            with st.expander(f"🎬 Story: {s.story_id[:8]} | {s.entry.get('trigger')} @ {s.entry.get('entry_price')}"):
-                c_s1, c_s2 = st.columns([1, 1])
-                with c_s1:
-                    st.markdown(f"**Trigger:** {s.entry.get('trigger')}")
-                    st.markdown(f"**Source:** {s.entry.get('trigger_source')}")
-                    st.markdown(f"**Entry:** {s.entry.get('entry_price')}")
-                    st.markdown(f"**Time (UTC):** {s.entry.get('event_time_utc')}")
-                with c_s2:
-                    st.markdown(f"**Risk (SL %):** %{s.risk.get('stop_loss_pct', 0)}")
-                    st.markdown(f"**Support:** {s.entry.get('levels', {}).get('nearest_support')}")
-                    st.markdown(f"**Resistance:** {s.entry.get('levels', {}).get('nearest_resistance')}")
-                
-                # Semantic Layer (Pre-Pattern) - MXI-1170
-                if s.pre_pattern:
-                    st.divider()
-                    st.markdown("### 🎭 Semantic Layer (Anlamsal Katman)")
-                    t_pp1, t_pp2, t_pp3 = st.tabs(["🥁 Ritim (Rhythm)", "✨ Ruh (Spirit)", "📜 Mana (Meaning)"])
-                    
-                    with t_pp1:
-                        st.info(s.pre_pattern.rhythm.summary_tr)
-                        st.markdown("**Faz Dizilimi:** " + " ➔ ".join([f"`{p}`" for p in s.pre_pattern.rhythm.phase_sequence]))
-                        st.json(s.pre_pattern.rhythm.tempo)
-                        
-                    with t_pp2:
-                        st.success(s.pre_pattern.spirit.summary_tr)
-                        st.multiselect("Etiketler", s.pre_pattern.spirit.tags, default=s.pre_pattern.spirit.tags, disabled=True)
-                        st.warning(f"💡 {s.pre_pattern.spirit.regime_hint_tr}")
-                        
-                    with t_pp3:
-                        st.markdown(f"**Özet:** {s.pre_pattern.meaning.summary_tr}")
-                        st.markdown(f"**🎯 Tez (Thesis):** {s.pre_pattern.meaning.thesis_tr}")
-                        st.error(f"**🚫 Geçersizlik (Invalidation):** {s.pre_pattern.meaning.invalidation_tr}")
-                else:
-                    st.caption("Bu hikaye için anlamsal katman verisi bulunmuyor.")
-
-        # MXI-1030: Diagnostics
-        diag_path = Path(cand["bundle_path"]) / "join_diagnostics.json"
-        if diag_path.exists():
-            with open(diag_path, "r") as f:
-                diag_data = json.load(f)
-            with st.expander("🔍 Join Diagnostics (Tanılama Günlüğü)"):
-                st.json(diag_data)
+            st.dataframe(
+                df[cols].sort_values("created_at", ascending=False), 
+                use_container_width=True,
+                column_config={
+                    "join_coverage": st.column_config.NumberColumn("Coverage", format="%.2f"),
+                    "created_at": st.column_config.DatetimeColumn("Created", format="D MMM, HH:mm")
+                }
+            )
 
 def render_runs(home: str):
     """

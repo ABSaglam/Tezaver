@@ -112,12 +112,35 @@ def _load_events_for_symbol_tf(symbol: str, timeframe: str) -> Optional[pd.DataF
                 df["event_time"] = pd.to_datetime(df[col], errors="coerce")
                 break
         
-        # Generate stable event_id if not exists
-        if "event_id" not in df.columns:
-            # Create deterministic event_id: {symbol}_{timeframe}_{epoch_seconds}
-            df["event_id"] = df["event_time"].apply(
-                lambda dt: f"{symbol}_{timeframe}_{int(dt.timestamp())}" if pd.notna(dt) else None
-            )
+        # Compute Tier if missing (needed for ID)
+        if 'rally_grade' in df.columns:
+            df['temp_tier'] = df['rally_grade'].apply(normalize_tier)
+        else:
+            df['temp_tier'] = df['future_max_gain_pct'].apply(compute_tier_from_gain)
+            
+        # Tier Code Mapping
+        def get_tier_code(tier_str):
+            if not tier_str: return "X"
+            t = str(tier_str).upper()
+            if "DIAMOND" in t: return "D"
+            if "GOLD" in t: return "G"
+            if "SILVER" in t: return "S"
+            if "BRONZE" in t: return "B"
+            return "X"
+
+        # Generate Tier-Coded Event ID: {symbol}_{timeframe}_{tier_code}_{timestamp}
+        # We overwrite existing event_id to enforce the new format
+        def generate_id(row):
+            if pd.isna(row['event_time']): return None
+            ts = int(row['event_time'].timestamp())
+            code = get_tier_code(row['temp_tier'])
+            return f"{symbol}_{timeframe}_{code}_{ts}"
+
+        df["event_id"] = df.apply(generate_id, axis=1)
+        
+        # Cleanup temp column
+        if 'temp_tier' in df.columns:
+            df.drop(columns=['temp_tier'], inplace=True)
         
         # Sort by time descending (newest first)
         df = df.sort_values("event_time", ascending=False).reset_index(drop=True)
@@ -164,135 +187,270 @@ def apply_normalize_to_annotation(annotation: SniperAnnotation, norm_result: Nor
 
 
 # =============================================================================
-# ONY STUDIO
+# BATCH OPERATIONS (AUTO-APPROVE)
+# =============================================================================
+
+def render_batch_operations():
+    """
+    MX-5360: ONY - Auto-Approve Batch Tool.
+    Allows automated approval of rallies based on Tiers (Diamond, Gold, etc.)
+    without manual review.
+    """
+    with st.expander("⚡ Batch Auto-Approve Tool (Toplu Onay)", expanded=False):
+        st.warning("⚠️ Bu araç seçili kriterlere uyan TÜM olayları otomatik onaylar (APPROVED). Dikkatli kullanın.")
+        
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            raw_symbols = _get_available_symbols()
+            symbols = ["TÜMÜ"] + raw_symbols
+            symbol = st.selectbox("Coin", symbols, key="batch_sym")
+        with c2:
+            timeframes = ["TÜMÜ", "15m", "1h", "4h"]
+            tf = st.selectbox("Timeframe", timeframes, key="batch_tf")
+        with c3:
+            # Default to all tiers
+            tiers = st.multiselect("Hedef Tierlar", TIERS, default=TIERS, key="batch_tiers")
+            
+        if st.button("🔍 Önizle (Scan)", use_container_width=True):
+            # Target logic
+            target_symbols = raw_symbols if symbol == "TÜMÜ" else [symbol]
+            target_tfs = ["15m", "1h", "4h"] if tf == "TÜMÜ" else [tf]
+            
+            all_events = []
+            
+            progress_text = "Taranıyor..."
+            my_bar = st.progress(0, text=progress_text)
+            total_steps = len(target_symbols) * len(target_tfs)
+            current_step = 0
+            
+            # Load Repo for checking existing
+            repo_check = SniperAnnotationRepository()
+            
+            for s in target_symbols:
+                for t in target_tfs:
+                    current_step += 1
+                    my_bar.progress(current_step / total_steps, text=f"Scanning {s} {t}...")
+                    
+                    df_events = _load_events_for_symbol_tf(s, t)
+                    if df_events is None or df_events.empty:
+                        continue
+                        
+                    # Compute Tiers
+                    if 'rally_grade' in df_events.columns:
+                        df_events['tier'] = df_events['rally_grade'].apply(normalize_tier)
+                    else:
+                        df_events['tier'] = df_events['future_max_gain_pct'].apply(compute_tier_from_gain)
+                    
+                    # Filter by Tiers
+                    filtered = df_events[df_events['tier'].isin(tiers)].copy()
+                    
+                    if not filtered.empty:
+                        # Skip APPROVED
+                        existing_anns = repo_check.load_all(s, t)
+                        approved_ids = {a.event_id for a in existing_anns if a.status == "APPROVED"}
+                        
+                        # Apply suppression
+                        before_count = len(filtered)
+                        filtered = filtered[~filtered['event_id'].isin(approved_ids)]
+                        # after_count = len(filtered)
+                        
+                        if not filtered.empty:
+                            # Add metadata
+                            filtered['symbol'] = s
+                            filtered['timeframe'] = t
+                            
+                            # Convert to records
+                            records = filtered[['event_id', 'tier', 'future_max_gain_pct', 'symbol', 'timeframe']].to_dict('records')
+                            all_events.extend(records)
+            
+            my_bar.empty()
+            
+            if not all_events:
+                 st.error("Kriterlere uyan ralli bulunamadı.")
+                 return
+            
+            st.session_state['batch_preview'] = {
+                "count": len(all_events),
+                "events": all_events,
+                "symbol_selection": symbol,
+                "tf_selection": tf
+            }
+            
+        # Execute Block
+        if 'batch_preview' in st.session_state:
+            prev = st.session_state['batch_preview']
+            st.info(f"🎯 Hedef: {prev['count']} adet olay (Seçim: {prev['symbol_selection']} / {prev['tf_selection']})")
+            
+            # Summary stats
+            df_prev = pd.DataFrame(prev['events'])
+            if not df_prev.empty:
+                st.write(df_prev['tier'].value_counts())
+            
+            if st.button(f"🚀 ONAYLA ({prev['count']} Adet)", type="primary", use_container_width=True):
+                repo = SniperAnnotationRepository()
+                count = 0
+                
+                progress_bar = st.progress(0)
+                total = len(prev['events'])
+                
+                for i, evt in enumerate(prev['events']):
+                    # Use per-event metadata
+                    s = evt['symbol']
+                    t = evt['timeframe']
+                    eid = str(evt['event_id'])
+                    
+                    # Check existing
+                    existing = repo.get_one(s, t, eid)
+                    
+                    # Create or Update
+                    entry_offset = existing.entry_bar_offset if existing else 0
+                    note = existing.note if existing else "Auto-Approved Batch"
+                    label = existing.label if existing else "GOOD"
+                    
+                    repo.append(
+                        symbol=s,
+                        timeframe=t,
+                        event_id=eid,
+                        entry_bar_offset=entry_offset,
+                        status="APPROVED",
+                        label=label,
+                        note=note
+                    )
+                    count += 1
+                    progress_bar.progress((i + 1) / total)
+                    
+                st.success(f"✅ {count} olay başarıyla ONAYLANDI!")
+                del st.session_state['batch_preview']
+                st.rerun()
+
+
+
+# =============================================================================
+# REV. STUDIO
 # =============================================================================
 
 def render_ony_studio():
     """
-    ONY Studio - Event seçimi, entry/exit işaretleme, grafik görüntüleme, kaydetme ve onaylama.
+    Rev. Stüdyo - Sadece problemli rallileri revize etme ekranı.
+    "Durum" ve "Etiket" kavramları UI'dan gizlenmiştir.
     """
-    st.subheader("🎯 ONY Stüdyo")
-    st.caption("Event seç → Entry/Exit işaretle → Kaydet → Onayla")
+    st.subheader("🛠️ Rev. Stüdyo")
+    st.caption("Problemli ralliyi seç → Ayarları düzelt → Kaydet (Otorite)")
     
     # Initialize repository
     repo = SniperAnnotationRepository()
     
-    # --- SYMBOL & TIMEFRAME SELECTION ---
-    col1, col2 = st.columns(2)
+    # --- COMPACT HEADER (Row 1) ---
+    # Col1: Coin, Col2: TF, Col3: Tier Filter
+    c_sym, c_tf, c_tier = st.columns([1, 1, 3])
     
-    with col1:
+    with c_sym:
         symbols = _get_available_symbols()
         default_sym_idx = symbols.index("BTCUSDT") if "BTCUSDT" in symbols else 0
-        symbol = st.selectbox("Coin", symbols, index=default_sym_idx, key="ony_symbol")
-    
-    with col2:
+        symbol = st.selectbox("Coin", symbols, index=default_sym_idx, key="ony_symbol", label_visibility="collapsed")
+        # specific label hack or keep label? User asked for compactness. "Coin" label is fine but maybe collapsed is better if row is tight.
+        # User pasted "Coin \n BTCUSDT", so they see labels. I'll keep labels but make them small?
+        # Let's keep labels for clarity but layout is what matters.
+        # Actually, let's keep labels visible but standard.
+        
+    with c_tf:
         timeframes = ["15m", "1h", "4h"]
-        timeframe = st.selectbox("Timeframe", timeframes, index=0, key="ony_timeframe")
+        timeframe = st.selectbox("Timeframe", timeframes, index=0, key="ony_timeframe", label_visibility="collapsed")
     
-    # --- EVENT SELECTION ---
-    st.markdown("---")
-    st.markdown("### 📋 Event Seçimi")
-    
-    # Load events
+    # Load events for filtering
     df_events = _load_events_for_symbol_tf(symbol, timeframe)
     
-    if df_events is None or df_events.empty:
-        st.warning(f"{symbol} {timeframe} için event bulunamadı. Önce Time Labs veya Fast15 taraması yapın.")
-        return
-    
-    # --- TIER COMPUTATION & FILTERING ---
-    # Compute tier for each event
-    if 'rally_grade' in df_events.columns:
-        df_events['tier'] = df_events['rally_grade'].apply(normalize_tier)
+    # Tier Logic (Hidden calculation for filter)
+    if df_events is not None and not df_events.empty:
+        if 'rally_grade' in df_events.columns:
+            df_events['tier'] = df_events['rally_grade'].apply(normalize_tier)
+        else:
+            df_events['tier'] = df_events['future_max_gain_pct'].apply(compute_tier_from_gain)
+        df_events = df_events[df_events['tier'].notna()].copy()
+        
+        tier_counts = {tier: len(df_events[df_events['tier'] == tier]) for tier in TIERS}
+        tier_options = [f"{tier} ({tier_counts[tier]})" for tier in TIERS]
     else:
-        df_events['tier'] = df_events['future_max_gain_pct'].apply(compute_tier_from_gain)
-    
-    # Remove events without valid tier
-    df_events = df_events[df_events['tier'].notna()].copy()
-    
-    if df_events.empty:
-        st.warning(f"{symbol} {timeframe} için geçerli tier'lı event bulunamadı.")
+        tier_options = TIERS
+        tier_counts = {t:0 for t in TIERS}
+
+    with c_tier:
+        if 'ony_selected_tier' not in st.session_state:
+            st.session_state['ony_selected_tier'] = "DIAMOND"
+        
+        # Horizontal Radio for compact look
+        selected_tier_label = st.radio(
+            "Tier",
+            tier_options,
+            horizontal=True,
+            key="ony_tier_radio",
+            label_visibility="collapsed",
+            index=TIERS.index(st.session_state['ony_selected_tier']) if st.session_state['ony_selected_tier'] in TIERS else 0
+        )
+        selected_tier = selected_tier_label.split(" (")[0]
+        
+        if st.session_state['ony_selected_tier'] != selected_tier:
+            st.session_state['ony_selected_tier'] = selected_tier
+            if 'ony_event_select' in st.session_state:
+                del st.session_state['ony_event_select']
+
+    # --- EVENT SELECTOR (Row 2) ---
+    if df_events is None or df_events.empty:
+        st.warning(f"Event yok: {symbol} {timeframe}")
         return
-    
-    # Count events per tier
-    tier_counts = {tier: len(df_events[df_events['tier'] == tier]) for tier in TIERS}
-    
-    # --- TIER SELECTOR (ABOVE EVENT DROPDOWN) ---
-    tier_options = [f"{tier} ({tier_counts[tier]})" for tier in TIERS]
-    
-    # Initialize tier selection state
-    if 'ony_selected_tier' not in st.session_state:
-        st.session_state['ony_selected_tier'] = "DIAMOND"
-    
-    selected_tier_label = st.radio(
-        "🏆 Tier Seç:",
-        tier_options,
-        horizontal=True,
-        key="ony_tier_radio",
-        index=TIERS.index(st.session_state['ony_selected_tier']) if st.session_state['ony_selected_tier'] in TIERS else 0
-    )
-    
-    # Parse selected tier from label
-    selected_tier = selected_tier_label.split(" (")[0]
-    
-    # Reset event selection if tier changed
-    if st.session_state['ony_selected_tier'] != selected_tier:
-        st.session_state['ony_selected_tier'] = selected_tier
-        if 'ony_event_select' in st.session_state:
-            del st.session_state['ony_event_select']
-    
-    # Filter events by selected tier
+
     filtered_events = df_events[df_events['tier'] == selected_tier].copy()
     
     if filtered_events.empty:
-        st.info(f"{selected_tier} tier'ında event yok.")
+        st.info(f"🔍 {selected_tier} katmanında incelenecek ralli yok.")
         return
     
-    st.caption(f"📊 {selected_tier}: {len(filtered_events)} event")
-    st.markdown("---")
-    
-    # Event selector (using filtered events)
+    # Event Options
     event_options = []
     event_map = {}
-    
-    for i, row in filtered_events.head(50).iterrows():  # Limit to 50 for performance (using filtered_events)
+    for i, row in filtered_events.head(100).iterrows(): 
         event_time = row.get("event_time")
         gain_pct = row.get("future_max_gain_pct", 0) * 100 if pd.notna(row.get("future_max_gain_pct")) else 0
         bars_to_peak = int(row.get("bars_to_peak", 0)) if pd.notna(row.get("bars_to_peak")) else 0
         event_id = str(row.get("event_id", i))
         
-        label = f"{event_time.strftime('%Y-%m-%d %H:%M') if pd.notna(event_time) else 'N/A'} | +{gain_pct:.1f}% | {bars_to_peak} bars"
+        # Is reviewed?
+        ann = repo.get_one(symbol, timeframe, event_id)
+        icon = "✅" if ann and ann.status == "APPROVED" else "🆕"
+        
+        label = f"{icon} {event_time.strftime('%Y-%m-%d %H:%M') if pd.notna(event_time) else 'N/A'} | +{gain_pct:.1f}% | {bars_to_peak}bar"
         event_options.append(label)
         event_map[label] = row
-    
+
     if not event_options:
-        st.warning("Görüntülenecek event yok.")
+        st.warning("Liste boş.")
         return
-    
-    selected_label = st.selectbox("Event Seç", event_options, key="ony_event_select")
+        
+    # Full width selectbox
+    selected_label = st.selectbox("Ralli Seçiniz", event_options, key="ony_event_select", label_visibility="collapsed")
     selected_event = event_map[selected_label]
     event_id = str(selected_event.get("event_id", 0))
     event_time = selected_event.get("event_time")
     bars_to_peak = int(selected_event.get("bars_to_peak", 20)) if pd.notna(selected_event.get("bars_to_peak")) else 20
     
-    # --- LOAD EXISTING ANNOTATION ---
+    # Load Existing
     existing_ann = repo.get_one(symbol, timeframe, event_id)
     
-    # --- ENTRY / EXIT CONFIGURATION ---
+    # --- ENTRY / EXIT CONFIGURATION (Top) ---
     st.markdown("---")
     st.markdown("### 🎯 Entry / Exit Ayarları")
     
     col_entry, col_exit = st.columns(2)
     
     with col_entry:
-        default_entry = existing_ann.entry_bar_offset if existing_ann else 5
+        default_entry = existing_ann.entry_bar_offset if existing_ann else 0
         entry_offset = st.number_input(
             "Entry Bar Offset",
             min_value=0,
             max_value=bars_to_peak + 50,
             value=default_entry,
             step=1,
-            help="Event başlangıcından kaç bar sonra giriş yapılacak (0 = ilk bar)",
+            help="Event başlangıcından kaç bar sonra giriş yapılacak",
             key="ony_entry_offset"
         )
     
@@ -313,244 +471,8 @@ def render_ony_studio():
             )
         else:
             exit_offset = None
-    
-    # --- STATUS & LABEL ---
-    st.markdown("---")
-    st.markdown("### 📝 Durum ve Etiket")
-    
-    col_status, col_label, col_note = st.columns(3)
-    
-    with col_status:
-        status_options = ["PENDING", "APPROVED", "REJECTED", "REVIEWED"]
-        default_status_idx = status_options.index(existing_ann.status) if existing_ann and existing_ann.status in status_options else 0
-        status = st.selectbox("Durum", status_options, index=default_status_idx, key="ony_status")
-    
-    with col_label:
-        label_options = ["UNCERTAIN", "GOOD", "BAD"]
-        default_label_idx = label_options.index(existing_ann.label) if existing_ann and existing_ann.label in label_options else 0
-        label = st.selectbox("Etiket", label_options, index=default_label_idx, key="ony_label")
-    
-    with col_note:
-        default_note = existing_ann.note if existing_ann else ""
-        note = st.text_input("Not", value=default_note, key="ony_note")
-    
-    # --- NORMALIZE ENTRY ---
-    st.markdown("---")
-    st.markdown("### 🧲 Normalize Entry (Auto-Snap)")
-    
-    # Snap Mode Selector
-    snap_mode = st.radio(
-        "Snap Mode",
-        options=["HIGH", "LOW", "CLOSE"],
-        index=0,
-        horizontal=True,
-        help="HIGH: Snap to Highest High (Breakout)\nLOW: Snap to Lowest Low (Dip/Pullback)\nCLOSE: Snap to Candle Close"
-    )
-
-    col_norm_btn, col_apply_reset = st.columns([1, 1])
-    
-    with col_norm_btn:
-        if st.button("🧲 Normalize (Entry)", key="ony_normalize_btn", use_container_width=True):
-            try:
-                # Parse event_time
-                event_time_ts = pd.to_datetime(event_time)
-                
-                # Call normalize_entry with selected mode
-                norm_result = normalize_entry(
-                    symbol=symbol,
-                    timeframe=timeframe,
-                    event_time=event_time_ts,
-                    entry_bar_offset=entry_offset,
-                    snap_mode=snap_mode
-                )
-                
-                # Store in session_state
-                st.session_state["ony_norm_result"] = norm_result.to_dict()
-                st.success("✅ Normalize computed successfully!")
-            except FileNotFoundError as e:
-                st.error(f"❌ History data not found: {e}")
-            except Exception as e:
-                st.error(f"❌ Normalize error: {e}")
-                import traceback
-                st.code(traceback.format_exc())
-    
-    # Display normalize result if available
-    if "ony_norm_result" in st.session_state:
-        norm_result_dict = st.session_state["ony_norm_result"]
-        
-        with st.expander("📊 Normalize Result", expanded=True):
-            col1, col2, col3 = st.columns(3)
             
-            with col1:
-                st.metric("Entry Offset (in)", norm_result_dict["entry_offset_in"])
-                st.metric("Entry Offset (out)", norm_result_dict["entry_offset_out"])
-            
-            with col2:
-                st.metric("Snap Distance", f"{norm_result_dict['snap_distance_bars']} bars")
-                st.metric("Snap Confidence", f"{norm_result_dict['snap_confidence']:.2f}")
-            
-            with col3:
-                st.caption("**Normalized Entry TS:**")
-                st.code(norm_result_dict["entry_ts_iso"])
-                st.caption("**Snap Reason:**")
-                st.info(norm_result_dict["snap_reason"])
-        
-        # Apply and Reset buttons
-        with col_apply_reset:
-            col_apply, col_reset = st.columns(2)
-            
-            with col_apply:
-                if st.button("✅ Apply", key="ony_apply_normalize", use_container_width=True, type="primary"):
-                    # Create NormalizeResult from dict
-                    from tezaver.rally.normalize_engine import NormalizeResult
-                    norm_result_obj = NormalizeResult(**norm_result_dict)
-                    
-                    # Load or create annotation
-                    ann = repo.get_one(symbol, timeframe, event_id)
-                    if ann is None:
-                        ann = SniperAnnotation(
-                            symbol=symbol,
-                            timeframe=timeframe,
-                            event_id=event_id,
-                            entry_bar_offset=entry_offset,
-                            note=note,
-                            status=status,
-                            label=label,
-                        )
-                    
-                    # Apply normalize
-                    ann = apply_normalize_to_annotation(ann, norm_result_obj)
-                    ann.note = note  # Preserve note
-                    ann.status = status
-                    ann.label = label
-                    if exit_enabled and exit_offset:
-                        ann.exit_bar_offset = exit_offset
-                    
-                    # Save
-                    repo.append(
-                        symbol=ann.symbol,
-                        timeframe=ann.timeframe,
-                        event_id=ann.event_id,
-                        entry_bar_offset=ann.entry_bar_offset,
-                        exit_bar_offset=ann.exit_bar_offset,
-                        note=ann.note,
-                        status=ann.status,
-                        label=ann.label,
-                    )
-                    
-                    st.success("✅ Normalize applied & saved!")
-                    st.rerun()
-            
-            with col_reset:
-                if st.button("↩ Reset", key="ony_reset_normalize", use_container_width=True):
-                    # Clear from session_state
-                    if "ony_norm_result" in st.session_state:
-                        del st.session_state["ony_norm_result"]
-                    
-                    # Clear from annotation if exists
-                    ann = repo.get_one(symbol, timeframe, event_id)
-                    if ann:
-                        ann.normalized_entry_bar_offset = None
-                        ann.normalized_entry_ts = None
-                        ann.snap_reason = None
-                        ann.snap_distance_bars = None
-                        ann.snap_confidence = None
-                        ann.snap_algo_version = None
-                        
-                        repo.append(
-                            symbol=ann.symbol,
-                            timeframe=ann.timeframe,
-                            event_id=ann.event_id,
-                            entry_bar_offset=ann.entry_bar_offset,
-                            exit_bar_offset=ann.exit_bar_offset,
-                            note=ann.note,
-                            status=ann.status,
-                            label=ann.label,
-                        )
-                    
-                    st.success("↩ Normalize reset!")
-                    st.rerun()
-    
-    # Show normalized badge if annotation has normalized data
-    if existing_ann and existing_ann.normalized_entry_ts:
-        st.info(f"✅ Normalized: {existing_ann.snap_reason} | TS: {existing_ann.normalized_entry_ts}")
-    
-    # --- ACTION BUTTONS ---
-    st.markdown("---")
-    
-    col_save, col_approve, col_reject = st.columns(3)
-    
-    with col_save:
-        if st.button("💾 Kaydet", use_container_width=True, type="secondary"):
-            ann = repo.append(
-                symbol=symbol,
-                timeframe=timeframe,
-                event_id=event_id,
-                entry_bar_offset=entry_offset,
-                exit_bar_offset=exit_offset,
-                note=note,
-                status=status,
-                label=label,
-            )
-            st.success(f"✅ Kayıt başarılı: {event_id}")
-            st.rerun()
-    
-    # Action Buttons Logic based on Current Status
-    is_already_approved = (existing_ann and existing_ann.status == "APPROVED")
-    
-    with col_approve:
-        btn_label = "💾 Revizyonu Kaydet" if is_already_approved else "✅ Onayla (Approve)"
-        btn_key = "btn_approve_update"
-        
-        if st.button(btn_label, key=btn_key, use_container_width=True, type="primary"):
-            ann = repo.append(
-                symbol=symbol,
-                timeframe=timeframe,
-                event_id=event_id,
-                entry_bar_offset=entry_offset,
-                exit_bar_offset=exit_offset,
-                note=note,
-                status="APPROVED",
-                label=label,
-                # Preserve existing internal fields if needed, 
-                # or rely on repo.append logic to handle merging if it existed (repo.append usually overwrites or appends new)
-                # Ideally we want to update. repo.append in current implementation appends to list and saves. 
-                # Correct implementation: load all, replace matching event_id, save.
-                # repo.append does: load, remove old if exists, append new, save. So it acts as upsert.
-            )
-            
-            # Additional logic for saving normalized fields if present in session_state or ann
-            # (Previously managed via internal modification of 'existing_ann' object)
-            # Since 'repo.append' creates a NEW object, we must ensure normalized fields are carried over if we care.
-            # But the UI flow above for 'Apply' normalized modified the 'existing_ann' in memory presumably? 
-            # No, apply_normalize_to_annotation returned a new object or modified it.
-            # If we want to persist normalized fields, we should pass them to append if supported, 
-            # or we rely on the fact that repo.append creates a basic annotation. 
-            # CAUTION: append() signature in sniper_annotations might not support extra fields like normalized_*.
-            # For now, we stick to basic fields. Normalized data retention might need repo update.
-            
-            if is_already_approved:
-                st.success(f"💾 REVİZYON KAYDEDİLDİ: {event_id}")
-            else:
-                st.success(f"✅ ONAYLANDI: {event_id}")
-            st.rerun()
-    
-    with col_reject:
-        if st.button("❌ Reddet (Reject/Revoke)", use_container_width=True):
-            ann = repo.append(
-                symbol=symbol,
-                timeframe=timeframe,
-                event_id=event_id,
-                entry_bar_offset=entry_offset,
-                exit_bar_offset=exit_offset,
-                note=note,
-                status="REJECTED",
-                label=label,
-            )
-            st.warning(f"❌ REDDEDİLDİ: {event_id}")
-            st.rerun()
-    
-    # --- CHART ---
+    # --- CHART (Middle) ---
     st.markdown("---")
     st.markdown("### 📊 Sniper Studio Grafiği")
     
@@ -567,110 +489,114 @@ def render_ony_studio():
         except Exception as e:
             st.error(f"Grafik hatası: {e}")
     else:
-        st.warning("Event zamanı bulunamadı, grafik çizilemiyor.")
+        st.warning("Event zamanı bulunamadı.")
+        
+    # --- NOTE ---
+    st.markdown("---")
+    st.markdown("### 📝 Revizyon Notu")
     
+    col_note, col_dummy = st.columns([2, 1])
+    with col_note:
+        default_note = existing_ann.note if existing_ann else ""
+        note = st.text_input("Not / Açıklama", value=default_note, placeholder="Ne değişti?", key="ony_note")
+
+    # --- NORMALIZE ---
+    st.markdown("---")
+    st.markdown("### 🧲 Normalize Entry (Auto-Snap)")
+    snap_mode = st.radio("Snap Mode", ["HIGH", "LOW", "CLOSE"], horizontal=True)
+    
+    if st.button("🧲 Normalize Hesapla", key="ony_normalize_btn"):
+        try:
+            ts = pd.to_datetime(event_time)
+            res = normalize_entry(symbol, timeframe, ts, entry_offset, snap_mode)
+            st.session_state["ony_norm_result"] = res.to_dict()
+            st.success("✅ Normalize computed!")
+        except Exception as e:
+            st.error(f"Hata: {e}")
+
+    if "ony_norm_result" in st.session_state:
+        nr = st.session_state["ony_norm_result"]
+        with st.expander("📊 Sonuç", expanded=True):
+            st.code(f"Offset: {nr['entry_offset_in']} -> {nr['entry_offset_out']}")
+            if st.button("✅ Uygula (Apply)"):
+                repo.append(symbol, timeframe, event_id, nr['entry_offset_out'], exit_offset, note, "APPROVED", "REV")
+                del st.session_state["ony_norm_result"]
+                st.rerun()
+
+    # --- SAVE ---
+    st.markdown("---")
+    if st.button("💾 REVİZYONU KAYDET (Asıl)", type="primary", use_container_width=True):
+        # Handle RVZ Logic
+        # Expected ID format: SYMBOL_TF_TIER_TS or SYMBOL_TF_TIER_RVZ_TS
+        final_id = event_id
+        parts = event_id.split('_')
+        
+        # Check if RVZ is missing
+        if "RVZ" not in parts:
+            # Insert after TIER (index 2: 0=SYM, 1=TF, 2=TIER) -> Insert at 3
+            if len(parts) >= 3:
+                parts.insert(3, "RVZ")
+                final_id = "_".join(parts)
+                
+                # Delete old non-RVZ entry to avoid duplicates
+                repo.delete(symbol, timeframe, event_id)
+        
+        repo.append(symbol, timeframe, final_id, entry_offset, exit_offset, note, "APPROVED", "REV")
+        st.success(f"✅ Kaydedildi (ID: {final_id})")
+        st.rerun()
     # --- INFO BOX ---
     if existing_ann:
         with st.expander("📋 Mevcut Kayıt Bilgisi"):
             st.json({
-                "event_id": existing_ann.event_id,
-                "entry_bar_offset": existing_ann.entry_bar_offset,
-                "exit_bar_offset": existing_ann.exit_bar_offset,
-                "status": existing_ann.status,
-                "label": existing_ann.label,
+                "entry": existing_ann.entry_bar_offset,
                 "note": existing_ann.note,
-                "created_at": existing_ann.created_at,
+                "created": existing_ann.created_at
             })
 
 
 # =============================================================================
-# ONY QUEUE
+# REV. STUDIO QUEUE (Simplified)
 # =============================================================================
 
 def render_ony_queue():
     """
-    ONY Queue - Tüm annotation kayıtlarını PENDING/APPROVED/REJECTED olarak listele.
+    Revizyon Listesi - Tüm kayıtları tek listede gösterir.
+    Status/Label gizlendi.
     """
-    st.subheader("📋 ONY Kuyruğu")
-    st.caption("Tüm annotation kayıtları")
+    st.subheader("📋 Kayıt Listesi")
     
     repo = SniperAnnotationRepository()
-    
-    # --- FILTERS ---
     col1, col2 = st.columns(2)
-    
     with col1:
         symbols = _get_available_symbols()
-        symbol = st.selectbox("Coin", symbols, key="ony_queue_symbol")
-    
+        symbol = st.selectbox("Coin", symbols, key="q_sym")
     with col2:
-        timeframes = ["15m", "1h", "4h"]
-        timeframe = st.selectbox("Timeframe", timeframes, key="ony_queue_tf")
-    
-    # Load all annotations
-    all_anns = repo.load_all(symbol, timeframe)
-    
+        tf = st.selectbox("Timeframe", ["15m", "1h", "4h"], key="q_tf")
+        
+    all_anns = repo.load_all(symbol, tf)
     if not all_anns:
-        st.info(f"{symbol} {timeframe} için kayıtlı annotation yok.")
+        st.info("Kayıt yok.")
         return
-    
-    # Group by status
-    pending = [a for a in all_anns if a.status == "PENDING"]
-    approved = [a for a in all_anns if a.status == "APPROVED"]
-    rejected = [a for a in all_anns if a.status == "REJECTED"]
-    reviewed = [a for a in all_anns if a.status == "REVIEWED"]
-    
-    # Display counts
-    st.markdown(f"**Toplam:** {len(all_anns)} | 🟡 PENDING: {len(pending)} | ✅ APPROVED: {len(approved)} | ❌ REJECTED: {len(rejected)} | 👁️ REVIEWED: {len(reviewed)}")
-    
-    st.markdown("---")
-    
-    # --- TABS ---
-    tab_approved, tab_rejected, tab_pending = st.tabs(["✅ APPROVED (Auto)", "❌ REJECTED", "🟡 PENDING (Legacy)"])
-    
-    def render_annotation_table(anns: List[SniperAnnotation], status_key: str):
-        if not anns:
-            st.info("Bu kategoride kayıt yok.")
-            return
         
-        # Build dataframe
-        data = []
-        for a in anns:
-            data.append({
-                "Event ID": a.event_id,
-                "Entry": a.entry_bar_offset,
-                "Exit": a.exit_bar_offset if a.exit_bar_offset else "-",
-                "Label": a.label,
-                "Not": a.note[:30] + "..." if a.note and len(a.note) > 30 else a.note,
-                "Oluşturulma": a.created_at[:16] if a.created_at else "-",
-            })
+    # Single List Table
+    data = []
+    for a in all_anns:
+        data.append({
+            "Event ID": a.event_id,
+            "Entry Offset": a.entry_bar_offset,
+            "Revizyon Notu": a.note,
+            "Tarih": a.created_at[:16] if a.created_at else "-"
+        })
         
-        df = pd.DataFrame(data)
-        st.dataframe(df, use_container_width=True, hide_index=True)
-        
-        # Open in Studio button
-        if anns:
-            selected_idx = st.selectbox(
-                "Stüdyoda aç:",
-                range(len(anns)),
-                format_func=lambda i: f"{anns[i].event_id} (Entry: +{anns[i].entry_bar_offset})",
-                key=f"ony_queue_select_{status_key}"
-            )
-            
-            if st.button(f"🎯 Stüdyoda Aç", key=f"ony_queue_open_{status_key}"):
-                # Set session state to switch to studio with this event
-                st.session_state["ony_prefill_event_id"] = anns[selected_idx].event_id
-                st.session_state["ony_tab_mode"] = "studio"
-                st.rerun()
+    st.dataframe(pd.DataFrame(data), use_container_width=True, hide_index=True)
     
-    with tab_approved:
-        render_annotation_table(approved, "approved")
-    
-    with tab_rejected:
-        render_annotation_table(rejected, "rejected")
-
-    with tab_pending:
-        render_annotation_table(pending, "pending")
+    # Open in Studio
+    ids = [a.event_id for a in all_anns]
+    sel_id = st.selectbox("Düzenlemek için seç:", ids, key="q_sel")
+    if st.button("✏️ Stüdyoda Düzenle"):
+        st.session_state["ony_prefill_event_id"] = sel_id
+        st.session_state["ony_tab_mode"] = "studio"
+        st.rerun()
 
 
 # =============================================================================
@@ -679,17 +605,20 @@ def render_ony_queue():
 
 def render_ony_page():
     """
-    ONY Ana Sayfa - Stüdyo veya Kuyruk seçimi.
+    Rev. Stüdyo Ana Sayfa - Stüdyo veya Kuyruk seçimi.
     """
     st.title("🎯 ONY - Onay Stüdyosu")
     
     # Tab mode
     mode = st.session_state.get("ony_tab_mode", "studio")
     
-    tab_studio, tab_queue = st.tabs(["🎨 Stüdyo", "📋 Kuyruk"])
+    tab_studio, tab_queue, tab_batch = st.tabs(["🎨 Revizyon", "📋 Liste", "⚡ Batch (Auto)"])
     
     with tab_studio:
         render_ony_studio()
     
     with tab_queue:
         render_ony_queue()
+        
+    with tab_batch:
+        render_batch_operations()

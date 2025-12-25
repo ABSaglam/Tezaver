@@ -106,6 +106,17 @@ class SniperAnnotationRepository:
                 return ann
         return None
 
+    def delete(self, symbol: str, timeframe: str, event_id: str) -> bool:
+        """Delete an annotation by event_id."""
+        all_anns = self.load_all(symbol, timeframe)
+        initial_len = len(all_anns)
+        all_anns = [a for a in all_anns if str(a.event_id) != str(event_id)]
+        
+        if len(all_anns) < initial_len:
+            self.save_all(symbol, timeframe, all_anns)
+            return True
+        return False
+
     def append(self, 
                symbol: str, 
                timeframe: str, 

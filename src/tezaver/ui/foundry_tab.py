@@ -11,10 +11,9 @@ import plotly.graph_objects as go
 import json
 
 from tezaver.foundry.bundle_index import scan_bundles, filter_bundles, load_bundle_files
-from tezaver.matrix.sniper.certification_registry import CertificationRegistry
-from tezaver.matrix.sniper.benchmark_service import BenchmarkService
-# Import locally to avoid circulars or ensure freshness
-from tezaver.sniper.sniper_backtest_v2 import analyze_pack_performance
+from tezaver.matrix.adapters.candidate_registry import CandidateRegistry
+# from tezaver.matrix.sniper.benchmark_service import BenchmarkService # Removed/Missing
+# from tezaver.sniper.sniper_backtest_v2 import analyze_pack_performance # Removed/Missing
 
 
 @st.cache_data(ttl=60)
@@ -41,9 +40,14 @@ def render_foundry_page():
         st.warning("No bundles found. Run packaging first to create ApprovedRallyBundles.")
         return
     
-    # Load Certification Status
-    cert_registry = CertificationRegistry()
-    df_bundles["certification"] = df_bundles["bundle_id"].apply(cert_registry.get_bundle_stage)
+    # Load Certification Status from Matrix Registry
+    candidate_registry = CandidateRegistry()
+    
+    def get_stage(bid):
+        c = candidate_registry.get(bid)
+        return c.get("status", "foundry") if c else "foundry"
+        
+    df_bundles["certification"] = df_bundles["bundle_id"].apply(get_stage)
     
     # Ensure essential columns exist in df_bundles
     for col in ["scenario_id", "qc_score", "qc_verdict"]:

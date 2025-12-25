@@ -142,6 +142,12 @@ def discover_bundles(
         search_roots.append(root / "out" / "matrix_approved")
         
     elif source == "CANDIDATES":
+        # User Request: CANDIDATES should resolve to Publisher Inbox
+        # Also keep legacy out/matrix_candidates for backward compat if needed? 
+        # User said "let's finish the file business" -> Likely wants just Inbox.
+        # Adding Inbox as PRIMARY source.
+        search_roots.append(root / "pipeline" / "inbox")
+        # Legacy fallback (optional, keeping it for transition safety)
         search_roots.append(root / "out" / "matrix_candidates")
     elif source == "GOLDEN":
         repo_root = resolve_repo_root(bus_root)
