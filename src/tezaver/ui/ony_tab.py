@@ -346,16 +346,24 @@ def render_ony_studio():
     
     with c_sym:
         symbols = _get_available_symbols()
-        default_sym_idx = symbols.index("BTCUSDT") if "BTCUSDT" in symbols else 0
+        # Default Logic: Check Session State first
+        sess_sym = st.session_state.get('ony_symbol')
+        if sess_sym and sess_sym in symbols:
+            default_sym_idx = symbols.index(sess_sym)
+        else:
+            default_sym_idx = symbols.index("BTCUSDT") if "BTCUSDT" in symbols else 0
+            
         symbol = st.selectbox("Coin", symbols, index=default_sym_idx, key="ony_symbol", label_visibility="collapsed")
-        # specific label hack or keep label? User asked for compactness. "Coin" label is fine but maybe collapsed is better if row is tight.
-        # User pasted "Coin \n BTCUSDT", so they see labels. I'll keep labels but make them small?
-        # Let's keep labels for clarity but layout is what matters.
-        # Actually, let's keep labels visible but standard.
         
     with c_tf:
         timeframes = ["15m", "1h", "4h"]
-        timeframe = st.selectbox("Timeframe", timeframes, index=0, key="ony_timeframe", label_visibility="collapsed")
+        sess_tf = st.session_state.get('ony_timeframe')
+        if sess_tf and sess_tf in timeframes:
+            default_tf_idx = timeframes.index(sess_tf)
+        else:
+            default_tf_idx = 0
+            
+        timeframe = st.selectbox("Timeframe", timeframes, index=default_tf_idx, key="ony_timeframe", label_visibility="collapsed")
     
     # Load events for filtering
     df_events = _load_events_for_symbol_tf(symbol, timeframe)
@@ -373,6 +381,16 @@ def render_ony_studio():
     else:
         tier_options = TIERS
         tier_counts = {t:0 for t in TIERS}
+        
+    # AUTO-SWITCH TIER (Jumper Fix)
+    if 'ony_prefill_event_id' in st.session_state and df_events is not None:
+        target_id = st.session_state['ony_prefill_event_id']
+        match = df_events[df_events['event_id'].astype(str) == str(target_id)]
+        
+        if not match.empty:
+             target_tier = match.iloc[0]['tier']
+             if target_tier in TIERS and st.session_state.get('ony_selected_tier') != target_tier:
+                 st.session_state['ony_selected_tier'] = target_tier
 
     with c_tier:
         if 'ony_selected_tier' not in st.session_state:
@@ -405,18 +423,38 @@ def render_ony_studio():
         st.info(f"🔍 {selected_tier} katmanında incelenecek ralli yok.")
         return
     
+    # Check for prefill request
+    prefill_id = st.session_state.pop('ony_prefill_event_id', None)
+    default_idx = 0
+    
     # Event Options
     event_options = []
     event_map = {}
-    for i, row in filtered_events.head(100).iterrows(): 
+    for i, row in filtered_events.head(1000).iterrows(): 
         event_time = row.get("event_time")
         gain_pct = row.get("future_max_gain_pct", 0) * 100 if pd.notna(row.get("future_max_gain_pct")) else 0
         bars_to_peak = int(row.get("bars_to_peak", 0)) if pd.notna(row.get("bars_to_peak")) else 0
         event_id = str(row.get("event_id", i))
         
-        # Is reviewed?
+        # Match Index for Prefill
+        if prefill_id:
+             # Standard match or RVZ match
+             if event_id == prefill_id or (prefill_id.replace("_RVZ_", "_") == event_id) or (event_id.replace("_RVZ_", "_") == prefill_id):
+                 default_idx = len(event_options)
+        
+        # Is reviewed? (Check Raw ID, then Check RVZ variant)
         ann = repo.get_one(symbol, timeframe, event_id)
+        if not ann:
+            # Try finding RVZ variant
+            # Construct tentative RVZ ID: Insert RVZ after tier
+            parts = event_id.split('_')
+            if len(parts) >= 3 and "RVZ" not in parts:
+                parts.insert(3, "RVZ")
+                rvz_id = "_".join(parts)
+                ann = repo.get_one(symbol, timeframe, rvz_id)
+        
         icon = "✅" if ann and ann.status == "APPROVED" else "🆕"
+        if ann and "RVZ" in ann.event_id: icon = "🛠️" # Show Wrench for Revised
         
         label = f"{icon} {event_time.strftime('%Y-%m-%d %H:%M') if pd.notna(event_time) else 'N/A'} | +{gain_pct:.1f}% | {bars_to_peak}bar"
         event_options.append(label)
@@ -427,7 +465,7 @@ def render_ony_studio():
         return
         
     # Full width selectbox
-    selected_label = st.selectbox("Ralli Seçiniz", event_options, key="ony_event_select", label_visibility="collapsed")
+    selected_label = st.selectbox("Ralli Seçiniz", event_options, index=default_idx, key="ony_event_select", label_visibility="collapsed")
     selected_event = event_map[selected_label]
     event_id = str(selected_event.get("event_id", 0))
     event_time = selected_event.get("event_time")
@@ -519,8 +557,19 @@ def render_ony_studio():
         with st.expander("📊 Sonuç", expanded=True):
             st.code(f"Offset: {nr['entry_offset_in']} -> {nr['entry_offset_out']}")
             if st.button("✅ Uygula (Apply)"):
-                repo.append(symbol, timeframe, event_id, nr['entry_offset_out'], exit_offset, note, "APPROVED", "REV")
+                # Handle RVZ Logic (Renaming ID)
+                final_id = event_id
+                parts = event_id.split('_')
+                if "RVZ" not in parts:
+                    if len(parts) >= 3:
+                        parts.insert(3, "RVZ")
+                        final_id = "_".join(parts)
+                        # Delete old ID
+                        repo.delete(symbol, timeframe, event_id)
+                
+                repo.append(symbol, timeframe, final_id, nr['entry_offset_out'], exit_offset, note, "APPROVED", "REV")
                 del st.session_state["ony_norm_result"]
+                st.success(f"✅ Uygulandı! (ID: {final_id})")
                 st.rerun()
 
     # --- SAVE ---
@@ -560,41 +609,219 @@ def render_ony_studio():
 
 def render_ony_queue():
     """
-    Revizyon Listesi - Tüm kayıtları tek listede gösterir.
-    Status/Label gizlendi.
+    Gelişmiş Revizyon Listesi (Matrix UI Style).
+    Hamm (Scanner) ve Revize (Repo) verileri arasında geçiş ve filtreleme.
     """
-    st.subheader("📋 Kayıt Listesi")
+    st.subheader("📋 Revizyon Listesi")
     
+    # --- FILTERS ROW 1 ---
+    c1, c2, c3, c4 = st.columns([2, 2, 2, 3])
+    
+    with c1:
+        # Source Selection
+        source_mode = st.radio("Kaynak", ["REVİZE (Düzenlenenler)", "HAM (Tarama Sonuçları)"], horizontal=True, label_visibility="collapsed")
+        is_revize_mode = source_mode.startswith("REVİZE")
+
+    # Coin Pagination Logic
+    all_symbols = _get_available_symbols()
+    page_size = 50
+    total_pages = (len(all_symbols) + page_size - 1) // page_size
+    
+    with c2:
+        # Group Selector
+        page_options = ["TÜMÜ"] + [f"{i*page_size+1}-{(i+1)*page_size}" for i in range(total_pages)]
+        selected_page = st.selectbox("Grup", page_options, index=0)
+
+    # Filter Symbols based on Page
+    target_symbols = all_symbols
+    if selected_page != "TÜMÜ":
+        # Parse range "1-50"
+        try:
+            p_start, p_end = map(int, selected_page.split('-'))
+            target_symbols = all_symbols[p_start-1 : p_end]
+        except: pass
+        
+    with c3:
+        # TF Filter (Single Select)
+        timeframes_opts = ["TÜMÜ", "15m", "1h", "4h"]
+        sel_tf_val = st.selectbox("Zaman", timeframes_opts, index=1) # Default 15m
+        
+        if sel_tf_val == "TÜMÜ": sel_tfs = ["15m", "1h", "4h"]
+        else: sel_tfs = [sel_tf_val]
+
+    with c4:
+        # Tier Filter (Single Select)
+        tier_opts = ["TÜMÜ"] + TIERS
+        sel_tier_val = st.selectbox("Tier", tier_opts, index=1) # Default DIAMOND
+        
+        if sel_tier_val == "TÜMÜ": sel_tiers = TIERS
+        else: sel_tiers = [sel_tier_val]
+
+    # --- DATA LOADING ---
+    rows = []
     repo = SniperAnnotationRepository()
-    col1, col2 = st.columns(2)
-    with col1:
-        symbols = _get_available_symbols()
-        symbol = st.selectbox("Coin", symbols, key="q_sym")
-    with col2:
-        tf = st.selectbox("Timeframe", ["15m", "1h", "4h"], key="q_tf")
-        
-    all_anns = repo.load_all(symbol, tf)
-    if not all_anns:
-        st.info("Kayıt yok.")
-        return
-        
-    # Single List Table
-    data = []
-    for a in all_anns:
-        data.append({
-            "Event ID": a.event_id,
-            "Entry Offset": a.entry_bar_offset,
-            "Revizyon Notu": a.note,
-            "Tarih": a.created_at[:16] if a.created_at else "-"
-        })
-        
-    st.dataframe(pd.DataFrame(data), use_container_width=True, hide_index=True)
     
-    # Open in Studio
-    ids = [a.event_id for a in all_anns]
-    sel_id = st.selectbox("Düzenlemek için seç:", ids, key="q_sel")
-    if st.button("✏️ Stüdyoda Düzenle"):
-        st.session_state["ony_prefill_event_id"] = sel_id
+    processing_container = st.empty()
+    
+    if is_revize_mode:
+        # REVİZE MODE: Load from Repo
+        # Force scan ALL symbols (Revisions are sparse, pagination hides them)
+        scan_symbols = all_symbols 
+        
+        with processing_container:
+            prog = st.progress(0, "Revizeler yükleniyor...")
+            
+        step = 0
+        total_steps = len(scan_symbols)
+        
+        for sym in scan_symbols:
+            step += 1
+            if step % 20 == 0: prog.progress(min(1.0, step/total_steps))
+            
+            for tf in sel_tfs:
+                anns = repo.load_all(sym, tf)
+                for ann in anns:
+                    parts = ann.event_id.split('_')
+                    tier = "UNKNOWN"
+                    for p in parts:
+                        if p in TIERS: tier = p; break
+                    
+                    # STRICT FILTER: Show "Manual Revisions"
+                    # Criteria: Has RVZ tag OR Note is custom (not auto-batch)
+                    is_rvz_tag = "_RVZ_" in ann.event_id
+                    is_custom_note = ann.note and "Auto-Approved Batch" not in ann.note
+                    
+                    if not (is_rvz_tag or is_custom_note): continue
+                    
+                    if tier not in sel_tiers: continue
+                    
+                    # Formatting
+                    tier_icon = "❓"
+                    if tier == "DIAMOND": tier_icon = "💎"
+                    if tier == "GOLD": tier_icon = "🥇"
+                    if tier == "SILVER": tier_icon = "🥈"
+                    if tier == "BRONZE": tier_icon = "🥉"
+                    
+                    rows.append({
+                        "ID": ann.event_id,
+                        "Tier": f"{tier_icon} {tier}" if tier != "UNKNOWN" else "❓ UNKNOWN",
+                        "Coin": sym,
+                        "Zaman": tf,
+                        "Not": ann.note,
+                        "Giriş Offset": ann.entry_bar_offset,
+                        "Durum": "🛠️ REVİZE" if is_rvz_tag else "📝 DÜZENLENDİ",
+                        "_ts": int(parts[-1]) if parts[-1].isdigit() else 0
+                    })
+        
+        # Sort: Newest First
+        rows.sort(key=lambda x: x["_ts"], reverse=True)
+        
+        processing_container.empty()
+    else:
+        # HAM MODE: Load from Scanner Files
+        # Use simple progress bar for feedback
+        stats_info = {"scanned": 0, "loaded": 0, "filtered": 0, "skipped_reviewed": 0}
+        
+        with processing_container:
+            prog = st.progress(0, "Veriler taranıyor...")
+            
+        step = 0
+        total_steps = len(target_symbols) * len(sel_tfs)
+        if total_steps == 0: total_steps = 1
+        
+        for sym in target_symbols:
+            for tf in sel_tfs:
+                step += 1
+                if step % 5 == 0: prog.progress(min(1.0, step / total_steps))
+                
+                df = _load_events_for_symbol_tf(sym, tf)
+                stats_info["scanned"] += 1
+                
+                if df is None or df.empty: continue
+                stats_info["loaded"] += len(df)
+                
+                # Check Repo to exclude already revised items
+                existing_anns = repo.load_all(sym, tf)
+                reviewed_ids = set()
+                for a in existing_anns:
+                    # STRICTER FILTER: Only exclude if it is a manual revision (has RVZ tag)
+                    if "_RVZ_" in a.event_id:
+                         reviewed_ids.add(a.event_id.replace("_RVZ_", "_").replace("__", "_"))
+                         reviewed_ids.add(a.event_id)
+                
+                for _, row in df.iterrows():
+                    eid = str(row['event_id'])
+                    
+                    if eid in reviewed_ids: 
+                        stats_info["skipped_reviewed"] += 1
+                        continue
+                    
+                    tier = "UNKNOWN"
+                    if 'rally_grade' in row:
+                        tier = normalize_tier(row['rally_grade'])
+                    else:
+                        tier = compute_tier_from_gain(row.get('future_max_gain_pct', 0))
+                    
+                    if tier not in sel_tiers or not tier: 
+                        stats_info["filtered"] += 1
+                        continue
+
+                    # Extract fields
+                    gain = row.get('future_max_gain_pct', 0) * 100
+                    bars = row.get('bars_to_peak', 0)
+                    qual = row.get('quality_score', 0)
+                    shape = row.get('rally_shape', '-')
+                    risk = row.get('risk_level', '-')
+                    
+                    rows.append({
+                        "ID": eid,
+                        "Tier": tier,
+                        "Coin": sym,
+                        "Zaman": tf,
+                        "Kazanç (%)": f"{gain:.1f}",
+                        "Süre": bars,
+                        "Kalite": f"{qual:.0f}",
+                        "Şekil": shape,
+                        "Risk": risk
+                    })
+        
+        if not rows:
+             st.warning(f"Stats: S={stats_info['scanned']}, L={stats_info['loaded']}, F={stats_info['filtered']}, SkipRev={stats_info['skipped_reviewed']}")
+        else:
+             processing_container.empty()
+
+    # --- DISPLAY ---
+    if not rows:
+        st.info("Kriterlere uygun kayıt bulunamadı.")
+        return
+
+    df_display = pd.DataFrame(rows)
+    
+    st.markdown(f"**Toplam:** {len(rows)} kayıt")
+    
+    # Interactive Table
+    selection = st.dataframe(
+        df_display,
+        use_container_width=True,
+        hide_index=True,
+        on_select="rerun",
+        selection_mode="single-row"
+    )
+    
+    # Handle Selection -> Navigate to Studio
+    if selection and selection.selection.rows:
+        idx = selection.selection.rows[0]
+        selected_row = df_display.iloc[idx]
+        sel_id = selected_row["ID"]
+        sel_sym = selected_row["Coin"]
+        sel_tf = selected_row["Zaman"]
+        
+        # Prepare Studio
+        st.session_state["ony_prefill_symbol"] = sel_sym
+        st.session_state["ony_prefill_tf"] = sel_tf
+        # Set target_id to trigger the Deep Link Handler in render_ony_page which updates widgets safely
+        st.session_state["ony_target_id"] = sel_id
+        
         st.session_state["ony_tab_mode"] = "studio"
         st.rerun()
 
@@ -607,18 +834,27 @@ def render_ony_page():
     """
     Rev. Stüdyo Ana Sayfa - Stüdyo veya Kuyruk seçimi.
     """
-    st.title("🎯 ONY - Onay Stüdyosu")
+    st.title("🎯 Revize")
+    
+    # --- DEEP LINKING HANDLER (Jumper) ---
+    if 'ony_target_id' in st.session_state:
+        target_id = st.session_state.pop('ony_target_id')
+        target_sym = st.session_state.pop('ony_prefill_symbol', None)
+        target_tf = st.session_state.pop('ony_prefill_tf', None)
+        
+        if target_sym: st.session_state['ony_symbol'] = target_sym
+        if target_tf: st.session_state['ony_timeframe'] = target_tf
+        st.session_state['ony_prefill_event_id'] = target_id
+        st.session_state["ony_tab_mode"] = "studio"
+        st.rerun()
     
     # Tab mode
     mode = st.session_state.get("ony_tab_mode", "studio")
     
-    tab_studio, tab_queue, tab_batch = st.tabs(["🎨 Revizyon", "📋 Liste", "⚡ Batch (Auto)"])
+    tab_studio, tab_queue = st.tabs(["🎨 Revizyon", "📋 Liste"])
     
     with tab_studio:
         render_ony_studio()
     
     with tab_queue:
         render_ony_queue()
-        
-    with tab_batch:
-        render_batch_operations()

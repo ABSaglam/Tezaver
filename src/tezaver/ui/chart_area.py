@@ -547,6 +547,8 @@ def render_rally_event_chart(
     bars_to_peak: int,
     window_before: int = 30,
     window_after: int = 20,
+    entry_offset: Optional[int] = None,
+    exit_offset: Optional[int] = None,
     debug: bool = False,
 ) -> None:
     """
@@ -585,8 +587,8 @@ def render_rally_event_chart(
             
             # Show debug info only if issues or debug mode
             if diag['mode'] == 'fallback':
-                st.warning(f"Feature merge failed: {diag['msg']} (Bars={diag['bars_len']}, Feats={diag['feats_len']}) - Rendering price only.")
-            elif diag['mode'] == 'asof':
+                # st.warning(f"Feature merge failed: {diag['msg']} (Bars={diag['bars_len']}, Feats={diag['feats_len']}) - Rendering price only.")
+                pass
                 # Optional info
                 # st.info(f"Features merged using ASOF (Exact match failed). Matches: {diag['asof_matches']}")
                 pass
@@ -688,6 +690,10 @@ def render_rally_event_chart(
         )
         
         # Candlestick (Row 1)
+        # Calculate Offsets for Tooltip
+        offsets = df_window.index - event_idx
+        hover_texts = [f"OFFSET: {x:+d}" for x in offsets]
+        
         fig.add_trace(
             go.Candlestick(
                 x=df_window['open_time'],
@@ -696,6 +702,8 @@ def render_rally_event_chart(
                 low=df_window['low'],
                 close=df_window['close'],
                 name='Fiyat',
+                hoverinfo='text',
+                text=hover_texts,
                 increasing_line_color=DEFAULT_INDICATOR_SETTINGS['candles']['sync_with_volume'] and DEFAULT_INDICATOR_SETTINGS['volume']['up_color'] or '#089981',
                 decreasing_line_color=DEFAULT_INDICATOR_SETTINGS['candles']['sync_with_volume'] and DEFAULT_INDICATOR_SETTINGS['volume']['down_color'] or '#F23645',
                 showlegend=False
@@ -714,7 +722,8 @@ def render_rally_event_chart(
                     y=df_window['volume'],
                     name="Volume",
                     marker_color=colors,
-                    opacity=0.5
+                    opacity=0.5,
+                    hoverinfo='skip'
                 ),
                 row=2, col=1
             )
@@ -785,6 +794,31 @@ def render_rally_event_chart(
                     import traceback
                     print(traceback.format_exc())
 
+            # --- CUSTOM ENTRY / EXIT OVERLAYS (Revisions) ---
+            
+            # Entry Line (Blue)
+            if entry_offset is not None:
+                try:
+                    entry_idx_local = event_idx + entry_offset
+                    if 0 <= entry_idx_local < len(df):
+                        entry_ts = df.iloc[int(entry_idx_local)]['open_time']
+                        
+                        fig.add_vline(x=entry_ts, line_dash="dash", line_color="#2979FF", line_width=2, row=1, col=1)
+                        fig.add_annotation(x=entry_ts, y=0.05, yref="y domain", text="GİRİŞ", font=dict(color="#2979FF", weight="bold"), showarrow=True, arrowhead=2, ax=0, ay=-40, arrowcolor="#2979FF", row=1, col=1)
+                except Exception as e:
+                    print(f"Entry render error: {e}")
+
+            # Exit Line (Green)
+            if exit_offset is not None:
+                try:
+                    exit_idx_local = event_idx + exit_offset
+                    if 0 <= exit_idx_local < len(df):
+                        exit_ts = df.iloc[int(exit_idx_local)]['open_time']
+                        
+                        fig.add_vline(x=exit_ts, line_dash="dash", line_color="#00E676", line_width=2, row=1, col=1)
+                        fig.add_annotation(x=exit_ts, y=0.95, yref="y domain", text="ÇIKIŞ", font=dict(color="#00E676", weight="bold"), showarrow=True, arrowhead=2, ax=0, ay=40, arrowcolor="#00E676", row=1, col=1)
+                except Exception as e:
+                    print(f"Exit render error: {e}")
         
         # MACD subplot (Row 3)
         if 'macd' in df_window.columns:
@@ -957,7 +991,7 @@ def render_rally_event_chart(
         fig.update_layout(
             height=800,  # Increased height for 4 panels
             margin=dict(l=10, r=10, t=40, b=10),
-            hovermode='x unified',
+            hovermode='x',
             showlegend=False,
             dragmode='pan',
             # Apply initial zoom range to the bottom axis (shared)
@@ -1815,11 +1849,18 @@ def render_sniper_studio_chart(
         vol_up = get_cfg('volume', 'up_color', '#089981')
         vol_down = get_cfg('volume', 'down_color', '#F23645')
         
+        # Tooltip Offset
+        # Tooltip Offset
+        offsets = df_window.index - event_idx
+        hover_texts = [f"OFFSET: {x:+d}" for x in offsets]
+
         fig.add_trace(go.Candlestick(
             x=df_window['open_time'],
             open=df_window['open'], high=df_window['high'],
             low=df_window['low'], close=df_window['close'],
             name='OHLC',
+            hoverinfo='text',
+            text=hover_texts,
             increasing_line_color=vol_up if c_sync else '#089981', 
             decreasing_line_color=vol_down if c_sync else '#F23645',
             showlegend=False
@@ -1831,7 +1872,7 @@ def render_sniper_studio_chart(
             colors = [vol_up if c >= o else vol_down for c, o in zip(df_window['close'], df_window['open'])]
             fig.add_trace(go.Bar(
                 x=df_window['open_time'], y=df_window['volume'],
-                marker_color=colors, opacity=0.5
+                marker_color=colors, opacity=0.5, hoverinfo='skip'
             ), row=2, col=1)
         
         # 3. MACD
@@ -1856,15 +1897,15 @@ def render_sniper_studio_chart(
                     if i > 0 and pd.notna(prev) and h < prev: hist_colors.append(c_neg_dec) # growing negative
                     else: hist_colors.append(c_neg_inc) # shrinking negative
 
-            fig.add_trace(go.Bar(x=df_window['open_time'], y=df_window['macd_hist'], marker_color=hist_colors), row=3, col=1)
-            fig.add_trace(go.Scatter(x=df_window['open_time'], y=df_window['macd'], line=dict(color=get_cfg('macd', 'macd_color', '#2962FF'), width=1)), row=3, col=1)
-            fig.add_trace(go.Scatter(x=df_window['open_time'], y=df_window['macd_signal'], line=dict(color=get_cfg('macd', 'signal_color', '#FF9800'), width=1)), row=3, col=1)
+            fig.add_trace(go.Bar(x=df_window['open_time'], y=df_window['macd_hist'], marker_color=hist_colors, hoverinfo='skip'), row=3, col=1)
+            fig.add_trace(go.Scatter(x=df_window['open_time'], y=df_window['macd'], line=dict(color=get_cfg('macd', 'macd_color', '#2962FF'), width=1), hoverinfo='skip'), row=3, col=1)
+            fig.add_trace(go.Scatter(x=df_window['open_time'], y=df_window['macd_signal'], line=dict(color=get_cfg('macd', 'signal_color', '#FF9800'), width=1), hoverinfo='skip'), row=3, col=1)
         
         # 4. RSI
         if rsi_enable:
-            fig.add_trace(go.Scatter(x=df_window['open_time'], y=df_window['rsi'], line=dict(color=get_cfg('rsi', 'color', '#7E57C2'), width=1.5)), row=4, col=1)
+            fig.add_trace(go.Scatter(x=df_window['open_time'], y=df_window['rsi'], line=dict(color=get_cfg('rsi', 'color', '#7E57C2'), width=1.5), hoverinfo='skip'), row=4, col=1)
             if rsi_ema_enable:
-                fig.add_trace(go.Scatter(x=df_window['open_time'], y=df_window['rsi_ema'], line=dict(color=get_cfg('rsi_ema', 'color', '#FFC107'), width=1.5)), row=4, col=1)
+                fig.add_trace(go.Scatter(x=df_window['open_time'], y=df_window['rsi_ema'], line=dict(color=get_cfg('rsi_ema', 'color', '#FFC107'), width=1.5), hoverinfo='skip'), row=4, col=1)
             
             fig.add_hline(y=70, line_dash="solid", line_color="red", line_width=1, row=4, col=1)
             fig.add_hline(y=50, line_dash="solid", line_color="gray", line_width=1, opacity=0.5, row=4, col=1)
@@ -1945,14 +1986,13 @@ def render_sniper_studio_chart(
         fig.update_layout(
             height=700,
             margin=dict(l=10, r=10, t=30, b=10),
-            hovermode='x unified',
+            hovermode='x',
             dragmode='pan',
             showlegend=False,
-            xaxis_rangeslider_visible=False,
-            template="plotly_dark"
+            xaxis_rangeslider_visible=False
         )
         
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, theme="streamlit")
 
     except Exception as e:
         st.error(f"Sniper grafiği hatası: {e}")

@@ -381,11 +381,97 @@ def render_time_labs_tab(symbol: str, timeframe: str):
         st.caption(f"📊 {rally_count_after_consolidation} rally (overlap temizlendi)")
 
     with col_chart:
+        # --- REVISION LOGIC ---
+        from tezaver.core.annotations import SniperAnnotationRepository
+        from tezaver.rally.rally_grade_cards import compute_tier_from_gain_pct
+        
+        repo = SniperAnnotationRepository()
+        anns = repo.load_all(symbol, timeframe)
+        
+        # Scanner Timestamp (ms) - Handle Timestamp objects safeely
+        raw_ts = sel_event['event_time']
+        if hasattr(raw_ts, 'timestamp'): # Check if datetime/Timestamp
+             scanner_ts_sec = int(raw_ts.timestamp())
+        else:
+             # Heuristic: If > 1e11 likely ms, else sec
+             val = int(raw_ts)
+             if val > 100000000000:
+                 scanner_ts_sec = val // 1000
+             else:
+                 scanner_ts_sec = val
+        
+        scanner_ts_ms = scanner_ts_sec * 1000 
+        
+        # Find match (tolerance 5s)
+        matched_ann = None
+        for ann in anns:
+            try:
+                parts = ann.event_id.split('_')
+                ann_ts = int(parts[-1]) # ID uses Seconds
+                if abs(ann_ts - scanner_ts_sec) < 5:
+                    matched_ann = ann
+                    break
+            except:
+                continue
+                
+        # Determine Params
+        chart_entry = None
+        chart_exit = None
+        is_revised = False
+        
+        if matched_ann:
+            chart_entry = matched_ann.entry_bar_offset
+            chart_exit = matched_ann.exit_bar_offset
+            if "RVZ" in matched_ann.event_id:
+                is_revised = True
+        
+        # DEBUG: Why not matching?
+        if not matched_ann and len(anns) > 0:
+            with st.expander("🐛 Debug: Eşleşme Hatası Analizi", expanded=False):
+                st.write(f"Scanner Sec: {scanner_ts_sec}")
+                st.write("Mevcut Annotation ID'leri (IDs use Seconds):")
+                for a in anns:
+                    st.code(a.event_id)
+        
+        # --- HEADLINE CONTROLS ---
+        h_c1, h_c2 = st.columns([1, 2])
+        with h_c1:
+            if is_revised:
+                st.success("🛠️ **REVİZE EDİLDİ**")
+            elif matched_ann:
+                st.info("☑️ **ONAYLANDI**")
+            else:
+                st.warning("⚠️ **HAM VERİ**")
+        
+        with h_c2:
+            if st.button("🛠️ Değiştir / Revize Et", help="ONY Stüdyosunda aç", key=f"jmp_{symbol}_{scanner_ts_sec}"):
+                # Redirect Logic
+                st.session_state['nav_selection'] = "🎯 Revize"
+                
+                # Critical: Exit Coin Detail Mode to allow Nav Routing
+                if 'current_page' in st.session_state:
+                    del st.session_state['current_page']
+                
+                # ID Logic (Pre-computation)
+                if matched_ann:
+                    target_id = matched_ann.event_id
+                else:
+                    tier_char = compute_tier_from_gain_pct(sel_event['future_max_gain_pct'])
+                    target_id = f"{symbol}_{timeframe}_{tier_char}_{scanner_ts_sec}"
+                
+                st.session_state['ony_target_id'] = target_id
+                # Force ONY to pre-fill
+                st.session_state['ony_prefill_symbol'] = symbol
+                st.session_state['ony_prefill_tf'] = timeframe
+                st.rerun()
+
         render_rally_event_chart(
             symbol=symbol,
             timeframe=timeframe,
             event_time=sel_dt,
-            bars_to_peak=int(sel_event['bars_to_peak'])
+            bars_to_peak=int(sel_event['bars_to_peak']),
+            entry_offset=chart_entry,
+            exit_offset=chart_exit
         )
 
     # ===== SECTION 3: Data Table =====

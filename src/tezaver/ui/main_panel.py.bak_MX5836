@@ -377,7 +377,8 @@ def render_coin_detail_page(symbol: str):
         "🛡️ Risk", 
         "☁️ Bulut Paketi",
         "🌀 Paternler",
-        "📏 Seviyeler"
+        "📏 Seviyeler",
+        "📊 Ana Grafik"
     ]
     
     
@@ -428,6 +429,11 @@ def render_coin_detail_page(symbol: str):
     # 7. Seviyeler
     with tabs[5]:
         render_levels_tab(symbol)
+
+    # 8. Grafik (Main Chart)
+    # 8. Grafik (Main Chart)
+    with tabs[6]:
+        render_main_price_chart(symbol)
 
 
 def render_cloud_mode():
@@ -633,7 +639,7 @@ def main():
                 "🏠 Ana Sayfa", 
                 "📊 Piyasa Özeti", 
                 "👁️ Insight Panel", 
-                "🎯 Revize",
+                "🎯 ONY Stüdyo",
                 "🏭 Dökümhane",
                 "💾 Veri Merkezi", 
                 "⚙️ Sistem Paneli"
@@ -693,7 +699,7 @@ def main():
             if current_nav == "🏠 Ana Sayfa": render_home_page()
             elif current_nav == "📊 Piyasa Özeti": render_market_summary_page()
             elif current_nav == "👁️ Insight Panel": render_insight_tab()
-            elif current_nav == "🎯 Revize": render_ony_page()
+            elif current_nav == "🎯 ONY Stüdyo": render_ony_page()
             elif current_nav == "🏭 Dökümhane":
                 from tezaver.ui.foundry_tab import render_foundry_page
                 render_foundry_page()
