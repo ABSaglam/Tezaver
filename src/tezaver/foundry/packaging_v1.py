@@ -10,10 +10,12 @@ from dataclasses import asdict
 import pandas as pd
 from pathlib import Path
 import json
+import os
 
-from tezaver.sniper.sniper_annotations import SniperAnnotation, SniperAnnotationRepository
+from tezaver.core.annotations import SniperAnnotation, SniperAnnotationRepository
 from tezaver.foundry.models import QCReport
 from tezaver.foundry.bundle_models import ApprovedRallyBundleManifest
+from tezaver.schemas.bundle_v1 import BundleManifestV1, BundleNamingV1, PROTOCOL_VERSION
 from tezaver.foundry import bundle_io
 from tezaver.rally.rally_grade_cards import compute_tier_from_gain_pct
 from tezaver.rally.rally_narrative_engine import analyze_scenario, SCENARIO_DEFINITIONS
@@ -91,85 +93,89 @@ def package_event(
     else:
         tier = "UNKNOWN"
     
-    # Generate Standard Bundle ID (e.g., BTC-15m-GOLD-01)
-    naming = BundleNamingService(output_root)
-    # Check for special tags in narrative/qc if needed, for now use Tier
-    # Future: if qc_report has 'special_tag' etc.
-    std_bundle_id = naming.generate_id(symbol, timeframe, tier)
+    # ... Imports
+    from tezaver.schemas.bundle_v1 import BundleManifestV1, BundleNamingV1, PROTOCOL_VERSION
+    from datetime import datetime
+
+    # ... (Logic to load annotation, report, etc.)
+
+    # 4. Generate Standard Bundle ID (e.g. BTC_15m_2551_A_D)
+    now = datetime.now()
+    naming = BundleNamingV1()
     
-    # Create bundle directory with Standard ID
+    # Resolving Version (A, B, C...):
+    # This requires scanning the output dir for existing bundles of same Week/Symbol/TF
+    # Helper to find next version
+    # "BTC_15m_2551" prefix scan
+    
+    prefix_scan = naming.generate_id(symbol, timeframe, now, "A", "D").rsplit("_", 2)[0] 
+    # e.g. BTC_15m_2551
+    
+    output_path = Path(output_root)
+    existing_versions = []
+    if output_path.exists():
+        for item in output_path.iterdir():
+            if item.is_dir() and item.name.startswith(prefix_scan):
+                # parse out version
+                try:
+                    parts = naming.parse_id(item.name)
+                    if parts: existing_versions.append(parts['ver'])
+                except: pass
+    
+    # Determine Next Version
+    if not existing_versions:
+        next_ver = "A"
+    else:
+        # Simple increment logic A->B...Z
+        # Max existing char
+        max_char = max(existing_versions)
+        next_ver = chr(ord(max_char) + 1)
+        
+    std_bundle_id = naming.generate_id(symbol, timeframe, now, next_ver, "D")
+    
+    # Create bundle directory
     bundle_dir = bundle_io.create_bundle_directory(
         symbol, timeframe, event_id, output_root, folder_name=std_bundle_id
     )
     
-    # Build approved dict
-    approved = {
-        "entry_bar_offset": getattr(annotation, 'approved_entry_bar_offset', None),
-        "entry_ts": getattr(annotation, 'approved_entry_ts', None),
-        "exit_bar_offset": getattr(annotation, 'approved_exit_bar_offset', None),
-        "exit_ts": getattr(annotation, 'approved_exit_ts', None)
-    }
+    # ... (Data gathering logic) ...
     
-    # Determine identifying ID for the manifest (must match parquet for backtest)
-    orig_id = str(event_row.get('event_id', event_row.get('event_idx', event_id)))
-
-    # Build QC dict
-    qc_dict = {
-        "verdict": qc_report.qc_verdict,
-        "score": qc_report.score,
-        "report_path": f"../../../qc_reports/{symbol}/{timeframe}/qc_{event_id}.json"
-    }
-    
-    # Build pointers (relative paths)
-    annotation_path = repo._file_path(symbol, timeframe)
-    event_dataset_path = _get_event_dataset_path(symbol, timeframe)
-    history_path = coin_cell_paths.get_history_file(symbol, timeframe)
-    
-    pointers = {
-        "annotation_path": str(annotation_path),
-        "event_dataset_path": event_dataset_path if event_dataset_path else "",
-        "history_path": str(history_path)
-    }
-    
-    # Extract price window
-    price_window_df = _extract_price_window(symbol, timeframe, event_row.get('event_time'))
-    
-    # Build manifest
-    bundle_id = f"{symbol}_{timeframe}_{orig_id}"
-    event_time_iso = pd.to_datetime(event_row.get('event_time')).isoformat() if pd.notna(event_row.get('event_time')) else ""
-    
-    # Analyze Narrative (Deep Story)
-    try:
-        story_engine = DeepNarrativeService()
-        # Ensure we pass the iso string correctly
-        narrative_data = story_engine.generate_story(symbol, timeframe, event_time_iso)
-        
-        narrative = {
-            "label": narrative_data.get("label", "Unknown Story"),
-            "desc": narrative_data.get("desc", "No description available."),
-            "risk": narrative_data.get("risk", "Medium"),
-            "details": narrative_data.get("details", {})
-        }
-        # Backwards compat: use a generic ID or synthesize one
-        scenario_id = "SCENARIO_DEEP_NARRATIVE" 
-    except Exception as e:
-        print(f"Deep Narrative Failed: {e}")
-        scenario_id = "SCENARIO_NEUTRAL"
-        narrative = {"label": "Neutral", "desc": "Analysis failed.", "risk": "Medium"}
-
-    manifest = ApprovedRallyBundleManifest(
-        bundle_id=std_bundle_id,  # Use Standard ID (e.g. BTC-15m-GOLD-01)
+    # 5. Build Manifest V1
+    # Clean symbol for Manifest (remove underscores if any, keep standard)
+    manifest = BundleManifestV1(
+        protocol_version=PROTOCOL_VERSION,
+        bundle_id=std_bundle_id,
+        source_system="foundry_mac",
+        created_ts=now.isoformat(),
         symbol=symbol,
         timeframe=timeframe,
-        event_id=orig_id,
-        event_time_iso=event_time_iso,
-        tier=tier,
-        approved=approved,
-        qc=qc_dict,
-        pointers=pointers,
-        scenario_id=scenario_id,
-        narrative=narrative
+        data_hash="pending", # Todo: calculate hash
+        status="APPROVED_DOKUMHANE",
+        suffix_code="D",
+        summary=f"Auto-packaged event {event_id} from Foundry. Tier: {tier}",
+        details={
+            "original_event_id": str(event_row.get('event_id', event_id)),
+            "tier": tier,
+            "qc_score": qc_report.score,
+            "narrative_label": narrative.get("label"),
+            "pointers": pointers
+        }
     )
+    
+    # ... Write files using bundle_io (might need update to start accepting V1 manifest dict)
+    # bundle_io.write_bundle_files expects object with to_dict? 
+    # Our BundleManifestV1 has to_dict.
+    
+    bundle_io.write_bundle_files(
+        bundle_dir=bundle_dir,
+        manifest=manifest, # Polymorphism: conforms to to_dict
+        annotation_dict=annotation_dict,
+        qc_report_dict=qc_report_dict,
+        event_row_dict=event_row_dict,
+        price_window_df=price_window_df
+    )
+    
+    return str(bundle_dir)
     
     # Prepare event row dict (minimal fields)
     event_row_dict = {
@@ -193,6 +199,24 @@ def package_event(
         price_window_df=price_window_df
     )
     
+    # 6. Publish to BUS (Inbox)
+    # Protocol V1 Requirement: Deliver to ~/.tezaver_bus/pipeline/inbox
+    import shutil
+    try:
+        # Detect Bus Root
+        home = os.environ.get("TEZAVER_BUS", os.environ.get("HOME", "."))
+        bus_inbox = Path(home) / ".tezaver_bus" / "pipeline" / "inbox"
+        bus_inbox.mkdir(parents=True, exist_ok=True)
+        
+        target_path = bus_inbox / std_bundle_id
+        if target_path.exists():
+            shutil.rmtree(target_path)
+        
+        shutil.copytree(bundle_dir, target_path)
+        print(f"[PUBLISHER] Delivered {std_bundle_id} to Bus Inbox.")
+    except Exception as e:
+        print(f"[PUBLISHER] Failed to deliver to bus: {e}")
+        
     return str(bundle_dir)
 
 

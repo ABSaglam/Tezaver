@@ -1,0 +1,10 @@
+{
+  "game_run_id": "game_20251225_061946_cbd444",
+  "bundle_id": "bundle_v1_1766331357",
+  "symbol": "BTCUSDT",
+  "timeframe": "UNKNOWN",
+  "engine_version": "v1.0.0",
+  "initial_capital": 100.0,
+  "config_signature": "mock_config_sig",
+  "data_rows": 70167
+}

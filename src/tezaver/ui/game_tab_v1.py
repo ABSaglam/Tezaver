@@ -36,11 +36,21 @@ from tezaver.matrix.game.game_bundle_discovery_v1 import (
 def render_run_params(home: str):
     st.subheader("⚙️ New Game Run")
     
-    # 1. Source Selector
+    # 1. Source Selector & Filters
     col1, col2 = st.columns([3, 1])
     with col1:
         source_opts = ["APPROVED", "CANDIDATES", "GOLDEN", "MANUAL"]
         selected_source = st.radio("Bundle Source", source_opts, horizontal=True)
+        
+        # Filters (only relevant for APPROVED/CANDIDATES)
+        if selected_source in ["APPROVED", "CANDIDATES"]:
+            c_f1, c_f2 = st.columns(2)
+            inc_legacy = c_f1.checkbox("Include Legacy (_legacy)", value=False)
+            inc_failed = c_f2.checkbox("Include Failed (_failed)", value=False)
+        else:
+            inc_legacy = False
+            inc_failed = False
+            
     with col2:
         if st.button("🔄 Refresh"):
             st.rerun()
@@ -48,10 +58,15 @@ def render_run_params(home: str):
     # 2. Discovery
     bus_root = resolve_bus_root()
     
-    if "discovery_res" not in st.session_state or st.session_state.get("last_source") != selected_source:
-        st.session_state["discovery_res"] = discover_bundles(bus_root, selected_source)
-        st.session_state["last_source"] = selected_source
-        
+    # Simplify state check - just rerun discovery if params change
+    # Or use a key-based cache? For now, re-discover is fast enough.
+    
+    st.session_state["discovery_res"] = discover_bundles(
+        bus_root, 
+        selected_source, 
+        include_legacy=inc_legacy,
+        include_failed=inc_failed
+    )
     res = st.session_state["discovery_res"]
     
     # 3. Bundle Selection / Manual Input
@@ -78,6 +93,11 @@ def render_run_params(home: str):
         count = len(res.bundles)
         st.caption(f"Found: {count} bundles in {selected_source}")
         
+        # Warning if root missing
+        if res.missing_roots:
+             for m in res.missing_roots:
+                 st.warning(f"Root not found: `{m}`. Standard for fresh setups.")
+        
         if count > 0:
             b_options = [b.label for b in res.bundles]
             sel_label = st.selectbox("Select Bundle", b_options)
@@ -85,14 +105,20 @@ def render_run_params(home: str):
                 idx = b_options.index(sel_label)
                 selected_bundle_ref = res.bundles[idx]
         else:
-            st.warning(f"No bundles found in {selected_source}. Check Debug Panel.")
+            st.info(f"No bundles found. Check Debug Panel below.")
 
     # 4. Debug Panel
     with st.expander("🐞 Bundle Discovery Debug"):
         st.write(f"Bus Root: `{bus_root}`")
-        st.write("Scanned Paths:")
-        for p in res.scanned_paths:
+        if res.missing_roots:
+            st.error(f"Missing Roots: {res.missing_roots}")
+            
+        st.write("Scanned Roots:")
+        for p in res.scanned_roots:
             st.code(p, language="text")
+            
+        st.write("Excluded Counts:", res.excluded_counts)
+        
         if res.errors:
             st.error("Errors:")
             for e in res.errors:
@@ -110,8 +136,12 @@ def render_run_params(home: str):
             return
             
         # Load Data
-        symbol = selected_bundle_ref.symbol or "UNKNOWN"
-        tf = selected_bundle_ref.timeframe or "UNKNOWN"
+        symbol = selected_bundle_ref.symbol
+        tf = selected_bundle_ref.timeframe
+        
+        if not symbol or not tf:
+             st.error(f"Bundle metadata incomplete (Symbol: {symbol}, TF: {tf}). Cannot run.")
+             return
         
         # Data path logic (Shared with TimeMachine?)
         # For now, simplistic assumption:

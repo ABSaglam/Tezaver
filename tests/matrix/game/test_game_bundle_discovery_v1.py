@@ -30,23 +30,63 @@ def mock_fs(tmpdir):
 
     return str(root)
 
-def test_discover_bundles_approved(mock_fs):
-    """Test discovering APPROVED bundles."""
-    res = discover_bundles(mock_fs, "APPROVED")
-    assert len(res.bundles) == 1
-    assert res.bundles[0].bundle_id == "BUNDLE_A"
-    assert res.bundles[0].source == "APPROVED"
-    assert "out/matrix_approved" in res.scanned_paths[0]
+def test_candidates_rglob_finds_manifest(mock_fs):
+    """Test rglob finding in CANDIDATES."""
+    # Add deep bundle
+    root = Path(mock_fs)
+    deep_path = root / "out/matrix_candidates/Group/SubGroup/DeepBundle/manifest_v2.json"
+    deep_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(deep_path, "w") as f:
+        json.dump({"bundle_id": "DEEP_BUNDLE", "symbol": "SOL", "timeframe": "4h"}, f)
+        
+    res = discover_bundles(mock_fs, "CANDIDATES")
+    # Should find BUNDLE_B (from mock_fs) and DEEP_BUNDLE
+    ids = [b.bundle_id for b in res.bundles]
+    assert "DEEP_BUNDLE" in ids
+    assert "BUNDLE_B" in ids
 
-def test_discover_empty_returns_0(mock_fs):
-    """Test empty source returns 0."""
-    # Create empty golden dir
-    p = Path(mock_fs) / "_fixtures"
-    p.mkdir(parents=True)
+def test_excludes_legacy_and_failed_by_default(mock_fs):
+    """Test default filtering."""
+    root = Path(mock_fs)
+    # Create legacy
+    leg = root / "out/matrix_candidates/_legacy/old_bundle/manifest.json"
+    leg.parent.mkdir(parents=True)
+    with open(leg, "w") as f:
+        json.dump({"bundle_id": "LEGACY_BUNDLE"}, f)
+        
+    # Create failed
+    fail = root / "out/matrix_candidates/_failed/bad_bundle/manifest.json"
+    fail.parent.mkdir(parents=True)
+    with open(fail, "w") as f:
+        json.dump({"bundle_id": "FAILED_BUNDLE"}, f)
+        
+    # Default: Exclude both
+    res = discover_bundles(mock_fs, "CANDIDATES")
+    ids = [b.bundle_id for b in res.bundles]
+    assert "LEGACY_BUNDLE" not in ids
+    assert "FAILED_BUNDLE" not in ids
+    assert res.excluded_counts["legacy"] == 1
+    assert res.excluded_counts["failed"] == 1
     
-    res = discover_bundles(mock_fs, "GOLDEN")
+    # Include Legacy
+    res2 = discover_bundles(mock_fs, "CANDIDATES", include_legacy=True)
+    ids2 = [b.bundle_id for b in res2.bundles]
+    assert "LEGACY_BUNDLE" in ids2
+    assert "FAILED_BUNDLE" not in ids2
+    
+    # Include Both
+    res3 = discover_bundles(mock_fs, "CANDIDATES", include_legacy=True, include_failed=True)
+    ids3 = [b.bundle_id for b in res3.bundles]
+    assert "LEGACY_BUNDLE" in ids3
+    assert "FAILED_BUNDLE" in ids3
+
+def test_approved_missing_reports_missing_root(tmpdir):
+    """Test missing root reporting."""
+    # Empty dir, no 'out/matrix_approved'
+    res = discover_bundles(str(tmpdir), "APPROVED")
     assert len(res.bundles) == 0
-    assert len(res.scanned_paths) > 0
+    assert len(res.missing_roots) > 0
+    assert "matrix_approved" in res.missing_roots[0]
 
 def test_manual_path_folder_loads_manifest(mock_fs):
     """Test manual path loading."""

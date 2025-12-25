@@ -14,7 +14,7 @@ import pandas as pd
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 
-from tezaver.sniper.sniper_annotations import (
+from tezaver.core.annotations import (
     SniperAnnotation,
     SniperAnnotationRepository,
     SniperStatus,

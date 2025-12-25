@@ -80,11 +80,8 @@ def _generate_intent_id(symbol: str, tf: str, bundle_id: str, tick_ts: str, trig
     raw = f"{symbol}|{tf}|{bundle_id}|{tick_ts}|{trigger}|{policy}"
     return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
-from tezaver.matrix.sniper.certification_registry import CertificationRegistry, STAGE_CANDIDATE
-
-
-
-from tezaver.matrix.sniper.certification_registry import CertificationRegistry, STAGE_SNIPER_PASSED, STAGE_LIVE_CERTIFIED
+from tezaver.core.certification import CertificationRegistry
+from tezaver.core.stages import STAGE_CANDIDATE, STAGE_SNIPER_PASSED, STAGE_LIVE_CERTIFIED
 
 class PoolDefender:
     """

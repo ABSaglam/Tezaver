@@ -38,7 +38,7 @@ def compute_rank_score(intent: TradeIntentV1) -> float:
         
     return base_score + tier_bonus + story_bonus
 
-from tezaver.matrix.sniper.certification_registry import (
+from tezaver.core.stages import (
     STAGE_CANDIDATE, STAGE_SNIPER_PASSED, STAGE_LIVE_CERTIFIED, STAGE_DEMOTED
 )
 

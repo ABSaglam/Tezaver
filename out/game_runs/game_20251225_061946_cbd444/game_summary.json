@@ -1,0 +1,19 @@
+{
+  "game_run_id": "game_20251225_061946_cbd444",
+  "bundle_id": "bundle_v1_1766331357",
+  "symbol": "BTCUSDT",
+  "timeframe": "UNKNOWN",
+  "final_equity": 100.0,
+  "return_pct": 0.0,
+  "max_drawdown": 0.0,
+  "trade_count": 0,
+  "win_rate": 0.0,
+  "profit_factor": 0.0,
+  "verdict_counts": {
+    "ALLOW": 0,
+    "BLOCK": 0,
+    "SKIP": 70167
+  },
+  "top_block_reasons": [],
+  "created_ts": "2025-12-25T03:19:52.545125"
+}

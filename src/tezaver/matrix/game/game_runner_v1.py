@@ -58,7 +58,31 @@ class GameRunnerV1:
 
         # 3. Pre-calculate Signals (Plan B optimization)
         # Convert dict to Manifest object if needed
-        if isinstance(manifest, dict):
+        # 3. Pre-calculate Signals (Plan B optimization)
+        # Convert dict to Manifest object if needed
+        # PROTOCOL V1 HELPER: Remap V1 to Internal Manifest Object if needed
+        if isinstance(manifest, dict) and manifest.get("protocol_version") == "1.0":
+             details = manifest.get("details", {})
+             # Construct backward-compatible object for SignalGenerator
+             # Mapping V1 to ApprovedRallyBundleManifestV1 fields
+             m_obj = ApprovedRallyBundleManifestV1(
+                bundle_version="v1.0_adapter",
+                bundle_id=manifest["bundle_id"],
+                symbol=manifest["symbol"],
+                timeframe=manifest["timeframe"],
+                event_id=details.get("original_event_id", "v1_event"),
+                event_time_iso=manifest["created_ts"], # Use created_ts as event time approx or detailed field?
+                approved_entry_bar_offset=0, # Defaults, V1 might not carry signal details yet
+                approved_entry_ts=manifest["created_ts"],
+                qc_verdict="PASS",
+                qc_score=details.get("qc_score", 0),
+                tier=details.get("tier", "UNKNOWN"),
+                scenario_id="PROTOCOL_V1",
+                narrative={"label": details.get("narrative_label", "-")},
+                trigger_spec_v1={}, 
+                policy_spec_v1={}
+             )
+        elif isinstance(manifest, dict):
             try:
                 m_obj = ApprovedRallyBundleManifestV1.from_dict(manifest)
             except:
@@ -102,10 +126,21 @@ class GameRunnerV1:
         pending_decision = None 
         
         # 4. Loop
-        df = history_df.sort_values("open_time").reset_index(drop=True)
+        
+        # Normalize time column
+        if 'open_time' in history_df.columns:
+            time_col = 'open_time'
+        elif 'timestamp' in history_df.columns:
+            time_col = 'timestamp'
+        elif 'time' in history_df.columns:
+            time_col = 'time'
+        else:
+            raise KeyError(f"No time column found. Available: {history_df.columns.tolist()}")
+            
+        df = history_df.sort_values(time_col).reset_index(drop=True)
         
         for idx, row in df.iterrows():
-            ts = int(row['open_time'])
+            ts = int(row[time_col])
             
             # --- T Open: Execution ---
             sim.on_bar_open(ts, row['open'], pending_decision, idx)

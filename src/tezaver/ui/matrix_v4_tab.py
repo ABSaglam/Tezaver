@@ -23,7 +23,6 @@ MAIN_HEADINGS = [
     ("DASHBOARD", "📊 Dashboard", "Genel sistem durumu, alarmlar ve yayın kontrolleri."),
     ("GAME", "🎮 Game v1", "Deterministik Replay + Court Trace + Chart."),
     ("CANDIDATES", "📋 Candidates", "Strateji adaylarını inceleme ve onay merkezi."),
-    ("SNIPER", "🎯 Sniper", "Tekil strateji testleri ve geçmişi."),
     ("WAR", "⚔️ WAR", "Çoklu coin toplu backtest ve risk analizi."),
     ("LIVE", "🟢 LIVE", "Canlı piyasa provası ve simülasyonu."),
     ("EVIDENCE", "🧾 Evidence", "Koşu geçmişi, raporlar ve olay kayıtları."),
@@ -50,11 +49,6 @@ NAV_MAP = {
     ],
     "CANDIDATES": [
         ("Adaylar", "CANDIDATES", None, False, "Strateji adaylarını listeler, onaylar veya reddeder."),
-    ],
-    "SNIPER": [
-        ("Sniper", "SNIPER", None, False, "Sniper tekli backtest geçmişi ve sonuçları."),
-        ("Koşular (Sniper)", "RUNS", "SNIPER", False, "Sadece Sniper modundaki koşuları filtreler."),
-        ("⏳ Time Machine", "BACKTEST", None, False, "Matrix Time Machine: 2 Yıllık Simülasyon."),
     ],
     "WAR": [
         ("WAR", "WAR", None, False, "Çoklu-coin toplu backtest paneli. Yeni WAR run başlatır."),
@@ -100,7 +94,6 @@ CATEGORIES = [
     ("RELEASE", "🚀 Release Gate", "Yayın kontrolü"),
     ("REHEARSAL", "✅ Rehearsal", "Go/No-Go kontrol listesi"),
     ("CANDIDATES", "📋 Candidates", "Strateji adayları"),
-    ("SNIPER", "🎯 Sniper", "Sniper run geçmişi"),
     ("RUNS", "▶️ Runs", "Çalıştırma geçmişi"),
     ("WAR", "⚔️ WAR", "Multi-coin backtest"),
     ("LIVE", "🟢 LIVE", "Canlı trading modu"),
@@ -166,160 +159,143 @@ def render_matrix_v4():
                 return item[0]
         return "(Seçim yok)"
     
-    # ===== SIDEBAR: 9 Main Headings =====
+    # ===== SIDEBAR: Unified Navigation (Mac-Style) =====
+    # We render Main Headings. If a Main Heading is active, we render its sub-items immediately below it.
+    
+    # Optional: Add a "Collapse All" or "Home" button if needed? 
+    # For now, just strict hierarchy.
+
     for item in MAIN_HEADINGS:
         main_key = item[0]
         main_label = item[1]
         help_text = item[2] if len(item) > 2 else None
         
-        is_active = st.session_state["active_main"] == main_key
-        btn_type = "primary" if is_active else "secondary"
+        # Check active state
+        is_main_active = (st.session_state["active_main"] == main_key)
         
-        if st.sidebar.button(main_label, key=f"main_{main_key}", use_container_width=True, type=btn_type, help=help_text):
+        # Render Main Button
+        # Visual cue: Active main button gets primary color
+        btn_type = "primary" if is_main_active else "secondary"
+        
+        if st.sidebar.button(main_label, key=f"main_{main_key}", use_container_width=True, type=btn_type):
             st.session_state["active_main"] = main_key
-            
-            # FIX-3: Bounds check for last_sub_index
+            # Reset sub-selection to first item if switching main category?
+            # Or keep last state?
+            # Mac UI behavior: usually resets or defaults to a sensible view.
+            # Let's check if we need to auto-select the first sub-item to avoid empty views.
             items = NAV_MAP.get(main_key, [])
             if items:
-                last_idx = st.session_state["last_sub_index_by_main"].get(main_key, 0)
-                if last_idx < 0 or last_idx >= len(items):
-                    last_idx = 0
-                    st.session_state["last_sub_index_by_main"][main_key] = 0
+                # Default to first item if just clicked Main
+                # Check if we already have a valid sub-selection for this main
+                # If we just switched, maybe we want to force the first one.
+                # But let's check current state? 
+                # Actually, if I click "WAR", I expect to see "WAR Dashboard".
+                # So yes, auto-select first sub-item logic is good.
                 
-                sub = items[last_idx]
-                # FIX-2: Cloud LOCKED items should not change state
-                if not sub[3]:  # disabled flag
-                    st.session_state["selected_route_key"] = sub[1]
-                    # FIX-1: filter_mode only for RUNS
-                    if sub[1] == "RUNS":
-                        st.session_state["selected_filter_mode"] = sub[2]
+                # Logic: If this button press CHANGED the active main, default to first sub.
+                # Since streamlit reruns on button press, we are here.
+                # We can't easily detect "change" inside the if-block unless we compare to previous before assignment.
+                # But the assignment `st.session_state["active_main"] = main_key` happened effectively now.
+                # Let's just set the sub-route to the first item of this group.
+                first_sub = items[0]
+                if not first_sub[3]: # if not disabled
+                    st.session_state["selected_route_key"] = first_sub[1]
+                    if first_sub[1] == "RUNS":
+                         st.session_state["selected_filter_mode"] = first_sub[2]
                     else:
-                        st.session_state["selected_filter_mode"] = None
+                         st.session_state["selected_filter_mode"] = None
             st.rerun()
+
+        # Sub-items removed from sidebar
+
+
     
-    # ===== MAIN CONTENT =====
+    # ===== MAIN CONTENT AREA (Hybrid Tabs) =====
     
-    # Top Banner (compact)
-    st.markdown(f"""
-    <div style="background:#222; color:#aaa; padding:6px 12px; font-family:monospace; margin-bottom:10px; border-radius:4px; font-size:10px;">
-        <b>Build:</b> {ctx['commit'][:8]} | <b>Branch:</b> {ctx['branch']} | 
-        candidates={counts['candidates']} runs={counts['runs']} approved={counts['approved']}
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # ===== BREADCRUMB =====
+    # Define Routing Helper locally (keeps closure over 'home' and 'counts')
+    def _render_content_route(route_key, filter_mode):
+        # FIX-1: Ensure filter_mode provided
+        if route_key != "RUNS":
+            filter_mode = None
+            
+        if route_key == "OPS":
+            render_ops(home)
+        elif route_key == "ALERTS":
+            render_alerts(home)
+        elif route_key == "PANEL_HEALTH":
+            render_panel_health(home)
+        elif route_key == "RELEASE":
+            render_release(home)
+        elif route_key == "REHEARSAL":
+            render_rehearsal(home)
+        elif route_key == "CANDIDATES":
+             render_candidates(home)
+        elif route_key == "GAME":
+            render_game_tab(home)
+        elif route_key == "WAR":
+            render_war(home)
+        elif route_key == "LIVE":
+            render_live(home)
+        elif route_key == "RUNS":
+            st.session_state["selected_filter_mode"] = filter_mode
+            render_runs(home)
+        elif route_key == "REPORTS":
+            render_reports(home)
+        elif route_key == "INCIDENTS":
+            render_incidents(home)
+        elif route_key == "BUNDLES":
+            render_bundles(home)
+        elif route_key == "MAINTENANCE":
+            render_maintenance(home)
+        elif route_key == "MIGRATION":
+            render_migration(home)
+        elif route_key == "REGISTRY":
+            render_registry(home)
+        elif route_key == "PLATFORM":
+            from tezaver.ui.platform_tab import render_platform_tab
+            render_platform_tab()
+        elif route_key == "CLOUD_RUNTIME":
+            render_cloud_runtime(home)
+        elif route_key == "USERSTREAM":
+            render_userstream(home)
+        elif route_key == "LOOP":
+            render_loop(home)
+        else:
+            st.info(f"Route not found: {route_key}")
+
+    # Use Streamlit Tabs for Sub-Navigation
     active_main = st.session_state["active_main"]
-    main_label = get_main_label(active_main)
-    sub_label = get_current_sub_label()
-    st.caption(f"📍 Konum: **{main_label}** > {sub_label}")
+    sub_items = NAV_MAP.get(active_main, [])
     
-    # ===== SUB-HEADING BAR (in main content) =====
-    items = NAV_MAP.get(active_main, [])
-    
-    if items:
-        # Split into rows of 5 for wrapping
-        rows = [items[i:i+5] for i in range(0, len(items), 5)]
+    # Optional styling or spacing
+    st.markdown("####")
+
+    if sub_items:
+        # Filter out disabled items
+        valid_subs = [s for s in sub_items if not s[3]]
         
-        for row_idx, row in enumerate(rows):
-            cols = st.columns(len(row))
-            for col_idx, item in enumerate(row):
-                # Unpack item: (label_tr, route_key, filter_mode, disabled, help_text)
-                label_tr = item[0]
-                route_key = item[1]
-                filter_mode = item[2]
-                disabled = item[3]
-                help_text = item[4] if len(item) > 4 else None
-                
-                with cols[col_idx]:
-                    # Unique key
-                    unique_key = f"sub_{active_main}_{row_idx}_{col_idx}"
+        if not valid_subs:
+            st.info("Bu modülde erişilebilir sayfa yok.")
+        else:
+            tab_labels = [s[0] for s in valid_subs]
+            tabs = st.tabs(tab_labels)
+            
+            for idx, tab in enumerate(tabs):
+                with tab:
+                    item = valid_subs[idx]
+                    # Update state silently for tracking (optional, but good for context)
+                    # st.session_state["selected_route_key"] = item[1] ... 
+                    # Actually, tabs don't change session state automatically unless we do it manually.
+                    # But we don't strictly need it if we render content directly.
                     
-                    # FIX-2: Cloud LOCKED items are disabled and do NOT change state
-                    if disabled:
-                        st.button(label_tr, key=unique_key, disabled=True, use_container_width=True, help=help_text)
-                    else:
-                        is_active = (
-                            st.session_state["selected_route_key"] == route_key and 
-                            st.session_state["selected_filter_mode"] == filter_mode
-                        )
-                        btn_type = "primary" if is_active else "secondary"
-                        
-                        if st.button(label_tr, key=unique_key, use_container_width=True, type=btn_type, help=help_text):
-                            st.session_state["selected_route_key"] = route_key
-                            # FIX-1: filter_mode only for RUNS
-                            if route_key == "RUNS":
-                                st.session_state["selected_filter_mode"] = filter_mode
-                            else:
-                                st.session_state["selected_filter_mode"] = None
-                            # Track last selected sub for this main
-                            global_idx = row_idx * 5 + col_idx
-                            st.session_state["last_sub_index_by_main"][active_main] = global_idx
-                            st.rerun()
-    
-    st.divider()
-    
-    # ===== ROUTE TO PAGE =====
-    route_key = st.session_state.get("selected_route_key", "OPS")
-    filter_mode = st.session_state.get("selected_filter_mode")
-    
-    # FIX-1: Ensure filter_mode is None for non-RUNS routes
-    if route_key != "RUNS":
-        filter_mode = None
-        st.session_state["selected_filter_mode"] = None
-    
-    # Handle LOCKED routes (should not happen due to FIX-2, but safety check)
-    if filter_mode == "LOCKED":
-        st.warning("🔒 Bu sayfa Matrix v1.0 FINAL sonrası aktif olacak.")
-        return
-    
-    # Render based on route_key
-    if route_key == "OPS":
-        render_ops(home)
-    elif route_key == "ALERTS":
-        render_alerts(home)
-    elif route_key == "PANEL_HEALTH":
-        render_panel_health(home)
-    elif route_key == "RELEASE":
-        render_release(home)
-    elif route_key == "REHEARSAL":
-        render_rehearsal(home)
-    elif route_key == "CANDIDATES":
-        render_candidates(home)
-    elif route_key == "SNIPER":
-        render_sniper(home)
-    elif route_key == "GAME":
-        render_game_tab(home)
-    elif route_key == "CANDIDATES":
-        render_candidates_hub(home)
-    elif route_key == "WAR":
-        render_war(home)
-    elif route_key == "LIVE":
-        render_live(home)
-    elif route_key == "RUNS":
-        render_runs(home)  # filter_mode can be used inside if needed
-    elif route_key == "REPORTS":
-        render_reports(home)
-    elif route_key == "INCIDENTS":
-        render_incidents(home)
-    elif route_key == "BUNDLES":
-        render_bundles(home)
-    elif route_key == "MAINTENANCE":
-        render_maintenance(home)
-    elif route_key == "MIGRATION":
-        render_migration(home)
-    elif route_key == "REGISTRY":
-        render_registry(home)
-    elif route_key == "PLATFORM":
-        from tezaver.ui.platform_tab import render_platform_tab
-        render_platform_tab()
-    elif route_key == "CLOUD_RUNTIME":
-        render_cloud_runtime(home)
-    elif route_key == "USERSTREAM":
-        render_userstream(home)
-    elif route_key == "LOOP":
-        render_loop(home)
+                    _render_content_route(item[1], item[2])
     else:
-        st.info(f"Route not found: {route_key}")
+        st.info("Alt menü yok.")
+    
+    # End of function
+    return
+
+# (Separator line was removed in replacement)
 
 
 # ============================================================================
@@ -1860,113 +1836,6 @@ def render_live(home: str):
         for inc in inc_list[:5]:
             st.warning(f"{inc.get('incident_type', '?')} | {inc.get('incident_id', '')} | {inc.get('created_at', '')[:19]}")
 
-
-def render_sniper(home: str):
-    """MX-FINAL-0302: Render Sniper page for sniper runs."""
-    from tezaver.ui.ui_guard import render_data_sources_box
-    render_data_sources_box()
-    
-    st.subheader("🎯 Sniper Runs")
-    st.caption("Sniper mode run geçmişi ve detayları")
-    
-    # --- Run from Bundle Section ---
-    with st.expander("📦 Run from Bundle", expanded=True):
-        st.caption("LOADED_OK durumundaki ApprovedRallyBundle'lardan Sniper run başlat")
-        
-        try:
-            from tezaver.matrix.bundles.bundle_loader_v1 import load_all_bundles
-            from tezaver.matrix.bundles.bundle_registry import BundleRegistry
-            from tezaver.matrix.sniper.sniper_bundle_adapter_v1 import start_sniper_from_bundle
-            
-            # Load bundles
-            registry = BundleRegistry()
-            load_all_bundles(registry=registry)
-            loaded_bundles = registry.list(status="LOADED_OK")
-            
-            if not loaded_bundles:
-                st.warning("⚠️ LOADED_OK durumunda bundle yok.")
-                st.caption("Önce ONY'de approve edip Dökümhane'de paketleyin.")
-            else:
-                # Create bundle options map
-                bundle_options = {
-                    f"{b.manifest.symbol}/{b.manifest.timeframe} - {b.manifest.bundle_id[:20]}...": b
-                    for b in loaded_bundles if b.manifest
-                }
-                
-                col1, col2 = st.columns([3, 1])
-                with col1:
-                    selected_label = st.selectbox(
-                        "Bundle Seç",
-                        list(bundle_options.keys()),
-                        key="sniper_bundle_select"
-                    )
-                
-                with col2:
-                    st.write("")  # Spacer
-                    st.write("")  # Spacer
-                    run_clicked = st.button("▶ Run Sniper", type="primary", key="run_sniper_from_bundle")
-                
-                if run_clicked and selected_label:
-                    selected_bundle = bundle_options[selected_label]
-                    
-                    with st.spinner("Sniper run başlatılıyor..."):
-                        result = start_sniper_from_bundle(selected_bundle)
-                    
-                    if result["status"] == "STARTED":
-                        st.success(f"✅ Sniper run başlatıldı: `{result['run_id']}`")
-                        st.json({
-                            "bundle_id": result["config"]["bundle_id"],
-                            "symbol": result["config"]["symbol"],
-                            "timeframe": result["config"]["timeframe"],
-                            "qc_score": result["config"]["qc_score"],
-                            "exit_missing": result["config"]["exit_missing"]
-                        })
-                        
-                        # Show telemetry
-                        if result["telemetry"]:
-                            with st.expander("📜 Telemetry", expanded=False):
-                                for event in result["telemetry"]:
-                                    st.code(json.dumps(event, indent=2))
-                    else:
-                        st.error(f"❌ Hata: {result['error']}")
-                        
-        except Exception as e:
-            st.error(f"Bundle yükleme hatası: {e}")
-    
-    st.divider()
-    
-    # --- Run History Section ---
-    st.subheader("📜 Run Geçmişi")
-    
-    # List sniper runs from runs directory
-    runs_dir = Path("out/matrix_runs/sniper")
-    
-    if not runs_dir.exists():
-        st.info("Henüz Sniper run yok.")
-        st.caption("Candidates sayfasından veya yukarıdaki 'Run from Bundle' ile başlatabilirsiniz.")
-        return
-    
-    runs = sorted(runs_dir.iterdir(), reverse=True)[:20]
-    
-    if not runs:
-        st.info("Henüz Sniper run yok.")
-        return
-    
-    # List runs
-    for run_dir in runs:
-        if run_dir.is_dir():
-            report_path = run_dir / "report.json"
-            if report_path.exists():
-                with open(report_path) as f:
-                    report = json.load(f)
-                
-                col1, col2, col3 = st.columns([3, 1, 1])
-                with col1:
-                    st.text(run_dir.name)
-                with col2:
-                    st.text(f"trades: {report.get('trade_count', '?')}")
-                with col3:
-                    st.text(report.get('stopped_at', '')[:10] if report.get('stopped_at') else '')
 
 
 def render_reports(home: str):
