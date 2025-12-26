@@ -832,9 +832,10 @@ def render_ony_queue():
 
 def render_ony_page():
     """
-    Rev. Stüdyo Ana Sayfa - Stüdyo veya Kuyruk seçimi.
+    Rev. Stüdyo Ana Sayfa.
+    Tek Görünüm: Editör.
     """
-    st.title("🎯 Revize")
+    # Title removed per user request
     
     # --- DEEP LINKING HANDLER (Jumper) ---
     if 'ony_target_id' in st.session_state:
@@ -842,19 +843,17 @@ def render_ony_page():
         target_sym = st.session_state.pop('ony_prefill_symbol', None)
         target_tf = st.session_state.pop('ony_prefill_tf', None)
         
+        # Determine Symbol/TF if not provided
+        if not target_sym or not target_tf:
+             start_parts = target_id.split('_') 
+             if len(start_parts) >= 2:
+                 target_sym = start_parts[0]
+                 target_tf = start_parts[1]
+
         if target_sym: st.session_state['ony_symbol'] = target_sym
         if target_tf: st.session_state['ony_timeframe'] = target_tf
+        
         st.session_state['ony_prefill_event_id'] = target_id
-        st.session_state["ony_tab_mode"] = "studio"
-        st.rerun()
     
-    # Tab mode
-    mode = st.session_state.get("ony_tab_mode", "studio")
-    
-    tab_studio, tab_queue = st.tabs(["🎨 Revizyon", "📋 Liste"])
-    
-    with tab_studio:
-        render_ony_studio()
-    
-    with tab_queue:
-        render_ony_queue()
+    # Direct Render (No Tabs)
+    render_ony_studio()

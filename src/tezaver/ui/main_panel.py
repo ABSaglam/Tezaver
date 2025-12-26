@@ -7,7 +7,16 @@ import time
 import pandas as pd
 import base64
 from pathlib import Path
+import streamlit as st
+import sys
+import json
+import subprocess
+import time
+import pandas as pd
+import base64
+from pathlib import Path
 from datetime import datetime
+import importlib
 
 # --- BOOTSTRAP ---
 project_root = Path(__file__).resolve().parents[3]
@@ -695,8 +704,9 @@ def main():
             elif current_nav == "👁️ Insight Panel": render_insight_tab()
             elif current_nav == "🎯 Revize": render_ony_page()
             elif current_nav == "🏭 Dökümhane":
-                from tezaver.ui.foundry_tab import render_foundry_page
-                render_foundry_page()
+                import tezaver.ui.foundry_tab
+                importlib.reload(tezaver.ui.foundry_tab)
+                tezaver.ui.foundry_tab.render_foundry_page()
             elif current_nav == "💾 Veri Merkezi": render_data_health_page()
             elif current_nav == "⚙️ Sistem Paneli": 
                 from tezaver.ui.subpages.system_dashboard import render_system_dashboard
