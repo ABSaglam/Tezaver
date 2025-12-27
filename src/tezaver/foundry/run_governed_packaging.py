@@ -33,8 +33,11 @@ def main():
     MIN_SCORE = qc_rules.get("min_score", 60)
     ALLOWED_TIERS = set(pkg_rules.get("allowed_tiers", []))
     
+    STRICT_MODE = qc_rules.get("strict_mode", True)
+    MANDATORY = set(qc_rules.get("mandatory_checks", []))
+    
     print(f"🏛️  Foundry Governance v{policy_ver} Active")
-    print(f"📋  Policy: Min Score {MIN_SCORE}, Tiers: {ALLOWED_TIERS}")
+    print(f"📋  Policy: Min Score {MIN_SCORE}, Strict: {STRICT_MODE}, Tiers: {ALLOWED_TIERS}")
     print("-" * 50)
     
     # 2. Discovery (Scan All Symbols)
@@ -78,8 +81,18 @@ def main():
                 
                 # Rule 2: QC Critical Fails
                 if report.fails:
-                    verdict = "FAIL"
-                    reasons.append(f"Critical QC Checks: {report.fails}")
+                    is_fatal = STRICT_MODE
+                    if not is_fatal:
+                        for f in report.fails:
+                            if f in MANDATORY:
+                                is_fatal = True
+                                break
+                    
+                    if is_fatal:
+                        verdict = "FAIL"
+                        reasons.append(f"Critical QC Checks: {report.fails}")
+                    else:
+                        reasons.append(f"WARN: Ignored Fails: {report.fails}")
                     
                 # Rule 3: Tier Check (Requires loading annotation to know Tier, or inferring)
                 # For now let packaging handle tier, or check if we can get it easily.

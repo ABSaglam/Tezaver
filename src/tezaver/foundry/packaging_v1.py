@@ -99,46 +99,42 @@ def package_event(
 
     # ... (Logic to load annotation, report, etc.)
 
-    # 4. Generate Standard Bundle ID (e.g. BTC_15m_2551_A_D)
+    # 4. Generate Bundle ID
+    # CRITICAL FIX for Bulk Packaging:
+    # Standard Naming (Week-Based) causes overwrites when backfilling history.
+    # We switch to using EVENT_ID as the Bundle ID to ensure uniqueness.
+    
+    # Restore 'now' for manifest creation
     now = datetime.now()
-    naming = BundleNamingV1()
     
-    # Resolving Version (A, B, C...):
-    # This requires scanning the output dir for existing bundles of same Week/Symbol/TF
-    # Helper to find next version
-    # "BTC_15m_2551" prefix scan
+    std_bundle_id = event_id
     
-    prefix_scan = naming.generate_id(symbol, timeframe, now, "A", "D").rsplit("_", 2)[0] 
-    # e.g. BTC_15m_2551
-    
-    output_path = Path(output_root)
-    existing_versions = []
-    if output_path.exists():
-        for item in output_path.iterdir():
-            if item.is_dir() and item.name.startswith(prefix_scan):
-                # parse out version
-                try:
-                    parts = naming.parse_id(item.name)
-                    if parts: existing_versions.append(parts['ver'])
-                except: pass
-    
-    # Determine Next Version
-    if not existing_versions:
-        next_ver = "A"
-    else:
-        # Simple increment logic A->B...Z
-        # Max existing char
-        max_char = max(existing_versions)
-        next_ver = chr(ord(max_char) + 1)
-        
-    std_bundle_id = naming.generate_id(symbol, timeframe, now, next_ver, "D")
-    
-    # Create bundle directory
+    # Create bundle directory using event_id as folder name
     bundle_dir = bundle_io.create_bundle_directory(
         symbol, timeframe, event_id, output_root, folder_name=std_bundle_id
     )
     
-    # ... (Data gathering logic) ...
+    # 4. Data Gathering
+    # Event Time
+    event_time_iso = str(event_row.get('event_time', ''))
+    
+    # Needs extracted price window
+    price_window_df = _extract_price_window(
+        symbol, timeframe, event_time_iso
+    )
+    
+    # 5. Narrative Analysis (The Soul)
+    # Uses Rally Narrative Engine to label the event (e.g. "Mechanical Breakout")
+    narrative_id = analyze_scenario(event_row)
+    narrative_def = SCENARIO_DEFINITIONS.get(narrative_id, SCENARIO_DEFINITIONS["SCENARIO_NEUTRAL"])
+    
+    # Pointers
+    pointers = {
+        "annotation": f"annotation.json",
+        "qc_report": f"qc_report.json",
+        "event_data": f"event_row.json",
+        "price_window": f"price_window.parquet"
+    }
     
     # 5. Build Manifest V1
     # Clean symbol for Manifest (remove underscores if any, keep standard)
@@ -157,7 +153,7 @@ def package_event(
             "original_event_id": str(event_row.get('event_id', event_id)),
             "tier": tier,
             "qc_score": qc_report.score,
-            "narrative_label": narrative.get("label"),
+            "narrative_label": narrative_def.get("label"),
             "pointers": pointers
         }
     )
@@ -166,18 +162,8 @@ def package_event(
     # bundle_io.write_bundle_files expects object with to_dict? 
     # Our BundleManifestV1 has to_dict.
     
-    bundle_io.write_bundle_files(
-        bundle_dir=bundle_dir,
-        manifest=manifest, # Polymorphism: conforms to to_dict
-        annotation_dict=annotation_dict,
-        qc_report_dict=qc_report_dict,
-        event_row_dict=event_row_dict,
-        price_window_df=price_window_df
-    )
-    
-    return str(bundle_dir)
-    
     # Prepare event row dict (minimal fields)
+    event_time_iso = str(event_row.get('event_time', ''))
     event_row_dict = {
         "event_id": event_id,
         "event_time": event_time_iso,
@@ -188,16 +174,17 @@ def package_event(
     
     # Prepare annotation dict
     annotation_dict = annotation.to_dict()
-    
-    # Write all bundle files
+
     bundle_io.write_bundle_files(
         bundle_dir=bundle_dir,
-        manifest=manifest,
+        manifest=manifest, # Polymorphism: conforms to to_dict
         annotation_dict=annotation_dict,
         qc_report_dict=qc_report_dict,
         event_row_dict=event_row_dict,
         price_window_df=price_window_df
     )
+    
+    return str(bundle_dir)
     
     # 6. Publish to BUS (Inbox)
     # Protocol V1 Requirement: Deliver to ~/.tezaver_bus/pipeline/inbox
@@ -487,44 +474,28 @@ def _load_event_row(symbol: str, timeframe: str, event_id: str) -> Optional[pd.S
         
         matches = pd.DataFrame()
         if id_col:
-            # Try match by ID (handling potential type mismatch like int vs str)
-            try:
-                # Assuming simple equality first
-                matches = df[df[id_col] == event_id]
-                if matches.empty:
-                    # Retry with string conversion if needed
-                    matches = df[df[id_col].astype(str) == str(event_id)]
-            except:
-                pass
+            # Try match by ID
+            matches = df[df[id_col] == event_id]
+            if matches.empty:
+                matches = df[df[id_col].astype(str) == str(event_id)]
         
-        # Fallback: Try matching event_id AS event_time if no matches found
+        # Fallback: Match by Timestamp
         if matches.empty and 'event_time' in df.columns:
             try:
-                # 1. Try direct parse
-                target_dt = pd.to_datetime(event_id, errors='coerce')
+                # 1. Parse timestamp from event_id (Standard ID: SYMBOL_TF_YYYYMMDDHHMM)
+                ts_part = str(event_id).split("_")[-1]
                 
-                # 2. Try slicing standard ID format: SYMBOL_TF_YYYYMMDDHHMM
-                if pd.isna(target_dt) and "_" in str(event_id):
-                    parts = str(event_id).split("_")
-                    if len(parts) >= 3:
-                        # Assumption: Last part is the time
-                        time_part = parts[-1]
-                        # Try parsing YYYYMMDDHHMM
-                        try:
-                            target_dt = pd.to_datetime(time_part, format='%Y%m%d%H%M')
-                        except:
-                            pass
-                
-                if pd.notna(target_dt):
-                    # Compare with tolerance? Or exact? 
-                    # Parquet times are usually precise. But maybe timezone diff?
-                    # Let's try exact first.
-                    matches = df[df['event_time'] == target_dt]
+                # Check if last part is numeric timestamp (Seconds or Ms)
+                if ts_part.isdigit():
+                    ts_val = int(ts_part)
+                    is_ms = len(ts_part) > 10
                     
-                    if matches.empty:
-                        # Try ignoring seconds/nanoseconds if dataset has them
-                        # Round to minutes?
-                         matches = df[df['event_time'].dt.floor('min') == target_dt.floor('min')]
+                    if is_ms:
+                        df_ts = df['event_time'].astype('int64') // 10**6
+                    else:
+                        df_ts = df['event_time'].astype('int64') // 10**9
+                        
+                    matches = df[df_ts == ts_val]
             except:
                 pass
                 
@@ -568,18 +539,37 @@ def _extract_price_window(
         Price window dataframe or None
     """
     if event_time is None or pd.isna(event_time):
+        print(f"DEBUG: Event time is None/NaT for {symbol}")
         return None
     
     history_file = coin_cell_paths.get_history_file(symbol, timeframe)
     if not history_file.exists():
+        print(f"DEBUG: History file not found: {history_file}")
         return None
     
     try:
         df = pd.read_parquet(history_file)
-        df['open_time'] = pd.to_datetime(df['open_time'], unit='ms', errors='coerce')
+        
+        # Schema Normalization
+        if 'timestamp' in df.columns and 'open_time' not in df.columns:
+            df['open_time'] = pd.to_datetime(df['timestamp'], unit='ms', errors='coerce')
+        elif 'open_time' in df.columns:
+            df['open_time'] = pd.to_datetime(df['open_time'], unit='ms', errors='coerce')
+        else:
+            print(f"DEBUG: Missing timestamp/open_time column in {history_file}")
+            return None
         
         # Normalize timezone
-        event_ts = pd.to_datetime(event_time)
+        # Handle numeric string or int
+        try:
+            if str(event_time).isdigit():
+                 event_ts = pd.to_datetime(int(event_time), unit='ms')
+            else:
+                 event_ts = pd.to_datetime(event_time)
+        except:
+             print(f"DEBUG: Failed to parse event_time: {event_time}")
+             return None
+
         if df['open_time'].dt.tz is not None and event_ts.tz is None:
             event_ts = event_ts.tz_localize('UTC')
         elif df['open_time'].dt.tz is None and event_ts.tz is not None:
@@ -590,7 +580,9 @@ def _extract_price_window(
         matching_indices = df[mask].index.tolist()
         
         if not matching_indices:
+            print(f"DEBUG: No matching index for {event_ts} in {symbol}")
             return None
+
         
         event_idx = matching_indices[-1]
         

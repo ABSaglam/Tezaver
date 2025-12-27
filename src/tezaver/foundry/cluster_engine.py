@@ -17,7 +17,7 @@ from typing import List, Dict, Optional, Any
 import numpy as np
 import pandas as pd
 
-from tezaver.sniper.sniper_annotations import SniperAnnotation
+from tezaver.core.annotations import SniperAnnotation
 
 @dataclass
 class RallyFeature:

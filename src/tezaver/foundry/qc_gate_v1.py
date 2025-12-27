@@ -18,7 +18,7 @@ from typing import Optional, List
 import pandas as pd
 from pathlib import Path
 
-from tezaver.sniper.sniper_annotations import SniperAnnotation, SniperAnnotationRepository
+from tezaver.core.annotations import SniperAnnotation, SniperAnnotationRepository
 from tezaver.foundry.models import QCReport
 from tezaver.core import coin_cell_paths
 
@@ -202,7 +202,14 @@ def run_for_symbol(symbol: str, timeframe: str) -> List[QCReport]:
     history_file = coin_cell_paths.get_history_file(symbol, timeframe)
     if history_file.exists():
         history_df = pd.read_parquet(history_file)
-        history_df['open_time'] = pd.to_datetime(history_df['open_time'], unit='ms', errors='coerce')
+        
+        # Standardize column names
+        if 'open_time' not in history_df.columns and 'timestamp' in history_df.columns:
+            # Map timestamp (ms) to open_time
+            history_df['open_time'] = pd.to_datetime(history_df['timestamp'], unit='ms', errors='coerce')
+        elif 'open_time' in history_df.columns:
+            # Ensure it is datetime (if it was ms int)
+            history_df['open_time'] = pd.to_datetime(history_df['open_time'], unit='ms', errors='coerce')
     else:
         history_df = None
     
@@ -212,18 +219,49 @@ def run_for_symbol(symbol: str, timeframe: str) -> List[QCReport]:
     # Evaluate each annotation
     for ann in approved_anns:
         # Find matching event
+        # Find matching event
         event_row = None
         if event_df is not None:
-            event_matches = event_df[event_df['event_id'] == ann.event_id]
-            if not event_matches.empty:
-                event_row = event_matches.iloc[0]
+            # 1. Try Strict ID Match
+            if 'event_id' in event_df.columns:
+                event_matches = event_df[event_df['event_id'] == ann.event_id]
+                if not event_matches.empty:
+                    event_row = event_matches.iloc[0]
+            
+            # 2. Key Fallback: Match by Timestamp in ID
+            if event_row is None and 'event_time' in event_df.columns:
+                try:
+                    # ID structure: SYMBOL_TF_TYPE_TIMESTAMP (e.g. ..._B_1709107200)
+                    parts = ann.event_id.split('_')
+                    ts_part = parts[-1]
+                    
+                    if ts_part.isdigit():
+                        ts_val = int(ts_part)
+                        # Detect precision (Seconds vs Ms)
+                        # 2024 is ~1.7e9 (Seconds) or 1.7e12 (Ms)
+                        is_ms = len(ts_part) > 10
+                        
+                        # Filter event_df
+                        # Convert event_time to compatible int
+                        # event_time is datetime64[ns], casting to int gives nanoseconds
+                        if is_ms:
+                            event_df_ts = event_df['event_time'].astype('int64') // 10**6 # ns to ms
+                        else:
+                            event_df_ts = event_df['event_time'].astype('int64') // 10**9 # ns to s
+                            
+                        # Find match
+                        matches = event_df[event_df_ts == ts_val]
+                        if not matches.empty:
+                            event_row = matches.iloc[0]
+                except Exception:
+                    pass
         
         # Run QC
         report = evaluate(ann, event_row, history_df)
         
         # Add pointers
         report.pointers = {
-            "annotation_path": str(repo._get_file_path(symbol, timeframe)),
+            "annotation_path": str(repo._file_path(symbol, timeframe)),
             "history_path": str(history_file) if history_file.exists() else None,
             "event_dataset_path": _get_event_dataset_path(symbol, timeframe)
         }
@@ -277,6 +315,15 @@ def _load_event_dataset(symbol: str, timeframe: str) -> Optional[pd.DataFrame]:
             # Ensure event_time is datetime
             if 'event_time' in df.columns:
                 df['event_time'] = pd.to_datetime(df['event_time'], errors='coerce')
+                
+                # Generate event_id if missing (for compatibility with legacy datasets)
+                if 'event_id' not in df.columns and 'symbol' in df.columns:
+                    # ID Format: SYMBOL_TF_YYYYMMDDHHMM (Standard Tezaver ID)
+                    # Note: We use the passed 'timeframe' argument
+                    df['event_id'] = df.apply(
+                        lambda row: f"{row['symbol']}_{timeframe}_{row['event_time'].strftime('%Y%m%d%H%M')}", 
+                        axis=1
+                    )
             return df
         except:
             return None

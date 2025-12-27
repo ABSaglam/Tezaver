@@ -48,14 +48,17 @@ class ClusteringService:
         valid_ids = []
         
         for idx, row in bundle_df.iterrows():
-            f = self._extract_features(Path(row['bundle_dir']))
+            f = self._extract_features(Path(row['bundle_dir']), row.get('event_time_iso'))
             if f:
                 features.append(f)
                 valid_ids.append(row['bundle_id'])
                 
         if not features:
-            return {"error": "Could not extract features"}
+            return {"error": "Could not extract features from any bundle."}
             
+        if len(features) < n_clusters:
+            return {"error": f"Not enough valid samples ({len(features)}) for {n_clusters} clusters. Wait for packaging or reduce K."}
+
         df_features = pd.DataFrame(features)
         
         # 2. Normalize (The Mixer)
@@ -90,8 +93,8 @@ class ClusteringService:
                 
         return results
 
-    def _extract_features(self, bundle_path: Path) -> Optional[Dict[str, float]]:
-        """Extract DNA from a single bundle."""
+    def _extract_features(self, bundle_path: Path, event_time_iso: Optional[str] = None) -> Optional[Dict[str, float]]:
+        """Extract DNA from a single bundle (Post-Entry)."""
         try:
             # Load price window
             pw_path = bundle_path / "price_window.parquet"
@@ -101,25 +104,62 @@ class ClusteringService:
             df = pd.read_parquet(pw_path)
             if df.empty: return None
             
+            # Slice From Event Time (Skip Context)
+            if event_time_iso:
+                try:
+                    # Normalize time column
+                    time_col = 'open_time' if 'open_time' in df.columns else 'timestamp'
+                    if time_col == 'timestamp':
+                        df[time_col] = pd.to_datetime(df[time_col], unit='ms', errors='coerce')
+                    else:
+                        df[time_col] = pd.to_datetime(df[time_col], errors='coerce')
+                        
+                    event_ts = pd.to_datetime(event_time_iso)
+                    
+                    # TZ Align
+                    if df[time_col].dt.tz is not None and event_ts.tz is None:
+                        event_ts = event_ts.tz_localize('UTC')
+                    elif df[time_col].dt.tz is None and event_ts.tz is not None:
+                        event_ts = event_ts.tz_localize(None)
+
+                    # Find Index
+                    mask = df[time_col] >= event_ts
+                    idx = mask.idxmax() if mask.any() else 0
+                    
+                    # Slice (Future Only)
+                    df = df.loc[idx:].copy()
+                    if df.empty: return None
+                except Exception as e:
+                    # print(f"Time slicing failed: {e}")
+                    pass
+            
             # Simple Feature Extraction Logic
             # Assuming 'close' column exists
+            if 'close' not in df.columns: return None
             closes = df['close'].values
             
-            # 1. Gain (Max - First) / First
+            # 1. Gain (Max - First) / First (Post-Entry)
             start_price = closes[0]
             max_price = np.max(closes)
+            peak_idx = np.argmax(closes)
+            
             gain = (max_price - start_price) / start_price * 100
             
-            # 2. Duration (Length)
-            duration = len(closes)
+            # 2. Duration (Time to Peak)
+            duration = int(peak_idx)
             
-            # 3. Drawdown (Min - Start) / Start (during the move)
+            # 3. Drawdown (Min - Start) / Start
+            # Only consider drawdown BEFORE the peak? Or strictly Min? 
+            # Usually Max Drawdown during the holding period.
             min_price = np.min(closes)
             max_dd = (min_price - start_price) / start_price * 100
             
-            # 4. Volatility (Std Dev of returns)
-            returns = np.diff(closes) / closes[:-1]
-            vol = np.std(returns) * 100
+            # 4. Volatility
+            if len(closes) > 1:
+                returns = np.diff(closes) / closes[:-1]
+                vol = np.std(returns) * 100
+            else:
+                vol = 0.0
             
             return {
                 "gain": gain,

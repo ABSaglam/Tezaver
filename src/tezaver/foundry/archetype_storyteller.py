@@ -29,27 +29,29 @@ class ArchetypeStoryteller:
         risk = "Medium"
         
         # Logic Tree for Naming
-        if dur < 20: 
-            # Short Duration
+        # Logic Tree for Naming
+        # Calibrated based on ADA 15m data (Avg Vol 0.6, Window 400)
+        
+        if dur < 150: 
+            # Short Duration (Early peak)
             if gain > 5:
                 label = "⚡ The Flash (Explosive Pop)"
-                desc = "Short duration but high gain. These are violent breakouts that pay quickly but fade fast."
+                desc = "Fast, violent breakout that peaks quickly."
                 risk = "High"
             else:
-                label = "🌱 The Sprout (Quick Scalp)"
-                desc = "Small, quick movements. Likely noise or minor scalping opportunities."
+                label = "🌱 The Wick (Quick Spike)"
+                desc = "Short-lived spike, often retracing quickly."
                 risk = "Low"
         else:
-            # Long Duration
-            if vol > 2.0:
+            # Long Duration (Sustained move)
+            if vol > 0.8:
                 label = "🎢 The Rollercoaster (Volatile Trend)"
-                desc = "Long lasting but very shaky ride. High volatility indicates a struggle between bulls and bears."
+                desc = "Long lasting but very shaky ride. High volatility."
                 risk = "High"
             else:
                 label = "🚂 The Steam Engine (Steady Grind)"
-                desc = "Low volatility, consistent uptrend. The most desirable 'compounder' type move."
+                desc = "Low volatility, consistent uptrend. The most desirable 'compounder'."
                 risk = "Low"
-                
         if gain > 15:
             label += " (Titan)"
             desc += " Be aware: This is a massive outlier move."
