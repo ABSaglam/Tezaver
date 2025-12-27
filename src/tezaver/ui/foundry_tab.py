@@ -12,221 +12,155 @@ import json
 import importlib
 from pathlib import Path
 
-from tezaver.foundry.bundle_index import scan_bundles, filter_bundles, load_bundle_files
-from tezaver.matrix.adapters.candidate_registry import CandidateRegistry
-import tezaver.foundry.configuration_service
-import tezaver.foundry.clustering_service
-import tezaver.foundry.bundle_index
-import tezaver.foundry.archetype_storyteller
-importlib.reload(tezaver.foundry.configuration_service)
-importlib.reload(tezaver.foundry.clustering_service)
-importlib.reload(tezaver.foundry.bundle_index)
-importlib.reload(tezaver.foundry.archetype_storyteller)
+# from tezaver.foundry.bundle_index import scan_bundles, filter_bundles, load_bundle_files
+# from tezaver.matrix.adapters.candidate_registry import CandidateRegistry
+# import tezaver.foundry.configuration_service
+# import tezaver.foundry.clustering_service
+# import tezaver.foundry.bundle_index
+# import tezaver.foundry.archetype_storyteller
+# importlib.reload(tezaver.foundry.configuration_service)
+# importlib.reload(tezaver.foundry.clustering_service)
+# importlib.reload(tezaver.foundry.bundle_index)
+# importlib.reload(tezaver.foundry.archetype_storyteller)
+import tezaver.foundry.archetype_service
+importlib.reload(tezaver.foundry.archetype_service)
 
-from tezaver.foundry.configuration_service import ConfigurationService
-from tezaver.foundry.audit_service import AuditService
-from tezaver.foundry.clustering_service import ClusteringService
-from tezaver.foundry.archetype_storyteller import ArchetypeStoryteller
+# from tezaver.foundry.configuration_service import ConfigurationService
+# from tezaver.foundry.audit_service import AuditService
+# from tezaver.foundry.clustering_service import ClusteringService
+# from tezaver.foundry.archetype_storyteller import ArchetypeStoryteller
+from tezaver.foundry.archetype_service import ArchetypeService
 # from tezaver.matrix.sniper.benchmark_service import BenchmarkService # Removed/Missing
 # from tezaver.sniper.sniper_backtest_v2 import analyze_pack_performance # Removed/Missing
 
 
-@st.cache_data(ttl=60)
-def cached_scan_bundles_v2():
-    """Cached bundle scanning (v2)."""
-    return scan_bundles()
+# cached_scan_bundles_v2 removed
 
 
 def render_foundry_page():
     """Main render function for Foundry tab."""
     st.title("🏭 Dökümhane")
     
-    # Inventory removed
-    tab_gov, tab_alc = st.tabs(["⚖️ Karar Defteri", "🧪 Simyacı"])
-    
-    with tab_gov:
-        _render_governance_tab()
-        
-    with tab_alc:
-        _render_alchemist_tab()
+    # Inventory removed, Alchemist Moved to Ony, Governance Moved to Alchemist
+    # Only Archetypes remain
+    _render_archetypes_tab()
 
-def _render_alchemist_tab():
-    """Render The Alchemist (Clustering) Tab."""
-    st.markdown("### 🧪 Simyacı: Arketip Keşfi")
-    st.info("Bu modül, tekil paketleri analiz ederek ortak desenleri (Arketipleri/Ruhları) ortaya çıkarır.")
-    
-    # 1. Select Cohort
-    df_bundles = cached_scan_bundles_v2()
-    
-    if not df_bundles.empty:
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            symbols = sorted(df_bundles["symbol"].unique().tolist())
-            sel_sym = st.selectbox("Sembol (Coin)", symbols, key="alc_sym")
-        with c2:
-            timeframes = sorted(df_bundles["timeframe"].unique().tolist())
-            sel_tf = st.selectbox("Zaman Dilimi (TF)", timeframes, key="alc_tf")
-        with c3:
-            clusters_n = st.slider("Arketip Sayısı (K)", 2, 5, 3, key="alc_k")
-            
-        # Filter Cohort
-        cohort = df_bundles[
-            (df_bundles["symbol"] == sel_sym) & 
-            (df_bundles["timeframe"] == sel_tf)
-        ]
-        
-        st.markdown(f"**Havuz:** {len(cohort)} adet paket var.")
-        
-        if len(cohort) < 3:
-            st.error("Analiz için en az 3 paket gerekli.")
-            
-        elif st.button("⚗️ Simyayı Başlat (Analyze)", type="primary"):
-            with st.spinner("Damıtılıyor... (Distilling Essence)"):
-                mixer = ClusteringService()
-                storyteller = ArchetypeStoryteller()
-                
-                # Run Clustering
-                result = mixer.cluster_bundles(cohort, n_clusters=clusters_n)
-                
-                if "error" in result:
-                    st.error(result["error"])
-                else:
-                    # Display Archetypes
-                    st.success("✨ Keşif Tamamlandı!")
-                    
-                    centroids = result["centroids"]
-                    cols = st.columns(len(centroids))
-                    
-                    for i, cent in enumerate(centroids):
-                        story = storyteller.tell_story(cent)
-                        
-                        with cols[i]:
-                            st.markdown(f"#### {story['label']}")
-                            st.caption(f"Risk: {story['risk_profile']}")
-                            st.markdown(f"**{cent['count']}** Üye")
-                            
-                            # Clamp values to [0.0, 1.0]
-                            gain_prog = min(1.0, max(0.0, cent['avg_gain'] / 50.0)) # Scale to 50% max
-                            dur_prog = min(1.0, max(0.0, cent['avg_duration'] / 100.0)) # Scale to 100 bars max
-                            
-                            st.progress(gain_prog, text=f"Gain: {cent['avg_gain']:.1f}%") 
-                            st.progress(dur_prog, text=f"Dur: {int(cent['avg_duration'])} bars")
-                            
-                            st.info(story['description'])
-                            
-                            with st.expander("Üye Listesi"):
-                                st.write(cent['member_ids'])
-    else:
-        st.warning("Analiz için veri yok. Önce paketleme yapın.")
+# _render_alchemist_tab removed
+# _render_governance_tab removed
 
-    st.divider()
-    with st.expander("📘 Teknik Tasarım (Design Doc) v1.1"):
-        try:
-            # Resolve relative to this file: ../foundry/docs/archetype_design.md
-            # tezaver/ui/foundry_tab.py -> parent=tezaver/ui -> parent.parent=tezaver
-            base_dir = Path(__file__).resolve().parent.parent
-            doc_path = base_dir / "foundry/docs/archetype_design.md"
-            
-            if doc_path.exists():
-                st.markdown(doc_path.read_text(encoding="utf-8"))
-            else:
-                st.warning(f"Tasarım dokümanı bulunamadı: {doc_path}")
-        except Exception as e:
-            st.error(f"Doküman okunamadı: {e}")
-
-def _render_governance_tab():
-    """Render Governance (Karar Defteri) Tab."""
-    config = ConfigurationService()
-    audit = AuditService()
-    
-    subtab_rules, subtab_config, subtab_log = st.tabs(["📜 Anayasa Maddeleri", "⚙️ Konfigürasyon", "📙 Tutanaklar"])
-    
-    qc = config.get_qc_rules()
-    pkg = config.get_packaging_rules()
-    alc = config.get_alchemist_rules()
-
-    with subtab_rules:
-        st.markdown("### Dökümhane Anayasası")
-        st.info("İşbu Anayasa, Revize Stüdyosu'ndan çıkan işlerin denetim ve üretim süreçlerini düzenler.")
-        
-        # Article 1: QC
-        st.markdown("#### BÖLÜM 1: KALİTE VE DENETİM")
-        st.markdown("**Madde 1 - Kabul Şartları ve Puanlama**")
-        st.write(f"""
-        **1.1. Puanlama Esası:** Herbir revizyon paketi, QC Gate v1 denetim motoru tarafından 100 üzerinden puanlanır. Onay için asgari **{qc.get('min_score', 60)}** puan gereklidir.
-        
-        **1.2. Kırmızı Çizgiler (Zorunlu Denetimler):** Aşağıdaki denetimlerden herhangi birinin başarısız olması durumunda, puan dikkate alınmaksızın paket reddedilir:
-        *   a) **QC-010:** Fiyat geçmişi eksiksiz olmalı.
-        *   b) **QC-040:** Olay, ana veri setinde (Rally Dataset) kayıtlı olmalı.
-        *   c) **QC-050:** Giriş ve Olay zamanları mantıksal olarak tutarlı olmalı.
-        
-        **1.3. Denetim Modu:** {'Sistem **Katı Mod (Strict Mode)** ile çalışır; en ufak bir uyumsuzluk reddine sebebiyet verir.' if qc.get('strict_mode') else 'Sistem **Esnek Mod** ile çalışır; kritik olmayan hatalarda puan yeterliyse geçiş izni verilir.'}
-        """)
-        
-        st.divider()
-        
-        # Article 2: Packaging
-        st.markdown("#### BÖLÜM 2: ÜRETİM VE SEVKİYAT")
-        st.markdown("**Madde 2 - Paketleme Standartları**")
-        st.write(f"""
-        **2.1. Yetkilendirilmiş Sınıflar:** Yalnızca **{', '.join(pkg.get('allowed_tiers', []))}** sertifika sınıfına sahip varlıklar üretim hattına alınır. Diğer sınıflar işleme kapatılmıştır.
-        
-        **2.2. Üretim Kotaları:** Kaynak verimliliği adına, her bir parite (Coin) ve zaman dilimi (TF) kombinasyonu için azami **{pkg.get('max_bundles_per_coin', 5)}** adet paket üretilmesine izin verilir.
-        
-        **2.3. İsimlendirme ve Etiketleme:** Üretilen tüm paketler, izlenebilirliği sağlamak amacıyla istisnasız `{pkg.get('naming_convention', 'STANDARD_V1')}` standardına uygun olarak etiketlenir.
-        """)
-        
-        st.divider()
-        
-        # Article 3: Alchemy
-        st.markdown("#### BÖLÜM 3: SİMYA VE KEŞİF (AR-GE)")
-        st.markdown("**Madde 3 - Arketip Damıtma**")
-        st.write(f"""
-        **3.1. Havuz Büyüklüğü:** İstatistiksel anlamlılık için en az **{alc.get('min_cohort_size', 3)}** adet paket biriktirilmeden damıtma işlemi yapılamaz.
-        
-        **3.2. DNA Analizi:** Arketiplerin ayrıştırılmasında şu öznitelikler esas alınır: `{', '.join(alc.get('features', []))}`
-        """)
-        
-    with subtab_config:
-        st.subheader("⚙️ Sistem Ayarları")
-        st.caption(f"Sürüm: {config.get_version()}")
-        
-        c1, c2 = st.columns(2)
-        with c1:
-            with st.expander("🛡️ Kalite Kontrol (QC)", expanded=True):
-                 if "description" in qc: st.caption(qc["description"])
-                 st.number_input("Min Geçme Puanı", value=qc.get("min_score", 60), disabled=True)
-                 st.checkbox("Katı Mod (Strict)", value=qc.get("strict_mode", True), disabled=True)
-                 st.multiselect("Zorunlu Kontroller", options=qc.get("mandatory_checks", []), default=qc.get("mandatory_checks", []), disabled=True)
-                 
-            with st.expander("⚗️ Simyacı Kuralları", expanded=True):
-                 if "description" in alc: st.caption(alc["description"])
-                 st.number_input("Min Havuz Boyutu", value=alc.get("min_cohort_size", 3), disabled=True)
-                 st.number_input("Varsayılan K", value=alc.get("default_k", 3), disabled=True)
-        
-        with c2:
-            with st.expander("📦 Paketleme Kuralları", expanded=True):
-                 if "description" in pkg: st.caption(pkg["description"])
-                 st.multiselect("İzin Verilen Tier'lar", options=pkg.get("allowed_tiers", []), default=pkg.get("allowed_tiers", []), disabled=True)
-                 st.number_input("Max Paket / Coin", value=pkg.get("max_bundles_per_coin", 5), disabled=True)
-
-
-    with subtab_log:
-        st.subheader("📙 Tutanaklar (Audit Log)")
-        logs = audit.read_recent_logs(limit=100)
-        
-        if logs:
-            df_logs = pd.DataFrame(logs)
-            st.dataframe(
-                df_logs[["ts", "action", "subject", "verdict", "details"]],
-                use_container_width=True,
-                height=500
-            )
-        else:
-            st.info("Henüz kayıt bulunmuyor. İşlem yapıldığında burada görünecektir.")
 
 # Inventory logic has been removed as per "The Great Cleanup" request.
 # The data bundles persist on disk for Alchemist usage.
 
 
 
+
+
+def _render_archetypes_tab():
+    """Render Archetypes (Piyasa Karakterleri) Tab with Live Data."""
+    st.markdown("### 🎭 Piyasa Karakter Envanteri")
+    
+    # 1. CONTROLS
+    service = ArchetypeService()
+    coins = service.get_available_coins()
+    
+    c1, c2 = st.columns([1, 1])
+    with c1:
+        sel_coin = st.selectbox("Coin Seçiniz:", coins, index=0 if coins else None, key="arch_coin_sel")
+    
+    if not sel_coin:
+        st.warning("Lütfen bir coin seçin.")
+        return
+
+    # Helper: Get TFs for this coin
+    tfs = service.get_available_timeframes(sel_coin)
+    with c2:
+        sel_tf = st.selectbox("Zaman Dilimi (TF):", tfs, index=0 if tfs else None, key="arch_tf_sel")
+
+    if not sel_tf:
+        st.warning("Bu coin için veri bulunamadı.")
+        return
+
+    # 2. LOAD DATA
+    data_map = service.scan_coin_archetypes(sel_coin, timeframe=sel_tf)
+    tiers = data_map["tiers"]
+    archs = data_map["archetypes"]
+    
+    # 3. MAIN TABS
+    tab_tier, tab_win, tab_lose, tab_const = st.tabs(["💎 Tiers", "🏆 Kazananlar", "💀 Kaybedenler", "📜 Anayasa"])
+
+    # Shared Render Helper
+    def render_list(items, empty_msg="Kayıt bulunamadı."):
+        if items:
+            df = pd.DataFrame(items)
+            df['time'] = df['time'].dt.strftime('%Y-%m-%d %H:%M')
+            df['gain'] = df['gain'].map('{:.1f}%'.format)
+            df['rsi'] = df['rsi'].map('{:.1f}'.format)
+            df['vol'] = df['vol'].map('{:.1f}x'.format)
+            st.dataframe(df, use_container_width=True, hide_index=True, height=400)
+            st.caption(f"Toplam: {len(items)} adet")
+        else:
+            st.info(empty_msg)
+
+    # ---------------------------------------------------------
+    # TIER TAB
+    # ---------------------------------------------------------
+    with tab_tier:
+        # Sub-tabs for Tiers
+        tt_d, tt_g, tt_s, tt_b = st.tabs(["💎 ELMAS", "🥇 ALTIN", "🥈 GÜMÜŞ", "🥉 BRONZ"])
+        
+        with tt_d: render_list(tiers["DIAMOND 💎"])
+        with tt_g: render_list(tiers["GOLD 🥇"])
+        with tt_s: render_list(tiers["SILVER 🥈"])
+        with tt_b: render_list(tiers["BRONZE 🥉"])
+
+    # ---------------------------------------------------------
+    # WINNERS TAB
+    # ---------------------------------------------------------
+    with tab_win:
+        w_tabs = st.tabs([
+            "GRIND 🪜", "GUILLOTINE 🩸", "SUPERNOVA 💥", 
+            "PHOENIX 🔥", "NINJA 🥷", "SURFER 🏄‍♂️", "OTHER 👽"
+        ])
+        
+        def render_arch_info(name, desc, dna, strat, items):
+            c1, c2 = st.columns([1, 2])
+            with c1:
+                st.info(f"**{name}**")
+                st.markdown(f"- {desc}")
+                st.markdown(f"- **DNA:** {dna}")
+                st.markdown(f"- **Hedef:** {strat}")
+            with c2:
+                render_list(items)
+
+        with w_tabs[0]: render_arch_info("GRIND", "Sessiz tırmanış.", "<1.5x Hacim", "AL/UNUT", archs["GRIND"])
+        with w_tabs[1]: render_arch_info("GUILLOTINE", "V-Dönüşü.", "RSI < 25", "SNIPE", archs["GUILLOTINE"])
+        with w_tabs[2]: render_arch_info("SUPERNOVA", "Patlama.", ">5x Hacim", "MOMENTUM", archs["SUPERNOVA"])
+        with w_tabs[3]: render_arch_info("PHOENIX", "İkinci Dalga.", "Supernova+4h", "DİP", archs["PHOENIX"])
+        with w_tabs[4]: render_arch_info("NINJA", "Sinsi Toplama.", "RSI 30-40, Ölü", "AKÜMÜLE", archs["NINJA"])
+        with w_tabs[5]: render_arch_info("SURFER", "Trend Takibi.", "RSI > 70", "İZ SÜR", archs["SURFER"])
+        with w_tabs[6]: render_arch_info("OTHER", "Melez/Tanımsız.", "Uyumsuz", "İZLE", archs["OTHER"])
+
+    # ---------------------------------------------------------
+    # LOSERS TAB
+    # ---------------------------------------------------------
+    with tab_lose:
+        l_tabs = st.tabs(["STORM ⛈️", "TRAP 🪤", "DEAD 🪦", "NEWS 📰"])
+        
+        with l_tabs[0]: st.error("STORM: Stop Patlatma (Whipsaw). YASAK.")
+        with l_tabs[1]: st.error("TRAP: Fake Breakout. YASAK.")
+        with l_tabs[2]: st.error("DEAD: Hacimsiz. BEKLE.")
+        with l_tabs[3]: st.error("NEWS: Gap Riski. YASAK.")
+
+    # ---------------------------------------------------------
+    # CONSTITUTION TAB
+    # ---------------------------------------------------------
+    with tab_const:
+        try:
+            doc_path = Path("/Users/alisaglam/.gemini/antigravity/brain/f5d38091-3f29-4665-ba21-dbbe70827774/market_archetypes.md")
+            if doc_path.exists():
+                st.markdown(doc_path.read_text(encoding="utf-8"))
+            else:
+                st.warning("Dosya bulunamadı.")
+        except Exception as e:
+            st.error(f"Hata: {e}")

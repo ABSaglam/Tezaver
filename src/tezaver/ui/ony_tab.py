@@ -20,8 +20,8 @@ from tezaver.core.annotations import (
     SniperStatus,
     SniperLabel,
 )
-from tezaver.ui.chart_area import render_sniper_studio_chart
 from tezaver.core import coin_cell_paths
+from tezaver.ui.chart_area import render_sniper_studio_chart
 from tezaver.rally.normalize_engine import normalize_entry, NormalizeResult
 
 
@@ -607,223 +607,10 @@ def render_ony_studio():
 # REV. STUDIO QUEUE (Simplified)
 # =============================================================================
 
-def render_ony_queue():
-    """
-    Gelişmiş Revizyon Listesi (Matrix UI Style).
-    Hamm (Scanner) ve Revize (Repo) verileri arasında geçiş ve filtreleme.
-    """
-    st.subheader("📋 Revizyon Listesi")
-    
-    # --- FILTERS ROW 1 ---
-    c1, c2, c3, c4 = st.columns([2, 2, 2, 3])
-    
-    with c1:
-        # Source Selection
-        source_mode = st.radio("Kaynak", ["REVİZE (Düzenlenenler)", "HAM (Tarama Sonuçları)"], horizontal=True, label_visibility="collapsed")
-        is_revize_mode = source_mode.startswith("REVİZE")
 
-    # Coin Pagination Logic
-    all_symbols = _get_available_symbols()
-    page_size = 50
-    total_pages = (len(all_symbols) + page_size - 1) // page_size
-    
-    with c2:
-        # Group Selector
-        page_options = ["TÜMÜ"] + [f"{i*page_size+1}-{(i+1)*page_size}" for i in range(total_pages)]
-        selected_page = st.selectbox("Grup", page_options, index=0)
 
-    # Filter Symbols based on Page
-    target_symbols = all_symbols
-    if selected_page != "TÜMÜ":
-        # Parse range "1-50"
-        try:
-            p_start, p_end = map(int, selected_page.split('-'))
-            target_symbols = all_symbols[p_start-1 : p_end]
-        except: pass
-        
-    with c3:
-        # TF Filter (Single Select)
-        timeframes_opts = ["TÜMÜ", "15m", "1h", "4h"]
-        sel_tf_val = st.selectbox("Zaman", timeframes_opts, index=1) # Default 15m
-        
-        if sel_tf_val == "TÜMÜ": sel_tfs = ["15m", "1h", "4h"]
-        else: sel_tfs = [sel_tf_val]
 
-    with c4:
-        # Tier Filter (Single Select)
-        tier_opts = ["TÜMÜ"] + TIERS
-        sel_tier_val = st.selectbox("Tier", tier_opts, index=1) # Default DIAMOND
-        
-        if sel_tier_val == "TÜMÜ": sel_tiers = TIERS
-        else: sel_tiers = [sel_tier_val]
 
-    # --- DATA LOADING ---
-    rows = []
-    repo = SniperAnnotationRepository()
-    
-    processing_container = st.empty()
-    
-    if is_revize_mode:
-        # REVİZE MODE: Load from Repo
-        # Force scan ALL symbols (Revisions are sparse, pagination hides them)
-        scan_symbols = all_symbols 
-        
-        with processing_container:
-            prog = st.progress(0, "Revizeler yükleniyor...")
-            
-        step = 0
-        total_steps = len(scan_symbols)
-        
-        for sym in scan_symbols:
-            step += 1
-            if step % 20 == 0: prog.progress(min(1.0, step/total_steps))
-            
-            for tf in sel_tfs:
-                anns = repo.load_all(sym, tf)
-                for ann in anns:
-                    parts = ann.event_id.split('_')
-                    tier = "UNKNOWN"
-                    for p in parts:
-                        if p in TIERS: tier = p; break
-                    
-                    # STRICT FILTER: Show "Manual Revisions"
-                    # Criteria: Has RVZ tag OR Note is custom (not auto-batch)
-                    is_rvz_tag = "_RVZ_" in ann.event_id
-                    is_custom_note = ann.note and "Auto-Approved Batch" not in ann.note
-                    
-                    if not (is_rvz_tag or is_custom_note): continue
-                    
-                    if tier not in sel_tiers: continue
-                    
-                    # Formatting
-                    tier_icon = "❓"
-                    if tier == "DIAMOND": tier_icon = "💎"
-                    if tier == "GOLD": tier_icon = "🥇"
-                    if tier == "SILVER": tier_icon = "🥈"
-                    if tier == "BRONZE": tier_icon = "🥉"
-                    
-                    rows.append({
-                        "ID": ann.event_id,
-                        "Tier": f"{tier_icon} {tier}" if tier != "UNKNOWN" else "❓ UNKNOWN",
-                        "Coin": sym,
-                        "Zaman": tf,
-                        "Not": ann.note,
-                        "Giriş Offset": ann.entry_bar_offset,
-                        "Durum": "🛠️ REVİZE" if is_rvz_tag else "📝 DÜZENLENDİ",
-                        "_ts": int(parts[-1]) if parts[-1].isdigit() else 0
-                    })
-        
-        # Sort: Newest First
-        rows.sort(key=lambda x: x["_ts"], reverse=True)
-        
-        processing_container.empty()
-    else:
-        # HAM MODE: Load from Scanner Files
-        # Use simple progress bar for feedback
-        stats_info = {"scanned": 0, "loaded": 0, "filtered": 0, "skipped_reviewed": 0}
-        
-        with processing_container:
-            prog = st.progress(0, "Veriler taranıyor...")
-            
-        step = 0
-        total_steps = len(target_symbols) * len(sel_tfs)
-        if total_steps == 0: total_steps = 1
-        
-        for sym in target_symbols:
-            for tf in sel_tfs:
-                step += 1
-                if step % 5 == 0: prog.progress(min(1.0, step / total_steps))
-                
-                df = _load_events_for_symbol_tf(sym, tf)
-                stats_info["scanned"] += 1
-                
-                if df is None or df.empty: continue
-                stats_info["loaded"] += len(df)
-                
-                # Check Repo to exclude already revised items
-                existing_anns = repo.load_all(sym, tf)
-                reviewed_ids = set()
-                for a in existing_anns:
-                    # STRICTER FILTER: Only exclude if it is a manual revision (has RVZ tag)
-                    if "_RVZ_" in a.event_id:
-                         reviewed_ids.add(a.event_id.replace("_RVZ_", "_").replace("__", "_"))
-                         reviewed_ids.add(a.event_id)
-                
-                for _, row in df.iterrows():
-                    eid = str(row['event_id'])
-                    
-                    if eid in reviewed_ids: 
-                        stats_info["skipped_reviewed"] += 1
-                        continue
-                    
-                    tier = "UNKNOWN"
-                    if 'rally_grade' in row:
-                        tier = normalize_tier(row['rally_grade'])
-                    else:
-                        tier = compute_tier_from_gain(row.get('future_max_gain_pct', 0))
-                    
-                    if tier not in sel_tiers or not tier: 
-                        stats_info["filtered"] += 1
-                        continue
-
-                    # Extract fields
-                    gain = row.get('future_max_gain_pct', 0) * 100
-                    bars = row.get('bars_to_peak', 0)
-                    qual = row.get('quality_score', 0)
-                    shape = row.get('rally_shape', '-')
-                    risk = row.get('risk_level', '-')
-                    
-                    rows.append({
-                        "ID": eid,
-                        "Tier": tier,
-                        "Coin": sym,
-                        "Zaman": tf,
-                        "Kazanç (%)": f"{gain:.1f}",
-                        "Süre": bars,
-                        "Kalite": f"{qual:.0f}",
-                        "Şekil": shape,
-                        "Risk": risk
-                    })
-        
-        if not rows:
-             st.warning(f"Stats: S={stats_info['scanned']}, L={stats_info['loaded']}, F={stats_info['filtered']}, SkipRev={stats_info['skipped_reviewed']}")
-        else:
-             processing_container.empty()
-
-    # --- DISPLAY ---
-    if not rows:
-        st.info("Kriterlere uygun kayıt bulunamadı.")
-        return
-
-    df_display = pd.DataFrame(rows)
-    
-    st.markdown(f"**Toplam:** {len(rows)} kayıt")
-    
-    # Interactive Table
-    selection = st.dataframe(
-        df_display,
-        use_container_width=True,
-        hide_index=True,
-        on_select="rerun",
-        selection_mode="single-row"
-    )
-    
-    # Handle Selection -> Navigate to Studio
-    if selection and selection.selection.rows:
-        idx = selection.selection.rows[0]
-        selected_row = df_display.iloc[idx]
-        sel_id = selected_row["ID"]
-        sel_sym = selected_row["Coin"]
-        sel_tf = selected_row["Zaman"]
-        
-        # Prepare Studio
-        st.session_state["ony_prefill_symbol"] = sel_sym
-        st.session_state["ony_prefill_tf"] = sel_tf
-        # Set target_id to trigger the Deep Link Handler in render_ony_page which updates widgets safely
-        st.session_state["ony_target_id"] = sel_id
-        
-        st.session_state["ony_tab_mode"] = "studio"
-        st.rerun()
 
 
 # =============================================================================
@@ -837,7 +624,6 @@ def render_ony_page():
     """
     # Title removed per user request
     
-    # --- DEEP LINKING HANDLER (Jumper) ---
     if 'ony_target_id' in st.session_state:
         target_id = st.session_state.pop('ony_target_id')
         target_sym = st.session_state.pop('ony_prefill_symbol', None)
@@ -855,5 +641,6 @@ def render_ony_page():
         
         st.session_state['ony_prefill_event_id'] = target_id
     
-    # Direct Render (No Tabs)
+    # --- TABS ---
+    # Directly render studio, no tabs
     render_ony_studio()

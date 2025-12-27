@@ -39,6 +39,7 @@ class SniperAnnotation:
     status: str = SniperStatus.PENDING
     label: str = SniperLabel.UNCERTAIN
     created_at: str = field(default_factory=lambda: datetime.now().isoformat())
+    archetype: Optional[str] = None # For Kalıpçı labeling
     
     # Normalized Entry Fields (Auto-Snap)
     normalized_entry_bar_offset: Optional[int] = None
@@ -184,6 +185,12 @@ class SniperAnnotationRepository:
             new_ann.snap_distance_bars = existing.snap_distance_bars
             new_ann.snap_confidence = existing.snap_confidence
             new_ann.snap_algo_version = existing.snap_algo_version
+            if not new_ann.archetype: new_ann.archetype = existing.archetype # Preserve archetype if not overwritten
+
+        # Allow kwargs to overwrite any field (e.g. archetype passed in kwargs)
+        for k, v in kwargs.items():
+            if hasattr(new_ann, k):
+                setattr(new_ann, k, v)
             
         # Update list
         if idx >= 0:

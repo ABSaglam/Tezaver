@@ -14,7 +14,7 @@ def calculate_rsi(series, period=14):
     rsi = 100 - (100 / (1 + rs))
     return rsi
 
-def run_autopsy(symbol="ADAUSDT", target_time_str="2025-03-02 15:15:00"):
+def run_autopsy(symbol="ADAUSDT", target_time_str="2023-12-08 16:00:00"):
     path = Path(f"coin_cells/{symbol}/data/history_15m.parquet")
     if not path.exists():
         print(f"File not found: {path}")

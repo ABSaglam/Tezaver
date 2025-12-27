@@ -180,20 +180,7 @@ def render_home_page():
     except:
         pass
 
-def render_market_summary_page():
-    st.title("📊 Piyasa Özeti")
-    states = state_store.load_coin_states()
-    if not states:
-        st.warning("Veri yok.")
-        return
-    data = []
-    for s in states:
-        # Use getattr for safety, though model now has it
-        price = getattr(s, 'last_price', 0.0)
-        # Correct attribute is last_update (singular)
-        updated = getattr(s, 'last_update', 'N/A')
-        data.append({"Sembol": s.symbol, "Fiyat": price, "Güncelleme": updated})
-    st.dataframe(pd.DataFrame(data), use_container_width=True)
+
 
 def render_levels_tab(symbol: str):
     st.subheader("Trend Seviyeleri (Destek & Direnç)")
@@ -640,9 +627,11 @@ def main():
             
             nav_options = [
                 "🏠 Ana Sayfa", 
-                "📊 Piyasa Özeti", 
+ 
                 "👁️ Insight Panel", 
                 "🎯 Revize",
+                "📐 Kalıpçı",
+                "🧪 Simyacı",
                 "🏭 Dökümhane",
                 "💾 Veri Merkezi", 
                 "⚙️ Sistem Paneli"
@@ -700,9 +689,17 @@ def main():
         else:
             # Main Navigation Routing
             if current_nav == "🏠 Ana Sayfa": render_home_page()
-            elif current_nav == "📊 Piyasa Özeti": render_market_summary_page()
+
             elif current_nav == "👁️ Insight Panel": render_insight_tab()
             elif current_nav == "🎯 Revize": render_ony_page()
+            elif current_nav == "📐 Kalıpçı":
+                import tezaver.ui.molder_tab
+                importlib.reload(tezaver.ui.molder_tab)
+                tezaver.ui.molder_tab.render_molder_page()
+            elif current_nav == "🧪 Simyacı":
+                import tezaver.ui.alchemist_tab
+                importlib.reload(tezaver.ui.alchemist_tab)
+                tezaver.ui.alchemist_tab.render_alchemist_page()
             elif current_nav == "🏭 Dökümhane":
                 import tezaver.ui.foundry_tab
                 importlib.reload(tezaver.ui.foundry_tab)
