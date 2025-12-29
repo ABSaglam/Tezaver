@@ -18,6 +18,7 @@ from typing import List, Optional, Dict
 from tezaver.core.annotations import SniperAnnotationRepository, SniperAnnotation, SniperStatus
 from tezaver.core.molds import Archetype, ARCHETYPE_LABELS, ARCHETYPE_DESCRIPTIONS
 from tezaver.ui.chart_area import render_sniper_studio_chart
+from tezaver.foundry.archetype_service import ArchetypeService
 # Reuse helpers from Ony Tab to maintain consistency
 from tezaver.ui.ony_tab import (
     _get_available_symbols, 
@@ -371,8 +372,11 @@ def render_molder_page():
     st.markdown("---")
     st.markdown("### 🤖 Sistem Analizi ve Öneriler")
     
+    # Force reload ArchetypeService to avoid stale cached class
+    import importlib
+    import tezaver.foundry.archetype_service
+    importlib.reload(tezaver.foundry.archetype_service)
     from tezaver.foundry.archetype_service import ArchetypeService
-    from tezaver.core.molds import ARCHETYPE_DESCRIPTIONS
     
     # --- 1. PREDICTIONS (Top) ---
     from tezaver.ui.chart_area import load_history_data
