@@ -18,7 +18,7 @@ from tezaver.core.annotations import (
     SniperAnnotation,
     SniperAnnotationRepository,
     SniperStatus,
-    SniperLabel,
+    SniperLabel
 )
 from tezaver.core import coin_cell_paths
 from tezaver.ui.chart_area import render_sniper_studio_chart
@@ -112,35 +112,31 @@ def _load_events_for_symbol_tf(symbol: str, timeframe: str) -> Optional[pd.DataF
                 df["event_time"] = pd.to_datetime(df[col], errors="coerce")
                 break
         
-        # Compute Tier if missing (needed for ID)
-        if 'rally_grade' in df.columns:
-            df['temp_tier'] = df['rally_grade'].apply(normalize_tier)
-        else:
-            df['temp_tier'] = df['future_max_gain_pct'].apply(compute_tier_from_gain)
-            
-        # Tier Code Mapping
-        def get_tier_code(tier_str):
-            if not tier_str: return "X"
-            t = str(tier_str).upper()
-            if "DIAMOND" in t: return "D"
-            if "GOLD" in t: return "G"
-            if "SILVER" in t: return "S"
-            if "BRONZE" in t: return "B"
-            return "X"
-
-        # Generate Tier-Coded Event ID: {symbol}_{timeframe}_{tier_code}_{timestamp}
-        # We overwrite existing event_id to enforce the new format
-        def generate_id(row):
-            if pd.isna(row['event_time']): return None
-            ts = int(row['event_time'].timestamp())
-            code = get_tier_code(row['temp_tier'])
-            return f"{symbol}_{timeframe}_{code}_{ts}"
-
-        df["event_id"] = df.apply(generate_id, axis=1)
+        # Unified Event ID Generation: {symbol}_{timeframe}_{tier_code}_{timestamp}
+        import importlib
+        import tezaver.core.annotations as core_ann
+        importlib.reload(core_ann)
+        from tezaver.core.annotations import generate_rally_id
         
-        # Cleanup temp column
-        if 'temp_tier' in df.columns:
-            df.drop(columns=['temp_tier'], inplace=True)
+        def ensure_unified_id(row):
+            # Trust existing event_id if it looks like the new format
+            curr_id = str(row.get('event_id', ''))
+            if curr_id and curr_id.count('_') >= 3 and "_RVZ_" not in curr_id:
+                return curr_id
+                
+            if pd.isna(row['event_time']): return None
+            # Compute tier for ID generation
+            tier = row.get('rally_grade')
+            if not tier:
+                tier = compute_tier_from_gain(row.get('future_max_gain_pct', 0))
+            return generate_rally_id(symbol, timeframe, row['event_time'], tier)
+
+        df["event_id"] = df.apply(ensure_unified_id, axis=1)
+        
+        # Cleanup temp columns if any
+        for temp_col in ['temp_tier']:
+            if temp_col in df.columns:
+                df.drop(columns=[temp_col], inplace=True)
         
         # Sort by time descending (newest first)
         df = df.sort_values("event_time", ascending=False).reset_index(drop=True)
@@ -337,6 +333,19 @@ def render_ony_studio():
     st.subheader("🛠️ Rev. Stüdyo")
     st.caption("Problemli ralliyi seç → Ayarları düzelt → Kaydet (Otorite)")
     
+    # Return to Molder Button (if came from Molder)
+    if st.session_state.get('came_from_molder'):
+        col_back, col_spacer = st.columns([1, 5])
+        with col_back:
+            if st.button("🔙 Kalıpçı'ya Dön", type="secondary"):
+                # Navigate back to Molder with target ID
+                st.session_state['nav_selection'] = "📐 Kalıpçı"
+                st.session_state['molder_target_id'] = st.session_state.get('molder_return_target')
+                # Clean up
+                st.session_state.pop('came_from_molder', None)
+                st.session_state.pop('molder_return_target', None)
+                st.rerun()
+    
     # Initialize repository
     repo = SniperAnnotationRepository()
     
@@ -445,11 +454,11 @@ def render_ony_studio():
         # Is reviewed? (Check Raw ID, then Check RVZ variant)
         ann = repo.get_one(symbol, timeframe, event_id)
         if not ann:
-            # Try finding RVZ variant
-            # Construct tentative RVZ ID: Insert RVZ after tier
+            # Try finding RVZ variant - using consistent infix logic
+            # Format: {symbol}_{tf}_RVZ_{tier}_{ts}
             parts = event_id.split('_')
             if len(parts) >= 3 and "RVZ" not in parts:
-                parts.insert(3, "RVZ")
+                parts.insert(2, "RVZ") # SYM_TF_RVZ...
                 rvz_id = "_".join(parts)
                 ann = repo.get_one(symbol, timeframe, rvz_id)
         
@@ -561,8 +570,8 @@ def render_ony_studio():
                 final_id = event_id
                 parts = event_id.split('_')
                 if "RVZ" not in parts:
-                    if len(parts) >= 3:
-                        parts.insert(3, "RVZ")
+                    if len(parts) >= 2:
+                        parts.insert(2, "RVZ")
                         final_id = "_".join(parts)
                         # Delete old ID
                         repo.delete(symbol, timeframe, event_id)
@@ -576,15 +585,15 @@ def render_ony_studio():
     st.markdown("---")
     if st.button("💾 REVİZYONU KAYDET (Asıl)", type="primary", use_container_width=True):
         # Handle RVZ Logic
-        # Expected ID format: SYMBOL_TF_TIER_TS or SYMBOL_TF_TIER_RVZ_TS
+        # Expected ID format: SYMBOL_TF_TIER_TS -> SYMBOL_TF_RVZ_TIER_TS
         final_id = event_id
         parts = event_id.split('_')
         
         # Check if RVZ is missing
         if "RVZ" not in parts:
-            # Insert after TIER (index 2: 0=SYM, 1=TF, 2=TIER) -> Insert at 3
-            if len(parts) >= 3:
-                parts.insert(3, "RVZ")
+            # Insert after TF (index 1: 0=SYM, 1=TF) -> Insert at 2
+            if len(parts) >= 2:
+                parts.insert(2, "RVZ")
                 final_id = "_".join(parts)
                 
                 # Delete old non-RVZ entry to avoid duplicates
@@ -601,16 +610,6 @@ def render_ony_studio():
                 "note": existing_ann.note,
                 "created": existing_ann.created_at
             })
-
-
-# =============================================================================
-# REV. STUDIO QUEUE (Simplified)
-# =============================================================================
-
-
-
-
-
 
 
 # =============================================================================

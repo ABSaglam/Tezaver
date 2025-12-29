@@ -37,6 +37,8 @@ from tezaver.rally.rally_quality_engine import (
     enrich_rally_events_with_quality,
     get_default_rally_quality_config,
 )
+from tezaver.core.annotations import generate_rally_id
+from tezaver.rally.rally_grade_cards import compute_tier_from_gain_pct
 from tezaver.context.multitimeframe_context import (
     ensure_mtc_columns,
     validate_mtc_schema,
@@ -271,21 +273,33 @@ def detect_rallies_oracle_mode(
     # Sort by time
     events_dedup = events_dedup.sort_values('event_index').reset_index(drop=True)
     
-    # Calculate buckets again (since they are not in groupby result if not included)
-    # Actually, we didn't add bucket in raw_events, let's add it now
-    events = []
+    # ========================================================================
+    # LOCKOUT FILTER: Prevent overlapping events
+    # Only keep events that are at least FAST15_EVENT_GAP bars apart
+    # ========================================================================
+    filtered_events = []
+    last_event_idx = -999  # Initialize to very negative so first event always passes
+    
     for _, row in events_dedup.iterrows():
-         bucket = determine_rally_bucket(row['future_max_gain_pct'])
-         if bucket:
-             events.append({
-                 'event_index': int(row['event_index']),
-                 'event_time': row['event_time'],
-                 'future_max_gain_pct': float(row['future_max_gain_pct']),
-                 'bars_to_peak': int(row['bars_to_peak']),
-                 'rally_bucket': bucket
-             })
-             
-    return pd.DataFrame(events)
+        current_idx = int(row['event_index'])
+        gap_from_last = current_idx - last_event_idx
+        
+        if gap_from_last >= FAST15_EVENT_GAP:
+            # This event is far enough from the last one
+            bucket = determine_rally_bucket(row['future_max_gain_pct'])
+            if bucket:
+                filtered_events.append({
+                    'event_index': current_idx,
+                    'event_time': row['event_time'],
+                    'future_max_gain_pct': float(row['future_max_gain_pct']),
+                    'bars_to_peak': int(row['bars_to_peak']),
+                    'rally_bucket': bucket
+                })
+                # Semantic Lockout: Skip until the peak of this rally
+                last_event_idx = int(row['peak_index']) 
+        # else: skip this event (too close to previous or already handled by previous peak)
+              
+    return pd.DataFrame(filtered_events)
 
 
 
@@ -745,7 +759,11 @@ def run_fast15_scan_for_symbol(symbol: str) -> Fast15RallyScanResult:
         )
         
         # Combine event info with snapshot
+        tier = compute_tier_from_gain_pct(event['future_max_gain_pct'])
+        eid = generate_rally_id(symbol, "15m", event_time, tier)
+        
         record = {
+            'event_id': eid,
             'symbol': symbol,
             'event_time': event_time,  # Use converted datetime
             'rally_bucket': event['rally_bucket'],

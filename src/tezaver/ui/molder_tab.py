@@ -33,6 +33,18 @@ def render_molder_page():
     # st.title("📐 Kalıpçı (Şablon Atölyesi)") # Title removed per style guide preference in Ony
     st.caption("Onaylanmış (Approved) rallilere Arketip (Kalıp) etiketi basar.")
     
+    # Handle return from Revize
+    if 'molder_target_id' in st.session_state:
+        target_id = st.session_state.pop('molder_target_id')
+        if target_id:
+            # Parse symbol and TF from event ID
+            parts = target_id.split('_')
+            if len(parts) >= 2:
+                st.session_state['molder_sym'] = parts[0]
+                st.session_state['molder_tf'] = parts[1]
+            st.session_state['molder_prefill_event_id'] = target_id
+            st.toast("📐 Revize'den döndünüz! Kalıp seçebilirsiniz.")
+    
     # Initialize repository
     repo = SniperAnnotationRepository()
 
@@ -85,13 +97,47 @@ def render_molder_page():
     
     display_items = []
     
+    # Dedupe: Keep latest version per unique timestamp
+    # Group by (symbol, tf, timestamp) and prefer _RVZ_ versions
+    seen_rallies = {}  # key: timestamp_str -> best annotation
+    
     for ann in approved_anns:
         eid = str(ann.event_id)
+        # Create a stable key for deduplication (ID without _RVZ_ and without Tier Code)
+        # Standard format: {SYM}_{TF}_{TIER}_{TS} or {SYM}_{TF}_RVZ_{TIER}_{TS}
+        parts = eid.split('_')
+        if not parts: continue
+        
+        # Dedupe key: SYMBOL_TF_TIMESTAMP
+        ts_part = parts[-1]
+        dedupe_key = f"{ann.symbol}_{ann.timeframe}_{ts_part}"
+        
+        is_revised = "_RVZ_" in eid
+        
+        if dedupe_key not in seen_rallies:
+            seen_rallies[dedupe_key] = ann
+        else:
+            # Prefer revised version
+            existing = seen_rallies[dedupe_key]
+            existing_is_revised = "_RVZ_" in str(existing.event_id)
+            if is_revised and not existing_is_revised:
+                seen_rallies[dedupe_key] = ann
+            elif is_revised and existing_is_revised:
+                # Both revised - keep the one with archetype if possible
+                if ann.archetype and not existing.archetype:
+                    seen_rallies[dedupe_key] = ann
+
+    # Now process only unique rallies
+    for ann in seen_rallies.values():
+        eid = str(ann.event_id)
         # Lookup metadata
-        # Logic: Try direct ID match. If fail, try removing '_RVZ_' infix.
+        # Logic: Try direct ID match. If fail, try the raw ID (without _RVZ_)
         meta = meta_map.get(eid)
         if not meta and "_RVZ_" in eid:
-            raw_id = eid.replace("_RVZ_", "_")
+            # Map SYM_TF_RVZ_TIER_TS -> SYM_TF_TIER_TS
+            parts = eid.split('_')
+            raw_parts = [p for p in parts if p != "RVZ"]
+            raw_id = "_".join(raw_parts)
             meta = meta_map.get(raw_id)
             
         if meta:
@@ -119,6 +165,16 @@ def render_molder_page():
         target_tier = item["tier"]
         if target_tier not in tier_groups: target_tier = "OTHER"
         tier_groups[target_tier].append(item)
+
+    # --- Handle Return from Revize: Find Target Rally's Tier ---
+    prefill_id = st.session_state.get('molder_prefill_event_id')
+    if prefill_id:
+        # Search all tiers to find the target rally
+        for tier, items in tier_groups.items():
+            for itm in items:
+                if itm['ann'].event_id == prefill_id:
+                    st.session_state['molder_selected_tier'] = tier
+                    break
 
     # --- TIER SELECTOR ---
     # Calc counts
@@ -152,8 +208,11 @@ def render_molder_page():
 
     # --- LIST SELECTOR ---
     current_list_items = tier_groups.get(selected_tier, [])
-    # Sort by Time Descending
-    current_list_items.sort(key=lambda x: x["ann"].event_id, reverse=True) 
+    # Sort: Unlabeled first, then by gain descending
+    def sort_key(x):
+        has_archetype = 1 if (x["ann"].archetype and x["ann"].archetype != "None") else 0
+        return (has_archetype, -x.get("gain", 0))  # (0=unlabeled first, then higher gain first)
+    current_list_items.sort(key=sort_key) 
     
     if not current_list_items:
         st.info(f"🔍 {selected_tier} katmanında etiketlenecek ralli yok. (Önce Revize Stüdyo'dan onaylanmalı)")
@@ -268,7 +327,17 @@ def render_molder_page():
         list_options.append(label_str)
         list_map[label_str] = item
 
-    selected_label_str = st.selectbox("Ralli Seçiniz", list_options, key="molder_list_select", label_visibility="collapsed")
+    # Calculate default index (for return from Revize)
+    default_idx = 0
+    prefill_id = st.session_state.pop('molder_prefill_event_id', None)
+    if prefill_id:
+        for i, lbl in enumerate(list_options):
+            item_data = list_map.get(lbl)
+            if item_data and item_data.get('ann') and item_data['ann'].event_id == prefill_id:
+                default_idx = i
+                break
+
+    selected_label_str = st.selectbox("Ralli Seçiniz", list_options, index=default_idx, key="molder_list_select", label_visibility="collapsed")
     
     if not selected_label_str:
         return
@@ -292,8 +361,9 @@ def render_molder_page():
              st.session_state['ony_target_id'] = current_ann.event_id
              st.session_state['ony_prefill_symbol'] = sel_sym
              st.session_state['ony_prefill_tf'] = sel_tf
-             st.rerun()
-
+             # Set flag for return navigation
+             st.session_state['came_from_molder'] = True
+             st.session_state['molder_return_target'] = current_ann.event_id
              st.rerun()
 
     # Layout: 7 Columns (Single Row)
@@ -343,27 +413,18 @@ def render_molder_page():
         if parts[-1].isdigit():
             event_time = pd.to_datetime(int(parts[-1]), unit='s')
             
-    # Auto-Zoom Calculation
-    # If revised exit exists, use it. Else fall back to metadata bars.
-    if current_ann.exit_bar_offset and current_ann.exit_bar_offset > 0:
-        display_bars = current_ann.exit_bar_offset + 30 # +Buffer
-    else:
-        display_bars = selected_item["bars"] if selected_item["bars"] > 0 else 50
-        
-    # Cap display bars to reasonable max if needed, but usually zoom in is better
-    display_bars = max(30, display_bars) # At least 30 bars
-
+    # Pass the SAME bar count displayed in the list to the chart for unrevised rallies
+    # This ensures consistency: List shows 9 bars -> Highlight is 9 bars.
+    chart_bars_to_peak = selected_item["bars"]
+    
     try:
         render_sniper_studio_chart(
             symbol=sel_sym,
             timeframe=sel_tf,
             event_time=event_time,
-            bars_to_peak=display_bars,
+            bars_to_peak=chart_bars_to_peak, # Use metadata bars for highlighting fallback
             entry_offset=current_ann.entry_bar_offset,
             exit_offset=current_ann.exit_bar_offset
-            # Note: We don't need 'entry_offset' to be mutable here usually, but if we wanted to tweak it?
-            # Molder is usually just "Labeling". Revize is for tweaking offsets.
-            # So static view is fine.
         )
     except Exception as e:
         st.error(f"Grafik hatası: {e}")
@@ -604,3 +665,138 @@ def render_molder_page():
 
         except Exception as e_pool:
             st.error(f"Künye hatası: {e_pool}")
+
+    # --- ARCHETYPE REFERENCE GUIDE ---
+    st.markdown("---")
+    with st.expander("📚 Kalıp Rehberi (Arketip Tanımları)", expanded=False):
+        st.markdown("""
+        Her arketip, belirli piyasa koşullarında ortaya çıkan bir ralli kalıbını temsil eder.
+        Aşağıda her birinin detaylı açıklaması ve örnek grafikleri bulunmaktadır.
+        """)
+        
+        from pathlib import Path
+        img_dir = Path("/Users/alisaglam/TezaverMac/library/archetype_images")
+        
+        # GRIND
+        st.markdown("### 🪜 GRIND - Yavaş Birikim")
+        col_g1, col_g2 = st.columns([1, 2])
+        with col_g1:
+            grind_img = list(img_dir.glob("archetype_grind*.png"))
+            if grind_img:
+                st.image(str(grind_img[0]), use_container_width=True)
+        with col_g2:
+            st.markdown("""
+            **Özellikler:**
+            - Düşük hacimli, yavaş ama kararlı yükseliş
+            - RSI genellikle 40-55 arasında stabil
+            - Küçük mumlar, düşük volatilite
+            - Sabır gerektiren pozisyon
+            
+            **Ne zaman görülür?**
+            Piyasanın sakin olduğu, büyük oyuncuların sessizce birikim yaptığı dönemler.
+            """)
+        
+        st.divider()
+        
+        # GUILLOTINE
+        st.markdown("### 🔪 GUILLOTINE - Düşen Bıçak")
+        col_gu1, col_gu2 = st.columns([1, 2])
+        with col_gu1:
+            guill_img = list(img_dir.glob("archetype_guillotine*.png"))
+            if guill_img:
+                st.image(str(guill_img[0]), use_container_width=True)
+        with col_gu2:
+            st.markdown("""
+            **Özellikler:**
+            - Sert düşüş sonrası dip avcılığı
+            - RSI 30 altında (aşırı satım)
+            - Yüksek hacimli panik satışı
+            - Riskli ama yüksek kazançlı
+            
+            **Ne zaman görülür?**
+            Ani kötü haberler, likidasyonlar veya piyasa çöküşlerinde. "Düşen bıçağı tutmak" stratejisi.
+            """)
+        
+        st.divider()
+        
+        # SUPERNOVA
+        st.markdown("### 💥 SUPERNOVA - Patlama")
+        col_s1, col_s2 = st.columns([1, 2])
+        with col_s1:
+            super_img = list(img_dir.glob("archetype_supernova*.png"))
+            if super_img:
+                st.image(str(super_img[0]), use_container_width=True)
+        with col_s2:
+            st.markdown("""
+            **Özellikler:**
+            - Patlayıcı hacim (5x+ ortalama)
+            - Parabolik fiyat hareketi
+            - Tek seansta büyük kazanç
+            - Kısa vadeli, hızlı
+            
+            **Ne zaman görülür?**
+            Büyük haberler, listing duyuruları, viral sosyal medya anları. Çok hızlı giriş-çıkış gerektirir.
+            """)
+        
+        st.divider()
+        
+        # PHOENIX
+        st.markdown("### 🦅 PHOENIX - Küllerinden Doğuş")
+        col_p1, col_p2 = st.columns([1, 2])
+        with col_p1:
+            phoenix_img = list(img_dir.glob("archetype_phoenix*.png"))
+            if phoenix_img:
+                st.image(str(phoenix_img[0]), use_container_width=True)
+        with col_p2:
+            st.markdown("""
+            **Özellikler:**
+            - Önce derin düşüş (RSI 25 altı)
+            - Ardından V veya U şeklinde toparlanma
+            - Güçlü direnç kırılımı
+            - Trend dönüşü sinyali
+            
+            **Ne zaman görülür?**
+            Büyük düşüşlerden sonraki recovery dönemleri. Dip teyidi + momentum.
+            """)
+        
+        st.divider()
+        
+        # NINJA
+        st.markdown("### 🥷 NINJA - Gizli Birikim")
+        col_n1, col_n2 = st.columns([1, 2])
+        with col_n1:
+            ninja_img = list(img_dir.glob("archetype_ninja*.png"))
+            if ninja_img:
+                st.image(str(ninja_img[0]), use_container_width=True)
+        with col_n2:
+            st.markdown("""
+            **Özellikler:**
+            - Çok düşük hacim (radarda görünmez)
+            - Sıkı fiyat konsolidasyonu
+            - RSI 45-55 nötr bölge
+            - Ani breakout potansiyeli
+            
+            **Ne zaman görülür?**
+            "Sinek kaydı borsasında" diye tabir edilen, herkesin unuttuğu coinlerde. Büyük hamle öncesi sessizlik.
+            """)
+        
+        st.divider()
+        
+        # SURFER
+        st.markdown("### 🏄 SURFER - Dalga Sörfü")
+        col_su1, col_su2 = st.columns([1, 2])
+        with col_su1:
+            surfer_img = list(img_dir.glob("archetype_surfer*.png"))
+            if surfer_img:
+                st.image(str(surfer_img[0]), use_container_width=True)
+        with col_su2:
+            st.markdown("""
+            **Özellikler:**
+            - Güçlü yerleşik uptrend
+            - RSI sürekli 60+ (momentum güçlü)
+            - Pullback'ler destek buluyor
+            - Trende katılma stratejisi
+            
+            **Ne zaman görülür?**
+            Piyasa genelinde bullish dönemler. "Trend is your friend" felsefesi.
+            """)

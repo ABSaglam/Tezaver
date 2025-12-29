@@ -63,7 +63,7 @@ def main():
         logger.info(f"\n>>> Processing {symbol}...")
         
         try:
-            result = run_fast15_rally_scan_for_symbol(symbol)
+            result = run_fast15_scan_for_symbol(symbol)
             results.append(result)
             
             logger.info(f"✓ {symbol}: {result.num_events_total} events found")

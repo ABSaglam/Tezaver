@@ -24,6 +24,37 @@ class SniperLabel:
     GOOD = "GOOD"
     BAD = "BAD"
 
+# --- ID Generation ---
+
+def generate_rally_id(symbol: str, timeframe: str, event_time: Any, tier: str = "X") -> str:
+    """
+    Unified Event ID Generation.
+    Format: {SYMBOL}_{TF}_{TIER_CODE}_{TIMESTAMP}
+    e.g., BTCUSDT_15m_G_1741094100
+    """
+    import pandas as pd
+    
+    # 1. Normalize Timestamp
+    if not isinstance(event_time, pd.Timestamp):
+        ts_obj = pd.to_datetime(event_time)
+    else:
+        ts_obj = event_time
+        
+    if ts_obj.tz is not None:
+        ts_obj = ts_obj.tz_localize(None)
+        
+    ts_unix = int(ts_obj.timestamp())
+    
+    # 2. Normalize Tier Code
+    t = str(tier).upper()
+    if "DIAMOND" in t: code = "D"
+    elif "GOLD" in t: code = "G"
+    elif "SILVER" in t: code = "S"
+    elif "BRONZE" in t: code = "B"
+    else: code = "X"
+    
+    return f"{symbol}_{timeframe}_{code}_{ts_unix}"
+
 # --- Models ---
 
 @dataclass

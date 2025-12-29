@@ -41,6 +41,8 @@ from tezaver.context.multitimeframe_context import (
     validate_mtc_schema,
     get_required_mtc_columns,
 )
+from tezaver.core.annotations import generate_rally_id
+from tezaver.rally.rally_grade_cards import compute_tier_from_gain_pct
 # Re-use Fast15 logic helpers where appropriate
 from tezaver.rally.fast15_rally_scanner import (
     find_last_closed_bar,
@@ -140,7 +142,9 @@ def detect_rallies_for_timeframe(
                 })
                 
                 # Skip to avoid overlapping events
-                i += max(1, event_gap)
+                # Semantic Lockout: Skip until the peak of this rally is reached
+                # This prevents detecting "starting points" for the same move as it develops.
+                i += max(event_gap, peak_offset)
                 continue
         
         i += 1
@@ -446,7 +450,11 @@ def run_timeframe_rally_scan_for_symbol(
         
         # Merge event info + snapshot
         row_data = event.to_dict()
+        tier = compute_tier_from_gain_pct(row_data['future_max_gain_pct'])
+        eid = generate_rally_id(symbol, timeframe, event_time, tier)
+        
         row_data.update(snapshot)
+        row_data['event_id'] = eid
         row_data['symbol'] = symbol
         # row_data['event_tf'] = timeframe # Will be set by MTC utils anyway
         

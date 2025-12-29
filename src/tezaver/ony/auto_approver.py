@@ -14,13 +14,14 @@ from typing import List, Optional
 import datetime
 import logging
 
-# Import existing models (Currently in sniper path)
-from tezaver.sniper.sniper_annotations import (
+# Import existing models (Now in core path)
+from tezaver.core.annotations import (
     SniperAnnotation,
     SniperAnnotationRepository,
     SniperStatus,
     SniperLabel
 )
+from tezaver.core import coin_cell_paths
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -28,30 +29,23 @@ logger = logging.getLogger("OnyAutoApprover")
 
 
 class OnyAutoApprover:
-    def __init__(self, base_dir: Path = Path(".")):
-        self.base_dir = base_dir
-        self.repo = SniperAnnotationRepository(base_dir=base_dir / "data/sniper")
+    def __init__(self, base_dir: Path = None):
+        # We ignore base_dir if passed, as we use the default foundry path
+        self.repo = SniperAnnotationRepository()
 
     def _load_events(self, symbol: str, timeframe: str) -> pd.DataFrame:
-        """Load events from parquet files (Refactored from ony_tab logic)."""
-        library_path = self.base_dir / "library"
-        
+        """Load events from parquet files using coin_cell_paths."""
         if timeframe == "15m":
-            path = library_path / "fast15_rallies" / symbol / "fast15_rallies.parquet"
-        elif timeframe == "1h":
-            path = library_path / "time_labs" / "1h" / symbol / "rallies_1h.parquet"
-        elif timeframe == "4h":
-            path = library_path / "time_labs" / "4h" / symbol / "rallies_4h.parquet"
+            path = coin_cell_paths.get_fast15_rallies_path(symbol)
         else:
-            return pd.DataFrame()
+            path = coin_cell_paths.get_time_labs_rallies_path(symbol, timeframe)
 
         if not path.exists():
-            # logger.warning(f"Parquet missing: {path}") # Reduce noise
             return pd.DataFrame()
 
         try:
             df = pd.read_parquet(path)
-            logger.info(f"Loaded {len(df)} events for {symbol} {timeframe}. Columns: {list(df.columns)}")
+            logger.info(f"Loaded {len(df)} events for {symbol} {timeframe}.")
             return df
         except Exception as e:
             logger.error(f"Failed to read parquet {path}: {e}")
@@ -72,22 +66,8 @@ class OnyAutoApprover:
 
         # Ensure event_id exists
         if 'event_id' not in df_events.columns:
-            # Generate event_id if missing
-            # Try 'open_time' then 'event_time'
-            time_col = None
-            if 'open_time' in df_events.columns:
-                time_col = 'open_time'
-            elif 'event_time' in df_events.columns:
-                time_col = 'event_time'
-            
-            if time_col:
-                df_events['event_id'] = df_events.apply(
-                    lambda row: f"{symbol}_{timeframe}_" + pd.to_datetime(row[time_col]).strftime('%Y%m%d%H%M'),
-                    axis=1
-                )
-            else:
-                logger.warning(f"Skipping {symbol} {timeframe}: No 'event_id', 'open_time', or 'event_time' column.")
-                return 0
+            logger.error(f"Skipping {symbol} {timeframe}: No 'event_id' found in Parquet. Please re-run scanner.")
+            return 0
 
         # 2. Load Existing Annotations
         existing_anns = self.repo.load_all(symbol, timeframe)

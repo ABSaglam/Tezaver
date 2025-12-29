@@ -693,9 +693,17 @@ def main():
             elif current_nav == "👁️ Insight Panel": render_insight_tab()
             elif current_nav == "🎯 Revize": render_ony_page()
             elif current_nav == "📐 Kalıpçı":
-                import tezaver.ui.molder_tab
-                importlib.reload(tezaver.ui.molder_tab)
-                tezaver.ui.molder_tab.render_molder_page()
+                try:
+                    import tezaver.ui.molder_tab
+                    importlib.reload(tezaver.ui.molder_tab)
+                    tezaver.ui.molder_tab.render_molder_page()
+                except AttributeError:
+                    # Module may be partially loaded, re-import cleanly
+                    import sys
+                    if 'tezaver.ui.molder_tab' in sys.modules:
+                        del sys.modules['tezaver.ui.molder_tab']
+                    import tezaver.ui.molder_tab
+                    tezaver.ui.molder_tab.render_molder_page()
             elif current_nav == "🧪 Simyacı":
                 import tezaver.ui.alchemist_tab
                 importlib.reload(tezaver.ui.alchemist_tab)
