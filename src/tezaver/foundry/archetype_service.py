@@ -42,6 +42,83 @@ class ArchetypeService:
         tfs.sort(key=lambda x: order.get(x, 99))
         return tfs
 
+    @staticmethod
+    def analyze_trend_scores(rsi_window: List[float], vol_window: List[float]) -> List[Dict]:
+        """
+        Analyze Trend and score ALL archetypes.
+        Returns sorted list of matches: [{'arch': 'GRIND', 'conf': 85, 'reason': '...'}, ...]
+        """
+        results = []
+        if not rsi_window or not vol_window:
+             return []
+             
+        curr_rsi = rsi_window[-1]
+        curr_vol = vol_window[-1]
+        n_bars = len(rsi_window)
+        
+        # Helper: Avg
+        def avg(arr, n=10):
+            sub = arr[-n:]
+            return sum(sub)/len(sub) if sub else 0
+            
+        avg_vol_20 = avg(vol_window, 20)
+        
+        # 1. PHOENIX Logic
+        if n_bars >= 30:
+            min_rsi = min(rsi_window)
+            idx_min = rsi_window.index(min_rsi)
+            bars_since_low = n_bars - 1 - idx_min
+            if min_rsi < 30 and curr_rsi > 40 and 5 <= bars_since_low <= 50:
+                 results.append({
+                     "arch": "PHOENIX", 
+                     "conf": 88, 
+                     "reason": f"Recovered from RSI {min_rsi:.0f} (Ashes) in last {bars_since_low} bars"
+                 })
+                 
+        # 2. GUILLOTINE
+        if curr_rsi < 35:
+             dist = 35 - curr_rsi
+             conf = 50 + (dist / 35 * 50)
+             results.append({
+                 "arch": "GUILLOTINE",
+                 "conf": min(99, int(conf)),
+                 "reason": f"RSI {curr_rsi:.1f} < 35 (Oversold/Falling)"
+             })
+
+        # 3. SUPERNOVA
+        if curr_vol >= 5.0:
+             results.append({"arch": "SUPERNOVA", "conf": 90, "reason": f"Vol {curr_vol:.1f} (Explosion)"})
+             
+        # 4. SURFER
+        if curr_rsi > 60:
+             results.append({"arch": "SURFER", "conf": 85, "reason": f"RSI {curr_rsi:.1f} > 60 (Trend)"})
+             
+        # 5. NINJA
+        if avg_vol_20 < 1.3 and curr_rsi <= 55:
+             results.append({"arch": "NINJA", "conf": 85, "reason": f"AvgVol {avg_vol_20:.1f} (Stealth) & RSI {curr_rsi:.0f}"})
+             
+        # 6. GRIND
+        if avg_vol_20 < 1.8:
+             results.append({"arch": "GRIND", "conf": 80, "reason": f"AvgVol {avg_vol_20:.1f} (Accumulation)"})
+             
+        # Sort by Confidence Descending
+        results.sort(key=lambda x: x['conf'], reverse=True)
+        return results
+
+    @staticmethod
+    def classify_trend(rsi_window: List[float], vol_window: List[float]):
+        """Legacy Wrapper: Returns best match"""
+        scores = ArchetypeService.analyze_trend_scores(rsi_window, vol_window)
+        if scores:
+            best = scores[0]
+            return best['arch'], best['reason'], best['conf']
+        return "OTHER", "No pattern", 0
+        
+    # Legacy wrapper for vector calls
+    @staticmethod
+    def classify_vector(rsi, vol):
+        return ArchetypeService.classify_trend([rsi]*60, [vol]*60)
+
     @st.cache_data(ttl=300)
     def scan_coin_archetypes(_self, symbol: str, timeframe: str = "15m") -> Dict[str, Dict[str, List[Dict]]]:
         """
@@ -156,14 +233,10 @@ class ArchetypeService:
                      pass
 
                 # 2. ARCHETYPE CLASSIFICATION
-                # Logic v3.0 (Modified: No "THE")
-                arch = "OTHER"
-                if rsi < 25: arch = "GUILLOTINE"
-                elif rsi > 65: arch = "SURFER"
-                elif vol >= 5.0: arch = "SUPERNOVA"
-                elif vol < 1.5 and rsi < 55: arch = "GRIND"
-                elif vol < 1.5 and rsi <= 45: arch = "NINJA"
+                # Use shared helper
+                arch, reason, conf = ArchetypeService.classify_vector(rsi, vol)
                 
+                # We only need 'arch' for this dict structure unless we want to store confidence too later
                 archetypes[arch].append(item)
                 
             return {"archetypes": archetypes, "tiers": tiers}

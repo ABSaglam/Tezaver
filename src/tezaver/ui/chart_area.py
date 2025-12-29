@@ -752,47 +752,76 @@ def render_rally_event_chart(
                 row=1, col=1
             )
             
-            # Rally Highlighting Logic
-            if bars_to_peak > 0:
+            # Rally Highlighting Logic: Revised vs Standard
+            highlight_start = event_time
+            highlight_end = event_time
+            highlight_label = f"Rally ({bars_to_peak} bars)"
+            
+            # Check for ANY revision or default existence
+            is_revised_entry = entry_offset is not None
+            is_revised_exit = exit_offset is not None
+            
+            # Use defaults if not revised
+            eff_entry_offset = entry_offset if is_revised_entry else 0
+            eff_exit_offset = exit_offset if is_revised_exit else bars_to_peak
+            
+            # IF Revised OR (Standard and valid bars)
+            if (is_revised_entry or is_revised_exit) or bars_to_peak > 0:
                 try:
-                    peak_idx = min(int(event_idx + bars_to_peak), len(df) - 1)
-                    highlight_end = df.iloc[peak_idx]['open_time']
-                    label_text = f"Rally ({bars_to_peak} bars)"
+                    h_start_idx = min(max(0, int(event_idx + eff_entry_offset)), len(df)-1)
+                    h_end_idx = min(max(0, int(event_idx + eff_exit_offset)), len(df)-1)
                     
-                    fig.add_vrect(
-                        x0=event_time,
-                        x1=highlight_end,
-                        fillcolor="yellow",
-                        opacity=0.2,
-                        line_width=0,
-                        row=1
-                    )
+                    if h_start_idx < len(df) and h_end_idx < len(df):
+                        highlight_start = df.iloc[h_start_idx]['open_time']
+                        highlight_end = df.iloc[h_end_idx]['open_time']
+                        
+                        # Calculate Dynamic Gain
+                        p_entry = df.iloc[h_start_idx]['close']
+                        p_exit = df.iloc[h_end_idx]['close']
+                        
+                        gain_val = (p_exit - p_entry) / p_entry if p_entry > 0 else 0
+                        gain_pct_val = gain_val * 100
+                        
+                        if is_revised_entry or is_revised_exit:
+                             highlight_label = f"Trade (+{gain_pct_val:.1f}%)"
+                        else:
+                             highlight_label = f"Rally ({bars_to_peak} bars)"
                     
-                    # Add vertical line at the END of the rally
-                    fig.add_vline(
-                        x=highlight_end,
-                        line_dash="solid",
-                        line_color="gold",
-                        line_width=2,
-                        row=1, col=1
-                    )
-                    
-                    # Add annotation manually for label
-                    fig.add_annotation(
-                        x=event_time,
-                        y=1,
-                        yref="y domain",
-                        text=label_text,
-                        showarrow=False,
-                        xanchor="left",
-                        yshift=10,
-                        row=1, col=1
-                    )
                 except Exception as e:
-                    st.error(f"YELLOW BOX ERROR: {e}")
-                    # Print full traceback to console
-                    import traceback
-                    print(traceback.format_exc())
+                    print(f"Highlight calc error: {e}")
+
+            # Draw The Box
+            if highlight_start != highlight_end:
+                fig.add_vrect(
+                    x0=highlight_start,
+                    x1=highlight_end,
+                    fillcolor="rgba(255, 215, 0, 0.3)",  # Gold/yellow
+                    opacity=0.3, # Increased slightly
+                    line_width=0,
+                    layer="below"
+                )
+                
+                # Add vertical line at the END of the rally
+                fig.add_vline(
+                    x=highlight_end,
+                    line_dash="solid",
+                    line_color="gold",
+                    line_width=2,
+                    row=1, col=1
+                )
+                
+                # Add annotation manually for label
+                fig.add_annotation(
+                    x=highlight_start, # Start label at entry point
+                    y=1,
+                    yref="y domain",
+                    text=highlight_label,
+                    font=dict(color="gold", size=14, weight="bold"),
+                    showarrow=False,
+                    xanchor="left",
+                    yshift=10,
+                    row=1, col=1
+                )
 
             # --- CUSTOM ENTRY / EXIT OVERLAYS (Revisions) ---
             
@@ -1913,20 +1942,51 @@ def render_sniper_studio_chart(
         
         # --- HIGHLIGHTS ---
         
-        # A) Rally Start (Event)
-        fig.add_vline(x=event_time, line_color="gold", line_dash="dash", row="all")
+        # B) Rally Box (Dynamic: Entry -> Exit/Peak)
+        # Determine Start/End indices
+        # Start: Entry Offset (default 0)
+        # End: Exit Offset if exists, else Bars To Peak
         
-        # B) Rally Box (Start -> Peak)
-        if bars_to_peak > 0:
-            peak_idx = min(len(df)-1, event_idx + bars_to_peak)
-            peak_time = df.iloc[peak_idx]['open_time']
+        idx_start = min(len(df)-1, max(0, event_idx + entry_offset))
+        
+        eff_exit_offset = exit_offset if exit_offset is not None else bars_to_peak
+        idx_end = min(len(df)-1, max(0, event_idx + eff_exit_offset))
+        
+        # Only draw if we have a valid range (and not just a single point unless huge zoom)
+        if idx_end > idx_start:
+            t_start = df.iloc[idx_start]['open_time']
+            t_end = df.iloc[idx_end]['open_time']
             
+            # Draw Yellow Focus Box
             fig.add_vrect(
-                x0=event_time, x1=peak_time,
-                fillcolor="yellow", opacity=0.1, line_width=0,
+                x0=t_start, x1=t_end,
+                fillcolor="rgba(255, 215, 0, 0.2)",  # Gold transparency
+                line_width=0,
+                layer="below", # Fixed: priority -> layer
                 row=1
             )
-            fig.add_vline(x=peak_time, line_color="gold", line_width=1, row=1, col=1)
+            
+            # Label
+            try:
+                p_start = df.iloc[idx_start]['close']
+                p_end = df.iloc[idx_end]['close']
+                gain_pct = ((p_end - p_start) / p_start) * 100 if p_start else 0
+                
+                label_txt = f"+{gain_pct:.1f}%"
+                if exit_offset is None: label_txt += " (Est.)"
+                
+                # Add Annotation at Top Center of Box
+                mid_time = t_start + (t_end - t_start) / 2
+                fig.add_annotation(
+                    x=mid_time, y=1, yref="y domain",
+                    text=label_txt,
+                    font=dict(color="gold", size=14, weight="bold"),
+                    showarrow=False,
+                    yshift=10,
+                    row=1, col=1
+                )
+            except:
+                pass
             
         # C) Sniper Entry Bar (Start + Offset)
         entry_idx = min(len(df)-1, event_idx + entry_offset)
