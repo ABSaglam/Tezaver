@@ -166,140 +166,8 @@ def find_last_closed_bar(df: pd.DataFrame, timestamp: pd.Timestamp) -> Optional[
     return filtered.iloc[-1]
 
 
-def detect_rallies_oracle_mode(
-    df_15m: pd.DataFrame,
-    window_radius: int = 10,  # Look 10 bars back/forward (Total 21)
-    min_gain: float = FAST15_MIN_GAIN # 0.05
-) -> pd.DataFrame:
-    """
-    Detects rallies using 'Oracle Mode' (Historical Rolling Extremas).
-    REFINED VERSION: Handles cluster dips and prevents overlap.
-    
-    Logic:
-    1. Find Local Dips: Low[t] == Min(Low[t-N : t+N])
-    2. Find Local Peaks: High[t] == Max(High[t-N : t+N])
-    3. Match Dip -> First Peak
-    4. Calculate Gain
-    5. Deduplicate: If multiple Dips point to same Peak, keep lowest Dip.
-    
-    Args:
-        df_15m: 15m DataFrame
-        window_radius: Number of bars to look back/forward (N)
-        min_gain: Minimum gain to qualify as rally
-        
-    Returns:
-        DataFrame with rally events
-    """
-    if df_15m.empty:
-        return pd.DataFrame()
-        
-    df = df_15m.copy()
-    
-    # Ensure High/Low exist
-    if 'high' not in df.columns or 'low' not in df.columns:
-        logger.warning("Missing high/low columns")
-        return pd.DataFrame()
-        
-    # Calculate Rolling Min/Max (Center=True looks forward and backward)
-    window_size = (window_radius * 2) + 1
-    
-    # Find Local Dips (Swing Lows)
-    df['rolling_min'] = df['low'].rolling(window=window_size, center=True).min()
-    df['is_dip'] = (df['low'] == df['rolling_min']) & df['rolling_min'].notna()
-    
-    # Find Local Peaks (Swing Highs)
-    df['rolling_max'] = df['high'].rolling(window=window_size, center=True).max()
-    df['is_peak'] = (df['high'] == df['rolling_max']) & df['rolling_max'].notna()
-    
-    # Extract indices
-    dip_indices = df.index[df['is_dip']].tolist()
-    peak_indices = df.index[df['is_peak']].tolist()
-    
-    raw_events = []
-    
-    # Maximum lookahead for peak search (60 bars = 15 hours for 15m)
-    MAX_PEAK_LOOKAHEAD = 60
-    
-    # First Pass: Find all potential dip-peak pairs
-    for dip_idx in dip_indices:
-        # Find subsequent peaks within lookahead window
-        future_peaks = [p for p in peak_indices if dip_idx < p <= dip_idx + MAX_PEAK_LOOKAHEAD]
-        
-        if not future_peaks:
-            continue
-        
-        dip_price = df.at[dip_idx, 'close']
-        if dip_price <= 0:
-            continue
-        
-        # Find the peak with MAXIMUM gain (not just first peak)
-        best_peak_idx = None
-        best_gain = 0
-        
-        for peak_idx in future_peaks:
-            peak_price = df.at[peak_idx, 'high']
-            gain_pct = (peak_price - dip_price) / dip_price
-            
-            if gain_pct > best_gain:
-                best_gain = gain_pct
-                best_peak_idx = peak_idx
-        
-        # Only include if best gain meets threshold
-        if best_gain >= min_gain and best_peak_idx is not None:
-            bars_to_peak = best_peak_idx - dip_idx
-            
-            raw_events.append({
-                'event_index': dip_idx,
-                'event_time': df.at[dip_idx, 'timestamp'],
-                'future_max_gain_pct': best_gain,
-                'bars_to_peak': bars_to_peak,
-                'peak_index': best_peak_idx,  # Used for dedup
-                'dip_price': df.at[dip_idx, 'low'] # Used for finding 'lowest' dip
-            })
-            
-    if not raw_events:
-        return pd.DataFrame()
-        
-    # Deduplication Logic (Ragged Bottoms Handling)
-    # If multiple events share the same 'peak_index', it means a ragged bottom pointing to same rally.
-    # We should keep the one with the lowest DIP PRICE (best entry).
-    
-    df_raw = pd.DataFrame(raw_events)
-    
-    # Group by peak_index and take the one with min dip_price
-    # If dip prices are equal, take the first one (earliest)
-    events_dedup = df_raw.sort_values('dip_price').groupby('peak_index').first().reset_index()
-    
-    # Sort by time
-    events_dedup = events_dedup.sort_values('event_index').reset_index(drop=True)
-    
-    # ========================================================================
-    # LOCKOUT FILTER: Prevent overlapping events
-    # Only keep events that are at least FAST15_EVENT_GAP bars apart
-    # ========================================================================
-    filtered_events = []
-    last_event_idx = -999  # Initialize to very negative so first event always passes
-    
-    for _, row in events_dedup.iterrows():
-        current_idx = int(row['event_index'])
-        gap_from_last = current_idx - last_event_idx
-        
-        if gap_from_last >= FAST15_EVENT_GAP:
-            # This event is far enough from the last one
-            bucket = determine_rally_bucket(row['future_max_gain_pct'])
-            if bucket:
-                filtered_events.append({
-                    'event_index': current_idx,
-                    'event_time': row['event_time'],
-                    'future_max_gain_pct': float(row['future_max_gain_pct']),
-                    'bars_to_peak': int(row['bars_to_peak']),
-                    'rally_bucket': bucket
-                })
-                # Semantic Lockout: Skip until the peak of this rally
-                last_event_idx = int(row['peak_index']) 
-        # else: skip this event (too close to previous or already handled by previous peak)
-              
-    return pd.DataFrame(filtered_events)
+
+from tezaver.rally.rally_utils import detect_rallies_oracle_mode
 
 
 
@@ -713,10 +581,21 @@ def run_fast15_scan_for_symbol(symbol: str) -> Fast15RallyScanResult:
     # Detect rally events ORACLE MODE
     events_df = detect_rallies_oracle_mode(
         df_15m,
-        window_radius=10, # 10 bars back, 10 bars forward
-        min_gain=FAST15_MIN_GAIN 
+        window_radius=10, 
+        min_gain=FAST15_MIN_GAIN,
+        event_gap=FAST15_EVENT_GAP
     )
     
+    if events_df.empty:
+        # Still save empty result (code omitted for brevity, logic remains same)
+        # We need to preserve the empty return flow logic actually.
+        pass 
+
+    # Calculate buckets if events found
+    if not events_df.empty:
+        events_df['rally_bucket'] = events_df['future_max_gain_pct'].apply(determine_rally_bucket)
+        events_df = events_df.dropna(subset=['rally_bucket'])
+        
     if events_df.empty:
         # Still save empty result
         output_path = coin_cell_paths.get_fast15_rallies_path(symbol)

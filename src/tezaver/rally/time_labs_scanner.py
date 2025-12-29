@@ -67,6 +67,9 @@ class TimeframeRallyScanResult:
     summary_path: Path
 
 
+
+from tezaver.rally.rally_utils import detect_rallies_oracle_mode
+
 def detect_rallies_for_timeframe(
     df_tf: pd.DataFrame,
     timeframe: str,
@@ -76,80 +79,47 @@ def detect_rallies_for_timeframe(
     event_gap: int,
 ) -> pd.DataFrame:
     """
-    Generic rally detection algorithm.
-    Scans looking for max high in the lookahead window.
-    
-    Args:
-        df_tf: Features DataFrame (must contain 'timestamp', 'close', 'high')
-        timeframe: "1h" or "4h" (for logging)
-        min_gain_pct: Minimum gain to qualify as rally
-        lookahead_bars: Future window size
-        buckets: Thresholds for classification
-        event_gap: Minimum bars between events
-        
-    Returns:
-        DataFrame with columns: event_index, event_time, future_max_gain_pct,
-                                bars_to_peak, rally_bucket
+    Unified Rally Detection (Oracle Mode Proxy).
+    Delegates to the shared rally_utils.detect_rallies_oracle_mode.
     """
-    if df_tf.empty or 'close' not in df_tf.columns or 'high' not in df_tf.columns:
-        logger.warning(f"{timeframe} DataFrame empty or missing columns")
+    if df_tf.empty:
+        logger.warning(f"{timeframe} DataFrame empty")
         return pd.DataFrame()
+        
+    # Mapping lookahead_bars to window_radius is tricky because Oracle uses radius for Extrema.
+    # TimeLabs used 'lookahead' for forward search.
+    # We will use defaults suitable for 1h/4h structural pivots.
+    # 1h: Radius 5 (5h pivot low/high)
+    # 4h: Radius 3 (12h pivot low/high)
     
-    # Ensure sorted
-    df_sorted = df_tf.sort_values('timestamp').reset_index(drop=True)
-    close = df_sorted['close'].values
-    high = df_sorted['high'].values
-    timestamps = df_sorted['timestamp']
+    radius = 5 if timeframe == "1h" else 3
     
-    events = []
-    i = 0
-    n = len(df_sorted)
+    # UNIFIED LOGIC: Use Oracle Mode
+    events_df = detect_rallies_oracle_mode(
+        df_tf,
+        window_radius=radius,
+        min_gain=min_gain_pct,
+        event_gap=event_gap,
+        max_peak_lookahead=lookahead_bars if lookahead_bars > 20 else 40 # Ensure enough runway
+    )
     
-    # Needs at least 1 bar ahead
-    while i < n - 1:
-        end_i = min(i + lookahead_bars, n - 1)
+    # Post-process to ensure columns match what TimeLabs expected (if any differ)
+    # Oracle returns: event_index, event_time, future_max_gain_pct, bars_to_peak, peak_index, dip_price
+    # TimeLabs expects: event_index, event_time, future_max_gain_pct, bars_to_peak, rally_bucket
+    
+    if events_df.empty:
+        return pd.DataFrame()
         
-        if end_i <= i:
-            break
-            
-        close_now = close[i]
-        if close_now <= 0:
-            i += 1
-            continue
-            
-        # Check future highs
-        future_highs = high[i+1 : end_i+1]
-        if len(future_highs) == 0:
-            i += 1
-            continue
-            
-        future_max_high = np.max(future_highs)
-        future_max_gain_pct = (future_max_high - close_now) / close_now
+    # Add bucket column
+    def get_bucket(gain):
+        return determine_rally_bucket(gain, buckets=buckets)
         
-        if future_max_gain_pct >= min_gain_pct:
-            # We found a registered rally candidate
-            # Find closest peak
-            peak_offset = np.argmax(future_highs) + 1
-            bucket = determine_rally_bucket(future_max_gain_pct, buckets=buckets)
-            
-            if bucket:
-                events.append({
-                    'event_index': i,
-                    'event_time': timestamps[i],
-                    'future_max_gain_pct': future_max_gain_pct,
-                    'bars_to_peak': peak_offset,
-                    'rally_bucket': bucket
-                })
-                
-                # Skip to avoid overlapping events
-                # Semantic Lockout: Skip until the peak of this rally is reached
-                # This prevents detecting "starting points" for the same move as it develops.
-                i += max(event_gap, peak_offset)
-                continue
-        
-        i += 1
-        
-    events_df = pd.DataFrame(events)
+    events_df['rally_bucket'] = events_df['future_max_gain_pct'].apply(get_bucket)
+    
+    # Filter out None buckets (should be covered by min_gain but safety check)
+    events_df = events_df.dropna(subset=['rally_bucket'])
+    
+    return events_df
     if not events_df.empty:
         logger.info(f"Detected {len(events_df)} rally events in {timeframe} data")
     

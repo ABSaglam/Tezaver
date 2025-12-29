@@ -1740,8 +1740,7 @@ def render_universal_chart(
 
         st.plotly_chart(fig, use_container_width=True)
         
-        if debug:
-            st.success("Chart rendered (st.plotly_chart called)")
+        # Chart rendered
 
     except Exception as e:
         st.error(f"Grafik hatası: {e}")
