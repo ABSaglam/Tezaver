@@ -1967,11 +1967,11 @@ def render_sniper_studio_chart(
             
             # Label
             try:
-                p_start = df.iloc[idx_start]['close']
-                p_end = df.iloc[idx_end]['close']
+                p_start = df.iloc[idx_start]['open'] # Entry is at Open
+                p_end = df.iloc[idx_end]['high']   # Exit is at High (Potential)
                 gain_pct = ((p_end - p_start) / p_start) * 100 if p_start else 0
                 
-                label_txt = f"+{gain_pct:.1f}%"
+                label_txt = f"+{gain_pct:.1f}% ({p_start:.2f} -> {p_end:.2f})"
                 if exit_offset is None: label_txt += " (Est.)"
                 
                 # Add Annotation at Top Center of Box

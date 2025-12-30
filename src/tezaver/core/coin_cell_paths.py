@@ -140,3 +140,25 @@ def get_sim_promotion_path(symbol: str) -> Path:
     Returns data/coin_profiles/{SYMBOL}/sim_promotion.json path.
     """
     return get_coin_profile_dir(symbol) / "sim_promotion.json"
+
+def get_foundry_root() -> Path:
+    """
+    Returns .tezaver_matrix/foundry/ directory.
+    Creates it if it doesn't exist.
+    """
+    root = get_project_root()
+    foundry_dir = root / ".tezaver_matrix" / "foundry"
+    if not foundry_dir.exists():
+        foundry_dir.mkdir(parents=True, exist_ok=True)
+    return foundry_dir
+
+def get_ciphers_dir() -> Path:
+    """
+    Returns .tezaver_matrix/foundry/ciphers/ directory.
+    Creates it if it doesn't exist.
+    """
+    foundry = get_foundry_root()
+    ciphers_dir = foundry / "ciphers"
+    if not ciphers_dir.exists():
+        ciphers_dir.mkdir(parents=True, exist_ok=True)
+    return ciphers_dir

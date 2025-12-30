@@ -5,7 +5,7 @@ Molder Tab - Kalıpçı (Archetype Labeling)
 "Ralliyi Adlandırma ve Sınıflandırma Atölyesi"
 
 Flow:
-1. Load APPROVED rallies from Ony Repo.
+1. Load APPROVED rallies from Ony Repo via RallyAssembler.
 2. Filter by Tier (Diamond, Gold, etc.).
 3. Select from List (synced with Chart).
 4. Label with Archetype (Icons).
@@ -13,12 +13,16 @@ Flow:
 
 import streamlit as st
 import pandas as pd
+import importlib
 from typing import List, Optional, Dict
+from datetime import datetime
 
-from tezaver.core.annotations import SniperAnnotationRepository, SniperAnnotation, SniperStatus
+from tezaver.core.annotations import SniperAnnotationRepository, SniperAnnotation, SniperStatus, SniperLabel
 from tezaver.core.molds import Archetype, ARCHETYPE_LABELS, ARCHETYPE_DESCRIPTIONS
-from tezaver.ui.chart_area import render_sniper_studio_chart
+from tezaver.ui.chart_area import render_sniper_studio_chart, load_history_data
 from tezaver.foundry.archetype_service import ArchetypeService
+from tezaver.foundry.rally_assembler import RallyAssembler
+
 # Reuse helpers from Ony Tab to maintain consistency
 from tezaver.ui.ony_tab import (
     _get_available_symbols, 
@@ -30,7 +34,6 @@ from tezaver.ui.ony_tab import (
 
 def render_molder_page():
     """Render the Kalıpçı page."""
-    # st.title("📐 Kalıpçı (Şablon Atölyesi)") # Title removed per style guide preference in Ony
     st.caption("Onaylanmış (Approved) rallilere Arketip (Kalıp) etiketi basar.")
     
     # Handle return from Revize
@@ -45,15 +48,15 @@ def render_molder_page():
             st.session_state['molder_prefill_event_id'] = target_id
             st.toast("📐 Revize'den döndünüz! Kalıp seçebilirsiniz.")
     
-    # Initialize repository
+    # Initialize repository & Assembler
     repo = SniperAnnotationRepository()
+    assembler = RallyAssembler()
 
     # --- TOP FILTERS (Coin, TF, Tier) ---
     c_sym, c_tf, c_tier = st.columns([1, 1, 3])
     
     with c_sym:
         symbols = _get_available_symbols()
-        # Session state persistence
         idx = 0
         if "molder_sym" in st.session_state and st.session_state["molder_sym"] in symbols:
             idx = symbols.index(st.session_state["molder_sym"])
@@ -66,118 +69,35 @@ def render_molder_page():
             idx = timeframes.index(st.session_state["molder_tf"])
         sel_tf = st.selectbox("Timeframe", timeframes, index=idx, key="molder_tf", label_visibility="collapsed")
     
-    # --- DATA LOADING ---
-    # 1. Load Repo (Source of Truth for "Approved")
-    all_anns = repo.load_all(sel_sym, sel_tf)
-    approved_anns = [a for a in all_anns if a.status == SniperStatus.APPROVED]
+    # --- DATA LOADING (Via RallyAssembler) ---
+    moldable_rallies = assembler.get_moldable_rallies(sel_sym, sel_tf)
     
-    # 2. Load Parquet (Source of Metadata: Gain, Tier, Bars)
-    df_events = _load_events_for_symbol_tf(sel_sym, sel_tf)
-    
-    # Create Metadata Map from Parquet
-    meta_map = {}
-    if df_events is not None and not df_events.empty:
-        # Index by event_id for fast lookup
-        # Note: df_events might have raw IDs. Annotations might have _RVZ_ IDs.
-        # We'll handle matching below.
-        df_events['str_id'] = df_events['event_id'].astype(str)
-        
-        # Ensure Tier is present
-        if 'rally_grade' in df_events.columns:
-            df_events['tier'] = df_events['rally_grade'].apply(normalize_tier)
-        else:
-            df_events['tier'] = df_events['future_max_gain_pct'].apply(compute_tier_from_gain)
-            
-        meta_map = df_events.set_index('str_id')[['tier', 'future_max_gain_pct', 'bars_to_peak', 'event_time']].to_dict('index')
+    if not moldable_rallies:
+         st.info("Bu coin/zaman için onaylanmış (Approved) ralli yok.")
+         return
 
-    # 3. Merge Repo + Metadata
-    # We want to group Approved Anns by Tier
+    # Group by Tier
     tier_groups = {t: [] for t in TIERS}
-    tier_groups["OTHER"] = [] # Fallback
+    tier_groups["OTHER"] = [] 
     
-    display_items = []
+    # Sort by Time (Newest First)
+    moldable_rallies.sort(key=lambda x: x.event_time, reverse=True)
     
-    # Dedupe: Keep latest version per unique timestamp
-    # Group by (symbol, tf, timestamp) and prefer _RVZ_ versions
-    seen_rallies = {}  # key: timestamp_str -> best annotation
-    
-    for ann in approved_anns:
-        eid = str(ann.event_id)
-        # Create a stable key for deduplication (ID without _RVZ_ and without Tier Code)
-        # Standard format: {SYM}_{TF}_{TIER}_{TS} or {SYM}_{TF}_RVZ_{TIER}_{TS}
-        parts = eid.split('_')
-        if not parts: continue
+    for rally in moldable_rallies:
+        t = rally.tier
+        if t not in tier_groups: t = "OTHER"
+        tier_groups[t].append(rally)
         
-        # Dedupe key: SYMBOL_TF_TIMESTAMP
-        ts_part = parts[-1]
-        dedupe_key = f"{ann.symbol}_{ann.timeframe}_{ts_part}"
-        
-        is_revised = "_RVZ_" in eid
-        
-        if dedupe_key not in seen_rallies:
-            seen_rallies[dedupe_key] = ann
-        else:
-            # Prefer revised version
-            existing = seen_rallies[dedupe_key]
-            existing_is_revised = "_RVZ_" in str(existing.event_id)
-            if is_revised and not existing_is_revised:
-                seen_rallies[dedupe_key] = ann
-            elif is_revised and existing_is_revised:
-                # Both revised - keep the one with archetype if possible
-                if ann.archetype and not existing.archetype:
-                    seen_rallies[dedupe_key] = ann
-
-    # Now process only unique rallies
-    for ann in seen_rallies.values():
-        eid = str(ann.event_id)
-        # Lookup metadata
-        # Logic: Try direct ID match. If fail, try the raw ID (without _RVZ_)
-        meta = meta_map.get(eid)
-        if not meta and "_RVZ_" in eid:
-            # Map SYM_TF_RVZ_TIER_TS -> SYM_TF_TIER_TS
-            parts = eid.split('_')
-            raw_parts = [p for p in parts if p != "RVZ"]
-            raw_id = "_".join(raw_parts)
-            meta = meta_map.get(raw_id)
-            
-        if meta:
-            tier = meta.get('tier')
-            gain = meta.get('future_max_gain_pct', 0) * 100
-            bars = int(meta.get('bars_to_peak', 0))
-            ts = meta.get('event_time')
-        else:
-            # Metadata missing? Fallback or calculate from annotation if possible?
-            # We assume metadata usually exists. If not, tier is unknown.
-            tier = "OTHER"
-            gain = 0
-            bars = 0
-            ts = pd.NaT
-
-        # Store for list logic
-        item = {
-            "ann": ann,
-            "tier": tier if tier in TIERS else "OTHER",
-            "gain": gain,
-            "bars": bars,
-            "ts": ts
-        }
-        
-        target_tier = item["tier"]
-        if target_tier not in tier_groups: target_tier = "OTHER"
-        tier_groups[target_tier].append(item)
-
     # --- Handle Return from Revize: Find Target Rally's Tier ---
     prefill_id = st.session_state.get('molder_prefill_event_id')
     if prefill_id:
-        # Search all tiers to find the target rally
         for tier, items in tier_groups.items():
-            for itm in items:
-                if itm['ann'].event_id == prefill_id:
+            for r in items:
+                if r.event_id == prefill_id:
                     st.session_state['molder_selected_tier'] = tier
                     break
 
     # --- TIER SELECTOR ---
-    # Calc counts
     tier_options = []
     for t in TIERS:
         count = len(tier_groups[t])
@@ -187,10 +107,8 @@ def render_molder_page():
         if 'molder_selected_tier' not in st.session_state:
             st.session_state['molder_selected_tier'] = "DIAMOND"
             
-        # Helper to strip count
         def get_clean_tier(opt): return opt.split(" (")[0]
         
-        # Find index
         current_sel_idx = 0
         if st.session_state['molder_selected_tier'] in TIERS:
             current_sel_idx = TIERS.index(st.session_state['molder_selected_tier'])
@@ -208,14 +126,9 @@ def render_molder_page():
 
     # --- LIST SELECTOR ---
     current_list_items = tier_groups.get(selected_tier, [])
-    # Sort: Unlabeled first, then by gain descending
-    def sort_key(x):
-        has_archetype = 1 if (x["ann"].archetype and x["ann"].archetype != "None") else 0
-        return (has_archetype, -x.get("gain", 0))  # (0=unlabeled first, then higher gain first)
-    current_list_items.sort(key=sort_key) 
     
     if not current_list_items:
-        st.info(f"🔍 {selected_tier} katmanında etiketlenecek ralli yok. (Önce Revize Stüdyo'dan onaylanmalı)")
+        st.info(f"🔍 {selected_tier} katmanında etiketlenecek ralli yok.")
         return
 
     # Helper for Icons
@@ -227,113 +140,34 @@ def render_molder_page():
         except:
             return "🏷️"
 
-    # Revised Check
-    def is_revised(ann):
-        return "_RVZ_" in str(ann.event_id) or str(ann.label) == "REV"
-
-    # --- PRELOAD HISTORY FOR GAIN CALC ---
-    from tezaver.ui.chart_area import load_history_data
-    df_hist_cache = None
-    
     list_options = []
     list_map = {}
     
-    for item in current_list_items:
-        ann = item["ann"]
-        arch = ann.archetype
+    for rally in current_list_items:
+        ts_str = rally.event_time.strftime('%Y-%m-%d %H:%M')
         
-        # Icons
-        arch_icon = get_arch_icon(arch)
-        revised = is_revised(ann)
-        rev_icon = "🛠️" if revised else ""
+        arch_icon = get_arch_icon(rally.archetype)
+        if rally.archetype and rally.archetype != "None":
+             arch_display = f" {arch_icon}" 
+        else:
+             arch_display = ""
+             
+        rev_icon = "🛠️" if rally.is_revised else ""
+        tier_icon = rally.get_icon()
+        if tier_icon == "🏷️": tier_icon = {"DIAMOND":"💎","GOLD":"🥇","SILVER":"🥈","BRONZE":"🥉"}.get(rally.tier, "🔹")
         
-        # Dynamic Vars
-        display_gain = item['gain']
-        eff_entry = ann.entry_bar_offset or 0
-        eff_exit = ann.exit_bar_offset if ann.exit_bar_offset is not None else item['bars']
-        
-        # Duration
-        display_bars = max(1, eff_exit - eff_entry)
-        
-        # Attempt Dynamic Gain Calculation (Greedy but Cached)
-        # Only try if revised (to match user expectation)
-        if revised:
-            try:
-                # We fetch history individually. Streamlit cache makes this fast-ish.
-                # Use a lightweight fetch if possible? load_history_data is full load.
-                dh = load_history_data(ann.symbol, ann.timeframe)
-                if dh is not None:
-                     # Calculate
-                     # Need event index
-                     # Using naive approach for speed
-                     target_ts = None
-                     if pd.notna(item.get("ts")): target_ts = item["ts"]
-                     if target_ts:
-                         pass
-            except:
-                pass
-        
-        # Let's try the direct calculation approach just for the currently selected symbol?
-        # If the outer scope `sel_sym` matches `ann.symbol`.
-        # (We need to check if `sel_sym` is available in scope. It is usually top-level)
-        
-        # Actually, let's look at `molder_tab.py` top scope again...
-        # It has `sel_sym` from sidebar.
-        is_active_symbol = (ann.symbol == sel_sym) and (ann.timeframe == sel_tf)
-        
-        if is_active_symbol and revised:
-             # Load history (should be cached hot)
-             dh = load_history_data(sel_sym, sel_tf)
-             if dh is not None and not dh.empty:
-                 try:
-                     # Find index 
-                     if dh.index.dtype.kind == 'M': times = dh.index
-                     else: times = pd.to_datetime(dh['open_time'])
-                     
-                     if times.dt.tz is not None: times = times.dt.tz_localize(None)
-                     
-                     ets = item["ts"]
-                     if ets.tzinfo: ets = ets.tz_localize(None)
-                     
-                     # Binary search or min abs
-                     # Fast approx
-                     idx = dh.index.get_loc(ets) if ets in dh.index else None
-                     
-                     if idx is None:
-                         # Fallback search
-                         diffs = (times - ets).abs()
-                         idx = int(diffs.values.argmin())
-                     
-                     if idx is not None:
-                         # Calc
-                         i_start = min(max(0, idx + eff_entry), len(dh)-1)
-                         i_end = min(max(0, idx + eff_exit), len(dh)-1)
-                         
-                         p0 = dh.iloc[i_start]['close']
-                         p1 = dh.iloc[i_end]['close']
-                         
-                         new_g = (p1 - p0) / p0
-                         display_gain = new_g * 100
-                 except:
-                     pass
-
-        final_icon = f"{rev_icon} {arch_icon}".strip()
-        ts_str = item["ts"].strftime('%Y-%m-%d %H:%M') if pd.notna(item["ts"]) else "N/A"
-        label_str = f"{final_icon} {ts_str} | +{display_gain:.1f}% | {display_bars}bar"
-        
-        if label_str in list_map:
-             label_str = f"{label_str} ({ann.event_id[-4:]})"
+        label_str = f"{tier_icon} {rev_icon}{arch_display} {ts_str} | +{rally.gain_pct*100:.1f}% | {max(1, rally.bars_to_peak)}bar"
         
         list_options.append(label_str)
-        list_map[label_str] = item
+        list_map[label_str] = rally
 
-    # Calculate default index (for return from Revize)
+    # Calculate default index
     default_idx = 0
     prefill_id = st.session_state.pop('molder_prefill_event_id', None)
     if prefill_id:
         for i, lbl in enumerate(list_options):
-            item_data = list_map.get(lbl)
-            if item_data and item_data.get('ann') and item_data['ann'].event_id == prefill_id:
+            r = list_map.get(lbl)
+            if r and r.event_id == prefill_id:
                 default_idx = i
                 break
 
@@ -342,124 +176,25 @@ def render_molder_page():
     if not selected_label_str:
         return
         
-    selected_item = list_map[selected_label_str]
-    current_ann = selected_item["ann"]
+    current_rally = list_map[selected_label_str] # AssembledRally object
     
-    # --- MAIN CONTENT ---
-    # st.divider() # Removed, merging panel directly
-
-    # --- LABELING PANEL (Now Top) ---
-    st.markdown("### 🏷️ Kalıp Seçimi (Archetype)")
-    
-    # Header Info + Revise Button
-    hb1, hb2 = st.columns([3, 1])
-    with hb1:
-         st.info(f"ID: `{current_ann.event_id}` | Mevcut: **{current_ann.archetype or 'YOK'}**")
-    with hb2:
-         if st.button("🛠️ Revize Et", help="Bu ralliyi Revize Stüdyo'da düzenle", type="primary"):
-             st.session_state['nav_selection'] = "🎯 Revize"
-             st.session_state['ony_target_id'] = current_ann.event_id
-             st.session_state['ony_prefill_symbol'] = sel_sym
-             st.session_state['ony_prefill_tf'] = sel_tf
-             # Set flag for return navigation
-             st.session_state['came_from_molder'] = True
-             st.session_state['molder_return_target'] = current_ann.event_id
-             st.rerun()
-
-    # Layout: 7 Columns (Single Row)
-    cols = st.columns(7)
-    mold_list = [
-        Archetype.GRIND, Archetype.GUILLOTINE, Archetype.SUPERNOVA, Archetype.PHOENIX,
-        Archetype.NINJA, Archetype.SURFER, Archetype.OTHER
-    ]
-    
-    for i, mold in enumerate(mold_list):
-        col = cols[i] # 1 to 1 mapping
-        label = ARCHETYPE_LABELS[mold]
-        desc = ARCHETYPE_DESCRIPTIONS.get(mold, "")
-        is_active = (current_ann.archetype == mold.value)
-        
-        with col:
-            if st.button(
-                label, 
-                key=f"btn_{mold.value}", 
-                use_container_width=True, 
-                type="primary" if is_active else "secondary",
-                help=desc # Tooltip for description
-            ):
-                # SAVE
-                repo.append(
-                    symbol=sel_sym,
-                    timeframe=sel_tf,
-                    event_id=current_ann.event_id,
-                    entry_bar_offset=current_ann.entry_bar_offset,
-                    status=current_ann.status, # Keep APPROVED
-                    label=current_ann.label,
-                    note=current_ann.note,
-                    archetype=mold.value # UPDATE ARCHETYPE
-                )
-                st.toast(f"✅ Etiketlendi: {label}")
-                st.rerun()
-             # No separate caption/description below button
-
-    # --- CHART AREA (Positioned below Labeling) ---
-    st.markdown("---")
-    
-    # Need event_time. Parse from metadata or ID
-    event_time = selected_item["ts"]
-    if pd.isna(event_time):
-        # Fallback to ID parse
-        parts = current_ann.event_id.split('_')
-        if parts[-1].isdigit():
-            event_time = pd.to_datetime(int(parts[-1]), unit='s')
-            
-    # Pass the SAME bar count displayed in the list to the chart for unrevised rallies
-    # This ensures consistency: List shows 9 bars -> Highlight is 9 bars.
-    chart_bars_to_peak = selected_item["bars"]
-    
-    try:
-        render_sniper_studio_chart(
-            symbol=sel_sym,
-            timeframe=sel_tf,
-            event_time=event_time,
-            bars_to_peak=chart_bars_to_peak, # Use metadata bars for highlighting fallback
-            entry_offset=current_ann.entry_bar_offset,
-            exit_offset=current_ann.exit_bar_offset
-        )
-    except Exception as e:
-        st.error(f"Grafik hatası: {e}")
-
-    # --- MOLDER AI ASSISTANT (Vertical Layout) ---
-    st.markdown("---")
-    st.markdown("### 🤖 Sistem Analizi ve Öneriler")
-    
-    # Force reload ArchetypeService to avoid stale cached class
-    import importlib
-    import tezaver.foundry.archetype_service
-    importlib.reload(tezaver.foundry.archetype_service)
-    from tezaver.foundry.archetype_service import ArchetypeService
-    
-    # --- 1. PREDICTIONS (Top) ---
-    from tezaver.ui.chart_area import load_history_data
+    # ==========================
+    # 1. AI PREDICTIONS (System Analysis)
+    # ==========================
     df_hist_curr = load_history_data(sel_sym, sel_tf)
-    
     scores = []
     
     if df_hist_curr is not None:
-         curr_ts = item.get("ts")
-         if pd.isna(curr_ts):
-             try:
-                 parts = current_ann.event_id.split('_')
-                 curr_ts = pd.to_datetime(int(parts[-1]), unit='s')
-             except: pass
-
+         curr_ts = current_rally.event_time
          if curr_ts:
+             # Ensure TZ naive for comparison
              if curr_ts.tzinfo: curr_ts = curr_ts.tz_localize(None)
+             
              if df_hist_curr.index.dtype.kind == 'M': t_idx = df_hist_curr.index 
              else: t_idx = pd.DatetimeIndex(pd.to_datetime(df_hist_curr['open_time']))
              if t_idx.tz is not None: t_idx = t_idx.tz_localize(None)
              
-             # Ensure Indicators
+             # Enrich Indicators
              if 'rsi' not in df_hist_curr.columns:
                  period = 14
                  delta = df_hist_curr['close'].diff()
@@ -471,15 +206,16 @@ def render_molder_page():
                  if 'volume' in df_hist_curr.columns: df_hist_curr['volume_rel'] = df_hist_curr['volume'] / df_hist_curr['volume'].rolling(20).mean()
                  else: df_hist_curr['volume_rel'] = 0
              
+             # Locate and Slice
              pos = t_idx.searchsorted(curr_ts)
              if pos < len(df_hist_curr):
-                 eff_idx = min(pos + (current_ann.entry_bar_offset or 0), len(df_hist_curr)-1)
+                 eff_idx = min(pos + (current_rally.entry_offset or 0), len(df_hist_curr)-1)
                  idx_start = max(0, eff_idx - 59)
                  window_slice = df_hist_curr.iloc[idx_start:eff_idx+1]
                  w_rsi = window_slice['rsi'].tolist()
                  w_vol = window_slice['volume_rel'].tolist()
                  
-                 # PREDICT SCORES (All)
+                 # PREDICT SCORES
                  scores = ArchetypeService.analyze_trend_scores(w_rsi, w_vol)
                  
                  if scores:
@@ -488,7 +224,6 @@ def render_molder_page():
                       p_conf = best['conf']
                       p_reason = best['reason']
                       
-                      # Highlighted Suggestion
                       c1, c2 = st.columns([1, 6])
                       with c1:
                           st.metric("Sistem Önerisi", p_arch, f"%{p_conf}")
@@ -496,7 +231,6 @@ def render_molder_page():
                           p_desc = ARCHETYPE_DESCRIPTIONS.get(p_arch, "")
                           st.success(f"**{p_arch}** ({p_desc})\n\n👉 **Gerekçe:** {p_reason}")
                           
-                      # Secondary
                       if len(scores) > 1 and scores[1]['conf'] > 50:
                           sec = scores[1]
                           with st.expander(f"Alternatif: {sec['arch']} (%{sec['conf']})"):
@@ -508,10 +242,65 @@ def render_molder_page():
 
     st.markdown("---")
 
-    # --- 2. SELECTION CHECK (Middle) ---
+    # ==========================
+    # 2. LABELING PANEL + CHART
+    # ==========================
+    st.markdown("### 🏷️ Kalıp Seçimi (Archetype)")
+    
+    # Header Info + Revise Button
+    hb1, hb2 = st.columns([3, 1])
+    with hb1:
+         st.info(f"ID: `{current_rally.event_id}` | Mevcut: **{current_rally.archetype or 'YOK'}**")
+    with hb2:
+         if st.button("🛠️ Revize Et", help="Bu ralliyi Revize Stüdyo'da düzenle", type="primary"):
+             st.session_state['nav_selection'] = "🎯 Revize"
+             st.session_state['ony_target_id'] = current_rally.event_id
+             st.session_state['ony_prefill_symbol'] = sel_sym
+             st.session_state['ony_prefill_tf'] = sel_tf
+             st.session_state['came_from_molder'] = True
+             st.session_state['molder_return_target'] = current_rally.event_id
+             st.rerun()
+
+    # Buttons
+    cols = st.columns(7)
+    mold_list = [
+        Archetype.GRIND, Archetype.GUILLOTINE, Archetype.SUPERNOVA, Archetype.PHOENIX,
+        Archetype.NINJA, Archetype.SURFER, Archetype.OTHER
+    ]
+    
+    for i, mold in enumerate(mold_list):
+        col = cols[i]
+        label = ARCHETYPE_LABELS[mold]
+        desc = ARCHETYPE_DESCRIPTIONS.get(mold, "")
+        is_active = (current_rally.archetype == mold.value)
+        
+        with col:
+            if st.button(
+                label, 
+                key=f"btn_{mold.value}", 
+                use_container_width=True, 
+                type="primary" if is_active else "secondary",
+                help=desc
+            ):
+                assembler.repo.append(
+                    symbol=sel_sym,
+                    timeframe=sel_tf,
+                    event_id=current_rally.event_id,
+                    entry_bar_offset=current_rally.entry_offset,
+                    exit_bar_offset=current_rally.exit_offset,
+                    status=current_rally.status, 
+                    label=SniperLabel.GOOD, 
+                    note=current_rally.note,
+                    archetype=mold.value
+                )
+                st.toast(f"✅ Etiketlendi: {label}")
+                st.rerun()
+    
+    # Selection Check (User vs System)
+    st.divider()
     c_chk_1, c_chk_2 = st.columns([1, 6])
     with c_chk_1:
-         user_arch = current_ann.archetype
+         user_arch = current_rally.archetype
          if user_arch and user_arch != "None":
              st.markdown("**Seçiminiz**")
              match_status = (scores and user_arch == scores[0]['arch'])
@@ -529,274 +318,118 @@ def render_molder_page():
              elif scores:
                  st.caption(f"⚠️ Sistem önerisi: **{scores[0]['arch']}**. Farklı bir yorumunuz olabilir.")
 
+    # Chart
     st.markdown("---")
+    event_time = current_rally.event_time
+    try:
+        render_sniper_studio_chart(
+            symbol=sel_sym,
+            timeframe=sel_tf,
+            event_time=event_time,
+            bars_to_peak=current_rally.bars_to_peak,
+            entry_offset=current_rally.entry_offset,
+            exit_offset=current_rally.exit_offset
+        )
+    except Exception as e:
+        st.error(f"Grafik hatası: {e}")
 
-    # --- 3. MASTERY SCORE (Bottom) ---
+    # ==========================
+    # 3. MASTERY SCORE & INFO POOL
+    # ==========================
+    st.markdown("---")
     st.caption("📊 Sistem Karnesi (Son 40 İşlem Başarısı)")
     
     hist_anns = repo.load_all(sel_sym, sel_tf)
     reviewed = [a for a in hist_anns if a.archetype and a.archetype != "None"]
     recent = reviewed[-40:] 
     
-    if recent:
-        df_hist_ai = load_history_data(sel_sym, sel_tf)
-        if df_hist_ai is not None and not df_hist_ai.empty:
-            if df_hist_ai.index.dtype.kind == 'M': times_ai = df_hist_ai.index 
-            else: times_ai = pd.DatetimeIndex(pd.to_datetime(df_hist_ai['open_time']))
-            if times_ai.tz is not None: times_ai = times_ai.tz_localize(None)
-            
-            # Ensure Indicators
-            if 'rsi' not in df_hist_ai.columns:
-                period = 14
-                delta = df_hist_ai['close'].diff()
-                gain = delta.where(delta > 0, 0).ewm(alpha=1/period, adjust=False).mean()
-                loss = -delta.where(delta < 0, 0).ewm(alpha=1/period, adjust=False).mean()
-                rs = gain / loss
-                df_hist_ai['rsi'] = 100 - (100 / (1 + rs))
-            if 'volume_rel' not in df_hist_ai.columns:
-                if 'volume' in df_hist_ai.columns: df_hist_ai['volume_rel'] = df_hist_ai['volume'] / df_hist_ai['volume'].rolling(20).mean()
-                else: df_hist_ai['volume_rel'] = 0
-
-            closes = df_hist_ai['close'].values
-            rsi_vals = df_hist_ai['rsi'].values
-            vol_vals = df_hist_ai['volume_rel'].values
-            
-            matches = 0
-            valid_n = 0
-            for r_ann in recent:
-                try:
-                    if r_ann.symbol != sel_sym: continue
-                    parts = r_ann.event_id.split('_')
-                    ts_val = int(parts[-1])
-                    event_ts = pd.to_datetime(ts_val, unit='s')
-                    idx = times_ai.searchsorted(event_ts)
-                    if idx < len(times_ai):
-                         e_idx = min(idx + (r_ann.entry_bar_offset or 0), len(closes)-1)
-                         curr_rsi = rsi_vals[e_idx]
-                         curr_vol = vol_vals[e_idx]
-                         p_arch, _, _ = ArchetypeService.classify_vector(curr_rsi, curr_vol)
-                         if p_arch == r_ann.archetype: matches += 1
-                         valid_n += 1
-                except: continue
-            
-            if valid_n > 0:
-                score = (matches / valid_n) * 100
-                st.progress(score/100, text=f"Başarı: %{score:.0f} (Son {valid_n} işlem)")
-            else:
-                st.caption("Veri yetersiz.")
-        else:
-            st.caption("Veri yükleniyor...")
+    if recent and df_hist_curr is not None:
+         # Use df_hist_curr (already loaded)
+         closes = df_hist_curr['close'].values
+         if 'rsi' in df_hist_curr.columns:
+             rsi_vals = df_hist_curr['rsi'].values
+             vol_vals = df_hist_curr['volume_rel'].values
+             times_ai = df_hist_curr.index if df_hist_curr.index.dtype.kind == 'M' else pd.to_datetime(df_hist_curr['open_time'])
+             if hasattr(times_ai, 'tz') and times_ai.tz is not None: times_ai = times_ai.tz_localize(None)
+             
+             matches = 0
+             valid_n = 0
+             for r_ann in recent:
+                 try:
+                     parts = r_ann.event_id.split('_')
+                     if len(parts) > 1 and parts[1] == sel_tf: # Check TF Match? implied by load_all
+                         ts_val = int(parts[-1])
+                         event_ts = pd.to_datetime(ts_val, unit='s')
+                         
+                         idx = times_ai.searchsorted(event_ts)
+                         if idx < len(times_ai):
+                              e_idx = min(idx + (r_ann.entry_bar_offset or 0), len(closes)-1)
+                              p_arch, _, _ = ArchetypeService.classify_vector(rsi_vals[e_idx], vol_vals[e_idx])
+                              if p_arch == r_ann.archetype: matches += 1
+                              valid_n += 1
+                 except: continue
+             
+             if valid_n > 0:
+                 score = (matches / valid_n) * 100
+                 st.progress(score/100, text=f"Başarı: %{score:.0f} (Son {valid_n} işlem)")
+             else:
+                 st.caption("Veri yetersiz.")
     else:
-        st.caption("Henüz yeterli işlem yok.")
+         st.caption("Veri yükleniyor...")
 
-    # --- INFO POOL (Bilgi Havuzu - Moved Below AI) ---
+    # Info Pool (Trade Künyesi)
     st.markdown("---")
     st.markdown("### 📊 Trade Künyesi")
     
-    with st.spinner("Künye Hazırlanıyor..."):
-        try:
-            from tezaver.ui.chart_area import load_history_data
-            df_hist = load_history_data(sel_sym, sel_tf)
-            
-            if df_hist is not None and not df_hist.empty:
-                # Find index
-                # Ensure timezone compatibility (naive)
-                if df_hist.index.dtype.kind == 'M': # DatetimeIndex
-                        times = df_hist.index
-                else:
-                        times = pd.to_datetime(df_hist['open_time'])
-                
-                if times.dt.tz is not None:
-                    times = times.dt.tz_localize(None)
-                
-                if not pd.isna(event_time):
-                    et_naive = event_time
-                    if et_naive.tzinfo: et_naive = et_naive.tz_localize(None)
-                    
-                    try:
-                        valid_diffs = (times - et_naive).abs()
-                        event_idx = int(valid_diffs.values.argmin())
-                        
-                        # Calculate Entry/Exit Indices
-                        entry_off = current_ann.entry_bar_offset or 0
-                        # Handle Partial Revision: If exit missing, use default metadata bars
-                        exit_off = current_ann.exit_bar_offset
-                        if exit_off is None:
-                             exit_off = selected_item.get("bars", 0) # Fallback to metadata
-                        
-                        entry_idx = min(max(0, event_idx + entry_off), len(df_hist)-1)
-                        
-                        # Get Entry Data
-                        p_entry = df_hist.iloc[entry_idx]['close']
-                        t_entry = times[entry_idx]
-                        
-                        # Get Exit Data & Calculation
-                        if entry_idx < len(df_hist):
-                            exit_idx = min(max(0, event_idx + exit_off), len(df_hist)-1)
-                            p_exit = df_hist.iloc[exit_idx]['close']
-                            t_exit = times[exit_idx]
+    if df_hist_curr is not None:
+         # Reuse df_hist_curr
+         if not pd.isna(event_time):
+             et_naive = event_time
+             if et_naive.tzinfo: et_naive = et_naive.tz_localize(None)
+             
+             times = df_hist_curr.index if df_hist_curr.index.dtype.kind == 'M' else pd.to_datetime(df_hist_curr['open_time'])
+             if hasattr(times, 'tz') and times.tz is not None: times = times.tz_localize(None)
+             
+             try:
+                 valid_diffs = (times - et_naive).abs()
+                 event_idx = int(valid_diffs.values.argmin())
+                 
+                 entry_off = current_rally.entry_offset or 0
+                 exit_off = current_rally.exit_offset
+                 if exit_off is None: exit_off = current_rally.bars_to_peak
+                 
+                 entry_idx = min(max(0, event_idx + entry_off), len(df_hist_curr)-1)
+                 
+                 if entry_idx < len(df_hist_curr):
+                      p_entry = df_hist_curr.iloc[entry_idx]['close']
+                      t_entry = times[entry_idx]
+                      
+                      exit_idx = min(max(0, event_idx + exit_off), len(df_hist_curr)-1)
+                      p_exit = df_hist_curr.iloc[exit_idx]['close']
+                      t_exit = times[exit_idx]
                             
-                            # Metrics
-                            net_gain = (p_exit - p_entry) / p_entry if p_entry > 0 else 0
-                            duration_bars = exit_off - entry_off
-                            duration_time = t_exit - t_entry
-                            
-                            # Display
-                            k1, k2, k3, k4 = st.columns(4)
-                            k1.metric("Giriş Fiyatı", f"{p_entry:.4f}")
-                            k2.metric("Çıkış Fiyatı", f"{p_exit:.4f}")
-                            
-                            # Add warning if using default exit
-                            gain_label = "Net Kazanç"
-                            if current_ann.exit_bar_offset is None:
-                                 gain_label += " (Varsayılan Tepe)"
-                                 
-                            k3.metric(gain_label, f"%{net_gain*100:.2f}", delta=f"{net_gain*100:.2f}%")
-                            k4.metric("Süre", f"{duration_bars} Bar", help=f"{duration_time}")
-                            
-                            st.caption(f"📅 **Aralık:** {t_entry} ➡️ {t_exit}")
-                        else:
-                            st.warning("Veri aralığı sınırları dışında.")
-                            
-                    except Exception as e_idx:
-                         st.warning(f"Hesaplama hatası (Index): {e_idx}")
-            else:
-                st.warning("Veri yüklenemedi.")
+                      net_gain = (p_exit - p_entry) / p_entry if p_entry > 0 else 0
+                      duration_bars = exit_off - entry_off
+                      duration_time = t_exit - t_entry
+                      
+                      k1, k2, k3, k4 = st.columns(4)
+                      k1.metric("Giriş Fiyatı", f"{p_entry:.4f}")
+                      k2.metric("Çıkış Fiyatı", f"{p_exit:.4f}")
+                      
+                      gain_label = "Net Kazanç"
+                      if current_rally.exit_offset is None: gain_label += " (Varsayılan)"
+                      k3.metric(gain_label, f"%{net_gain*100:.2f}", delta=f"{net_gain*100:.2f}%")
+                      k4.metric("Süre", f"{duration_bars} Bar", help=f"{duration_time}")
+                      st.caption(f"📅 **Aralık:** {t_entry} ➡️ {t_exit}")
+             except Exception as e_pool:
+                 st.warning(f"Künye hesaplanamadı: {e_pool}")
 
-        except Exception as e_pool:
-            st.error(f"Künye hatası: {e_pool}")
-
-    # --- ARCHETYPE REFERENCE GUIDE ---
+    # Guide (Static)
     st.markdown("---")
     with st.expander("📚 Kalıp Rehberi (Arketip Tanımları)", expanded=False):
-        st.markdown("""
-        Her arketip, belirli piyasa koşullarında ortaya çıkan bir ralli kalıbını temsil eder.
-        Aşağıda her birinin detaylı açıklaması ve örnek grafikleri bulunmaktadır.
-        """)
-        
-        from pathlib import Path
-        img_dir = Path("/Users/alisaglam/TezaverMac/library/archetype_images")
-        
-        # GRIND
-        st.markdown("### 🪜 GRIND - Yavaş Birikim")
-        col_g1, col_g2 = st.columns([1, 2])
-        with col_g1:
-            grind_img = list(img_dir.glob("archetype_grind*.png"))
-            if grind_img:
-                st.image(str(grind_img[0]), use_container_width=True)
-        with col_g2:
-            st.markdown("""
-            **Özellikler:**
-            - Düşük hacimli, yavaş ama kararlı yükseliş
-            - RSI genellikle 40-55 arasında stabil
-            - Küçük mumlar, düşük volatilite
-            - Sabır gerektiren pozisyon
-            
-            **Ne zaman görülür?**
-            Piyasanın sakin olduğu, büyük oyuncuların sessizce birikim yaptığı dönemler.
-            """)
-        
-        st.divider()
-        
-        # GUILLOTINE
-        st.markdown("### 🔪 GUILLOTINE - Düşen Bıçak")
-        col_gu1, col_gu2 = st.columns([1, 2])
-        with col_gu1:
-            guill_img = list(img_dir.glob("archetype_guillotine*.png"))
-            if guill_img:
-                st.image(str(guill_img[0]), use_container_width=True)
-        with col_gu2:
-            st.markdown("""
-            **Özellikler:**
-            - Sert düşüş sonrası dip avcılığı
-            - RSI 30 altında (aşırı satım)
-            - Yüksek hacimli panik satışı
-            - Riskli ama yüksek kazançlı
-            
-            **Ne zaman görülür?**
-            Ani kötü haberler, likidasyonlar veya piyasa çöküşlerinde. "Düşen bıçağı tutmak" stratejisi.
-            """)
-        
-        st.divider()
-        
-        # SUPERNOVA
-        st.markdown("### 💥 SUPERNOVA - Patlama")
-        col_s1, col_s2 = st.columns([1, 2])
-        with col_s1:
-            super_img = list(img_dir.glob("archetype_supernova*.png"))
-            if super_img:
-                st.image(str(super_img[0]), use_container_width=True)
-        with col_s2:
-            st.markdown("""
-            **Özellikler:**
-            - Patlayıcı hacim (5x+ ortalama)
-            - Parabolik fiyat hareketi
-            - Tek seansta büyük kazanç
-            - Kısa vadeli, hızlı
-            
-            **Ne zaman görülür?**
-            Büyük haberler, listing duyuruları, viral sosyal medya anları. Çok hızlı giriş-çıkış gerektirir.
-            """)
-        
-        st.divider()
-        
-        # PHOENIX
-        st.markdown("### 🦅 PHOENIX - Küllerinden Doğuş")
-        col_p1, col_p2 = st.columns([1, 2])
-        with col_p1:
-            phoenix_img = list(img_dir.glob("archetype_phoenix*.png"))
-            if phoenix_img:
-                st.image(str(phoenix_img[0]), use_container_width=True)
-        with col_p2:
-            st.markdown("""
-            **Özellikler:**
-            - Önce derin düşüş (RSI 25 altı)
-            - Ardından V veya U şeklinde toparlanma
-            - Güçlü direnç kırılımı
-            - Trend dönüşü sinyali
-            
-            **Ne zaman görülür?**
-            Büyük düşüşlerden sonraki recovery dönemleri. Dip teyidi + momentum.
-            """)
-        
-        st.divider()
-        
-        # NINJA
-        st.markdown("### 🥷 NINJA - Gizli Birikim")
-        col_n1, col_n2 = st.columns([1, 2])
-        with col_n1:
-            ninja_img = list(img_dir.glob("archetype_ninja*.png"))
-            if ninja_img:
-                st.image(str(ninja_img[0]), use_container_width=True)
-        with col_n2:
-            st.markdown("""
-            **Özellikler:**
-            - Çok düşük hacim (radarda görünmez)
-            - Sıkı fiyat konsolidasyonu
-            - RSI 45-55 nötr bölge
-            - Ani breakout potansiyeli
-            
-            **Ne zaman görülür?**
-            "Sinek kaydı borsasında" diye tabir edilen, herkesin unuttuğu coinlerde. Büyük hamle öncesi sessizlik.
-            """)
-        
-        st.divider()
-        
-        # SURFER
-        st.markdown("### 🏄 SURFER - Dalga Sörfü")
-        col_su1, col_su2 = st.columns([1, 2])
-        with col_su1:
-            surfer_img = list(img_dir.glob("archetype_surfer*.png"))
-            if surfer_img:
-                st.image(str(surfer_img[0]), use_container_width=True)
-        with col_su2:
-            st.markdown("""
-            **Özellikler:**
-            - Güçlü yerleşik uptrend
-            - RSI sürekli 60+ (momentum güçlü)
-            - Pullback'ler destek buluyor
-            - Trende katılma stratejisi
-            
-            **Ne zaman görülür?**
-            Piyasa genelinde bullish dönemler. "Trend is your friend" felsefesi.
-            """)
+        st.markdown("**GRIND:** Yavaş birikim, düşük volatilite. (RSI ~50)")
+        st.markdown("**GUILLOTINE:** Sert düşüş sonrası dip dönüşü. (RSI <30)")
+        st.markdown("**SUPERNOVA:** Ani patlama, parabolik yükseliş. (RSI >70)")
+        st.markdown("**PHOENIX:** Derin düşüşten V dönüşü.")
+        st.markdown("**NINJA:** Gizli birikim, hacimsiz yükseliş.")
+        st.markdown("**SURFER:** Güçlü trend takibi. (RSI >60)")

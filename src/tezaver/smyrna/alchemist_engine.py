@@ -182,3 +182,105 @@ class AlchemistEngine:
         # Linear projection based on avg_gain (Naive Ghost)
         target = current_price * (1 + cipher.avg_gain_pct/100)
         return [current_price, (current_price+target)/2, target]
+
+    def save_master_cipher(self, cipher: MasterCipher, filename: str = None) -> str:
+        """
+        Persists a MasterCipher to disk (JSON).
+        """
+        from dataclasses import asdict
+        import json
+        from tezaver.core.coin_cell_paths import get_ciphers_dir
+        
+        c_dir = get_ciphers_dir()
+        if not filename:
+            # Sanitize name
+            safe_name = "".join([c if c.isalnum() else "_" for c in cipher.name])
+            filename = f"{safe_name}.json"
+            
+        file_path = c_dir / filename
+        
+        data = asdict(cipher)
+        # Handle datetime serialization
+        data['created_at'] = cipher.created_at.isoformat()
+        # Handle enum serialization inside particles
+        if 'template_sequence' in data and 'particles' in data['template_sequence']:
+             for p in data['template_sequence']['particles']:
+                 if 'type' in p and hasattr(p['type'], 'name'):
+                     p['type'] = p['type'].name # Enum to string
+                 # In case it's already string (if asdict treated it so? usually not for Enums)
+                 
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=4, default=str)
+            
+        return str(file_path)
+
+    def load_master_ciphers(self) -> List[MasterCipher]:
+        """
+        Loads all Master Ciphers from the Vault.
+        """
+        import json
+        from tezaver.core.coin_cell_paths import get_ciphers_dir
+        from tezaver.core.cipher_types import ParticleType
+        
+        c_dir = get_ciphers_dir()
+        ciphers = []
+        
+        if not c_dir.exists(): return []
+        
+        for f_path in c_dir.glob("*.json"):
+            try:
+                with open(f_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    
+                # Reconstruct Objects (Manual Deserialization)
+                # 1. Particles
+                particles = []
+                raw_seq = data.get('template_sequence', {})
+                for p_data in raw_seq.get('particles', []):
+                    # Convert type string back to Enum
+                    t_str = p_data.get('type')
+                    if isinstance(t_str, str):
+                        try:
+                            # Handle potential format changes (ParticleType.RSI_OVERSOLD vs "RSI_OVERSOLD")
+                            if "." in t_str: t_str = t_str.split(".")[-1]
+                            p_type = ParticleType[t_str]
+                        except:
+                            p_type = ParticleType.RSI_OVERSOLD # Fallback
+                    else:
+                        p_type = ParticleType.RSI_OVERSOLD
+
+                    p = RallyParticle(
+                        type=p_type,
+                        val=p_data.get('val', 0),
+                        time_offset=p_data.get('time_offset', 0),
+                        timeframe=p_data.get('timeframe', '15m'),
+                        description=p_data.get('description', ''),
+                        weight=p_data.get('weight', 1.0)
+                    )
+                    particles.append(p)
+                
+                # 2. Sequence
+                seq = RallySequence(
+                    particles=particles,
+                    symbol=raw_seq.get('symbol', 'UNKNOWN'),
+                    rally_event_id=raw_seq.get('rally_event_id', 'unknown'),
+                    total_duration_bars=raw_seq.get('total_duration_bars', 0)
+                )
+                
+                # 3. MasterCipher
+                mc = MasterCipher(
+                    name=data.get('name', 'Unnamed'),
+                    sequence_signature=data.get('sequence_signature', ''),
+                    template_sequence=seq,
+                    conquest_score=data.get('conquest_score', 0),
+                    win_rate=data.get('win_rate', 0),
+                    avg_gain_pct=data.get('avg_gain_pct', 0),
+                    false_positive_rate=data.get('false_positive_rate', 0),
+                    tags=data.get('tags', []),
+                    created_at=datetime.fromisoformat(data.get('created_at')) if data.get('created_at') else datetime.now()
+                )
+                ciphers.append(mc)
+            except Exception as e:
+                logger.error(f"Failed to load cipher {f_path}: {e}")
+                
+        return ciphers

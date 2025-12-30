@@ -71,6 +71,7 @@ class SniperAnnotation:
     label: str = SniperLabel.UNCERTAIN
     created_at: str = field(default_factory=lambda: datetime.now().isoformat())
     archetype: Optional[str] = None # For Kalıpçı labeling
+    rev_gain: Optional[float] = None # Calculated gain for revised entry/exit window
     
     # Normalized Entry Fields (Auto-Snap)
     normalized_entry_bar_offset: Optional[int] = None
@@ -158,6 +159,7 @@ class SniperAnnotationRepository:
                note: str = "",
                status: str = SniperStatus.PENDING,
                label: str = SniperLabel.UNCERTAIN,
+               rev_gain: Optional[float] = None,
                **kwargs) -> SniperAnnotation:
         """
         Add or Update an annotation.
@@ -184,6 +186,7 @@ class SniperAnnotationRepository:
             note=note,
             status=status,
             label=label,
+            rev_gain=rev_gain,
             # Preserve created_at if updating, else new
             created_at=existing.created_at if existing else datetime.now().isoformat()
         )

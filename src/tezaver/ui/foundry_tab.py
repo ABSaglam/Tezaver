@@ -87,7 +87,7 @@ def _render_archetypes_tab():
     archs = data_map["archetypes"]
     
     # 3. MAIN TABS
-    tab_tier, tab_win, tab_lose, tab_const = st.tabs(["💎 Tiers", "🏆 Kazananlar", "💀 Kaybedenler", "📜 Anayasa"])
+    tab_tier, tab_win, tab_lose, tab_cipher, tab_const = st.tabs(["💎 Tiers", "🏆 Kazananlar", "💀 Kaybedenler", "🔐 Şifreler", "📜 Anayasa"])
 
     # Shared Render Helper
     def render_list(items, empty_msg="Kayıt bulunamadı."):
@@ -101,6 +101,30 @@ def _render_archetypes_tab():
             st.caption(f"Toplam: {len(items)} adet")
         else:
             st.info(empty_msg)
+
+    # ---------------------------------------------------------
+    # CIPHER TAB (New)
+    # ---------------------------------------------------------
+    with tab_cipher:
+        from tezaver.smyrna.alchemist_engine import AlchemistEngine
+        engine = AlchemistEngine()
+        ciphers = engine.load_master_ciphers()
+        
+        if ciphers:
+             st.success(f"📚 {len(ciphers)} Master Cipher (Üretim Bandında)")
+             
+             cols = st.columns(3)
+             for i, mc in enumerate(ciphers):
+                 with cols[i % 3]:
+                     with st.expander(f"🔐 {mc.name}", expanded=True):
+                         st.metric("Win Rate", f"%{mc.win_rate*100:.0f}")
+                         st.metric("Avg Gain", f"%{mc.avg_gain_pct:.1f}")
+                         st.caption(f"Score: {mc.conquest_score}")
+                         st.code(mc.sequence_signature, language="text")
+                         if st.button("Paketle (Üretim)", key=f"btn_pack_{i}"):
+                             st.toast("Paketleme servisi henüz aktif değil.")
+        else:
+             st.info("Henüz üretilmiş şifre yok. Simyacı laboratuvarına gidiniz.")
 
     # ---------------------------------------------------------
     # TIER TAB

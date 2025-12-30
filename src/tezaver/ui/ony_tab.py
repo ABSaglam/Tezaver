@@ -21,7 +21,7 @@ from tezaver.core.annotations import (
     SniperLabel
 )
 from tezaver.core import coin_cell_paths
-from tezaver.ui.chart_area import render_sniper_studio_chart
+from tezaver.ui.chart_area import render_sniper_studio_chart, load_history_data
 from tezaver.rally.normalize_engine import normalize_entry, NormalizeResult
 
 
@@ -483,6 +483,17 @@ def render_ony_studio():
     # Load Existing
     existing_ann = repo.get_one(symbol, timeframe, event_id)
     
+    # FIX: If not found, try finding RVZ variant (because Revize renames ID)
+    if not existing_ann:
+        parts = event_id.split('_')
+        if len(parts) >= 3 and "RVZ" not in parts:
+            parts.insert(2, "RVZ")
+            rvz_id = "_".join(parts)
+            existing_ann = repo.get_one(symbol, timeframe, rvz_id)
+            # IMPORTANT: If found, we must treat this as the active event_id for saving/updating
+            if existing_ann:
+                event_id = rvz_id
+    
     # --- ENTRY / EXIT CONFIGURATION (Top) ---
     st.markdown("---")
     st.markdown("### 🎯 Entry / Exit Ayarları")
@@ -566,41 +577,71 @@ def render_ony_studio():
         with st.expander("📊 Sonuç", expanded=True):
             st.code(f"Offset: {nr['entry_offset_in']} -> {nr['entry_offset_out']}")
             if st.button("✅ Uygula (Apply)"):
-                # Handle RVZ Logic (Renaming ID)
-                final_id = event_id
-                parts = event_id.split('_')
-                if "RVZ" not in parts:
-                    if len(parts) >= 2:
-                        parts.insert(2, "RVZ")
-                        final_id = "_".join(parts)
-                        # Delete old ID
-                        repo.delete(symbol, timeframe, event_id)
+
+                # Immutable ID Architecture: No renaming to _RVZ_
+                # We just update the existing ID with new offsets and REV label
                 
-                repo.append(symbol, timeframe, final_id, nr['entry_offset_out'], exit_offset, note, "APPROVED", "REV")
+                # Calculate Rev Gain
+                rev_gain = None
+                try:
+                    df = load_history_data(symbol, timeframe)
+                    if df is not None:
+                        if 'open_time' in df.columns: df = df.set_index('open_time')
+                        if df.index.tz is not None: df.index = df.index.tz_localize(None)
+                        
+                        ts = pd.to_datetime(event_time).tz_localize(None)
+                        if ts in df.index:
+                            start_pos = df.index.get_loc(ts)
+                            # Handle slice if get_loc returns slice (duplicates) - take first
+                            if isinstance(start_pos, slice): start_pos = start_pos.start
+                            
+                            p_entry = df.iloc[min(start_pos + nr['entry_offset_out'], len(df)-1)]['open']
+                            exit_pos = min(start_pos + (exit_offset if exit_offset else 0), len(df)-1)
+                            p_exit = df.iloc[exit_pos]['high'] # Use High for rally potential
+                            if p_entry > 0:
+                                rev_gain = (p_exit - p_entry) / p_entry
+                except Exception as e:
+                    print(f"Gain calc error: {e}")
+
+                repo.append(symbol, timeframe, event_id, nr['entry_offset_out'], exit_offset, note, "APPROVED", "REV", rev_gain=rev_gain)
+                
                 del st.session_state["ony_norm_result"]
-                st.success(f"✅ Uygulandı! (ID: {final_id})")
+                st.success(f"✅ Uygulandı! (ID: {event_id})")
                 st.rerun()
 
     # --- SAVE ---
     st.markdown("---")
     if st.button("💾 REVİZYONU KAYDET (Asıl)", type="primary", use_container_width=True):
-        # Handle RVZ Logic
-        # Expected ID format: SYMBOL_TF_TIER_TS -> SYMBOL_TF_RVZ_TIER_TS
-        final_id = event_id
-        parts = event_id.split('_')
+        # Immutable ID Architecture: 
+        # ID never changes. We overwrite the annotation with "REV" label.
         
-        # Check if RVZ is missing
-        if "RVZ" not in parts:
-            # Insert after TF (index 1: 0=SYM, 1=TF) -> Insert at 2
-            if len(parts) >= 2:
-                parts.insert(2, "RVZ")
-                final_id = "_".join(parts)
+        # Calculate Rev Gain
+        rev_gain = None
+        try:
+            df = load_history_data(symbol, timeframe)
+            if df is not None:
+                if 'open_time' in df.columns: df = df.set_index('open_time')
+                if df.index.tz is not None: df.index = df.index.tz_localize(None)
                 
-                # Delete old non-RVZ entry to avoid duplicates
-                repo.delete(symbol, timeframe, event_id)
+                ts = pd.to_datetime(event_time).tz_localize(None)
+                if ts in df.index:
+                    start_pos = df.index.get_loc(ts)
+                    if isinstance(start_pos, slice): start_pos = start_pos.start
+                    
+                    p_entry = df.iloc[min(start_pos + entry_offset, len(df)-1)]['open']
+                    exit_pos = min(start_pos + (exit_offset if exit_offset else 0), len(df)-1)
+                    p_exit = df.iloc[exit_pos]['high']
+                    if p_entry > 0:
+                        rev_gain = (p_exit - p_entry) / p_entry
+        except Exception as e:
+            print(f"Gain calc error: {e}")
+
+        repo.append(symbol, timeframe, event_id, entry_offset, exit_offset, note, "APPROVED", "REV", rev_gain=rev_gain)
         
-        repo.append(symbol, timeframe, final_id, entry_offset, exit_offset, note, "APPROVED", "REV")
-        st.success(f"✅ Kaydedildi (ID: {final_id})")
+        if st.session_state.get('came_from_molder'):
+             st.session_state['molder_return_target'] = event_id
+             
+        st.success(f"✅ Kaydedildi (ID: {event_id})")
         st.rerun()
     # --- INFO BOX ---
     if existing_ann:
