@@ -251,6 +251,15 @@ def render_molder_page():
              st.rerun()
 
     # Buttons
+    # Custom CSS to reduce font size for archetype buttons (~20% smaller)
+    st.markdown("""
+    <style>
+    div[data-testid="stHorizontalBlock"] button p {
+        font-size: 13px !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
     cols = st.columns(7)
     mold_list = [
         Archetype.GRIND, Archetype.GUILLOTINE, Archetype.SUPERNOVA, Archetype.PHOENIX,
@@ -440,12 +449,45 @@ def render_molder_page():
              except Exception as e_pool:
                  st.warning(f"Künye hesaplanamadı: {e_pool}")
 
-    # Guide (Static)
+    # Guide (Visual)
     st.markdown("---")
-    with st.expander("📚 Kalıp Rehberi (Arketip Tanımları)", expanded=False):
-        st.markdown("**GRIND:** Yavaş birikim, düşük volatilite. (RSI ~50)")
-        st.markdown("**GUILLOTINE:** Sert düşüş sonrası dip dönüşü. (RSI <30)")
-        st.markdown("**SUPERNOVA:** Ani patlama, parabolik yükseliş. (RSI >70)")
-        st.markdown("**PHOENIX:** Derin düşüşten V dönüşü.")
-        st.markdown("**NINJA:** Gizli birikim, hacimsiz yükseliş.")
-        st.markdown("**SURFER:** Güçlü trend takibi. (RSI >60)")
+    with st.expander("📚 Kalıp Rehberi (Görsel Anlatım)", expanded=False):
+        import os
+        
+        # Hardcoded paths based on find result
+        # library/archetype_images/...
+        base_img_path = "library/archetype_images"
+        
+        # Map arch to filename partial
+        img_map = {
+            "GRIND": "archetype_grind",
+            "GUILLOTINE": "archetype_guillotine",
+            "SUPERNOVA": "archetype_supernova",
+            "PHOENIX": "archetype_phoenix",
+            "NINJA": "archetype_ninja",
+            "SURFER": "archetype_surfer"
+        }
+        
+        cols = st.columns(3)
+        
+        # Helper to find exact file
+        def get_img_path(partial_name):
+            try:
+                if not os.path.exists(base_img_path): return None
+                for f in os.listdir(base_img_path):
+                    if partial_name in f:
+                        return os.path.join(base_img_path, f)
+            except: pass
+            return None
+
+        # Render in Grid
+        for i, (arch_key, fname_part) in enumerate(img_map.items()):
+            col = cols[i % 3]
+            with col:
+                fpath = get_img_path(fname_part)
+                if fpath:
+                    st.image(fpath, use_container_width=True)
+                st.markdown(f"**{arch_key}**")
+                desc = ARCHETYPE_DESCRIPTIONS.get(Archetype(arch_key), "")
+                st.caption(desc)
+

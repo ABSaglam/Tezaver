@@ -233,7 +233,7 @@ def render_ony_studio():
         if sess_sym and sess_sym in symbols:
             default_sym_idx = symbols.index(sess_sym)
         else:
-            default_sym_idx = symbols.index("BTCUSDT") if "BTCUSDT" in symbols else 0
+            default_sym_idx = 0
             
         symbol = st.selectbox("Coin", symbols, index=default_sym_idx, key="ony_symbol", label_visibility="collapsed")
         

@@ -119,7 +119,12 @@ class RallyAssembler:
         note = rev.get('note', '')
         archetype = rev.get('archetype')
         
-        is_revised = (status != 'PENDING') or (entry_offset != 0) or (exit_offset is not None)
+        # Rally is "revised" only if user made manual changes, not just auto-approved
+        # Check: entry offset changed, exit explicitly set, OR note is non-auto
+        auto_note_keywords = ["Auto-Approved", "Otomat", "System"]
+        has_manual_note = note and not any(kw in note for kw in auto_note_keywords)
+        
+        is_revised = (entry_offset != 0) or (exit_offset is not None) or has_manual_note
         
         # Calculations: Paranoid Gain Check
         final_gain = rev.get('rev_gain')

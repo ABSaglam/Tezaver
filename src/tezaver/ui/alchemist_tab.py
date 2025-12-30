@@ -29,14 +29,14 @@ def render_alchemist_page():
             st.warning("Coin verisi yok.")
             return
 
-        # Top Bar Controls: 3 Columns like Molder
-        c_coin, c_time, c_tier = st.columns([1, 1, 3])
+        # Top Bar Controls: One Single Row (7 Columns Ratio: 1-1-5)
+        c_coin, c_time, c_tier = st.columns([1.5, 1.5, 6])
         
         with c_coin:
-            selected_coin = st.selectbox("Coin", [s.symbol for s in coin_states], key="alc_coin_sel")
+            selected_coin = st.selectbox("Coin", [s.symbol for s in coin_states], key="alc_coin_sel", label_visibility="collapsed")
         
         with c_time:
-            selected_tf = st.selectbox("Zaman", ["15m", "1h", "4h"], key="alc_tf_sel")
+            selected_tf = st.selectbox("Zaman", ["15m", "1h", "4h"], key="alc_tf_sel", label_visibility="collapsed")
             
         # Data Loading (Via RallyAssembler)
         from tezaver.foundry.rally_assembler import RallyAssembler
@@ -47,7 +47,8 @@ def render_alchemist_page():
              alchemist_rallies = assembler.get_alchemist_ready_rallies(selected_coin, selected_tf)
              
              if not alchemist_rallies:
-                 st.info(f"{selected_coin} {selected_tf} için Simyacı'ya uygun (Approved) ralli yok.")
+                 # st.info(f"{selected_coin} {selected_tf} için Simyacı'ya uygun (Approved) ralli yok.")
+                 pass
                  
         except Exception as e:
             st.error(f"Veri yükleme hatası: {e}")
@@ -85,6 +86,7 @@ def render_alchemist_page():
             if st.session_state['alc_selected_tier'] in TIERS:
                 current_sel_idx = TIERS.index(st.session_state['alc_selected_tier'])
                 
+            # Vertical alignment hack: labels removed
             selected_tier_label = st.radio(
                 "Tier", 
                 tier_options, 
@@ -102,26 +104,11 @@ def render_alchemist_page():
         list_map = {}
         
         if not current_list_items:
-            st.info(f"🔍 {selected_tier} katmanında uygun ralli yok.")
+            # st.info(f"🔍 {selected_tier} katmanında uygun ralli yok.") # Less noise
             st.session_state['alc_current_rally'] = None
         else:
-            # Helper for Icons (Local or Imported)
-            def get_arch_icon_local(arch_code):
-                if not arch_code: return "❓"
-                try:
-                    # If arch_code is enum value string
-                    if isinstance(arch_code, str):
-                        # Try to find enum member
-                        try:
-                            a_enum = Archetype(arch_code)
-                            lbl = ARCHETYPE_LABELS.get(a_enum, "")
-                            return lbl.split(" ")[-1] if " " in lbl else "🏷️"
-                        except: return "🏷️"
-                    return "🏷️"
-                except:
-                    return "🏷️"
-
             for r in current_list_items:
+                # Use Standardized Label from Assembler
                 options.append(r.display_label)
                 list_map[r.display_label] = r
             
