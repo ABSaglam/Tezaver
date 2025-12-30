@@ -1971,7 +1971,7 @@ def render_sniper_studio_chart(
                 p_end = df.iloc[idx_end]['high']   # Exit is at High (Potential)
                 gain_pct = ((p_end - p_start) / p_start) * 100 if p_start else 0
                 
-                label_txt = f"+{gain_pct:.1f}% ({p_start:.2f} -> {p_end:.2f})"
+                label_txt = f"+{gain_pct:.1f}%"
                 if exit_offset is None: label_txt += " (Est.)"
                 
                 # Add Annotation at Top Center of Box
@@ -2041,10 +2041,14 @@ def render_sniper_studio_chart(
                 row=1, col=1
             )
         
+        # Default Title
+        title_text = f"{symbol} {timeframe} | {event_time.strftime('%d %b %H:%M')}"
+        
         # Layout
         fig.update_layout(
+            title=dict(text=title_text, x=0.05, y=0.98),
             height=700,
-            margin=dict(l=10, r=10, t=30, b=10),
+            margin=dict(l=10, r=10, t=50, b=10),
             hovermode='x',
             dragmode='pan',
             showlegend=False,

@@ -17,16 +17,19 @@ import importlib
 from typing import List, Optional, Dict
 from datetime import datetime
 
-from tezaver.core.annotations import SniperAnnotationRepository, SniperAnnotation, SniperStatus, SniperLabel
+from tezaver.core.annotations import SniperAnnotation, SniperStatus, SniperLabel
 from tezaver.core.molds import Archetype, ARCHETYPE_LABELS, ARCHETYPE_DESCRIPTIONS
 from tezaver.ui.chart_area import render_sniper_studio_chart, load_history_data
 from tezaver.foundry.archetype_service import ArchetypeService
 from tezaver.foundry.rally_assembler import RallyAssembler
+from tezaver.core.rally_store import RallyStore
 
 # Reuse helpers from Ony Tab to maintain consistency
 from tezaver.ui.ony_tab import (
     _get_available_symbols, 
-    _load_events_for_symbol_tf, 
+)
+
+from tezaver.core.tier_utils import (
     normalize_tier, 
     compute_tier_from_gain,
     TIERS
@@ -49,7 +52,7 @@ def render_molder_page():
             st.toast("📐 Revize'den döndünüz! Kalıp seçebilirsiniz.")
     
     # Initialize repository & Assembler
-    repo = SniperAnnotationRepository()
+    store = RallyStore()
     assembler = RallyAssembler()
 
     # --- TOP FILTERS (Coin, TF, Tier) ---
@@ -144,22 +147,8 @@ def render_molder_page():
     list_map = {}
     
     for rally in current_list_items:
-        ts_str = rally.event_time.strftime('%Y-%m-%d %H:%M')
-        
-        arch_icon = get_arch_icon(rally.archetype)
-        if rally.archetype and rally.archetype != "None":
-             arch_display = f" {arch_icon}" 
-        else:
-             arch_display = ""
-             
-        rev_icon = "🛠️" if rally.is_revised else ""
-        tier_icon = rally.get_icon()
-        if tier_icon == "🏷️": tier_icon = {"DIAMOND":"💎","GOLD":"🥇","SILVER":"🥈","BRONZE":"🥉"}.get(rally.tier, "🔹")
-        
-        label_str = f"{tier_icon} {rev_icon}{arch_display} {ts_str} | +{rally.gain_pct*100:.1f}% | {max(1, rally.bars_to_peak)}bar"
-        
-        list_options.append(label_str)
-        list_map[label_str] = rally
+        list_options.append(rally.display_label)
+        list_map[rally.display_label] = rally
 
     # Calculate default index
     default_idx = 0
@@ -282,17 +271,28 @@ def render_molder_page():
                 type="primary" if is_active else "secondary",
                 help=desc
             ):
-                assembler.repo.append(
-                    symbol=sel_sym,
-                    timeframe=sel_tf,
-                    event_id=current_rally.event_id,
-                    entry_bar_offset=current_rally.entry_offset,
-                    exit_bar_offset=current_rally.exit_offset,
-                    status=current_rally.status, 
-                    label=SniperLabel.GOOD, 
-                    note=current_rally.note,
-                    archetype=mold.value
-                )
+                # SAVE to Store
+                doc = store.get_rally(current_rally.event_id)
+                rev_data = doc.get('rev_data', {}) or {}
+                molder_data = doc.get('molder_data', {}) or {}
+                
+                # Update Archetype in Rev Data (Labeling)
+                rev_data.update({
+                    'archetype': mold.value, # Use mold.value for arch_key
+                    'updated_at': pd.Timestamp.now()
+                })
+                
+                # Update Molder Metadata
+                molder_data.update({
+                    'archetype': mold.value, # Use mold.value for arch_key
+                    'confidence': scores[0]['conf'] if (scores and scores[0]['arch'] == mold.value) else 0.5, # Simple logic
+                    'labeled_at': pd.Timestamp.now()
+                })
+                
+                store.upsert_rally(current_rally.event_id, rev_data, layer='rev')
+                store.upsert_rally(current_rally.event_id, molder_data, layer='molder')
+                
+                st.success(f"✅ Kaydedildi! ({mold.value})")
                 st.toast(f"✅ Etiketlendi: {label}")
                 st.rerun()
     
@@ -339,8 +339,15 @@ def render_molder_page():
     st.markdown("---")
     st.caption("📊 Sistem Karnesi (Son 40 İşlem Başarısı)")
     
-    hist_anns = repo.load_all(sel_sym, sel_tf)
-    reviewed = [a for a in hist_anns if a.archetype and a.archetype != "None"]
+    all_rallies = store.list_rallies(symbol=sel_sym, timeframe=sel_tf)
+    reviewed = []
+    for r in all_rallies:
+        rev = r.get('rev_data', {}) or {}
+        if rev.get('archetype'):
+            # Convert to simple object to match existing logic if needed, or query directly
+            # For mastery score we just need archetype and offset
+            reviewed.append(r)
+            
     recent = reviewed[-40:] 
     
     if recent and df_hist_curr is not None:
@@ -356,18 +363,27 @@ def render_molder_page():
              valid_n = 0
              for r_ann in recent:
                  try:
-                     parts = r_ann.event_id.split('_')
+                     rev_data = r_ann.get('rev_data', {}) or {}
+                     eid = r_ann.get('id')
+                     
+                     parts = eid.split('_')
                      if len(parts) > 1 and parts[1] == sel_tf: # Check TF Match? implied by load_all
                          ts_val = int(parts[-1])
                          event_ts = pd.to_datetime(ts_val, unit='s')
                          
                          idx = times_ai.searchsorted(event_ts)
                          if idx < len(times_ai):
-                              e_idx = min(idx + (r_ann.entry_bar_offset or 0), len(closes)-1)
+                              e_off = rev_data.get('entry_bar_offset', 0)
+                              e_idx = min(idx + (e_off or 0), len(closes)-1)
                               p_arch, _, _ = ArchetypeService.classify_vector(rsi_vals[e_idx], vol_vals[e_idx])
-                              if p_arch == r_ann.archetype: matches += 1
+                              
+                              # Check match
+                              user_arch = rev_data.get('archetype')
+                              if p_arch == user_arch: matches += 1
                               valid_n += 1
-                 except: continue
+                 except Exception as e: 
+                     # print(f"Mastery calc error: {e}")
+                     continue
              
              if valid_n > 0:
                  score = (matches / valid_n) * 100

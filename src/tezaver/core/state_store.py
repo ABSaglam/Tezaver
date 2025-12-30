@@ -77,12 +77,15 @@ def load_coin_states() -> List[CoinState]:
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             data_list = json.load(f)
-            return [_deserialize_coin_state(item) for item in data_list]
+            states = [_deserialize_coin_state(item) for item in data_list]
+            # Standardize Sorting: Alphabetical
+            states.sort(key=lambda s: s.symbol)
+            return states
     except (json.JSONDecodeError, IOError) as e:
         print(f"Error loading coin states: {e}. Returning defaults.")
         # Fallback to defaults if file is corrupt
         default_states = []
-        for symbol in DEFAULT_COINS:
+        for symbol in sorted(DEFAULT_COINS):
             default_states.append(CoinState(symbol=symbol))
         return default_states
 

@@ -122,21 +122,8 @@ def render_alchemist_page():
                     return "🏷️"
 
             for r in current_list_items:
-                ts_str = r.event_time.strftime('%Y-%m-%d %H:%M')
-                
-                arch_icon = get_arch_icon_local(r.archetype)
-                
-                # Format: [TIER] [REV] [ARCH] DATE | GAIN | BARS
-                rev_icon = "🛠️" if r.is_revised else ""
-                tier_icon = r.get_icon()
-                if tier_icon == "🏷️": tier_icon = {"DIAMOND":"💎","GOLD":"🥇","SILVER":"🥈","BRONZE":"🥉"}.get(r.tier, "🔹")
-                
-                arch_display = f" {arch_icon}" if (r.archetype and r.archetype != "None") else ""
-                
-                label = f"{tier_icon} {rev_icon}{arch_display} {ts_str} | +{r.gain_pct*100:.1f}% | {max(1, r.bars_to_peak)}bar"
-                
-                options.append(label)
-                list_map[label] = r
+                options.append(r.display_label)
+                list_map[r.display_label] = r
             
             # Full Width Selectbox
             default_idx = 0

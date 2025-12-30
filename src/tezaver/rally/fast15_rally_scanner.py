@@ -45,6 +45,7 @@ from tezaver.context.multitimeframe_context import (
     get_required_mtc_columns,
 )
 from tezaver.rally.rally_narrative_engine import enrich_with_narratives
+from tezaver.core.rally_store import RallyStore
 
 logger = get_logger(__name__)
 
@@ -723,7 +724,32 @@ def run_fast15_scan_for_symbol(symbol: str) -> Fast15RallyScanResult:
     
     # ========================================================================
     
-    # Save parquet
+    # ========================================================================
+    # SAVE TO UNIFIED STORAGE (SQLite)
+    # ========================================================================
+    try:
+        store = RallyStore()
+        
+        # Ensure ID and Tier for Storage
+        if 'rally_grade' not in df_final.columns:
+            df_final['rally_grade'] = df_final['future_max_gain_pct'].apply(compute_tier_from_gain_pct)
+            
+        if 'event_id' not in df_final.columns:
+            df_final['event_id'] = df_final.apply(lambda r: generate_rally_id(symbol, "15m", r['event_time'], r['rally_grade']), axis=1)
+            
+        logger.info(f"Syncing {len(df_final)} events to SQLite Store...")
+        
+        for _, row in df_final.iterrows():
+            eid = row['event_id']
+            # Convert row to dict, handling timestamps
+            raw_data = row.to_dict()
+            # Upsert
+            store.upsert_rally(eid, raw_data, layer='raw')
+            
+    except Exception as e:
+        logger.error(f"Failed to sync to SQLite Store: {e}", exc_info=True)
+
+    # Save parquet (Legacy/Backup)
     output_path = coin_cell_paths.get_fast15_rallies_path(symbol)
     df_final.to_parquet(output_path, index=False)
     logger.info(f"Saved {len(df_final)} events to {output_path}")

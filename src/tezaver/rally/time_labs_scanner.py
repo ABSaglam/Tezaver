@@ -42,6 +42,7 @@ from tezaver.context.multitimeframe_context import (
     get_required_mtc_columns,
 )
 from tezaver.core.annotations import generate_rally_id
+from tezaver.core.rally_store import RallyStore
 from tezaver.rally.rally_grade_cards import compute_tier_from_gain_pct
 # Re-use Fast15 logic helpers where appropriate
 from tezaver.rally.fast15_rally_scanner import (
@@ -469,6 +470,25 @@ def run_timeframe_rally_scan_for_symbol(
         logger.error(f"MTC Schema enforcement failed: {e}", exc_info=True)
         
     # 6. Save Findings
+    
+    # SAVE TO UNIFIED STORAGE (SQLite)
+    try:
+        store = RallyStore()
+        logger.info(f"Syncing {len(df_final)} events to SQLite Store...")
+        
+        for _, row in df_final.iterrows():
+            eid = row['event_id']
+            if not eid: # Safety
+                 continue
+                 
+            # Convert row to dict
+            raw_data = row.to_dict()
+            # Upsert
+            store.upsert_rally(eid, raw_data, layer='raw')
+            
+    except Exception as e:
+        logger.error(f"Failed to sync to SQLite Store: {e}", exc_info=True)
+
     output_path = coin_cell_paths.get_time_labs_rallies_path(symbol, timeframe)
     df_final.to_parquet(output_path, index=False)
     

@@ -16,135 +16,22 @@ from typing import Optional, List, Dict, Any
 
 from tezaver.core.annotations import (
     SniperAnnotation,
-    SniperAnnotationRepository,
     SniperStatus,
     SniperLabel
 )
 from tezaver.core import coin_cell_paths
 from tezaver.ui.chart_area import render_sniper_studio_chart, load_history_data
 from tezaver.rally.normalize_engine import normalize_entry, NormalizeResult
+from tezaver.foundry.rally_assembler import RallyAssembler
+from tezaver.core.tier_utils import TIERS, normalize_tier, compute_tier_from_gain
+from tezaver.core.rally_store import RallyStore
 
 
 # =============================================================================
-# HELPER FUNCTIONS
+# HELPER FUNCTIONS - MOVED TO CORE/TIER_UTILS.PY
 # =============================================================================
 
-# Tier constants
-TIERS = ["DIAMOND", "GOLD", "SILVER", "BRONZE"]
-
-def normalize_tier(value: Any) -> Optional[str]:
-    """
-    Normalize tier/grade string to standard tier name.
-    
-    Args:
-        value: Tier string (can be 'diamond', 'DIAMOND', 'DIA', etc.) or None
-    
-    Returns:
-        Standardized tier name ("DIAMOND", "GOLD", "SILVER", "BRONZE") or None if unknown
-    """
-    if pd.isna(value) or value is None:
-        return None
-    
-    s = str(value).strip().upper()
-    
-    # Diamond variants
-    if s in ["DIAMOND", "DIA", "💎"]:
-        return "DIAMOND"
-    
-    # Gold variants
-    if s in ["GOLD", "GLD", "🥇"]:
-        return "GOLD"
-    
-    # Silver variants
-    if s in ["SILVER", "SLV", "🥈"]:
-        return "SILVER"
-    
-    # Bronze variants
-    if s in ["BRONZE", "BRZ", "🥉"]:
-        return "BRONZE"
-    
-    return None
-
-
-def compute_tier_from_gain(gain_pct: float) -> Optional[str]:
-    """
-    Compute tier from future_max_gain_pct.
-    
-    WRAPPER: This function now delegates to the canonical implementation
-    in rally_grade_cards.py to prevent threshold drift.
-    
-    Args:
-        gain_pct: Gain percentage as decimal (e.g., 0.30 for 30%)
-    
-    Returns:
-        Tier name or None if gain is too low
-    """
-    from tezaver.rally.rally_grade_cards import compute_tier_from_gain_pct
-    return compute_tier_from_gain_pct(gain_pct)
-
-def _load_events_for_symbol_tf(symbol: str, timeframe: str) -> Optional[pd.DataFrame]:
-    """
-    Load rally events from Fast15 or Time Labs depending on timeframe.
-    
-    Dataset paths:
-    - 15m: library/fast15_rallies/{symbol}/fast15_rallies.parquet
-    - 1h:  library/time_labs/1h/{symbol}/rallies_1h.parquet
-    - 4h:  library/time_labs/4h/{symbol}/rallies_4h.parquet
-    
-    Returns DataFrame with stable event_id generation.
-    """
-    try:
-        if timeframe == "15m":
-            path = coin_cell_paths.get_fast15_rallies_path(symbol)
-        else:
-            path = coin_cell_paths.get_time_labs_rallies_path(symbol, timeframe)
-        
-        if not path.exists():
-            return None
-        
-        df = pd.read_parquet(path)
-        if df.empty:
-            return None
-        
-        # Normalize timestamp column
-        for col in ["event_time", "start_ts", "timestamp"]:
-            if col in df.columns:
-                df["event_time"] = pd.to_datetime(df[col], errors="coerce")
-                break
-        
-        # Unified Event ID Generation: {symbol}_{timeframe}_{tier_code}_{timestamp}
-        import importlib
-        import tezaver.core.annotations as core_ann
-        importlib.reload(core_ann)
-        from tezaver.core.annotations import generate_rally_id
-        
-        def ensure_unified_id(row):
-            # Trust existing event_id if it looks like the new format
-            curr_id = str(row.get('event_id', ''))
-            if curr_id and curr_id.count('_') >= 3 and "_RVZ_" not in curr_id:
-                return curr_id
-                
-            if pd.isna(row['event_time']): return None
-            # Compute tier for ID generation
-            tier = row.get('rally_grade')
-            if not tier:
-                tier = compute_tier_from_gain(row.get('future_max_gain_pct', 0))
-            return generate_rally_id(symbol, timeframe, row['event_time'], tier)
-
-        df["event_id"] = df.apply(ensure_unified_id, axis=1)
-        
-        # Cleanup temp columns if any
-        for temp_col in ['temp_tier']:
-            if temp_col in df.columns:
-                df.drop(columns=[temp_col], inplace=True)
-        
-        # Sort by time descending (newest first)
-        df = df.sort_values("event_time", ascending=False).reset_index(drop=True)
-        
-        return df
-    except Exception as e:
-        st.warning(f"Event yüklenirken hata: {e}")
-        return None
+# Helper removed: _load_events_for_symbol_tf (Replaced by RallyStore/Assembler)
 
 
 def _get_available_symbols() -> List[str]:
@@ -220,44 +107,32 @@ def render_batch_operations():
             current_step = 0
             
             # Load Repo for checking existing
-            repo_check = SniperAnnotationRepository()
+            store = RallyStore()
             
             for s in target_symbols:
                 for t in target_tfs:
                     current_step += 1
                     my_bar.progress(current_step / total_steps, text=f"Scanning {s} {t}...")
                     
-                    df_events = _load_events_for_symbol_tf(s, t)
-                    if df_events is None or df_events.empty:
-                        continue
-                        
-                    # Compute Tiers
-                    if 'rally_grade' in df_events.columns:
-                        df_events['tier'] = df_events['rally_grade'].apply(normalize_tier)
-                    else:
-                        df_events['tier'] = df_events['future_max_gain_pct'].apply(compute_tier_from_gain)
+                    # FETCH FROM STORE
+                    rallies = assembler.get_ony_review_rallies(s, t)
                     
                     # Filter by Tiers
-                    filtered = df_events[df_events['tier'].isin(tiers)].copy()
+                    filtered = [r for r in rallies if r.tier in tiers]
                     
-                    if not filtered.empty:
-                        # Skip APPROVED
-                        existing_anns = repo_check.load_all(s, t)
-                        approved_ids = {a.event_id for a in existing_anns if a.status == "APPROVED"}
+                    if filtered:
+                        # Skip APPROVED using property
+                        pending = [r for r in filtered if r.status != "APPROVED"]
                         
-                        # Apply suppression
-                        before_count = len(filtered)
-                        filtered = filtered[~filtered['event_id'].isin(approved_ids)]
-                        # after_count = len(filtered)
-                        
-                        if not filtered.empty:
-                            # Add metadata
-                            filtered['symbol'] = s
-                            filtered['timeframe'] = t
-                            
-                            # Convert to records
-                            records = filtered[['event_id', 'tier', 'future_max_gain_pct', 'symbol', 'timeframe']].to_dict('records')
-                            all_events.extend(records)
+                        if pending:
+                            for r in pending:
+                                all_events.append({
+                                    'event_id': r.event_id,
+                                    'tier': r.tier,
+                                    'future_max_gain_pct': r.gain_pct,
+                                    'symbol': r.symbol,
+                                    'timeframe': r.timeframe
+                                })
             
             my_bar.empty()
             
@@ -283,7 +158,7 @@ def render_batch_operations():
                 st.write(df_prev['tier'].value_counts())
             
             if st.button(f"🚀 ONAYLA ({prev['count']} Adet)", type="primary", use_container_width=True):
-                repo = SniperAnnotationRepository()
+                store = RallyStore()
                 count = 0
                 
                 progress_bar = st.progress(0)
@@ -295,26 +170,23 @@ def render_batch_operations():
                     t = evt['timeframe']
                     eid = str(evt['event_id'])
                     
-                    # Check existing
-                    existing = repo.get_one(s, t, eid)
+                    # Get Existing Unified Doc
+                    doc = store.get_rally(eid)
+                    rev = doc.get('rev_data', {}) or {}
                     
-                    # Create or Update
-                    entry_offset = existing.entry_bar_offset if existing else 0
-                    note = existing.note if existing else "Auto-Approved Batch"
-                    label = existing.label if existing else "GOOD"
+                    # Update
+                    rev.update({
+                        'status': 'APPROVED',
+                        'label': rev.get('label', 'GOOD'),
+                        'note': rev.get('note', 'Auto-Approved Batch'),
+                        'updated_at': pd.Timestamp.now()
+                    })
                     
-                    repo.append(
-                        symbol=s,
-                        timeframe=t,
-                        event_id=eid,
-                        entry_bar_offset=entry_offset,
-                        status="APPROVED",
-                        label=label,
-                        note=note
-                    )
+                    store.upsert_rally(eid, rev, layer='rev')
+                    
                     count += 1
                     progress_bar.progress((i + 1) / total)
-                    
+                
                 st.success(f"✅ {count} olay başarıyla ONAYLANDI!")
                 del st.session_state['batch_preview']
                 st.rerun()
@@ -347,7 +219,8 @@ def render_ony_studio():
                 st.rerun()
     
     # Initialize repository
-    repo = SniperAnnotationRepository()
+    # Initialize store
+    store = RallyStore()
     
     # --- COMPACT HEADER (Row 1) ---
     # Col1: Coin, Col2: TF, Col3: Tier Filter
@@ -374,38 +247,35 @@ def render_ony_studio():
             
         timeframe = st.selectbox("Timeframe", timeframes, index=default_tf_idx, key="ony_timeframe", label_visibility="collapsed")
     
-    # Load events for filtering
-    df_events = _load_events_for_symbol_tf(symbol, timeframe)
+    # Load Rallies via Steel Core Assembler
+    assembler = RallyAssembler()
+    rallies = assembler.get_ony_review_rallies(symbol, timeframe)
     
-    # Tier Logic (Hidden calculation for filter)
-    if df_events is not None and not df_events.empty:
-        if 'rally_grade' in df_events.columns:
-            df_events['tier'] = df_events['rally_grade'].apply(normalize_tier)
-        else:
-            df_events['tier'] = df_events['future_max_gain_pct'].apply(compute_tier_from_gain)
-        df_events = df_events[df_events['tier'].notna()].copy()
-        
-        tier_counts = {tier: len(df_events[df_events['tier'] == tier]) for tier in TIERS}
-        tier_options = [f"{tier} ({tier_counts[tier]})" for tier in TIERS]
+    # Tier Logic
+    if rallies:
+        # Group count
+        counts = {t: 0 for t in TIERS}
+        for r in rallies:
+             if r.tier in counts: counts[r.tier] += 1
+        tier_options = [f"{t} ({counts[t]})" for t in TIERS]
     else:
         tier_options = TIERS
-        tier_counts = {t:0 for t in TIERS}
         
     # AUTO-SWITCH TIER (Jumper Fix)
-    if 'ony_prefill_event_id' in st.session_state and df_events is not None:
-        target_id = st.session_state['ony_prefill_event_id']
-        match = df_events[df_events['event_id'].astype(str) == str(target_id)]
-        
-        if not match.empty:
-             target_tier = match.iloc[0]['tier']
-             if target_tier in TIERS and st.session_state.get('ony_selected_tier') != target_tier:
-                 st.session_state['ony_selected_tier'] = target_tier
+    if 'ony_prefill_event_id' in st.session_state and rallies:
+        target_id = str(st.session_state['ony_prefill_event_id'])
+        # Find rally
+        match = next((r for r in rallies if str(r.event_id) == target_id), None)
+        if match:
+             if match.tier in TIERS and st.session_state.get('ony_selected_tier') != match.tier:
+                 st.session_state['ony_selected_tier'] = match.tier
+                 st.rerun()
 
     with c_tier:
         if 'ony_selected_tier' not in st.session_state:
             st.session_state['ony_selected_tier'] = "DIAMOND"
         
-        # Horizontal Radio for compact look
+        # Horizontal Radio
         selected_tier_label = st.radio(
             "Tier",
             tier_options,
@@ -422,13 +292,14 @@ def render_ony_studio():
                 del st.session_state['ony_event_select']
 
     # --- EVENT SELECTOR (Row 2) ---
-    if df_events is None or df_events.empty:
+    if not rallies:
         st.warning(f"Event yok: {symbol} {timeframe}")
         return
 
-    filtered_events = df_events[df_events['tier'] == selected_tier].copy()
+    # Filter by Tier
+    filtered_rallies = [r for r in rallies if r.tier == selected_tier]
     
-    if filtered_events.empty:
+    if not filtered_rallies:
         st.info(f"🔍 {selected_tier} katmanında incelenecek ralli yok.")
         return
     
@@ -436,38 +307,18 @@ def render_ony_studio():
     prefill_id = st.session_state.pop('ony_prefill_event_id', None)
     default_idx = 0
     
-    # Event Options
+    # Build Options
     event_options = []
-    event_map = {}
-    for i, row in filtered_events.head(1000).iterrows(): 
-        event_time = row.get("event_time")
-        gain_pct = row.get("future_max_gain_pct", 0) * 100 if pd.notna(row.get("future_max_gain_pct")) else 0
-        bars_to_peak = int(row.get("bars_to_peak", 0)) if pd.notna(row.get("bars_to_peak")) else 0
-        event_id = str(row.get("event_id", i))
-        
-        # Match Index for Prefill
-        if prefill_id:
-             # Standard match or RVZ match
-             if event_id == prefill_id or (prefill_id.replace("_RVZ_", "_") == event_id) or (event_id.replace("_RVZ_", "_") == prefill_id):
-                 default_idx = len(event_options)
-        
-        # Is reviewed? (Check Raw ID, then Check RVZ variant)
-        ann = repo.get_one(symbol, timeframe, event_id)
-        if not ann:
-            # Try finding RVZ variant - using consistent infix logic
-            # Format: {symbol}_{tf}_RVZ_{tier}_{ts}
-            parts = event_id.split('_')
-            if len(parts) >= 3 and "RVZ" not in parts:
-                parts.insert(2, "RVZ") # SYM_TF_RVZ...
-                rvz_id = "_".join(parts)
-                ann = repo.get_one(symbol, timeframe, rvz_id)
-        
-        icon = "✅" if ann and ann.status == "APPROVED" else "🆕"
-        if ann and "RVZ" in ann.event_id: icon = "🛠️" # Show Wrench for Revised
-        
-        label = f"{icon} {event_time.strftime('%Y-%m-%d %H:%M') if pd.notna(event_time) else 'N/A'} | +{gain_pct:.1f}% | {bars_to_peak}bar"
+    rally_map = {}
+    
+    for i, rally in enumerate(filtered_rallies):
+        # Prefill logic
+        if prefill_id and str(rally.event_id) == str(prefill_id):
+            default_idx = i
+            
+        label = rally.display_label
         event_options.append(label)
-        event_map[label] = row
+        rally_map[label] = rally
 
     if not event_options:
         st.warning("Liste boş.")
@@ -475,24 +326,38 @@ def render_ony_studio():
         
     # Full width selectbox
     selected_label = st.selectbox("Ralli Seçiniz", event_options, index=default_idx, key="ony_event_select", label_visibility="collapsed")
-    selected_event = event_map[selected_label]
-    event_id = str(selected_event.get("event_id", 0))
-    event_time = selected_event.get("event_time")
-    bars_to_peak = int(selected_event.get("bars_to_peak", 20)) if pd.notna(selected_event.get("bars_to_peak")) else 20
+    current_rally = rally_map[selected_label]
     
-    # Load Existing
-    existing_ann = repo.get_one(symbol, timeframe, event_id)
+    # Extract Data from Assembler Object (Unified Source)
+    event_id = current_rally.event_id
+    event_time = current_rally.event_time
+    bars_to_peak = current_rally.bars_to_peak
     
-    # FIX: If not found, try finding RVZ variant (because Revize renames ID)
-    if not existing_ann:
-        parts = event_id.split('_')
-        if len(parts) >= 3 and "RVZ" not in parts:
-            parts.insert(2, "RVZ")
-            rvz_id = "_".join(parts)
-            existing_ann = repo.get_one(symbol, timeframe, rvz_id)
-            # IMPORTANT: If found, we must treat this as the active event_id for saving/updating
-            if existing_ann:
-                event_id = rvz_id
+    # Since we use Repository inside Assembler, current_rally ALREADY reflects the DB state.
+    # But for the Edit Form, we can use the assembler object's properties as defaults.
+    # To be absolutely safe regarding latest DB state (concurrency), we can reload via repo if we want,
+    # but Assembler just loaded it. Let's rely on Assembler object.
+    
+    existing_ann = None
+    doc = store.get_rally(event_id)
+    if doc:
+        rev_data = doc.get('rev_data', {}) or {}
+        if rev_data.get('status'): # If status exists, it's effectively an annotation
+            existing_ann = SniperAnnotation(
+                 symbol=symbol,
+                 timeframe=timeframe,
+                 event_id=event_id,
+                 entry_bar_offset=rev_data.get('entry_bar_offset', 0),
+                 exit_bar_offset=rev_data.get('exit_bar_offset'),
+                 status=rev_data.get('status', 'PENDING'),
+                 label=rev_data.get('label', ''),
+                 note=rev_data.get('note', ''),
+                 created_at=rev_data.get('updated_at', pd.Timestamp.now())
+            )
+            # Inject rev_gain if needed
+            if 'rev_gain' in rev_data:
+                existing_ann.rev_gain = rev_data['rev_gain']
+
     
     # --- ENTRY / EXIT CONFIGURATION (Top) ---
     st.markdown("---")
@@ -532,7 +397,7 @@ def render_ony_studio():
             
     # --- CHART (Middle) ---
     st.markdown("---")
-    st.markdown("### 📊 Sniper Studio Grafiği")
+    # Header removed (Chart has internal title now)
     
     if pd.notna(event_time):
         try:
@@ -603,7 +468,30 @@ def render_ony_studio():
                 except Exception as e:
                     print(f"Gain calc error: {e}")
 
-                repo.append(symbol, timeframe, event_id, nr['entry_offset_out'], exit_offset, note, "APPROVED", "REV", rev_gain=rev_gain)
+                # Save to Store
+                rev_data = {
+                     'symbol': symbol,
+                     'timeframe': timeframe,
+                     'event_id': event_id,
+                     'entry_bar_offset': nr['entry_offset_out'],
+                     'exit_bar_offset': exit_offset,
+                     'note': note,
+                     'status': "APPROVED",
+                     'label': "REV",
+                     'rev_gain': rev_gain,
+                     'updated_at': pd.Timestamp.now()
+                }
+                
+                # Check for existing logic to preserve other fields? Store.upsert handles merge if we read first, 
+                # but upsert replaces the layer blob. 
+                # Ideally we should read existing 'rev_data' first.
+                curr_doc = store.get_rally(event_id)
+                curr_rev = curr_doc.get('rev_data', {}) or {}
+                
+                # Merge
+                curr_rev.update(rev_data)
+                
+                store.upsert_rally(event_id, curr_rev, layer='rev')
                 
                 del st.session_state["ony_norm_result"]
                 st.success(f"✅ Uygulandı! (ID: {event_id})")
@@ -611,38 +499,81 @@ def render_ony_studio():
 
     # --- SAVE ---
     st.markdown("---")
-    if st.button("💾 REVİZYONU KAYDET (Asıl)", type="primary", use_container_width=True):
-        # Immutable ID Architecture: 
-        # ID never changes. We overwrite the annotation with "REV" label.
-        
-        # Calculate Rev Gain
-        rev_gain = None
-        try:
-            df = load_history_data(symbol, timeframe)
-            if df is not None:
-                if 'open_time' in df.columns: df = df.set_index('open_time')
-                if df.index.tz is not None: df.index = df.index.tz_localize(None)
-                
-                ts = pd.to_datetime(event_time).tz_localize(None)
-                if ts in df.index:
-                    start_pos = df.index.get_loc(ts)
-                    if isinstance(start_pos, slice): start_pos = start_pos.start
+    cols_save = st.columns([3, 1])
+    
+    with cols_save[0]:
+        if st.button("💾 KAYDET (GÜNCELLE)", type="primary", use_container_width=True):
+            # Immutable ID Architecture: 
+            # ID never changes. We overwrite the annotation with "REV" label.
+            
+            # Calculate Rev Gain
+            rev_gain = None
+            try:
+                df = load_history_data(symbol, timeframe)
+                if df is not None:
+                    if 'open_time' in df.columns: df = df.set_index('open_time')
+                    if df.index.tz is not None: df.index = df.index.tz_localize(None)
                     
-                    p_entry = df.iloc[min(start_pos + entry_offset, len(df)-1)]['open']
-                    exit_pos = min(start_pos + (exit_offset if exit_offset else 0), len(df)-1)
-                    p_exit = df.iloc[exit_pos]['high']
-                    if p_entry > 0:
-                        rev_gain = (p_exit - p_entry) / p_entry
-        except Exception as e:
-            print(f"Gain calc error: {e}")
+                    ts = pd.to_datetime(event_time).tz_localize(None)
+                    if ts in df.index:
+                        start_pos = df.index.get_loc(ts)
+                        if isinstance(start_pos, slice): start_pos = start_pos.start
+                        
+                        p_entry = df.iloc[min(start_pos + entry_offset, len(df)-1)]['open']
+                        exit_pos = min(start_pos + (exit_offset if exit_offset else 0), len(df)-1)
+                        p_exit = df.iloc[exit_pos]['high']
+                        if p_entry > 0:
+                            rev_gain = (p_exit - p_entry) / p_entry
+            except Exception as e:
+                print(f"Gain calc error: {e}")
+    
+            # Save to Store
+            rev_data = {
+                    'symbol': symbol,
+                    'timeframe': timeframe,
+                    'event_id': event_id,
+                    'entry_bar_offset': entry_offset,
+                    'exit_bar_offset': exit_offset,
+                    'note': note,
+                    'status': "APPROVED",
+                    'label': "REV",
+                    'rev_gain': rev_gain,
+                    'updated_at': pd.Timestamp.now()
+            }
+            
+            curr_doc = store.get_rally(event_id)
+            curr_rev = curr_doc.get('rev_data', {}) or {}
+            curr_rev.update(rev_data)
+            
+            store.upsert_rally(event_id, curr_rev, layer='rev')
+            
+            if st.session_state.get('came_from_molder'):
+                    st.session_state['molder_return_target'] = event_id
+                    
+            st.success(f"✅ Kaydedildi (ID: {event_id})")
+            st.rerun()
 
-        repo.append(symbol, timeframe, event_id, entry_offset, exit_offset, note, "APPROVED", "REV", rev_gain=rev_gain)
-        
-        if st.session_state.get('came_from_molder'):
-             st.session_state['molder_return_target'] = event_id
+    with cols_save[1]:
+        if st.button("↩️ ORJİNALE DÖN", type="secondary", use_container_width=True, help="Tüm revizyonları siler ve ralliyi ilk haline döndürür."):
+             # Reset Logic
+             curr_doc = store.get_rally(event_id)
+             curr_rev = curr_doc.get('rev_data', {}) or {}
              
-        st.success(f"✅ Kaydedildi (ID: {event_id})")
-        st.rerun()
+             # Reset Critical Fields to Defaults
+             reset_data = {
+                 'entry_bar_offset': 0,
+                 'exit_bar_offset': None,
+                 'rev_gain': None,
+                 'note': "",
+                 'label': "", # Remove REV label
+                 'status': "APPROVED", # Keep Approved
+                 'updated_at': pd.Timestamp.now()
+             }
+             curr_rev.update(reset_data)
+             
+             store.upsert_rally(event_id, curr_rev, layer='rev')
+             st.success("✅ Orjinale dönüldü.")
+             st.rerun()
     # --- INFO BOX ---
     if existing_ann:
         with st.expander("📋 Mevcut Kayıt Bilgisi"):
