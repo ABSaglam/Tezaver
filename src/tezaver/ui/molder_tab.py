@@ -35,6 +35,14 @@ from tezaver.core.tier_utils import (
     TIERS
 )
 
+from tezaver.core.coin_class_utils import (
+    get_coin_class_with_override,
+    get_coin_class_display,
+    get_coin_class_icon,
+    get_coin_class_color,
+    COIN_CLASS_INFO,
+)
+
 def render_molder_page():
     """Render the Kalıpçı page."""
     st.caption("Onaylanmış (Approved) rallilere Arketip (Kalıp) etiketi basar.")
@@ -71,6 +79,13 @@ def render_molder_page():
         if "molder_tf" in st.session_state and st.session_state["molder_tf"] in timeframes:
             idx = timeframes.index(st.session_state["molder_tf"])
         sel_tf = st.selectbox("Timeframe", timeframes, index=idx, key="molder_tf", label_visibility="collapsed")
+    
+    # --- COIN CLASS INFO BADGE ---
+    coin_class = get_coin_class_with_override(sel_sym)
+    class_info = COIN_CLASS_INFO.get(coin_class, COIN_CLASS_INFO["B"])
+    class_badge = f"{class_info['icon']} **Sınıf {coin_class}** - {class_info['name']}"
+    st.caption(f"{class_badge} | _{class_info['description']}_")
+
     
     # --- DATA LOADING (Via RallyAssembler) ---
     moldable_rallies = assembler.get_moldable_rallies(sel_sym, sel_tf)
@@ -285,15 +300,20 @@ def render_molder_page():
                 rev_data = doc.get('rev_data', {}) or {}
                 molder_data = doc.get('molder_data', {}) or {}
                 
+                # Auto-detect coin class
+                current_coin_class = get_coin_class_with_override(current_rally.symbol)
+                
                 # Update Archetype in Rev Data (Labeling)
                 rev_data.update({
                     'archetype': mold.value, # Use mold.value for arch_key
+                    'coin_class': current_coin_class, # Auto-detected class
                     'updated_at': pd.Timestamp.now()
                 })
                 
                 # Update Molder Metadata
                 molder_data.update({
                     'archetype': mold.value, # Use mold.value for arch_key
+                    'coin_class': current_coin_class, # Auto-detected class
                     'confidence': scores[0]['conf'] if (scores and scores[0]['arch'] == mold.value) else 0.5, # Simple logic
                     'labeled_at': pd.Timestamp.now()
                 })

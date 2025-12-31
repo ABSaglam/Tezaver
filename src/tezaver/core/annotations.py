@@ -71,6 +71,7 @@ class SniperAnnotation:
     label: str = SniperLabel.UNCERTAIN
     created_at: str = field(default_factory=lambda: datetime.now().isoformat())
     archetype: Optional[str] = None # For Kalıpçı labeling
+    coin_class: Optional[str] = None # Coin character class (A/B/C/D/N) for Simyacı filtering
     rev_gain: Optional[float] = None # Calculated gain for revised entry/exit window
     
     # Normalized Entry Fields (Auto-Snap)

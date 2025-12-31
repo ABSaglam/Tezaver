@@ -42,6 +42,7 @@ class AssembledRally:
     # Human Decisions (From Repo)
     status: str # PENDING, APPROVED, REJECTED
     archetype: Optional[str] # PHOENIX, etc.
+    coin_class: Optional[str] # A/B/C/D/N for Simyacı filtering
     entry_offset: int
     exit_offset: Optional[int]
     is_revised: bool
@@ -118,6 +119,7 @@ class RallyAssembler:
         exit_offset = rev.get('exit_bar_offset')
         note = rev.get('note', '')
         archetype = rev.get('archetype')
+        coin_class = rev.get('coin_class') # Coin character class from Molder
         
         # Rally is "revised" only if user made manual changes, not just auto-approved
         # Check: entry offset changed, exit explicitly set, OR note is non-auto
@@ -192,6 +194,7 @@ class RallyAssembler:
             bars_to_peak=final_bars,
             status=status,
             archetype=archetype,
+            coin_class=coin_class,
             entry_offset=entry_offset,
             exit_offset=exit_offset,
             is_revised=is_revised,
