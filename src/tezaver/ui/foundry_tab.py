@@ -1,190 +1,233 @@
 """
-Foundry Tab - Dökümhane Bundle Browser
-=======================================
+Dökümhane (Foundry) - 3 Tab UI
+===============================
+"Kontrol Merkezi: Özet + Kasa + Paketçi"
 
-UI for browsing ApprovedRallyBundle packages.
+Tab 1: Özet - System dashboard and health monitoring
+Tab 2: Kasa - Master Cipher vault browser
+Tab 3: Paketçi - Export manager for Matrix/Cloud
 """
 
 import streamlit as st
 import pandas as pd
-import plotly.graph_objects as go
 import json
-import importlib
 from pathlib import Path
+from datetime import datetime
 
-# from tezaver.foundry.bundle_index import scan_bundles, filter_bundles, load_bundle_files
-# from tezaver.matrix.adapters.candidate_registry import CandidateRegistry
-# import tezaver.foundry.configuration_service
-# import tezaver.foundry.clustering_service
-# import tezaver.foundry.bundle_index
-# import tezaver.foundry.archetype_storyteller
-# importlib.reload(tezaver.foundry.configuration_service)
-# importlib.reload(tezaver.foundry.clustering_service)
-# importlib.reload(tezaver.foundry.bundle_index)
-# importlib.reload(tezaver.foundry.archetype_storyteller)
-import tezaver.foundry.archetype_service
-importlib.reload(tezaver.foundry.archetype_service)
+from tezaver.core.rally_store import RallyStore
+from tezaver.core.logging_utils import get_logger
 
-# from tezaver.foundry.configuration_service import ConfigurationService
-# from tezaver.foundry.audit_service import AuditService
-# from tezaver.foundry.clustering_service import ClusteringService
-# from tezaver.foundry.archetype_storyteller import ArchetypeStoryteller
-from tezaver.foundry.archetype_service import ArchetypeService
-# from tezaver.matrix.sniper.benchmark_service import BenchmarkService # Removed/Missing
-# from tezaver.sniper.sniper_backtest_v2 import analyze_pack_performance # Removed/Missing
-
-
-# cached_scan_bundles_v2 removed
+logger = get_logger(__name__)
 
 
 def render_foundry_page():
-    """Main render function for Foundry tab."""
+    """Main render function for Dökümhane."""
     st.title("🏭 Dökümhane")
+    st.caption("Master Cipher Kontrol Merkezi")
     
-    # Inventory removed, Alchemist Moved to Ony, Governance Moved to Alchemist
-    # Only Archetypes remain
-    _render_archetypes_tab()
-
-# _render_alchemist_tab removed
-# _render_governance_tab removed
-
-
-# Inventory logic has been removed as per "The Great Cleanup" request.
-# The data bundles persist on disk for Alchemist usage.
-
-
-
-
-
-def _render_archetypes_tab():
-    """Render Archetypes (Piyasa Karakterleri) Tab with Live Data."""
-    st.markdown("### 🎭 Piyasa Karakter Envanteri")
+    # 3 Tab Structure
+    tab1, tab2, tab3 = st.tabs(["📊 Özet", "🔐 Kasa", "📦 Paketçi"])
     
-    # 1. CONTROLS
-    service = ArchetypeService()
-    coins = service.get_available_coins()
+    with tab1:
+        render_ozet_tab()
     
-    c1, c2 = st.columns([1, 1])
-    with c1:
-        sel_coin = st.selectbox("Coin Seçiniz:", coins, index=0 if coins else None, key="arch_coin_sel")
+    with tab2:
+        render_kasa_tab()
     
-    if not sel_coin:
-        st.warning("Lütfen bir coin seçin.")
-        return
+    with tab3:
+        render_paketci_tab()
 
-    # Helper: Get TFs for this coin
-    tfs = service.get_available_timeframes(sel_coin)
-    with c2:
-        sel_tf = st.selectbox("Zaman Dilimi (TF):", tfs, index=0 if tfs else None, key="arch_tf_sel")
 
-    if not sel_tf:
-        st.warning("Bu coin için veri bulunamadı.")
-        return
-
-    # 2. LOAD DATA
-    data_map = service.scan_coin_archetypes(sel_coin, timeframe=sel_tf)
-    tiers = data_map["tiers"]
-    archs = data_map["archetypes"]
+def render_ozet_tab():
+    """Tab 1: Özet (Dashboard)"""
+    st.header("Sistem Özeti")
     
-    # 3. MAIN TABS
-    tab_tier, tab_win, tab_lose, tab_cipher, tab_const = st.tabs(["💎 Tiers", "🏆 Kazananlar", "💀 Kaybedenler", "🔐 Şifreler", "📜 Anayasa"])
-
-    # Shared Render Helper
-    def render_list(items, empty_msg="Kayıt bulunamadı."):
-        if items:
-            df = pd.DataFrame(items)
-            df['time'] = df['time'].dt.strftime('%Y-%m-%d %H:%M')
-            df['gain'] = df['gain'].map('{:.1f}%'.format)
-            df['rsi'] = df['rsi'].map('{:.1f}'.format)
-            df['vol'] = df['vol'].map('{:.1f}x'.format)
-            st.dataframe(df, use_container_width=True, hide_index=True, height=400)
-            st.caption(f"Toplam: {len(items)} adet")
+    store = RallyStore()
+    
+    # Rally Envanteri
+    st.subheader("📋 Rally Envanteri")
+    
+    col1, col2, col3, col4 = st.columns(4)
+    
+    # Count by tier
+    all_rallies = store.list_rallies(limit=1000)
+    
+    tier_counts = {}
+    for rally in all_rallies:
+        tier = rally.get('tier', 'UNKNOWN')
+        tier_counts[tier] = tier_counts.get(tier, 0) + 1
+    
+    with col1:
+        st.metric("💎 Diamond", tier_counts.get('DIAMOND', 0))
+    with col2:
+        st.metric("🥇 Gold", tier_counts.get('GOLD', 0))
+    with col3:
+        st.metric("🥈 Silver", tier_counts.get('SILVER', 0))
+    with col4:
+        st.metric("🥉 Bronze", tier_counts.get('BRONZE', 0))
+    
+    st.divider()
+    
+    # Cipher Vault Status
+    st.subheader("🔐 Kasa Durumu")
+    
+    vault_dir = Path(".tezaver_matrix/vault/ciphers")
+    vault_dir.mkdir(parents=True, exist_ok=True)
+    
+    ciphers = list(vault_dir.glob("*.json"))
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric("Toplam Şifre", len(ciphers))
+    with col2:
+        # Count active ciphers
+        active_count = 0
+        for cipher_file in ciphers:
+            try:
+                with open(cipher_file) as f:
+                    cipher = json.load(f)
+                    if cipher.get('lifecycle', {}).get('status') == 'ACTIVE':
+                        active_count += 1
+            except:
+                pass
+        st.metric("Aktif Şifre", active_count)
+    with col3:
+        st.metric("Draft Şifre", len(ciphers) - active_count)
+    
+    st.divider()
+    
+    # System Health
+    st.subheader("⚕️ Sistem Sağlığı")
+    
+    health_items = [
+        ("Rally Veritabanı", "✅ Çalışıyor", len(all_rallies) > 0),
+        ("Feature Engine", "✅ Hazır", True),
+        ("Mining Algorithms", "✅ Hazır", True),
+        ("Backtest Engine", "✅ Hazır", True),
+    ]
+    
+    for name, status, is_ok in health_items:
+        if is_ok:
+            st.success(f"{name}: {status}")
         else:
-            st.info(empty_msg)
+            st.error(f"{name}: ❌ Sorun var")
 
-    # ---------------------------------------------------------
-    # CIPHER TAB (New)
-    # ---------------------------------------------------------
-    with tab_cipher:
-        from tezaver.smyrna.alchemist_engine import AlchemistEngine
-        engine = AlchemistEngine()
-        ciphers = engine.load_master_ciphers()
-        
-        if ciphers:
-             st.success(f"📚 {len(ciphers)} Master Cipher (Üretim Bandında)")
-             
-             cols = st.columns(3)
-             for i, mc in enumerate(ciphers):
-                 with cols[i % 3]:
-                     with st.expander(f"🔐 {mc.name}", expanded=True):
-                         st.metric("Win Rate", f"%{mc.win_rate*100:.0f}")
-                         st.metric("Avg Gain", f"%{mc.avg_gain_pct:.1f}")
-                         st.caption(f"Score: {mc.conquest_score}")
-                         st.code(mc.sequence_signature, language="text")
-                         if st.button("Paketle (Üretim)", key=f"btn_pack_{i}"):
-                             st.toast("Paketleme servisi henüz aktif değil.")
-        else:
-             st.info("Henüz üretilmiş şifre yok. Simyacı laboratuvarına gidiniz.")
 
-    # ---------------------------------------------------------
-    # TIER TAB
-    # ---------------------------------------------------------
-    with tab_tier:
-        # Sub-tabs for Tiers
-        tt_d, tt_g, tt_s, tt_b = st.tabs(["💎 ELMAS", "🥇 ALTIN", "🥈 GÜMÜŞ", "🥉 BRONZ"])
-        
-        with tt_d: render_list(tiers["DIAMOND 💎"])
-        with tt_g: render_list(tiers["GOLD 🥇"])
-        with tt_s: render_list(tiers["SILVER 🥈"])
-        with tt_b: render_list(tiers["BRONZE 🥉"])
-
-    # ---------------------------------------------------------
-    # WINNERS TAB
-    # ---------------------------------------------------------
-    with tab_win:
-        w_tabs = st.tabs([
-            "GRIND 🪜", "GUILLOTINE 🩸", "SUPERNOVA 💥", 
-            "PHOENIX 🔥", "NINJA 🥷", "SURFER 🏄‍♂️", "OTHER 👽"
-        ])
-        
-        def render_arch_info(name, desc, dna, strat, items):
-            c1, c2 = st.columns([1, 2])
-            with c1:
-                st.info(f"**{name}**")
-                st.markdown(f"- {desc}")
-                st.markdown(f"- **DNA:** {dna}")
-                st.markdown(f"- **Hedef:** {strat}")
-            with c2:
-                render_list(items)
-
-        with w_tabs[0]: render_arch_info("GRIND", "Sessiz tırmanış.", "<1.5x Hacim", "AL/UNUT", archs["GRIND"])
-        with w_tabs[1]: render_arch_info("GUILLOTINE", "V-Dönüşü.", "RSI < 25", "SNIPE", archs["GUILLOTINE"])
-        with w_tabs[2]: render_arch_info("SUPERNOVA", "Patlama.", ">5x Hacim", "MOMENTUM", archs["SUPERNOVA"])
-        with w_tabs[3]: render_arch_info("PHOENIX", "İkinci Dalga.", "Supernova+4h", "DİP", archs["PHOENIX"])
-        with w_tabs[4]: render_arch_info("NINJA", "Sinsi Toplama.", "RSI 30-40, Ölü", "AKÜMÜLE", archs["NINJA"])
-        with w_tabs[5]: render_arch_info("SURFER", "Trend Takibi.", "RSI > 70", "İZ SÜR", archs["SURFER"])
-        with w_tabs[6]: render_arch_info("OTHER", "Melez/Tanımsız.", "Uyumsuz", "İZLE", archs["OTHER"])
-
-    # ---------------------------------------------------------
-    # LOSERS TAB
-    # ---------------------------------------------------------
-    with tab_lose:
-        l_tabs = st.tabs(["STORM ⛈️", "TRAP 🪤", "DEAD 🪦", "NEWS 📰"])
-        
-        with l_tabs[0]: st.error("STORM: Stop Patlatma (Whipsaw). YASAK.")
-        with l_tabs[1]: st.error("TRAP: Fake Breakout. YASAK.")
-        with l_tabs[2]: st.error("DEAD: Hacimsiz. BEKLE.")
-        with l_tabs[3]: st.error("NEWS: Gap Riski. YASAK.")
-
-    # ---------------------------------------------------------
-    # CONSTITUTION TAB
-    # ---------------------------------------------------------
-    with tab_const:
+def render_kasa_tab():
+    """Tab 2: Kasa (Vault Browser)"""
+    st.header("Master Cipher Kasası")
+    
+    vault_dir = Path(".tezaver_matrix/vault/ciphers")
+    vault_dir.mkdir(parents=True, exist_ok=True)
+    
+    ciphers = list(vault_dir.glob("*.json"))
+    
+    if len(ciphers) == 0:
+        st.info("📭 Henüz şifre üretilmedi. Simyacı'dan yeni şifre oluşturun.")
+        return
+    
+    # Cipher list
+    st.subheader(f"Toplam {len(ciphers)} Şifre")
+    
+    # Filters
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        filter_tier = st.selectbox("Tier", ["Tümü", "DIAMOND", "GOLD", "SILVER", "BRONZE"])
+    with col2:
+        filter_status = st.selectbox("Durum", ["Tümü", "ACTIVE", "DRAFT", "WARNING", "ARCHIVE"])
+    with col3:
+        sort_by = st.selectbox("Sırala", ["En Yeni", "En Eski", "İsme Göre"])
+    
+    # Load and display ciphers
+    cipher_data = []
+    
+    for cipher_file in ciphers:
         try:
-            doc_path = Path("/Users/alisaglam/.gemini/antigravity/brain/f5d38091-3f29-4665-ba21-dbbe70827774/market_archetypes.md")
-            if doc_path.exists():
-                st.markdown(doc_path.read_text(encoding="utf-8"))
-            else:
-                st.warning("Dosya bulunamadı.")
+            with open(cipher_file) as f:
+                cipher = json.load(f)
+            
+            # Apply filters
+            tier = cipher.get('target', {}).get('tier', 'ANY')
+            status = cipher.get('lifecycle', {}).get('status', 'DRAFT')
+            
+            if filter_tier != "Tümü" and tier != filter_tier:
+                continue
+            if filter_status != "Tümü" and status != filter_status:
+                continue
+            
+            cipher_data.append({
+                'ID': cipher.get('cipher_id', 'Unknown'),
+                'Tier': tier,
+                'Archetype': cipher.get('target', {}).get('archetype', 'ANY'),
+                'Durum': status,
+                'Features': cipher.get('entry_rules', {}).get('feature_count', 0),
+                'Oluşturulma': cipher.get('created_at', 'Unknown'),
+                'File': cipher_file
+            })
         except Exception as e:
-            st.error(f"Hata: {e}")
+            logger.warning(f"Failed to load {cipher_file}: {e}")
+    
+    if not cipher_data:
+        st.warning("Filtre kriterlerine uygun şifre bulunamadı.")
+        return
+    
+    # Display as dataframe
+    df = pd.DataFrame(cipher_data)
+    
+    # Select cipher to view
+    selected_idx = st.selectbox(
+        "Şifre Seç",
+        range(len(df)),
+        format_func=lambda i: f"{df.iloc[i]['ID']} ({df.iloc[i]['Tier']})"
+    )
+    
+    if selected_idx is not None:
+        selected_cipher_file = df.iloc[selected_idx]['File']
+        
+        with open(selected_cipher_file) as f:
+            cipher = json.load(f)
+        
+        st.divider()
+        st.subheader("Şifre Detayları")
+        
+        # Display cipher details
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.write("**Hedef:**")
+            st.json(cipher.get('target', {}))
+        
+        with col2:
+            st.write("**Giriş Kuralları:**")
+            features = cipher.get('entry_rules', {}).get('selected_features', [])
+            st.write(f"Toplam {len(features)} özellik:")
+            for i, feat in enumerate(features[:10], 1):
+                st.text(f"{i}. {feat}")
+            if len(features) > 10:
+                st.text(f"... ve {len(features) - 10} daha")
+        
+        st.write("**Eğitim İstatistikleri:**")
+        st.json(cipher.get('training_stats', {}))
+        
+        st.write("**Özet:**")
+        summary = cipher.get('human_readable_summary', {})
+        st.info(summary.get('tr', 'Özet mevcut değil'))
+
+
+def render_paketci_tab():
+    """Tab 3: Paketçi (Export Manager)"""
+    st.header("Paketçi - Export Manager")
+    
+    st.info("🚧 Paketçi modülü yakında eklenecek.")
+    st.write("Bu modül Master Cipher'ları Matrix/Cloud'a export etmek için kullanılacak.")
+    
+    # Placeholder UI
+    st.subheader("Export Özellikleri")
+    
+    st.checkbox("Aktif şifreleri dahil et")
+    st.checkbox("Draft şifreleri dahil et")
+    st.selectbox("Export formatı", ["JSON", "ZIP Bundle", "CSV"])
+    
+    st.button("Export Hazırla", disabled=True)

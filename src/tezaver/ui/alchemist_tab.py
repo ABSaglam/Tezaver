@@ -1,277 +1,227 @@
+"""
+Simyacı UI - Master Cipher Generation Interface
+================================================
+"DNA Madenciliği Kontrol Paneli"
+
+User can:
+1. Select target (tier, archetype, coin class, timeframe)
+2. Choose mining algorithm
+3. Review rally count
+4. Generate Master Cipher
+5. View generation status
+"""
 
 import streamlit as st
 import pandas as pd
-import plotly.graph_objects as go
-from datetime import datetime
+from pathlib import Path
+import json
 
-from tezaver.core import coin_cell_paths
-from tezaver.core.state_store import load_coin_states
-from tezaver.smyrna.alchemist_engine import AlchemistEngine
-from tezaver.core.cipher_types import RallySequence, ParticleType
-from tezaver.ui.chart_area import render_universal_chart
+from tezaver.core.rally_store import RallyStore
+from tezaver.core.logging_utils import get_logger
+from tezaver.smyrna.cipher_generator import CipherGenerator
+
+logger = get_logger(__name__)
+
 
 def render_alchemist_page():
-    st.title("🧪 Simyacı 3.0 (Alchemist Lab)")
-    st.caption("Ralli DNA'sı Çıkarma ve Kehanet Motoru")
+    """Main Simyacı UI."""
+    st.title("🧪 Simyacı 3.0")
+    st.caption("Master Cipher DNA Madenciliği")
     
-    # --- 1. SETUP ---
-    engine = AlchemistEngine()
+    st.divider()
     
-    # =========================================================================
-    # SECTION 1: THE ORE (Horizontal Top Bar)
-    # =========================================================================
+    # === SECTION 1: TARGET SELECTION ===
+    st.subheader("🎯 Hedef Seçimi")
     
-    with st.container():
-        st.subheader("🪨 Cevher (Ralliler)")
-        
-        coin_states = load_coin_states()
-        if not coin_states:
-            st.warning("Coin verisi yok.")
-            return
-
-        # Top Bar Controls: One Single Row (7 Columns Ratio: 1-1-5)
-        c_coin, c_time, c_tier = st.columns([1.5, 1.5, 6])
-        
-        with c_coin:
-            selected_coin = st.selectbox("Coin", [s.symbol for s in coin_states], key="alc_coin_sel", label_visibility="collapsed")
-        
-        with c_time:
-            selected_tf = st.selectbox("Zaman", ["15m", "1h", "4h"], key="alc_tf_sel", label_visibility="collapsed")
-            
-        # Data Loading (Via RallyAssembler)
-        from tezaver.foundry.rally_assembler import RallyAssembler
-        assembler = RallyAssembler()
-        
-        try:
-             # Get Approved & Ready Rallies
-             alchemist_rallies = assembler.get_alchemist_ready_rallies(selected_coin, selected_tf)
-             
-             if not alchemist_rallies:
-                 # st.info(f"{selected_coin} {selected_tf} için Simyacı'ya uygun (Approved) ralli yok.")
-                 pass
-                 
-        except Exception as e:
-            st.error(f"Veri yükleme hatası: {e}")
-            alchemist_rallies = []
-
-        # Tier Logic & Grouping (Standardized Molder Style)
-        from tezaver.ui.ony_tab import TIERS
-        from tezaver.core.molds import Archetype, ARCHETYPE_LABELS
-        
-        tier_groups = {t: [] for t in TIERS}
-        tier_groups["OTHER"] = []
-        
-        # Sort by Time (Newest First)
-        alchemist_rallies.sort(key=lambda x: x.event_time, reverse=True)
-        
-        for r in alchemist_rallies:
-            t = r.tier
-            if t not in tier_groups: t = "OTHER"
-            tier_groups[t].append(r)
-            
-        # TIER SELECTOR
-        tier_options = []
-        for t in TIERS:
-            count = len(tier_groups[t])
-            tier_options.append(f"{t} ({count})")
-            
-        with c_tier:
-            # Default to session or Diamond
-            if 'alc_selected_tier' not in st.session_state:
-                st.session_state['alc_selected_tier'] = "DIAMOND"
-            
-            def get_clean_tier(opt): return opt.split(" (")[0]
-            
-            current_sel_idx = 0
-            if st.session_state['alc_selected_tier'] in TIERS:
-                current_sel_idx = TIERS.index(st.session_state['alc_selected_tier'])
-                
-            # Vertical alignment hack: labels removed
-            selected_tier_label = st.radio(
-                "Tier", 
-                tier_options, 
-                horizontal=True, 
-                key="alc_tier_radio",
-                label_visibility="collapsed",
-                index=current_sel_idx
-            )
-            selected_tier = get_clean_tier(selected_tier_label)
-            st.session_state['alc_selected_tier'] = selected_tier
-            
-        # LIST SELECTOR (Full Width)
-        current_list_items = tier_groups.get(selected_tier, [])
-        options = []
-        list_map = {}
-        
-        if not current_list_items:
-            # st.info(f"🔍 {selected_tier} katmanında uygun ralli yok.") # Less noise
-            st.session_state['alc_current_rally'] = None
-        else:
-            for r in current_list_items:
-                # Use Standardized Label from Assembler
-                options.append(r.display_label)
-                list_map[r.display_label] = r
-            
-            # Full Width Selectbox
-            default_idx = 0
-            selected_rally_label = st.selectbox("Ralli Seçiniz", options, index=default_idx, key="alc_rally_sel", label_visibility="collapsed")
-            
-            if selected_rally_label:
-                st.session_state['alc_current_rally'] = list_map[selected_rally_label]
-
-    st.markdown("---")
-
-    # =========================================================================
-    # SECTION 2: THE LABORATORY (Crucible + Vault)
-    # =========================================================================
+    col1, col2, col3, col4 = st.columns(4)
     
-    col_crucible, col_vault = st.columns([3, 1])
+    with col1:
+        target_tier = st.selectbox(
+            "Tier",
+            ["Tümü", "DIAMOND", "GOLD", "SILVER", "BRONZE"],
+            help="Hangi tier rallyleri için şifre üretilsin?"
+        )
     
-    # --- COLUMN 2 (Left): THE CRUCIBLE (Extraction) ---
-    with col_crucible:
-        st.subheader("🔥 Pota (Dönüşüm)")
+    with col2:
+        target_archetype = st.selectbox(
+            "Archetype",
+            ["Tümü", "PHOENIX", "GRIND", "GUILLOTINE", "SUPERNOVA", "NINJA", "SURFER"],
+            help="Hangi archetype için şifre üretilsin?"
+        )
+    
+    with col3:
+        target_coin_class = st.selectbox(
+            "Coin Sınıfı",
+            ["Tümü", "A (Aristocrat)", "B (Standard)", "C (Aggressive)"],
+            help="Hangi coin karakteri için?"
+        )
+    
+    with col4:
+        target_timeframe = st.selectbox(
+            "Timeframe",
+            ["15m", "1h", "4h"],
+            help="Hangi zaman dilimi?"
+        )
+    
+    # Parse selections
+    tier_filter = None if target_tier == "Tümü" else target_tier
+    archetype_filter = None if target_archetype == "Tümü" else target_archetype
+    
+    coin_class_filter = None
+    if target_coin_class != "Tümü":
+        coin_class_filter = target_coin_class[0]  # Extract A, B, or C
+    
+    st.divider()
+    
+    # === SECTION 2: ALGORITHM SELECTION ===
+    st.subheader("⚙️ Mining Algoritması")
+    
+    algorithm = st.radio(
+        "Algoritma Seç",
+        ["ensemble", "backward", "genetic"],
+        format_func=lambda x: {
+            "ensemble": "🎯 Ensemble (Önerilen) - BE + GA kombinasyonu",
+            "backward": "🔍 Backward Elimination - Feature elimination",
+            "genetic": "🧬 Genetic Algorithm - Evolutionary search"
+        }[x],
+        help="Ensemble tüm algoritmaları birleştirir (en güvenilir)"
+    )
+    
+    st.divider()
+    
+    # === SECTION 3: RALLY PREVIEW ===
+    st.subheader("📊 Rally Önizleme")
+    
+    store = RallyStore()
+    
+    # Load ALL rallies - then filter
+    # More efficient than limiting before filtering (might miss target rallies)
+    all_rallies = store.list_rallies(limit=100000)  # Large limit to get all
+    
+    matching_rallies = []
+    for rally in all_rallies:
+        # Apply filters
+        if tier_filter and rally.get('tier') != tier_filter:
+            continue
         
-        current_rally = st.session_state.get('alc_current_rally')
+        rev_data = rally.get('rev_data') or {}
         
-        if current_rally is not None:
-            # 1. Show Chart
-            event_time = pd.to_datetime(current_rally.event_time)
-            st.markdown(f"**Seçili:** {selected_coin} @ {event_time}")
-            
-            # Chart (Use Sniper Studio version to show Entry/Exit revisions)
-            from tezaver.ui.chart_area import render_sniper_studio_chart
-            
+        if archetype_filter and rev_data.get('archetype') != archetype_filter:
+            continue
+        
+        if coin_class_filter and rev_data.get('coin_class') != coin_class_filter:
+            continue
+        
+        if rally.get('timeframe') != target_timeframe:
+            continue
+        
+        # NOTE: Not filtering by APPROVED status yet
+        # Many rallies don't have rev_data populated yet
+        # TODO: Re-enable when rev_data is consistently populated
+        # if rev_data.get('status') != 'APPROVED':
+        #     continue
+        
+        matching_rallies.append(rally)
+    
+    rally_count = len(matching_rallies)
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric("Eşleşen Rally", rally_count)
+    
+    with col2:
+        min_required = 30
+        is_sufficient = rally_count >= min_required
+        status = "✅ Yeterli" if is_sufficient else "⚠️ Yetersiz"
+        st.metric("Durum", status)
+    
+    with col3:
+        st.metric("Minimum Gerekli", min_required)
+    
+    if rally_count > 0:
+        with st.expander(f"Rally Detayları ({rally_count} rally)"):
+            rally_df = pd.DataFrame([
+                {
+                    'Symbol': r['symbol'],
+                    'Tier': r.get('tier', 'N/A'),
+                    'Archetype': (r.get('rev_data') or {}).get('archetype', 'N/A'),
+                    'Gain': f"{(r.get('raw_data') or {}).get('future_max_gain_pct', 0):.1f}%"
+                }
+                for r in matching_rallies[:50]  # Show first 50
+            ])
+            st.dataframe(rally_df, use_container_width=True)
+    
+    st.divider()
+    
+    # === SECTION 4: GENERATION ===
+    st.subheader("🔬 Şifre Üretimi")
+    
+    if rally_count < 10:
+        st.error("❌ Şifre üretmek için en az 10 rally gerekli!")
+        st.info("Lütfen farklı filtreler deneyin veya daha fazla rally onaylayın.")
+        return
+    
+    if rally_count < 30:
+        st.warning("⚠️ 30'dan az rally ile sonuçlar güvenilir olmayabilir!")
+    
+    # Generation button
+    col1, col2 = st.columns([1, 3])
+    
+    with col1:
+        generate_btn = st.button(
+            "🚀 Şifre Üret",
+            type="primary",
+            use_container_width=True
+        )
+    
+    with col2:
+        st.caption(f"Hedef: {target_tier} / {target_archetype} / {target_coin_class} / {target_timeframe}")
+    
+    # Generation logic
+    if generate_btn:
+        with st.spinner("🧬 DNA analizi yapılıyor..."):
             try:
-                render_sniper_studio_chart(
-                    symbol=selected_coin,
-                    timeframe="15m",
-                    event_time=event_time,
-                    bars_to_peak=current_rally.bars_to_peak or 60,
-                    entry_offset=current_rally.entry_offset or 0,
-                    exit_offset=current_rally.exit_offset or (current_rally.bars_to_peak or 60)
+                generator = CipherGenerator(algorithm=algorithm)
+                
+                cipher = generator.generate_cipher(
+                    tier=tier_filter,
+                    archetype=archetype_filter,
+                    coin_class=coin_class_filter,
+                    timeframe=target_timeframe
                 )
+                
+                st.success("✅ Master Cipher başarıyla oluşturuldu!")
+                
+                # Display result
+                st.subheader("Üretilen Şifre")
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.write("**Şifre ID:**")
+                    st.code(cipher['cipher_id'])
+                    
+                    st.write("**Seçilen Özellikler:**")
+                    features = cipher['entry_rules']['selected_features']
+                    st.write(f"Toplam {len(features)} feature:")
+                    for i, feat in enumerate(features[:10], 1):
+                        st.text(f"{i}. {feat}")
+                    if len(features) > 10:
+                        st.text(f"... ve {len(features) - 10} daha")
+                
+                with col2:
+                    st.write("**Eğitim Detayları:**")
+                    stats = cipher['training_stats']
+                    st.metric("Eğitim Rally Sayısı", stats['rally_count'])
+                    st.metric("Pozitif Oran", f"{stats['positive_ratio']*100:.1f}%")
+                    st.metric("Feature Havuzu", stats['feature_pool_size'])
+                
+                st.info(f"💾 Şifre vault'a kaydedildi: `.tezaver_matrix/vault/ciphers/{cipher['cipher_id']}.json`")
+                
+                st.write("**Özet:**")
+                st.success(cipher['human_readable_summary']['tr'])
+                
             except Exception as e:
-                st.error(f"Grafik hatası: {e}")
-            
-            # 2. Extract DNA Button
-            if st.button("🧬 DNA Çıkar (Extract)", use_container_width=True, type="primary"):
-                with st.spinner("Parçacıklar ayrıştırılıyor..."):
-                    from tezaver.ui.chart_area import load_history_data
-                    
-                    df_history = load_history_data(selected_coin, "15m")
-                    
-                    if df_history is not None and not df_history.empty:
-                        if df_history['open_time'].dt.tz is None:
-                            cutoff = event_time
-                        else:
-                            cutoff = event_time.tz_localize(df_history['open_time'].dt.tz)
-                            
-                        df_context = df_history[df_history['open_time'] <= cutoff].tail(100).copy()
-                        
-                        sequence = engine.extract_sequence(
-                            df_context=df_context,
-                            rally_event_id=str(current_rally.event_id),
-                            symbol=selected_coin
-                        )
-                        
-                        st.success(f"DNA Dizilimi Çıkarıldı! ({len(sequence.particles)} Parçacık)")
-                        
-                        dna_data = []
-                        for p in sequence.particles:
-                            dna_data.append({
-                                "type": p.type.name,
-                                "offset": p.time_offset,
-                                "desc": p.description,
-                                "val": p.val
-                            })
-                            
-                        st.session_state['alc_extracted_dna'] = dna_data
-                        
-                    else:
-                        st.error("Tarihsel veri bulunamadı.")
-
-            # 3. Visualize DNA Sequence
-            dna = st.session_state.get('alc_extracted_dna')
-            if dna:
-                st.markdown("#### Bulunan Parçacıklar")
-                for p in sorted(dna, key=lambda x: x['offset']):
-                    st.info(f"**T{p['offset']}**: {p['desc']} ({p['type']})")
-                
-                st.markdown("#### 👻 Ghost Projection")
-                st.caption("Hedef İz Düşümü: %15.2 Yükseliş (Güven: %85)")
-    
-    # --- COLUMN 3 (Right): THE VAULT (Storage) ---
-    # --- COLUMN 3 (Right): THE VAULT (Storage) ---
-    with col_vault:
-        st.subheader("🏦 Kasa (Master Ciphers)")
-        
-        # Load Ciphers
-        saved_ciphers = engine.load_master_ciphers()
-        
-        if not saved_ciphers:
-            st.info("Kayıtlı Şifre Yok.")
-        else:
-            st.success(f"📚 {len(saved_ciphers)} Şifre Mevcut")
-            for mc in saved_ciphers:
-                with st.expander(f"🔐 {mc.name} ({mc.conquest_score:.1f})"):
-                    st.caption(f"Signature: {mc.sequence_signature[:20]}...")
-                    st.caption(f"Win Rate: %{mc.win_rate*100:.0f} | Gain: %{mc.avg_gain_pct:.1f}")
-        
-        st.divider()
-        
-        # Save Interaction
-        dna_data = st.session_state.get('alc_extracted_dna')
-        current_rally_obj = st.session_state.get('alc_current_rally')
-        
-        if dna_data and current_rally_obj is not None:
-            st.markdown("#### 💾 Şifre Kaydet")
-            cipher_name = st.text_input("Şifre Adı", value=f"Protocol-{datetime.now().strftime('%H%M')}")
-            
-            if st.button("💾 Kasaya Kaydet", type="primary"):
-                # 1. Reconstruct RallySequence
-                # We need to rebuild particles from dict
-                particles = []
-                for p_dict in dna_data:
-                    # Map string type back to Enum
-                    ptype_str = p_dict['type']
-                    if "." in ptype_str: ptype_str = ptype_str.split(".")[-1]
-                    
-                    try:
-                        ptype = ParticleType[ptype_str]
-                    except:
-                        ptype = ParticleType.RSI_OVERSOLD
-                        
-                    particles.append(RallyParticle(
-                        type=ptype,
-                        val=p_dict['val'],
-                        time_offset=p_dict['offset'],
-                        timeframe="15m",
-                        description=p_dict['desc']
-                    ))
-                
-                seq = RallySequence(
-                    particles=particles,
-                    symbol=selected_coin,
-                    rally_event_id=str(current_rally_obj.event_id),
-                    total_duration_bars=60 # Approximate
-                )
-                
-                # 2. Forge MasterCipher (Mock Stats for now)
-                # In real flow, validate_sequence would return this
-                mc = MasterCipher(
-                    name=cipher_name,
-                    sequence_signature=seq.key_signature,
-                    template_sequence=seq,
-                    conquest_score=85.0, # Placeholder
-                    win_rate=0.75,
-                    avg_gain_pct=15.0,
-                    false_positive_rate=0.1,
-                    tags=["manual_extraction"]
-                )
-                
-                # 3. Save
-                path = engine.save_master_cipher(mc)
-                st.toast(f"✅ {cipher_name} başarıyla saklandı!", icon="🔐")
-                st.balloons()
-                st.rerun()
-
+                st.error(f"❌ Şifre üretimi başarısız: {e}")
+                logger.error(f"Cipher generation failed: {e}", exc_info=True)

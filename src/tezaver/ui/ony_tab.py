@@ -451,18 +451,29 @@ def render_ony_studio():
                 try:
                     df = load_history_data(symbol, timeframe)
                     if df is not None:
-                        if 'open_time' in df.columns: df = df.set_index('open_time')
-                        if df.index.tz is not None: df.index = df.index.tz_localize(None)
+                        # raw_data'dan event_index al (doğrudan iloc için kullan)
+                        curr_doc = store.get_rally(event_id)
+                        raw = curr_doc.get('raw_data', {}) or {}
+                        event_idx = raw.get('event_index')
+                        raw_bars = raw.get('bars_to_peak', 0)
+                        dip_price = raw.get('dip_price')
                         
-                        ts = pd.to_datetime(event_time).tz_localize(None)
-                        if ts in df.index:
-                            start_pos = df.index.get_loc(ts)
-                            # Handle slice if get_loc returns slice (duplicates) - take first
-                            if isinstance(start_pos, slice): start_pos = start_pos.start
+                        if event_idx is not None:
+                            start_pos = int(event_idx)
                             
-                            p_entry = df.iloc[min(start_pos + nr['entry_offset_out'], len(df)-1)]['open']
-                            exit_pos = min(start_pos + (exit_offset if exit_offset else 0), len(df)-1)
-                            p_exit = df.iloc[exit_pos]['high'] # Use High for rally potential
+                            entry_pos = min(start_pos + nr['entry_offset_out'], len(df)-1)
+                            # Entry: offset=0 ise dip_price, değilse low kullan
+                            if nr['entry_offset_out'] == 0 and dip_price is not None:
+                                p_entry = float(dip_price)
+                            else:
+                                p_entry = df.iloc[entry_pos]['low']
+                            
+                            if exit_offset is not None and exit_offset > 0:
+                                exit_pos = min(start_pos + exit_offset, len(df)-1)
+                            else:
+                                exit_pos = min(start_pos + raw_bars, len(df)-1)
+                            
+                            p_exit = df.iloc[exit_pos]['high']
                             if p_entry > 0:
                                 rev_gain = (p_exit - p_entry) / p_entry
                 except Exception as e:
@@ -511,16 +522,30 @@ def render_ony_studio():
             try:
                 df = load_history_data(symbol, timeframe)
                 if df is not None:
-                    if 'open_time' in df.columns: df = df.set_index('open_time')
-                    if df.index.tz is not None: df.index = df.index.tz_localize(None)
+                    # raw_data'dan gerekli bilgileri al
+                    curr_doc = store.get_rally(event_id)
+                    raw = curr_doc.get('raw_data', {}) or {}
+                    event_idx = raw.get('event_index')
+                    raw_bars = raw.get('bars_to_peak', 0)
+                    dip_price = raw.get('dip_price')  # Orijinal dip fiyatı
                     
-                    ts = pd.to_datetime(event_time).tz_localize(None)
-                    if ts in df.index:
-                        start_pos = df.index.get_loc(ts)
-                        if isinstance(start_pos, slice): start_pos = start_pos.start
+                    if event_idx is not None:
+                        start_pos = int(event_idx)
                         
-                        p_entry = df.iloc[min(start_pos + entry_offset, len(df)-1)]['open']
-                        exit_pos = min(start_pos + (exit_offset if exit_offset else 0), len(df)-1)
+                        # Entry fiyatı: offset=0 ise dip_price kullan (flash crash için gerekli)
+                        # offset != 0 ise offset pozisyonundaki low kullan
+                        entry_pos = min(start_pos + entry_offset, len(df)-1)
+                        if entry_offset == 0 and dip_price is not None:
+                            p_entry = float(dip_price)  # Orijinal dip
+                        else:
+                            p_entry = df.iloc[entry_pos]['low']  # Low kullan, open değil!
+                        
+                        # Exit: Kullanıcı belirlememişse raw peak'e git
+                        if exit_offset is not None and exit_offset > 0:
+                            exit_pos = min(start_pos + exit_offset, len(df)-1)
+                        else:
+                            exit_pos = min(start_pos + raw_bars, len(df)-1)
+                        
                         p_exit = df.iloc[exit_pos]['high']
                         if p_entry > 0:
                             rev_gain = (p_exit - p_entry) / p_entry

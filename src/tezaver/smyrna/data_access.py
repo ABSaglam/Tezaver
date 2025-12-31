@@ -75,8 +75,8 @@ def get_rally_context(
     logger.info(f"Loading context for {rally_id}: symbol={symbol}, tf={timeframe}, T-0={event_time}")
     
     # 2. Load Historical Price Data
-    cell_path = coin_cell_paths.get_coin_cell_dir(symbol)
-    tf_file = cell_path / f"{timeframe}.parquet"
+    # CRITICAL FIX: Use correct path helper function
+    tf_file = coin_cell_paths.get_history_file(symbol, timeframe)
     
     if not tf_file.exists():
         raise ValueError(f"Price data not found: {tf_file}")

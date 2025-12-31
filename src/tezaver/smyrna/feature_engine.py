@@ -634,6 +634,208 @@ def extract_trend_features(df: pd.DataFrame) -> pd.DataFrame:
 
 
 # ============================================================================
+# CATEGORY 3: PRICE ACTION (8 Features)
+# ============================================================================
+
+def calculate_bollinger_bands(df: pd.DataFrame, period: int = 20, std: float = 2.0) -> Dict[str, pd.Series]:
+    """Calculate Bollinger Bands."""
+    sma = df['close'].rolling(window=period).mean()
+    rolling_std = df['close'].rolling(window=period).std()
+    
+    upper = sma + (std * rolling_std)
+    lower = sma - (std * rolling_std)
+    
+    return {'upper': upper, 'middle': sma, 'lower': lower}
+
+
+def detect_bb_squeeze(df: pd.DataFrame, threshold: float = 0.02) -> pd.Series:
+    """Detect Bollinger Band Squeeze (low volatility)."""
+    bb = calculate_bollinger_bands(df)
+    bandwidth = (bb['upper'] - bb['lower']) / bb['middle']
+    return bandwidth < threshold
+
+
+def detect_support_bounce(df: pd.DataFrame, lookback: int = 20) -> pd.Series:
+    """Detect bounce from support level."""
+    low_min = df['low'].rolling(window=lookback).min()
+    is_at_support = (df['low'] <= low_min * 1.01)  # Within 1% of support
+    bounce = is_at_support & (df['close'] > df['open'])  # Bullish candle
+    return bounce
+
+
+def detect_resistance_break(df: pd.DataFrame, lookback: int = 20) -> pd.Series:
+    """Detect break above resistance."""
+    high_max = df['high'].rolling(window=lookback).max()
+    break_resistance = df['close'] > high_max.shift(1)
+    return break_resistance
+
+
+def detect_fair_value_gap(df: pd.DataFrame) -> pd.Series:
+    """Detect Fair Value Gap (FVG) - imbalance zones."""
+    # FVG = gap between candle 1's high and candle 3's low
+    gap = df['low'].shift(-1) - df['high'].shift(1)
+    return gap > 0
+
+
+def extract_price_action_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Extract Price Action features."""
+    result = df.copy()
+    logger.info("Calculating Price Action features...")
+    
+    bb = calculate_bollinger_bands(result)
+    result['bb_upper'] = bb['upper']
+    result['bb_middle'] = bb['middle']
+    result['bb_lower'] = bb['lower']
+    result['bb_squeeze'] = detect_bb_squeeze(result)
+    result['support_bounce'] = detect_support_bounce(result)
+    result['resistance_break'] = detect_resistance_break(result)
+    result['fair_value_gap'] = detect_fair_value_gap(result)
+    result['price_vs_bb'] = (result['close'] - bb['lower']) / (bb['upper'] - bb['lower'])
+    
+    logger.info(f"Price Action features extracted: {len(result)} rows")
+    return result
+
+
+# ============================================================================
+# CATEGORY 7: VOLATILITY (4 Features)
+# ============================================================================
+
+def calculate_atr(df: pd.DataFrame, period: int = 14) -> pd.Series:
+    """Calculate Average True Range."""
+    high_low = df['high'] - df['low']
+    high_close = abs(df['high'] - df['close'].shift())
+    low_close = abs(df['low'] - df['close'].shift())
+    
+    tr = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
+    atr = tr.rolling(window=period).mean()
+    return atr
+
+
+def calculate_bb_width(df: pd.DataFrame, period: int = 20) -> pd.Series:
+    """Calculate Bollinger Band Width."""
+    bb = calculate_bollinger_bands(df, period)
+    width = (bb['upper'] - bb['lower']) / bb['middle']
+    return width
+
+
+def extract_volatility_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Extract Volatility features."""
+    result = df.copy()
+    logger.info("Calculating Volatility features...")
+    
+    result['atr_14'] = calculate_atr(result, 14)
+    result['bb_width'] = calculate_bb_width(result)
+    result['volatility_ratio'] = result['atr_14'] / result['close'] * 100
+    result['price_range'] = (result['high'] - result['low']) / result['close'] * 100
+    
+    logger.info(f"Volatility features extracted: {len(result)} rows")
+    return result
+
+
+# ============================================================================
+# CATEGORY 5: FIBONACCI (3 Features)
+# ============================================================================
+
+def calculate_fibonacci_levels(df: pd.DataFrame, lookback: int = 50) -> Dict[str, pd.Series]:
+    """Calculate Fibonacci retracement levels."""
+    high = df['high'].rolling(window=lookback).max()
+    low = df['low'].rolling(window=lookback).min()
+    diff = high - low
+    
+    return {
+        'fib_0.236': high - 0.236 * diff,
+        'fib_0.382': high - 0.382 * diff,
+        'fib_0.618': high - 0.618 * diff,
+    }
+
+
+def extract_fibonacci_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Extract Fibonacci features."""
+    result = df.copy()
+    logger.info("Calculating Fibonacci features...")
+    
+    fib = calculate_fibonacci_levels(result)
+    result['near_fib_618'] = abs(result['close'] - fib['fib_0.618']) / result['close'] < 0.005
+    result['near_fib_382'] = abs(result['close'] - fib['fib_0.382']) / result['close'] < 0.005
+    result['fib_zone'] = result['near_fib_618'] | result['near_fib_382']
+    
+    logger.info(f"Fibonacci features extracted: {len(result)} rows")
+    return result
+
+
+# ============================================================================
+# CATEGORY 9: STATISTICAL (3 Features)
+# ============================================================================
+
+def calculate_z_score(df: pd.DataFrame, period: int = 20) -> pd.Series:
+    """Calculate Z-Score."""
+    mean = df['close'].rolling(window=period).mean()
+    std = df['close'].rolling(window=period).std()
+    z_score = (df['close'] - mean) / std
+    return z_score.fillna(0)
+
+
+def extract_statistical_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Extract Statistical features."""
+    result = df.copy()
+    logger.info("Calculating Statistical features...")
+    
+    result['z_score'] = calculate_z_score(result)
+    result['price_percentile'] = result['close'].rolling(window=50).apply(
+        lambda x: (x.iloc[-1] > x).sum() / len(x) * 100
+    )
+    result['volume_percentile'] = result['volume'].rolling(window=50).apply(
+        lambda x: (x.iloc[-1] > x).sum() / len(x) * 100
+    )
+    
+    logger.info(f"Statistical features extracted: {len(result)} rows")
+    return result
+
+
+# ============================================================================
+# CATEGORY 10: CANDLE PATTERNS (2 Features)
+# ============================================================================
+
+def detect_hammer(df: pd.DataFrame) -> pd.Series:
+    """Detect Hammer candle pattern."""
+    body = abs(df['close'] - df['open'])
+    lower_wick = df[['open', 'close']].min(axis=1) - df['low']
+    upper_wick = df['high'] - df[['open', 'close']].max(axis=1)
+    
+    is_hammer = (
+        (lower_wick > 2 * body) &
+        (upper_wick < body * 0.5)
+    )
+    return is_hammer
+
+
+def detect_engulfing(df: pd.DataFrame) -> pd.Series:
+    """Detect Bullish Engulfing pattern."""
+    is_bullish = df['close'] > df['open']
+    prev_bearish = df['close'].shift(1) < df['open'].shift(1)
+    
+    engulfs = (
+        is_bullish &
+        prev_bearish &
+        (df['open'] < df['close'].shift(1)) &
+        (df['close'] > df['open'].shift(1))
+    )
+    return engulfs
+
+
+def extract_candle_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Extract Candle Pattern features."""
+    result = df.copy()
+    logger.info("Calculating Candle features...")
+    
+    result['hammer'] = detect_hammer(result)
+    result['bullish_engulfing'] = detect_engulfing(result)
+    
+    logger.info(f"Candle features extracted: {len(result)} rows")
+    return result
+
+
+# ============================================================================
 # FEATURE EXTRACTION MASTER FUNCTION
 # ============================================================================
 
@@ -690,7 +892,7 @@ def extract_momentum_features(df: pd.DataFrame) -> pd.DataFrame:
 
 def extract_all_features(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Extract ALL features (Momentum + Volume + Trend + ...).
+    Extract ALL 43 features across 10 categories.
     
     Master function for complete feature extraction.
     
@@ -710,17 +912,23 @@ def extract_all_features(df: pd.DataFrame) -> pd.DataFrame:
     # Category 2: Volume (5 features)
     result = extract_volume_features(result)
     
+    # Category 3: Price Action (8 features)
+    result = extract_price_action_features(result)
+    
     # Category 4: Trend (6 features)
     result = extract_trend_features(result)
     
-    # TODO: Add remaining categories
-    # - Price Action (8 features)
-    # - Fibonacci (3 features)
-    # - Wyckoff (3 features)
-    # - Volatility (4 features)
-    # - Multi-TF (3 features)
-    # - Statistical (3 features)
-    # - Candle (2 features)
+    # Category 5: Fibonacci (3 features)
+    result = extract_fibonacci_features(result)
+    
+    # Category 7: Volatility (4 features)
+    result = extract_volatility_features(result)
+    
+    # Category 9: Statistical (3 features)
+    result = extract_statistical_features(result)
+    
+    # Category 10: Candle (2 features)
+    result = extract_candle_features(result)
     
     feature_count = len([c for c in result.columns if c not in df.columns])
     logger.info(f"Feature extraction complete: {feature_count} new features added")
