@@ -203,7 +203,7 @@ def render_ony_studio():
     "Durum" ve "Etiket" kavramları UI'dan gizlenmiştir.
     """
     st.subheader("🛠️ Rev. Stüdyo")
-    st.caption("Problemli ralliyi seç → Ayarları düzelt → Kaydet (Otorite)")
+
     
     # Return to Molder Button (if came from Molder)
     if st.session_state.get('came_from_molder'):
@@ -299,6 +299,20 @@ def render_ony_studio():
     # Filter by Tier
     filtered_rallies = [r for r in rallies if r.tier == selected_tier]
     
+
+    
+    # Sort: Unrevised first, Revised last
+    # Secondary sort: Event time (descending or ascending? default list seems to be sorted)
+    # Assuming rallies list is already sorted by time. Python's sort is stable.
+    def is_revised(r):
+        # r is AssembledRally object
+        # Ensure return is strictly int (0 or 1) to avoid TypeError: '<' not supported between instances of 'str' and 'bool'
+        is_app = (r.status == 'APPROVED')
+        is_rev = bool(getattr(r, 'is_revised', False))
+        return int(is_app or is_rev)
+
+    filtered_rallies.sort(key=is_revised)
+    
     if not filtered_rallies:
         st.info(f"🔍 {selected_tier} katmanında incelenecek ralli yok.")
         return
@@ -359,46 +373,110 @@ def render_ony_studio():
                 existing_ann.rev_gain = rev_data['rev_gain']
 
     
-    # --- ENTRY / EXIT CONFIGURATION (Top) ---
-    st.markdown("---")
-    st.markdown("### 🎯 Entry / Exit Ayarları")
+    # --- COMPACT CONTROL BAR ---
     
-    col_entry, col_exit = st.columns(2)
+    # Row 1: Entry Label + Entry Input | Exit Label + Exit Input | KAYDET | ORJ
+    lbl1, inp1, lbl2, inp2, btn1, btn2 = st.columns([0.5, 1, 0.5, 1, 1.2, 0.8])
     
-    with col_entry:
+    with lbl1:
+        st.markdown("**Giriş**")
+    
+    with inp1:
         default_entry = existing_ann.entry_bar_offset if existing_ann else 0
         entry_offset = st.number_input(
-            "Entry Bar Offset",
-            min_value=0,
+            "Giriş",
+            min_value=-50,  # Negatif değer izni (±)
             max_value=bars_to_peak + 50,
             value=default_entry,
             step=1,
-            help="Event başlangıcından kaç bar sonra giriş yapılacak",
-            key="ony_entry_offset"
+            key="ony_entry_offset",
+            label_visibility="collapsed"
         )
     
-    with col_exit:
-        default_exit_enabled = existing_ann is not None and existing_ann.exit_bar_offset is not None
-        exit_enabled = st.checkbox("Exit Belirle", value=default_exit_enabled, key="ony_exit_enabled")
-        
-        if exit_enabled:
-            default_exit = existing_ann.exit_bar_offset if existing_ann and existing_ann.exit_bar_offset else bars_to_peak
-            exit_offset = st.number_input(
-                "Exit Bar Offset",
-                min_value=entry_offset + 1,
-                max_value=bars_to_peak + 100,
-                value=default_exit,
-                step=1,
-                help="Event başlangıcından kaç bar sonra çıkış yapılacak",
-                key="ony_exit_offset"
-            )
-        else:
-            exit_offset = None
-            
-    # --- CHART (Middle) ---
-    st.markdown("---")
-    # Header removed (Chart has internal title now)
+    with lbl2:
+        st.markdown("**Çıkış**")
     
+    with inp2:
+        default_exit = existing_ann.exit_bar_offset if existing_ann and existing_ann.exit_bar_offset else bars_to_peak
+        exit_offset = st.number_input(
+            "Çıkış",
+            min_value=entry_offset + 1,
+            max_value=bars_to_peak + 100,
+            value=default_exit,
+            step=1,
+            key="ony_exit_offset",
+            label_visibility="collapsed"
+        )
+    
+    note = ""  # Sabit boş not
+    
+    with btn1:
+        if st.button("💾 KAYDET", type="primary", use_container_width=True):
+            # Calculate Rev Gain
+            rev_gain = None
+            try:
+                df = load_history_data(symbol, timeframe)
+                if df is not None:
+                    curr_doc = store.get_rally(event_id)
+                    raw = curr_doc.get('raw_data', {}) or {}
+                    event_idx = raw.get('event_index')
+                    raw_bars = raw.get('bars_to_peak', 0)
+                    dip_price = raw.get('dip_price')
+                    
+                    if event_idx is not None:
+                        start_pos = int(event_idx)
+                        entry_pos = min(start_pos + entry_offset, len(df)-1)
+                        if entry_offset == 0 and dip_price is not None:
+                            p_entry = float(dip_price)
+                        else:
+                            p_entry = df.iloc[entry_pos]['low']
+                        
+                        if exit_offset is not None and exit_offset > 0:
+                            exit_pos = min(start_pos + exit_offset, len(df)-1)
+                        else:
+                            exit_pos = min(start_pos + raw_bars, len(df)-1)
+                        
+                        p_exit = df.iloc[exit_pos]['high']
+                        if p_entry > 0:
+                            rev_gain = (p_exit - p_entry) / p_entry
+            except Exception as e:
+                print(f"Gain calc error: {e}")
+    
+            # Save to Store
+            rev_data = {
+                    'symbol': symbol,
+                    'timeframe': timeframe,
+                    'event_id': event_id,
+                    'entry_bar_offset': entry_offset,
+                    'exit_bar_offset': exit_offset,
+                    'note': note,
+                    'status': "APPROVED",
+                    'label': "REV",
+                    'rev_gain': rev_gain,
+                    'updated_at': pd.Timestamp.now()
+            }
+            
+            curr_doc = store.get_rally(event_id)
+            curr_rev = curr_doc.get('rev_data', {}) or {}
+            curr_rev.update(rev_data)
+            
+            store.upsert_rally(event_id, curr_rev, layer='rev')
+            
+            if st.session_state.get('came_from_molder'):
+                    st.session_state['molder_return_target'] = event_id
+                    
+            st.success(f"✅ Kaydedildi")
+            st.rerun()
+    
+    with btn2:
+        if st.button("↩️ ORJ", use_container_width=True, help="Orijinale dön"):
+            # Reset to original values
+            st.session_state['ony_entry_offset'] = 0
+            st.session_state['ony_exit_enabled'] = False
+            st.session_state['ony_note'] = ""
+            st.rerun()
+
+    # --- CHART ---
     if pd.notna(event_time):
         try:
             render_sniper_studio_chart(
@@ -408,20 +486,12 @@ def render_ony_studio():
                 bars_to_peak=bars_to_peak,
                 entry_offset=entry_offset,
                 exit_offset=exit_offset,
+                raw_gain_pct=current_rally.gain_pct if current_rally else None
             )
         except Exception as e:
             st.error(f"Grafik hatası: {e}")
     else:
         st.warning("Event zamanı bulunamadı.")
-        
-    # --- NOTE ---
-    st.markdown("---")
-    st.markdown("### 📝 Revizyon Notu")
-    
-    col_note, col_dummy = st.columns([2, 1])
-    with col_note:
-        default_note = existing_ann.note if existing_ann else ""
-        note = st.text_input("Not / Açıklama", value=default_note, placeholder="Ne değişti?", key="ony_note")
 
     # --- NORMALIZE ---
     st.markdown("---")
@@ -508,97 +578,7 @@ def render_ony_studio():
                 st.success(f"✅ Uygulandı! (ID: {event_id})")
                 st.rerun()
 
-    # --- SAVE ---
-    st.markdown("---")
-    cols_save = st.columns([3, 1])
-    
-    with cols_save[0]:
-        if st.button("💾 KAYDET (GÜNCELLE)", type="primary", use_container_width=True):
-            # Immutable ID Architecture: 
-            # ID never changes. We overwrite the annotation with "REV" label.
-            
-            # Calculate Rev Gain
-            rev_gain = None
-            try:
-                df = load_history_data(symbol, timeframe)
-                if df is not None:
-                    # raw_data'dan gerekli bilgileri al
-                    curr_doc = store.get_rally(event_id)
-                    raw = curr_doc.get('raw_data', {}) or {}
-                    event_idx = raw.get('event_index')
-                    raw_bars = raw.get('bars_to_peak', 0)
-                    dip_price = raw.get('dip_price')  # Orijinal dip fiyatı
-                    
-                    if event_idx is not None:
-                        start_pos = int(event_idx)
-                        
-                        # Entry fiyatı: offset=0 ise dip_price kullan (flash crash için gerekli)
-                        # offset != 0 ise offset pozisyonundaki low kullan
-                        entry_pos = min(start_pos + entry_offset, len(df)-1)
-                        if entry_offset == 0 and dip_price is not None:
-                            p_entry = float(dip_price)  # Orijinal dip
-                        else:
-                            p_entry = df.iloc[entry_pos]['low']  # Low kullan, open değil!
-                        
-                        # Exit: Kullanıcı belirlememişse raw peak'e git
-                        if exit_offset is not None and exit_offset > 0:
-                            exit_pos = min(start_pos + exit_offset, len(df)-1)
-                        else:
-                            exit_pos = min(start_pos + raw_bars, len(df)-1)
-                        
-                        p_exit = df.iloc[exit_pos]['high']
-                        if p_entry > 0:
-                            rev_gain = (p_exit - p_entry) / p_entry
-            except Exception as e:
-                print(f"Gain calc error: {e}")
-    
-            # Save to Store
-            rev_data = {
-                    'symbol': symbol,
-                    'timeframe': timeframe,
-                    'event_id': event_id,
-                    'entry_bar_offset': entry_offset,
-                    'exit_bar_offset': exit_offset,
-                    'note': note,
-                    'status': "APPROVED",
-                    'label': "REV",
-                    'rev_gain': rev_gain,
-                    'updated_at': pd.Timestamp.now()
-            }
-            
-            curr_doc = store.get_rally(event_id)
-            curr_rev = curr_doc.get('rev_data', {}) or {}
-            curr_rev.update(rev_data)
-            
-            store.upsert_rally(event_id, curr_rev, layer='rev')
-            
-            if st.session_state.get('came_from_molder'):
-                    st.session_state['molder_return_target'] = event_id
-                    
-            st.success(f"✅ Kaydedildi (ID: {event_id})")
-            st.rerun()
 
-    with cols_save[1]:
-        if st.button("↩️ ORJİNALE DÖN", type="secondary", use_container_width=True, help="Tüm revizyonları siler ve ralliyi ilk haline döndürür."):
-             # Reset Logic
-             curr_doc = store.get_rally(event_id)
-             curr_rev = curr_doc.get('rev_data', {}) or {}
-             
-             # Reset Critical Fields to Defaults
-             reset_data = {
-                 'entry_bar_offset': 0,
-                 'exit_bar_offset': None,
-                 'rev_gain': None,
-                 'note': "",
-                 'label': "", # Remove REV label
-                 'status': "APPROVED", # Keep Approved
-                 'updated_at': pd.Timestamp.now()
-             }
-             curr_rev.update(reset_data)
-             
-             store.upsert_rally(event_id, curr_rev, layer='rev')
-             st.success("✅ Orjinale dönüldü.")
-             st.rerun()
     # --- INFO BOX ---
     if existing_ann:
         with st.expander("📋 Mevcut Kayıt Bilgisi"):

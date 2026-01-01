@@ -44,18 +44,22 @@ def render_ozet_tab():
     
     store = RallyStore()
     
+    # Fetch all rallies for health check
+    all_rallies = store.list_rallies(limit=10) # Limit is fine for >0 check
+    
     # Rally Envanteri
     st.subheader("📋 Rally Envanteri")
     
     col1, col2, col3, col4 = st.columns(4)
     
-    # Count by tier
-    all_rallies = store.list_rallies(limit=1000)
-    
-    tier_counts = {}
-    for rally in all_rallies:
-        tier = rally.get('tier', 'UNKNOWN')
-        tier_counts[tier] = tier_counts.get(tier, 0) + 1
+    # Count by tier using direct SQL (not limited)
+    import sqlite3
+    conn = sqlite3.connect(store.db_path)
+    cursor = conn.cursor()
+    cursor.execute('SELECT tier, COUNT(*) FROM rallies GROUP BY tier')
+    results = cursor.fetchall()
+    tier_counts = {tier: count for tier, count in results}
+    conn.close()
     
     with col1:
         st.metric("💎 Diamond", tier_counts.get('DIAMOND', 0))

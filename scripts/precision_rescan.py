@@ -67,14 +67,15 @@ def rescan_all():
                     if tier is None:
                         continue
                     
-                    # Rally ID oluştur
-                    rally_id = generate_rally_id(coin, tf, tier, row['event_time'])
+                    # Rally ID oluştur - raw_dip_idx timestamp'i kullan
+                    dip_idx = int(row['raw_dip_idx'])
+                    dip_timestamp = df.iloc[dip_idx]['timestamp']  # ms cinsinden
+                    dip_time = pd.Timestamp(dip_timestamp, unit='ms')
                     
-                    # Timestamp'i düzgün formata çevir
-                    if isinstance(row['event_time'], (int, float)):
-                        event_time_str = pd.Timestamp(row['event_time'], unit='ms').strftime('%Y-%m-%d %H:%M:%S')
-                    else:
-                        event_time_str = str(row['event_time'])
+                    rally_id = generate_rally_id(coin, tf, tier, dip_time)
+                    
+                    # Timestamp'i düzgün formata çevir (dip zamanı)
+                    event_time_str = dip_time.strftime('%Y-%m-%d %H:%M:%S')
                     
                     # Rally verisi hazırla
                     rally_data = {

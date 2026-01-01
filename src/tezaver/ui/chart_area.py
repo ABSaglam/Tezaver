@@ -1754,7 +1754,8 @@ def render_sniper_studio_chart(
     entry_offset: int,
     window_before: int = 50,
     window_after: int = 30,
-    exit_offset: Optional[int] = None
+    exit_offset: Optional[int] = None,
+    raw_gain_pct: Optional[float] = None  # Orijinal gain yüzdesi (hesaplamadan bağımsız)
 ) -> None:
     """
     Renders 4-panel chart for Sniper Studio with Entry & optional Exit markers.
@@ -1868,7 +1869,7 @@ def render_sniper_studio_chart(
             vertical_spacing=0.03,
             row_heights=[0.5, 0.15, 0.15, 0.2],
             specs=[[{}], [{}], [{}], [{}]],
-            subplot_titles=(f"{symbol} Sniper Studio", "Volume", "MACD", "RSI")
+            subplot_titles=(f"{symbol}", "Volume", "MACD", "RSI")
         )
         
         # 1. Price
@@ -1965,14 +1966,19 @@ def render_sniper_studio_chart(
                 row=1
             )
             
-            # Label
+            # Label: raw_gain_pct varsa doğrudan kullan, yoksa hesapla
             try:
-                p_start = df.iloc[idx_start]['open'] # Entry is at Open
-                p_end = df.iloc[idx_end]['high']   # Exit is at High (Potential)
-                gain_pct = ((p_end - p_start) / p_start) * 100 if p_start else 0
-                
-                label_txt = f"+{gain_pct:.1f}%"
-                if exit_offset is None: label_txt += " (Est.)"
+                if raw_gain_pct is not None:
+                    # Orijinal değeri kullan (garantili doğru)
+                    gain_pct = raw_gain_pct * 100
+                    label_txt = f"+{gain_pct:.1f}%"
+                else:
+                    # Fallback: Hesapla
+                    p_start = df.iloc[idx_start]['low']
+                    p_end = df.loc[df.index[idx_start]:df.index[idx_end], 'high'].max()
+                    gain_pct = ((p_end - p_start) / p_start) * 100 if p_start else 0
+                    label_txt = f"+{gain_pct:.1f}%"
+                    if exit_offset is None: label_txt += " (Est.)"
                 
                 # Add Annotation at Top Center of Box
                 mid_time = t_start + (t_end - t_start) / 2

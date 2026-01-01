@@ -71,9 +71,14 @@ class RallyAssembler:
     def get_assembled_rallies(self, symbol: str, timeframe: str) -> List[AssembledRally]:
         """
         The Master Function. Returns fully merged rallies for a coin/tf using SQLite.
+        Handles 'TÜMÜ' or None for wildcard.
         """
+        # Handle Wildcards
+        target_sym = None if symbol in ["TÜMÜ", None, ""] else symbol
+        target_tf = None if timeframe in ["TÜMÜ", None, ""] else timeframe
+        
         # 1. Fetch from SQLite
-        rows = self.store.list_rallies(symbol=symbol, timeframe=timeframe)
+        rows = self.store.list_rallies(symbol=target_sym, timeframe=target_tf)
         return [self._assemble_rally_from_row(row) for row in rows]
 
     def get_ony_review_rallies(self, symbol: str, timeframe: str) -> List[AssembledRally]:

@@ -80,11 +80,7 @@ def render_molder_page():
             idx = timeframes.index(st.session_state["molder_tf"])
         sel_tf = st.selectbox("Timeframe", timeframes, index=idx, key="molder_tf", label_visibility="collapsed")
     
-    # --- COIN CLASS INFO BADGE ---
-    coin_class = get_coin_class_with_override(sel_sym)
-    class_info = COIN_CLASS_INFO.get(coin_class, COIN_CLASS_INFO["B"])
-    class_badge = f"{class_info['icon']} **Sınıf {coin_class}** - {class_info['name']}"
-    st.caption(f"{class_badge} | _{class_info['description']}_")
+
 
     
     # --- DATA LOADING (Via RallyAssembler) ---
@@ -98,8 +94,12 @@ def render_molder_page():
     tier_groups = {t: [] for t in TIERS}
     tier_groups["OTHER"] = [] 
     
-    # Sort by Time (Newest First)
-    moldable_rallies.sort(key=lambda x: x.event_time, reverse=True)
+    # Sort: Unlabeled first (Priority 1), then by Time (Newest First)
+    def molder_sort_key(r):
+        is_labeled = (r.archetype is not None and r.archetype != "None")
+        return (0 if is_labeled else 1, r.event_time)
+        
+    moldable_rallies.sort(key=molder_sort_key, reverse=True)
     
     for rally in moldable_rallies:
         t = rally.tier
@@ -244,11 +244,30 @@ def render_molder_page():
                  else:
                       st.warning("Hiçbir kalıp tespit edilemedi.")
 
-    st.markdown("---")
+
 
     # ==========================
     # 2. LABELING PANEL + CHART
     # ==========================
+    
+    # --- CHART (Moved to Top) ---
+    event_time = current_rally.event_time
+    try:
+        render_sniper_studio_chart(
+            symbol=sel_sym,
+            timeframe=sel_tf,
+            event_time=event_time,
+            bars_to_peak=current_rally.bars_to_peak,
+            entry_offset=current_rally.entry_offset,
+            exit_offset=current_rally.exit_offset,
+            raw_gain_pct=current_rally.gain_pct
+        )
+    except Exception as e:
+        st.error(f"Grafik hatası: {e}")
+
+    st.markdown("---")
+
+    # --- LABELING PANEL ---
     st.markdown("### 🏷️ Kalıp Seçimi (Archetype)")
     
     # Header Info + Revise Button
@@ -347,21 +366,6 @@ def render_molder_page():
              elif scores:
                  st.caption(f"⚠️ Sistem önerisi: **{scores[0]['arch']}**. Farklı bir yorumunuz olabilir.")
 
-    # Chart
-    st.markdown("---")
-    event_time = current_rally.event_time
-    try:
-        render_sniper_studio_chart(
-            symbol=sel_sym,
-            timeframe=sel_tf,
-            event_time=event_time,
-            bars_to_peak=current_rally.bars_to_peak,
-            entry_offset=current_rally.entry_offset,
-            exit_offset=current_rally.exit_offset
-        )
-    except Exception as e:
-        st.error(f"Grafik hatası: {e}")
-
     # ==========================
     # 3. MASTERY SCORE & INFO POOL
     # ==========================
@@ -386,7 +390,13 @@ def render_molder_page():
              rsi_vals = df_hist_curr['rsi'].values
              vol_vals = df_hist_curr['volume_rel'].values
              times_ai = df_hist_curr.index if df_hist_curr.index.dtype.kind == 'M' else pd.to_datetime(df_hist_curr['open_time'])
-             if hasattr(times_ai, 'tz') and times_ai.tz is not None: times_ai = times_ai.tz_localize(None)
+             
+             # Robust TZ Stripping
+             if hasattr(times_ai, 'tz'): # DatetimeIndex
+                 if times_ai.tz is not None: times_ai = times_ai.tz_localize(None)
+             elif hasattr(times_ai, 'dt'): # Series
+                 if hasattr(times_ai.dt, 'tz') and times_ai.dt.tz is not None:
+                     times_ai = times_ai.dt.tz_localize(None)
              
              matches = 0
              valid_n = 0
@@ -422,6 +432,11 @@ def render_molder_page():
     else:
          st.caption("Veri yükleniyor...")
 
+    # Show Coin Class Info under Mastery Score
+    coin_cls = get_coin_class_with_override(sel_sym)
+    cls_info = COIN_CLASS_INFO.get(coin_cls, COIN_CLASS_INFO["B"])
+    st.info(f"{cls_info.get('icon','')} **Sınıf {coin_cls} - {cls_info.get('name','')}** | {cls_info.get('description','')}")
+
     # Info Pool (Trade Künyesi)
     st.markdown("---")
     st.markdown("### 📊 Trade Künyesi")
@@ -433,7 +448,13 @@ def render_molder_page():
              if et_naive.tzinfo: et_naive = et_naive.tz_localize(None)
              
              times = df_hist_curr.index if df_hist_curr.index.dtype.kind == 'M' else pd.to_datetime(df_hist_curr['open_time'])
-             if hasattr(times, 'tz') and times.tz is not None: times = times.tz_localize(None)
+             
+             # Robust TZ Stripping
+             if hasattr(times, 'tz'): # DatetimeIndex
+                 if times.tz is not None: times = times.tz_localize(None)
+             elif hasattr(times, 'dt'): # Series
+                 if hasattr(times.dt, 'tz') and times.dt.tz is not None:
+                     times = times.dt.tz_localize(None)
              
              try:
                  valid_diffs = (times - et_naive).abs()
@@ -490,24 +511,62 @@ def render_molder_page():
         
         cols = st.columns(3)
         
-        # Helper to find exact file
-        def get_img_path(partial_name):
+        # Helper to find ALL exact files
+        def get_img_paths(partial_name):
+            matches = []
             try:
-                if not os.path.exists(base_img_path): return None
-                for f in os.listdir(base_img_path):
+                if not os.path.exists(base_img_path): return []
+                for f in sorted(os.listdir(base_img_path)): # Sorted for consistent order
                     if partial_name in f:
-                        return os.path.join(base_img_path, f)
+                        matches.append(os.path.join(base_img_path, f))
             except: pass
-            return None
+            return matches
 
         # Render in Grid
         for i, (arch_key, fname_part) in enumerate(img_map.items()):
             col = cols[i % 3]
             with col:
-                fpath = get_img_path(fname_part)
-                if fpath:
-                    st.image(fpath, use_container_width=True)
+                img_paths = get_img_paths(fname_part)
+                
                 st.markdown(f"**{arch_key}**")
+                
+                if not img_paths:
+                    st.caption("Görsel yok")
+                elif len(img_paths) == 1:
+                    st.image(img_paths[0], use_container_width=True)
+                else:
+                    # Multiple images - use tabs
+                    tabs = st.tabs([f"Görsel {j+1}" for j in range(len(img_paths))])
+                    for j, tab in enumerate(tabs):
+                        with tab:
+                            st.image(img_paths[j], use_container_width=True)
+                
                 desc = ARCHETYPE_DESCRIPTIONS.get(Archetype(arch_key), "")
                 st.caption(desc)
+
+    # --- COIN CLASS LEGEND ---
+    st.markdown("---")
+    
+    with st.expander("🏛️ Sınıf Özellikleri (Coin Character Classes)", expanded=False):
+        cls_cols = st.columns(3)
+        # Iterate classes (A, B, C, D, N)
+        for i, (cls_code, info) in enumerate(COIN_CLASS_INFO.items()):
+            
+            # Skip unknown if present
+            if cls_code not in ["A", "B", "C", "D", "N"]: continue
+            
+            col = cls_cols[i % 3]
+            with col:
+                # Header with Icon and Code
+                st.markdown(f"#### {info.get('icon', '❓')} {info.get('name', 'Bilinmeyen')} ({cls_code})")
+                
+                # Badge Color
+                color = info.get('color', '#808080')
+                st.markdown(f"<span style='color:{color}'>⬤</span> **{cls_code} Sınıfı**", unsafe_allow_html=True)
+                
+                # Description
+                st.info(info.get('description', ''))
+                
+                # Strategy
+                st.caption(f"💡 **Strateji:** {info.get('strategy', '-')}")
 
