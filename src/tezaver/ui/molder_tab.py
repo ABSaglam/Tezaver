@@ -43,9 +43,12 @@ from tezaver.core.coin_class_utils import (
     COIN_CLASS_INFO,
 )
 
-def render_molder_page():
-    """Render the Kalıpçı page."""
-    st.caption("Onaylanmış (Approved) rallilere Arketip (Kalıp) etiketi basar.")
+def render_molder_boutique_view():
+    """
+    Render the 'Tekli' (Boutique) Molder page.
+    This is the original, detailed view for deep analysis.
+    """
+
     
     # Handle return from Revize
     if 'molder_target_id' in st.session_state:
@@ -250,41 +253,7 @@ def render_molder_page():
     # 2. LABELING PANEL + CHART
     # ==========================
     
-    # --- CHART (Moved to Top) ---
-    event_time = current_rally.event_time
-    try:
-        render_sniper_studio_chart(
-            symbol=sel_sym,
-            timeframe=sel_tf,
-            event_time=event_time,
-            bars_to_peak=current_rally.bars_to_peak,
-            entry_offset=current_rally.entry_offset,
-            exit_offset=current_rally.exit_offset,
-            raw_gain_pct=current_rally.gain_pct
-        )
-    except Exception as e:
-        st.error(f"Grafik hatası: {e}")
-
-    st.markdown("---")
-
-    # --- LABELING PANEL ---
-    st.markdown("### 🏷️ Kalıp Seçimi (Archetype)")
-    
-    # Header Info + Revise Button
-    hb1, hb2 = st.columns([3, 1])
-    with hb1:
-         st.info(f"ID: `{current_rally.event_id}` | Mevcut: **{current_rally.archetype or 'YOK'}**")
-    with hb2:
-         if st.button("🛠️ Revize Et", help="Bu ralliyi Revize Stüdyo'da düzenle", type="primary"):
-             st.session_state['nav_selection'] = "🎯 Revize"
-             st.session_state['ony_target_id'] = current_rally.event_id
-             st.session_state['ony_prefill_symbol'] = sel_sym
-             st.session_state['ony_prefill_tf'] = sel_tf
-             st.session_state['came_from_molder'] = True
-             st.session_state['molder_return_target'] = current_rally.event_id
-             st.rerun()
-
-    # Buttons
+    # --- BUTTONS (Moved to Top) ---
     # Custom CSS to reduce font size for archetype buttons (~20% smaller)
     st.markdown("""
     <style>
@@ -343,6 +312,40 @@ def render_molder_page():
                 st.success(f"✅ Kaydedildi! ({mold.value})")
                 st.toast(f"✅ Etiketlendi: {label}")
                 st.rerun()
+
+    # --- CHART ---
+    event_time = current_rally.event_time
+    try:
+        render_sniper_studio_chart(
+            symbol=sel_sym,
+            timeframe=sel_tf,
+            event_time=event_time,
+            bars_to_peak=current_rally.bars_to_peak,
+            entry_offset=current_rally.entry_offset,
+            exit_offset=current_rally.exit_offset,
+            raw_gain_pct=current_rally.gain_pct
+        )
+    except Exception as e:
+        st.error(f"Grafik hatası: {e}")
+
+    st.markdown("---")
+
+    # --- INFO ---
+    st.markdown("### 🏷️ Kalıp Durumu")
+    
+    # Header Info + Revise Button
+    hb1, hb2 = st.columns([3, 1])
+    with hb1:
+         st.info(f"ID: `{current_rally.event_id}` | Mevcut: **{current_rally.archetype or 'YOK'}**")
+    with hb2:
+         if st.button("🛠️ Revize Et", help="Bu ralliyi Revize Stüdyo'da düzenle", type="primary"):
+             st.session_state['nav_selection'] = "🎯 Revize"
+             st.session_state['ony_target_id'] = current_rally.event_id
+             st.session_state['ony_prefill_symbol'] = sel_sym
+             st.session_state['ony_prefill_tf'] = sel_tf
+             st.session_state['came_from_molder'] = True
+             st.session_state['molder_return_target'] = current_rally.event_id
+             st.rerun()
     
     # Selection Check (User vs System)
     st.divider()
@@ -569,4 +572,216 @@ def render_molder_page():
                 
                 # Strategy
                 st.caption(f"💡 **Strateji:** {info.get('strategy', '-')}")
+
+# ==========================
+# GALLERY MODE & ORCHESTRATOR
+# ==========================
+
+def render_molder_gallery_view():
+    """
+    Render the 'Galeri' (Factory) Molder page for rapid labeling.
+    """
+    # Initialize Assembler
+    assembler = RallyAssembler()
+    
+    # --- FILTERS ---
+    c_fil_1, c_fil_2, c_act = st.columns([2, 2, 2])
+    with c_fil_1:
+         # Symbol Filter
+         symbols = ["TÜMÜ"] + _get_available_symbols()
+         sel_sym = st.selectbox("Coin", symbols, key="gal_sym")
+         target_sym = None if sel_sym == "TÜMÜ" else sel_sym
+         
+    with c_fil_2:
+         # Timeframe Filter
+         tfs = ["TÜMÜ", "15m", "1h", "4h"]
+         sel_tf_raw = st.selectbox("Zaman", tfs, key="gal_tf")
+         target_tf = None if sel_tf_raw == "TÜMÜ" else sel_tf_raw
+    
+    # --- DATA LOADING ---
+    # Load ALL unlabeled (moldable) rallies matching criteria
+    all_moldable = assembler.get_moldable_rallies(target_sym, target_tf)
+    
+    # Sort by Newest
+    all_moldable.sort(key=lambda x: x.event_time, reverse=True)
+    
+    total_count = len(all_moldable)
+    if total_count == 0:
+        st.info("Kriterlere uygun bekleyen ralli yok. 🎉")
+        return
+
+    # Pagination
+    PAGE_SIZE = 20
+    if 'gal_page' not in st.session_state: st.session_state['gal_page'] = 0
+    
+    start_idx = st.session_state['gal_page'] * PAGE_SIZE
+    end_idx = start_idx + PAGE_SIZE
+    batch_rallies = all_moldable[start_idx:end_idx]
+    
+    with c_act:
+        st.caption(f"Toplam: **{total_count}** (Gösterilen: {start_idx+1}-{min(end_idx, total_count)})")
+        # Simple Pagination Controls
+        bp, bn = st.columns(2)
+        if bp.button("⬅️", disabled=(start_idx==0)): 
+            st.session_state['gal_page'] -= 1
+            st.rerun()
+        if bn.button("➡️", disabled=(end_idx>=total_count)): 
+            st.session_state['gal_page'] += 1
+            st.rerun()
+
+    # --- GRID LAYOUT ---
+    st.markdown("---")
+    
+    # Store selections in a form to allow batch submit? 
+    # Or just checkboxes outside form? Checkboxes are cleaner.
+    
+    grid = st.columns(4)
+    processed_count = 0
+    
+    # Selection State Management
+    # We use a dictionary in session state to track selected IDs for approval
+    if 'gal_selected' not in st.session_state: st.session_state['gal_selected'] = {}
+
+    for i, rally in enumerate(batch_rallies):
+        col = grid[i % 4]
+        with col:
+            # Card Container
+            with st.container(border=True):
+                st.markdown(f"**{rally.symbol}** `{rally.timeframe}`")
+                st.caption(f"{rally.event_time.strftime('%d %b %H:%M')}")
+                
+                # Mini Chart (Plotly)
+                try:
+                    df = load_history_data(rally.symbol, rally.timeframe)
+                    if df is not None and not df.empty:
+                        # Slice logic
+                        times = df.index if df.index.dtype.kind == 'M' else pd.to_datetime(df['open_time'])
+                        # Robust TZ Strip
+                        if hasattr(times, 'dt'): times = times.dt.tz_localize(None)
+                        elif hasattr(times, 'tz_localize'): times = times.tz_localize(None)
+                        
+                        et = rally.event_time
+                        if et.tzinfo: et = et.tz_localize(None)
+                        
+                        pos = times.searchsorted(et)
+                        if pos < len(df):
+                            # Window
+                            s_idx = max(0, pos - 40)
+                            e_idx = min(len(df)-1, pos + 20)
+                            subset = df.iloc[s_idx:e_idx]
+                            
+                            # Create Plotly Figure
+                            import plotly.graph_objects as go
+                            
+                            fig = go.Figure(data=[go.Candlestick(
+                                x=subset.index,
+                                open=subset['open'],
+                                high=subset['high'],
+                                low=subset['low'],
+                                close=subset['close'],
+                                increasing_line_color='green', decreasing_line_color='red'
+                            )])
+                            
+                            # Minimal Layout
+                            fig.update_layout(
+                                margin=dict(l=0, r=0, t=0, b=0),
+                                height=150,
+                                xaxis=dict(visible=False, rangeslider=dict(visible=False)),
+                                yaxis=dict(visible=False),
+                                paper_bgcolor='rgba(0,0,0,0)',
+                                plot_bgcolor='rgba(0,0,0,0)'
+                            )
+                            
+                            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+                    else:
+                        st.caption("Veri yok")
+                except Exception as e:
+                    st.error(f"Grafik Hatası: {e}")
+
+                # Action Checkbox
+                # Key is critical
+                chk_key = f"chk_{rally.event_id}"
+                
+                # Manual "Select"
+                is_checked = st.checkbox("✅ Onayla", key=chk_key)
+                if is_checked:
+                    st.session_state['gal_selected'][rally.event_id] = rally
+                elif rally.event_id in st.session_state['gal_selected']:
+                     del st.session_state['gal_selected'][rally.event_id]
+
+    # --- BULK ACTION BAR ---
+    st.markdown("---")
+    sel_count = len(st.session_state.get('gal_selected', {}))
+    
+    c_act_1, c_act_2 = st.columns([2, 5])
+    
+    with c_act_1:
+         # Target Label Selector
+         target_arch = st.selectbox("Atanacak Etiket (Tümü İçin)", [a.value for a in Archetype], key="gal_target_arch")
+         
+    with c_act_2:
+         # Save Button
+         # Add Spacer to align with selectbox
+         st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+         
+         label_btn = f"Seçilen {sel_count} Ralliyi '{target_arch}' Olarak Kaydet 💾"
+         if st.button(label_btn, type="primary", disabled=(sel_count==0), use_container_width=True):
+             # Process Selections
+             store = RallyStore()
+             updated_count = 0
+             
+             for eid, r_obj in st.session_state['gal_selected'].items():
+                 doc = store.get_rally(eid)
+                 if not doc: continue
+                 
+                 rev_data = doc.get('rev_data', {}) or {}
+                 molder_data = doc.get('molder_data', {}) or {}
+                 
+                 coin_cls = get_coin_class_with_override(r_obj.symbol)
+                 
+                 # Prepare Labels
+                 rev_data.update({
+                     'archetype': target_arch,
+                     'coin_class': coin_cls,
+                     'updated_at': pd.Timestamp.now()
+                 })
+                 
+                 molder_data.update({
+                     'archetype': target_arch,
+                     'coin_class': coin_cls,
+                     'labeled_at': pd.Timestamp.now(),
+                     'confidence': 1.0 # Manual override implies high confidence
+                 })
+                 
+                 store.upsert_rally(eid, rev_data, layer='rev')
+                 store.upsert_rally(eid, molder_data, layer='molder')
+                 updated_count += 1
+             
+             st.toast(f"✅ {updated_count} Ralli Başarıyla Kaydedildi!")
+             st.session_state['gal_selected'] = {} # Clear
+             st.rerun()
+
+
+def render_molder_page():
+    """
+    Main Orchestrator for Molder Tab.
+    Handles view switching between Boutique (Single) and Factory (Gallery) modes.
+    """
+    # View Mode Toggle at the top
+    c_mode, c_spacer = st.columns([2, 5])
+    with c_mode:
+        mode = st.radio(
+            "Görünüm Modu", 
+            ["🔍 Tekli (Detaylı)", "🏭 Galeri (Hızlı)"], 
+            horizontal=True,
+            label_visibility="collapsed",
+            key="molder_view_mode_selector"
+        )
+    
+    st.markdown("---")
+    
+    if mode == "🔍 Tekli (Detaylı)":
+        render_molder_boutique_view()
+    else:
+        render_molder_gallery_view()
 

@@ -165,20 +165,7 @@ def render_system_scans_section():
 
 # --- PAGE RENDERERS ---
 
-def render_home_page():
-    # Title removed as per user request (Header logo is sufficient)
-    st.subheader("Offline Lab Kontrol Paneli")
-    st.info("Sistem aktif. Sol menüden işlem seçebilirsiniz.")
-    
-    # Show basic stats if available
-    try:
-        state = system_state.load_state()
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Son Full Bakım", state.last_offline_maintenance_run_at.split('T')[1][:5] if state.last_offline_maintenance_run_at else "-")
-        c2.metric("Toplam Coin", len(state_store.load_coin_states() or []))
-        c3.metric("Lab Durumu", "Aktif" if state.last_offline_maintenance_status != "failed" else "Hata")
-    except:
-        pass
+
 
 
 
@@ -360,6 +347,29 @@ def render_main_price_chart(symbol: str):
 from tezaver.ui.time_labs_tab import render_time_labs_tab
 
 def render_coin_detail_page(symbol: str):
+    # COIN SELECTOR (NEW)
+    states = state_store.load_coin_states()
+    if states:
+        all_syms = [s.symbol for s in states]
+        if symbol in all_syms:
+            curr_idx = all_syms.index(symbol)
+        else:
+            curr_idx = 0
+            
+        c_sel, c_space = st.columns([1, 4])
+        with c_sel:
+            new_sym = st.selectbox(
+                "Coin Değiştir", 
+                all_syms, 
+                index=curr_idx, 
+                key="detail_page_coin_selector",
+                label_visibility="collapsed"
+            )
+            
+        if new_sym != symbol:
+            st.session_state['selected_coin'] = new_sym
+            st.rerun()
+
     # HEADER
     render_coin_header(symbol)
     
@@ -429,7 +439,7 @@ def render_coin_detail_page(symbol: str):
 def render_cloud_mode():
     # Title removed
     st.sidebar.markdown("### Navigasyon")
-    if st.sidebar.button("🏠 Ana Sayfa", use_container_width=True):
+    if st.sidebar.button("👁️ Insight Panel", use_container_width=True):
         st.rerun()
         
     st.sidebar.header("Sunucu Kontrol")
@@ -521,7 +531,7 @@ def main():
                 st.session_state['system_mode'] = new_mode
                 
                 # RESET NAVIGATION TO HOME
-                st.session_state['nav_selection'] = "🏠 Ana Sayfa"
+                st.session_state['nav_selection'] = "👁️ Insight Panel"
                 if 'current_page' in st.session_state:
                     del st.session_state['current_page']
                 if 'selected_coin' in st.session_state:
@@ -623,12 +633,11 @@ def main():
             # --- NAVIGATION BUTTONS (Replacing Radio) ---
             # Default state
             if 'nav_selection' not in st.session_state:
-                st.session_state['nav_selection'] = "🏠 Ana Sayfa"
+                st.session_state['nav_selection'] = "👁️ Insight Panel"
             
             nav_options = [
-                "🏠 Ana Sayfa", 
- 
                 "👁️ Insight Panel", 
+                "🔍 Detay",
                 "🎯 Revize",
                 "📐 Kalıpçı",
                 "🧪 Simyacı",
@@ -649,50 +658,24 @@ def main():
             
             st.markdown("---")
             
-            # Coin Selector
-            states = state_store.load_coin_states()
-            if states:
-                symbols = [s.symbol for s in states]
-                idx = 0
-                if 'selected_coin' in st.session_state and st.session_state['selected_coin'] in symbols:
-                    idx = symbols.index(st.session_state['selected_coin'])
-                
-                # Label is hidden as per user request ("Coin İncele" removed)
-                sel_coin = st.selectbox("Coin İncele", symbols, index=idx, key="sb_coin_selector", label_visibility="collapsed")
-                
-                # CRITICAL FIX: NO AUTOMATIC REDIRECT!
-                # Just update session state, DON'T call st.rerun()
-                # User must click "Detaya Git" button to navigate
-                if sel_coin != st.session_state.get('selected_coin'):
-                    st.session_state['selected_coin'] = sel_coin
-                    # NO st.rerun() here! This prevents unwanted navigation
-                
-                if st.button("🔍 Detaya Git", use_container_width=True):
-                    st.session_state['current_page'] = 'coin_detail'
-                    st.rerun()
-            else:
-                st.warning("Coin verisi yok.")
+            # Coin Selector removed as per user request (Now in Detay Page)
+            if 'selected_coin' not in st.session_state:
+                st.session_state['selected_coin'] = 'BTCUSDT'
 
             # Cleaned up as per user request (Moved to System Panel)
             pass
 
         # 3. Main Content Router
         # Check if we are in Detail View or Main Nav View
-        current_nav = st.session_state.get('nav_selection', "🏠 Ana Sayfa")
+        current_nav = st.session_state.get('nav_selection', "👁️ Insight Panel")
         
-        # Priority: Coin Detail View overrides Nav if explicitly set
-        if st.session_state.get('current_page') == 'coin_detail' and st.session_state.get('selected_coin'):
-             render_coin_detail_page(st.session_state['selected_coin'])
-             if st.button("⬅️ Geri Dön (Ana Menü)"):
-                 st.session_state['current_page'] = 'home' # Exit detail mode
-                 st.rerun()
-        else:
-            # Main Navigation Routing
-            if current_nav == "🏠 Ana Sayfa": render_home_page()
-
-            elif current_nav == "👁️ Insight Panel": render_insight_tab()
-            elif current_nav == "🎯 Revize": render_ony_page()
-            elif current_nav == "📐 Kalıpçı":
+        if current_nav == "🔍 Detay":
+             sym = st.session_state.get('selected_coin', 'BTCUSDT')
+             render_coin_detail_page(sym)
+             
+        elif current_nav == "👁️ Insight Panel": render_insight_tab()
+        elif current_nav == "🎯 Revize": render_ony_page()
+        elif current_nav == "📐 Kalıpçı":
                 try:
                     import tezaver.ui.molder_tab
                     importlib.reload(tezaver.ui.molder_tab)
