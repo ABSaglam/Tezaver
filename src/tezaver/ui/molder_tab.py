@@ -16,13 +16,19 @@ import pandas as pd
 import importlib
 from typing import List, Optional, Dict
 from datetime import datetime
+from pathlib import Path
 
 from tezaver.core.annotations import SniperAnnotation, SniperStatus, SniperLabel
 from tezaver.core.molds import Archetype, ARCHETYPE_LABELS, ARCHETYPE_DESCRIPTIONS
 from tezaver.ui.chart_area import render_sniper_studio_chart, load_history_data
 from tezaver.foundry.archetype_service import ArchetypeService
-from tezaver.foundry.rally_assembler import RallyAssembler
+import tezaver.core.rally_store
+importlib.reload(tezaver.core.rally_store)
 from tezaver.core.rally_store import RallyStore
+
+import tezaver.foundry.rally_assembler
+importlib.reload(tezaver.foundry.rally_assembler)
+from tezaver.foundry.rally_assembler import RallyAssembler
 
 # Reuse helpers from Ony Tab to maintain consistency
 from tezaver.ui.ony_tab import (
@@ -40,8 +46,39 @@ from tezaver.core.coin_class_utils import (
     get_coin_class_display,
     get_coin_class_icon,
     get_coin_class_color,
+    get_coin_class_color,
     COIN_CLASS_INFO,
 )
+
+@st.cache_data(ttl=60)
+def load_moldable_history(symbol: str, timeframe: str) -> Optional[pd.DataFrame]:
+    """
+    Load history and enrich with RSI/VolumeRel for Molder AI.
+    Cached to optimize AI Scan loops.
+    """
+    df_cached = load_history_data(symbol, timeframe)
+    if df_cached is None or df_cached.empty:
+        return None
+        
+    df = df_cached.copy()
+    
+    # Enrich RSI if missing
+    if 'rsi' not in df.columns:
+        period = 14
+        delta = df['close'].diff()
+        gain = delta.where(delta > 0, 0).ewm(alpha=1/period, adjust=False).mean()
+        loss = -delta.where(delta < 0, 0).ewm(alpha=1/period, adjust=False).mean()
+        rs = gain / loss
+        df['rsi'] = 100 - (100 / (1 + rs))
+
+    # Enrich Volume Rel
+    if 'volume_rel' not in df.columns:
+        if 'volume' in df.columns: 
+            df['volume_rel'] = df['volume'] / df['volume'].rolling(20).mean()
+        else: 
+            df['volume_rel'] = 0
+            
+    return df
 
 def render_molder_boutique_view():
     """
@@ -70,7 +107,7 @@ def render_molder_boutique_view():
     c_sym, c_tf, c_tier = st.columns([1, 1, 3])
     
     with c_sym:
-        symbols = _get_available_symbols()
+        symbols = ["TÜMÜ"] + _get_available_symbols()
         idx = 0
         if "molder_sym" in st.session_state and st.session_state["molder_sym"] in symbols:
             idx = symbols.index(st.session_state["molder_sym"])
@@ -87,7 +124,8 @@ def render_molder_boutique_view():
 
     
     # --- DATA LOADING (Via RallyAssembler) ---
-    moldable_rallies = assembler.get_moldable_rallies(sel_sym, sel_tf)
+    target_sym = None if sel_sym == "TÜMÜ" else sel_sym
+    moldable_rallies = assembler.get_moldable_rallies(target_sym, sel_tf)
     
     if not moldable_rallies:
          st.info("Bu coin/zaman için onaylanmış (Approved) ralli yok.")
@@ -317,8 +355,8 @@ def render_molder_boutique_view():
     event_time = current_rally.event_time
     try:
         render_sniper_studio_chart(
-            symbol=sel_sym,
-            timeframe=sel_tf,
+            symbol=current_rally.symbol,  # FIX: Use specific symbol, never wildcard
+            timeframe=current_rally.timeframe, # FIX: Use specific TF
             event_time=event_time,
             bars_to_peak=current_rally.bars_to_peak,
             entry_offset=current_rally.entry_offset,
@@ -341,8 +379,8 @@ def render_molder_boutique_view():
          if st.button("🛠️ Revize Et", help="Bu ralliyi Revize Stüdyo'da düzenle", type="primary"):
              st.session_state['nav_selection'] = "🎯 Revize"
              st.session_state['ony_target_id'] = current_rally.event_id
-             st.session_state['ony_prefill_symbol'] = sel_sym
-             st.session_state['ony_prefill_tf'] = sel_tf
+             st.session_state['ony_prefill_symbol'] = current_rally.symbol
+             st.session_state['ony_prefill_tf'] = current_rally.timeframe
              st.session_state['came_from_molder'] = True
              st.session_state['molder_return_target'] = current_rally.event_id
              st.rerun()
@@ -375,7 +413,8 @@ def render_molder_boutique_view():
     st.markdown("---")
     st.caption("📊 Sistem Karnesi (Son 40 İşlem Başarısı)")
     
-    all_rallies = store.list_rallies(symbol=sel_sym, timeframe=sel_tf)
+    # FIX: Use specific symbol for stats query
+    all_rallies = store.list_rallies(symbol=current_rally.symbol, timeframe=current_rally.timeframe)
     reviewed = []
     for r in all_rallies:
         rev = r.get('rev_data', {}) or {}
@@ -585,7 +624,11 @@ def render_molder_gallery_view():
     assembler = RallyAssembler()
     
     # --- FILTERS ---
-    c_fil_1, c_fil_2, c_act = st.columns([2, 2, 2])
+    # Set DEFAULTS
+    if 'gal_tf' not in st.session_state: st.session_state['gal_tf'] = "15m"
+    if 'gal_tier' not in st.session_state: st.session_state['gal_tier'] = "DIAMOND"
+    
+    c_fil_1, c_fil_2, c_fil_3, c_fil_4 = st.columns([1.5, 1.5, 1.5, 2])
     with c_fil_1:
          # Symbol Filter
          symbols = ["TÜMÜ"] + _get_available_symbols()
@@ -597,15 +640,96 @@ def render_molder_gallery_view():
          tfs = ["TÜMÜ", "15m", "1h", "4h"]
          sel_tf_raw = st.selectbox("Zaman", tfs, key="gal_tf")
          target_tf = None if sel_tf_raw == "TÜMÜ" else sel_tf_raw
+
+    with c_fil_3:
+         # Tier Filter
+         tiers = ["TÜMÜ", "DIAMOND", "GOLD", "SILVER", "BRONZE"]
+         sel_tier = st.selectbox("Tier (Sınıf)", tiers, key="gal_tier")
+         target_tier = None if sel_tier == "TÜMÜ" else sel_tier
+         
+    with c_fil_4:
+         # AI Filter (Smart Scan)
+         ai_opts = ["TÜMÜ"] + [a.value for a in Archetype]
+         
+         def on_ai_change():
+             val = st.session_state.get("gal_ai_filter_sel")
+             if val and val != "TÜMÜ":
+                 st.session_state["gal_target_arch_top"] = val
+                 
+         sel_ai_filter = st.selectbox("🤖 Yapay Zeka", ai_opts, key="gal_ai_filter_sel", on_change=on_ai_change)
     
     # --- DATA LOADING ---
-    # Load ALL unlabeled (moldable) rallies matching criteria
-    all_moldable = assembler.get_moldable_rallies(target_sym, target_tf)
+    # Load ALL assembled rallies matching filters (Tier filtering via SQL)
+    # This fixes the issue where limited results reduced the specific tier count
+    assembled_rows = assembler.get_assembled_rallies(target_sym, target_tf, target_tier)
     
+    # Filter 1: Approved Only (The "Universe" for Molder)
+    approved_rallies = [r for r in assembled_rows if r.status == SniperStatus.APPROVED]
+    total_approved_cnt = len(approved_rallies)
+    
+    # Filter 2: Unlabeled (The working list)
+    all_moldable = [r for r in approved_rallies if (not r.archetype or r.archetype == "None")]
+    unlabeled_cnt = len(all_moldable)
+    
+    # Filter 3: AI Prediction (The subset)
+    filtered_by_ai = []
+    scan_limit = 50 
+    
+    if sel_ai_filter == "TÜMÜ":
+        filtered_by_ai = all_moldable
+    else:
+        # Smart Scan
+        candidates = all_moldable[:scan_limit]
+        matches = []
+        
+        if candidates:
+            prog_text = f"🤖 Yapay Zeka '{sel_ai_filter}' arıyor... ({len(candidates)} ralli taranıyor)"
+            # Only show progress if enough candidates
+            if len(candidates) > 5:
+                prog_bar = st.progress(0, text=prog_text)
+            
+            for i, rally in enumerate(candidates):
+                if len(candidates) > 5:
+                    prog_bar.progress((i + 1) / len(candidates), text=prog_text)
+                
+                # Check criteria
+                try:
+                    df = load_moldable_history(rally.symbol, rally.timeframe)
+                    if df is not None and not df.empty:
+                         # Slice (Logic identical to manual, but data is pre-enriched)
+                         times = df.index if df.index.dtype.kind == 'M' else pd.to_datetime(df['open_time'])
+                         if hasattr(times, 'dt'): times = times.dt.tz_localize(None)
+                         et = rally.event_time
+                         if et.tzinfo: et = et.tz_localize(None)
+                         pos = times.searchsorted(et)
+                         eff_idx = min(pos + (rally.entry_offset or 0), len(df)-1)
+                         ai_start = max(0, eff_idx - 59)
+                         ai_slice = df.iloc[ai_start:eff_idx+1]
+                         
+                         if 'rsi' in ai_slice.columns:
+                             w_rsi = ai_slice['rsi'].tolist()
+                             w_vol = ai_slice['volume_rel'].tolist()
+                             scores = ArchetypeService.analyze_trend_scores(w_rsi, w_vol)
+                             if scores and scores[0]['arch'] == sel_ai_filter:
+                                 matches.append(rally)
+                except:
+                    pass
+            
+            if len(candidates) > 5: prog_bar.empty()
+        
+        filtered_by_ai = matches
+        
+        if not filtered_by_ai:
+             st.warning(f"Son {scan_limit} ralli içinde '{sel_ai_filter}' tahmin edilen bulunamadı.")
+             
+    # Sort and Set Final List
+    all_moldable = filtered_by_ai
     # Sort by Newest
     all_moldable.sort(key=lambda x: x.event_time, reverse=True)
     
-    total_count = len(all_moldable)
+    ai_selected_cnt = len(all_moldable)
+    total_count = ai_selected_cnt
+
     if total_count == 0:
         st.info("Kriterlere uygun bekleyen ralli yok. 🎉")
         return
@@ -618,23 +742,113 @@ def render_molder_gallery_view():
     end_idx = start_idx + PAGE_SIZE
     batch_rallies = all_moldable[start_idx:end_idx]
     
-    with c_act:
-        st.caption(f"Toplam: **{total_count}** (Gösterilen: {start_idx+1}-{min(end_idx, total_count)})")
-        # Simple Pagination Controls
-        bp, bn = st.columns(2)
-        if bp.button("⬅️", disabled=(start_idx==0)): 
-            st.session_state['gal_page'] -= 1
-            st.rerun()
-        if bn.button("➡️", disabled=(end_idx>=total_count)): 
-            st.session_state['gal_page'] += 1
-            st.rerun()
+    # --- UNIFIED TOP TOOLBAR (2 ROWS) ---
+    
+    # ROW 1: ACTION [Label Select (1)] [Save Button (3)]
+    r1_c1, r1_c2 = st.columns([1, 3])
+    
+    with r1_c1:
+         # Target Label
+         target_arch = st.selectbox("Atanacak Etiket", [a.value for a in Archetype], key="gal_target_arch_top", label_visibility="collapsed")
 
+    with r1_c2:
+         # SAVE BUTTON (Wide)
+         sel_count = len(st.session_state.get('gal_selected', {}))
+         label_btn = f"💾 SEÇİLEN {sel_count} RALLİYİ '{target_arch}' OLARAK KAYDET"
+         
+         if st.button(label_btn, type="primary", disabled=(sel_count==0), use_container_width=True):
+             # Process Selections
+             store = RallyStore()
+             updated_count = 0
+             feedback_file = Path("data/brain/feedback_loop.csv")
+             if not feedback_file.parent.exists(): feedback_file.parent.mkdir(parents=True, exist_ok=True)
+             
+             for eid, r_obj in st.session_state['gal_selected'].items():
+                 doc = store.get_rally(eid)
+                 if not doc: continue
+                 
+                 rev_data = doc.get('rev_data', {}) or {}
+                 molder_data = doc.get('molder_data', {}) or {}
+                 coin_cls = get_coin_class_with_override(r_obj.symbol)
+                 
+                 # AI Feedback Log
+                 try:
+                      df = load_history_data(r_obj.symbol, r_obj.timeframe)
+                      if df is not None:
+                           times = df.index if df.index.dtype.kind == 'M' else pd.to_datetime(df['open_time'])
+                           if hasattr(times, 'dt'): times = times.dt.tz_localize(None)
+                           et = r_obj.event_time
+                           if et.tzinfo: et = et.tz_localize(None)
+                           pos = times.searchsorted(et)
+                           eff_idx = min(pos + (r_obj.entry_offset or 0), len(df)-1)
+                           ai_start = max(0, eff_idx - 59)
+                           ai_slice = df.iloc[ai_start:eff_idx+1]
+                           if 'rsi' in ai_slice.columns:
+                                w_rsi = ai_slice['rsi'].tolist()
+                                w_vol = ai_slice['volume_rel'].tolist() if 'volume_rel' in ai_slice.columns else []
+                                scores = ArchetypeService.analyze_trend_scores(w_rsi, w_vol)
+                                sys_pred = scores[0]['arch'] if scores else "NONE"
+                                
+                                import csv
+                                file_exists = feedback_file.exists()
+                                with open(feedback_file, 'a', newline='') as f:
+                                     writer = csv.writer(f)
+                                     if not file_exists: writer.writerow(['timestamp', 'symbol', 'tf', 'rsi_vector', 'vol_vector', 'sys_pred', 'user_label'])
+                                     writer.writerow([pd.Timestamp.now(), r_obj.symbol, r_obj.timeframe, str(w_rsi), str(w_vol), sys_pred, target_arch])
+                 except: pass # Fail silently on logging
+                 
+                 rev_data.update({'archetype': target_arch, 'coin_class': coin_cls, 'updated_at': pd.Timestamp.now()})
+                 molder_data.update({'archetype': target_arch, 'coin_class': coin_cls, 'labeled_at': pd.Timestamp.now(), 'confidence': 1.0})
+                 
+                 store.upsert_rally(eid, rev_data, layer='rev')
+                 store.upsert_rally(eid, molder_data, layer='molder')
+                 updated_count += 1
+             
+             st.toast(f"✅ {updated_count} Ralli Kaydedildi!", icon="💾")
+             st.session_state['gal_selected'] = {}
+             st.rerun()
+
+    # ROW 2: NAVIGATION [Select All + Stats (2.5)] [Spacer (0.1)] [Pagination (1.4)]
+    r2_c1, r2_c2, r2_c3 = st.columns([2.5, 0.1, 1.4])
+    
+    with r2_c1:
+        # Col: [Button 0.8] [Stats 2]
+        c_btn, c_stats = st.columns([0.8, 2])
+        with c_btn:
+             if st.button("✅ Hepsini Seç", use_container_width=True, help="Ekranda görünen tüm grafikleri işaretler"):
+                for r in batch_rallies:
+                    st.session_state[f"chk_{r.event_id}"] = True
+                    st.session_state['gal_selected'][r.event_id] = r
+                st.rerun()
+        
+        with c_stats:
+             # STATS DISPLAY
+             st.markdown(
+                 f"<div style='margin-top: 5px; font-size: 0.9em;'>"
+                 f"🔹 <b>Toplam:</b> {total_approved_cnt} | "
+                 f"🔸 <b>Kalıplanacak:</b> {unlabeled_cnt} | "
+                 f"✨ <b>Yapay Zeka:</b> {ai_selected_cnt}"
+                 f"</div>", 
+                 unsafe_allow_html=True
+             )
+            
+    with r2_c3:
+        # Pagination [Prev] [Text] [Next]
+        bp, b_txt, bn = st.columns([1, 2, 1])
+        with bp:
+            if st.button("⬅️", disabled=(start_idx==0), key="types_prev"): 
+                st.session_state['gal_page'] -= 1
+                st.rerun()
+        with b_txt:
+            st.markdown(f"<div style='text-align: center; margin-top: 5px;'><b>{start_idx+1}-{min(end_idx, total_count)}</b> / {total_count}</div>", unsafe_allow_html=True)
+        with bn:
+            if st.button("➡️", disabled=(end_idx>=total_count), key="types_next"): 
+                st.session_state['gal_page'] += 1
+                st.rerun()
+                
     # --- GRID LAYOUT ---
-    st.markdown("---")
-    
-    # Store selections in a form to allow batch submit? 
-    # Or just checkboxes outside form? Checkboxes are cleaner.
-    
+    # st.markdown("---") # Removed for tighter look
+
     grid = st.columns(4)
     processed_count = 0
     
@@ -647,16 +861,24 @@ def render_molder_gallery_view():
         with col:
             # Card Container
             with st.container(border=True):
-                st.markdown(f"**{rally.symbol}** `{rally.timeframe}`")
-                st.caption(f"{rally.event_time.strftime('%d %b %H:%M')}")
+                # Tier Icon Helper
+                t_icon = "🎗️"
+                t_raw = rally.tier.upper() if rally.tier else "WEAK"
+                if "DIAMOND" in t_raw: t_icon = "💎"
+                elif "GOLD" in t_raw: t_icon = "🥇"
+                elif "SILVER" in t_raw: t_icon = "🥈"
+                elif "BRONZE" in t_raw: t_icon = "🥉"
                 
-                # Mini Chart (Plotly)
+                # AI Analysis (On-the-fly)
+                ai_label = ""
+                ai_conf = 0.0
+                subset = None
+                
                 try:
-                    df = load_history_data(rally.symbol, rally.timeframe)
+                    df = load_moldable_history(rally.symbol, rally.timeframe)
                     if df is not None and not df.empty:
-                        # Slice logic
+                        # Slice logic (Indicators are already enriched)
                         times = df.index if df.index.dtype.kind == 'M' else pd.to_datetime(df['open_time'])
-                        # Robust TZ Strip
                         if hasattr(times, 'dt'): times = times.dt.tz_localize(None)
                         elif hasattr(times, 'tz_localize'): times = times.tz_localize(None)
                         
@@ -665,38 +887,121 @@ def render_molder_gallery_view():
                         
                         pos = times.searchsorted(et)
                         if pos < len(df):
-                            # Window
+                            # Window for Chart
                             s_idx = max(0, pos - 40)
                             e_idx = min(len(df)-1, pos + 20)
                             subset = df.iloc[s_idx:e_idx]
                             
-                            # Create Plotly Figure
-                            import plotly.graph_objects as go
+                            # Window for AI (60 bars lookback)
+                            eff_idx = min(pos + (rally.entry_offset or 0), len(df)-1)
+                            ai_start = max(0, eff_idx - 59)
+                            ai_slice = df.iloc[ai_start:eff_idx+1]
                             
-                            fig = go.Figure(data=[go.Candlestick(
-                                x=subset.index,
-                                open=subset['open'],
-                                high=subset['high'],
-                                low=subset['low'],
-                                close=subset['close'],
-                                increasing_line_color='green', decreasing_line_color='red'
-                            )])
-                            
-                            # Minimal Layout
-                            fig.update_layout(
-                                margin=dict(l=0, r=0, t=0, b=0),
-                                height=150,
-                                xaxis=dict(visible=False, rangeslider=dict(visible=False)),
-                                yaxis=dict(visible=False),
-                                paper_bgcolor='rgba(0,0,0,0)',
-                                plot_bgcolor='rgba(0,0,0,0)'
-                            )
-                            
-                            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-                    else:
-                        st.caption("Veri yok")
-                except Exception as e:
-                    st.error(f"Grafik Hatası: {e}")
+                            # Calc AI Inputs
+                            if 'rsi' not in ai_slice.columns or 'volume_rel' not in ai_slice.columns:
+                                 # Should not happen with load_moldable_history
+                                 pass 
+                            else:
+                                 w_rsi = ai_slice['rsi'].tolist()
+                                 w_vol = ai_slice['volume_rel'].tolist()
+                                 scores = ArchetypeService.analyze_trend_scores(w_rsi, w_vol)
+                                 if scores:
+                                     best = scores[0]
+                                     ai_label = f"🤖 {best['arch']} %{best['conf']}"
+                                     ai_conf = best['conf']
+                except:
+                    pass
+
+                # Display Header with Tier + AI
+                st.markdown(f"**{rally.symbol}** `{rally.timeframe}` {t_icon}")
+                if ai_label:
+                    st.caption(f"{rally.event_time.strftime('%d %b %H:%M')} | {ai_label}")
+                else:
+                    st.caption(f"{rally.event_time.strftime('%d %b %H:%M')}")
+                
+                # Mini Chart (Plotly)
+                if subset is not None and not subset.empty:
+                    try:
+                        import plotly.graph_objects as go
+                        
+                        # Primary: Candle
+                        fig = go.Figure()
+                        
+                        fig.add_trace(go.Candlestick(
+                            x=subset.index,
+                            open=subset['open'], high=subset['high'],
+                            low=subset['low'], close=subset['close'],
+                            name="Price",
+                            increasing_line_color='green', decreasing_line_color='red'
+                        ))
+                        
+                        # markers: Start (Green) & End (Red)
+                        # Start = event_time + entry_offset
+                        # End = event_time + exit_offset (or bars_to_peak)
+                        
+                        # We need to find the EXACT time index in subset
+                        t_subset = subset.index
+                        if hasattr(t_subset, 'dt'): t_subset = t_subset.dt.tz_localize(None)
+                        
+                        # Calculate exact timestamps
+                        start_ts = et # approximate event time
+                        # refine with offset if needed, but event_time is usually the 'trigger'. 
+                        # actually event_time is the start of the rally roughly.
+                        
+                        # Let's map integer indices relative to 'pos' (event_time index)
+                        # subset starts at s_idx (pos - 40)
+                        # event is at pos. So relative index is pos - s_idx = 40.
+                        
+                        rel_event_idx = pos - s_idx
+                        
+                        # Start Marker
+                        if 0 <= rel_event_idx < len(subset):
+                            fig.add_trace(go.Scatter(
+                                x=[subset.index[rel_event_idx]],
+                                y=[subset['low'].iloc[rel_event_idx] * 0.99], # slightly below
+                                mode='markers',
+                                marker=dict(symbol='triangle-up', size=10, color='blue'),
+                                name='Start'
+                            ))
+                        
+                        # Peak Marker
+                        peak_bars = int(rally.bars_to_peak) if rally.bars_to_peak else 0
+                        peak_idx = rel_event_idx + peak_bars
+                        if 0 <= peak_idx < len(subset):
+                             fig.add_trace(go.Scatter(
+                                x=[subset.index[peak_idx]],
+                                y=[subset['high'].iloc[peak_idx] * 1.01], # slightly above
+                                mode='markers',
+                                marker=dict(symbol='triangle-down', size=10, color='purple'),
+                                name='End'
+                            ))
+                        
+                        # Volume (Secondary Axis)
+                        if 'volume' in subset.columns:
+                            fig.add_trace(go.Bar(
+                                x=subset.index, y=subset['volume'],
+                                marker_color='rgba(100, 100, 250, 0.3)',
+                                yaxis='y2',
+                                name="Vol"
+                            ))
+
+                        # Layout
+                        fig.update_layout(
+                            margin=dict(l=0, r=0, t=0, b=0),
+                            height=150,
+                            xaxis=dict(visible=False, rangeslider=dict(visible=False)),
+                            yaxis=dict(visible=False),
+                            yaxis2=dict(visible=False, overlaying='y', side='right', range=[0, subset['volume'].max() * 4]), # Scale vol down
+                            paper_bgcolor='rgba(0,0,0,0)',
+                            plot_bgcolor='rgba(0,0,0,0)',
+                            showlegend=False
+                        )
+                        
+                        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+                    except Exception as e:
+                         st.error(f"Chart: {e}")
+                else:
+                    st.caption("Veri yok")
 
                 # Action Checkbox
                 # Key is critical
@@ -709,57 +1014,8 @@ def render_molder_gallery_view():
                 elif rally.event_id in st.session_state['gal_selected']:
                      del st.session_state['gal_selected'][rally.event_id]
 
-    # --- BULK ACTION BAR ---
-    st.markdown("---")
-    sel_count = len(st.session_state.get('gal_selected', {}))
-    
-    c_act_1, c_act_2 = st.columns([2, 5])
-    
-    with c_act_1:
-         # Target Label Selector
-         target_arch = st.selectbox("Atanacak Etiket (Tümü İçin)", [a.value for a in Archetype], key="gal_target_arch")
-         
-    with c_act_2:
-         # Save Button
-         # Add Spacer to align with selectbox
-         st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
-         
-         label_btn = f"Seçilen {sel_count} Ralliyi '{target_arch}' Olarak Kaydet 💾"
-         if st.button(label_btn, type="primary", disabled=(sel_count==0), use_container_width=True):
-             # Process Selections
-             store = RallyStore()
-             updated_count = 0
-             
-             for eid, r_obj in st.session_state['gal_selected'].items():
-                 doc = store.get_rally(eid)
-                 if not doc: continue
-                 
-                 rev_data = doc.get('rev_data', {}) or {}
-                 molder_data = doc.get('molder_data', {}) or {}
-                 
-                 coin_cls = get_coin_class_with_override(r_obj.symbol)
-                 
-                 # Prepare Labels
-                 rev_data.update({
-                     'archetype': target_arch,
-                     'coin_class': coin_cls,
-                     'updated_at': pd.Timestamp.now()
-                 })
-                 
-                 molder_data.update({
-                     'archetype': target_arch,
-                     'coin_class': coin_cls,
-                     'labeled_at': pd.Timestamp.now(),
-                     'confidence': 1.0 # Manual override implies high confidence
-                 })
-                 
-                 store.upsert_rally(eid, rev_data, layer='rev')
-                 store.upsert_rally(eid, molder_data, layer='molder')
-                 updated_count += 1
-             
-             st.toast(f"✅ {updated_count} Ralli Başarıyla Kaydedildi!")
-             st.session_state['gal_selected'] = {} # Clear
-             st.rerun()
+    # Bottom Action Bar Removed (Moved to Top)
+    pass
 
 
 def render_molder_page():
@@ -767,21 +1023,14 @@ def render_molder_page():
     Main Orchestrator for Molder Tab.
     Handles view switching between Boutique (Single) and Factory (Gallery) modes.
     """
-    # View Mode Toggle at the top
-    c_mode, c_spacer = st.columns([2, 5])
-    with c_mode:
-        mode = st.radio(
-            "Görünüm Modu", 
-            ["🔍 Tekli (Detaylı)", "🏭 Galeri (Hızlı)"], 
-            horizontal=True,
-            label_visibility="collapsed",
-            key="molder_view_mode_selector"
-        )
+    # Tabs for Navigation
+    # Default to Gallery (index 1) if we want speed, but Streamlit defaults to 0. 
+    # Let's keep it standard.
+    t_single, t_gallery = st.tabs(["🔍 Tekli (Butik)", "🏭 Galeri (Seri)"])
     
-    st.markdown("---")
-    
-    if mode == "🔍 Tekli (Detaylı)":
+    with t_single:
         render_molder_boutique_view()
-    else:
+        
+    with t_gallery:
         render_molder_gallery_view()
 

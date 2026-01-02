@@ -154,7 +154,7 @@ class RallyStore:
             return self._row_to_dict(row)
         return None
 
-    def list_rallies(self, symbol: str = None, timeframe: str = None, tier: str = None, limit: int = 1000) -> List[Dict[str, Any]]:
+    def list_rallies(self, symbol: str = None, timeframe: str = None, tier: str = None, status: str = None, limit: int = 5000) -> List[Dict[str, Any]]:
         """Query rallies with filters."""
         conn = self._get_conn()
         conn.row_factory = sqlite3.Row
@@ -172,6 +172,15 @@ class RallyStore:
         if tier:
             query += " AND tier = ?"
             params.append(tier)
+        
+        # JSON Filter Hack (SAFE for our schema)
+        if status:
+            # We assume standard JSON encoding: "status": "APPROVED"
+            # Note: Spacing might vary if manually edited, but standard json.dumps uses consistent spacing.
+            # To be safer, we can just look for the value if we trust the context, or use LIKE logic.
+            # rev_data LIKE '%"status": "APPROVED"%'
+            query += " AND rev_data LIKE ?"
+            params.append(f'%"{status}"%')
             
         query += " ORDER BY event_time DESC LIMIT ?"
         params.append(limit)

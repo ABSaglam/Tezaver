@@ -171,10 +171,13 @@ def build_coin_chart_figure(
     if indicator_settings is None:
         indicator_settings = DEFAULT_INDICATOR_SETTINGS
     # Load history data
-    df = load_history_data(focus.symbol, focus.timeframe)
+    df_cached = load_history_data(focus.symbol, focus.timeframe)
     
-    if df is None or df.empty:
+    if df_cached is None or df_cached.empty:
         return None, None, None
+    
+    # CRITICAL: Copy to avoid mutating cached object
+    df = df_cached.copy()
     
     
     # Convert timestamps to Turkey Time using standard function
@@ -565,14 +568,17 @@ def render_rally_event_chart(
     """
     try:
         # Load data for specific timeframe
-        df_history = load_history_data(symbol, timeframe)
+        df_history_cached = load_history_data(symbol, timeframe)
         df_features = load_features_data(symbol, timeframe)
         
-        if df_history is None or df_history.empty:
+        if df_history_cached is None or df_history_cached.empty:
             st.warning(f"{symbol} için {timeframe} tarihsel veri bulunamadı.")
             if debug:
                  st.error("Debug: df_history is None or empty. Check data loader.")
             return
+
+        # CRITICAL: Copy to ensure thread safety
+        df_history = df_history_cached.copy()
 
         # FORCE RENDER / DEBUG INFO
         if debug:

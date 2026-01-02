@@ -642,7 +642,6 @@ def main():
                 "📐 Kalıpçı",
                 "🧪 Simyacı",
                 "🏭 Dökümhane",
-                "💾 Veri Merkezi", 
                 "⚙️ Sistem Paneli"
             ]
             
@@ -687,18 +686,17 @@ def main():
                         del sys.modules['tezaver.ui.molder_tab']
                     import tezaver.ui.molder_tab
                     tezaver.ui.molder_tab.render_molder_page()
-            elif current_nav == "🧪 Simyacı":
-                import tezaver.ui.alchemist_tab
-                importlib.reload(tezaver.ui.alchemist_tab)
-                tezaver.ui.alchemist_tab.render_alchemist_page()
-            elif current_nav == "🏭 Dökümhane":
-                import tezaver.ui.foundry_tab
-                importlib.reload(tezaver.ui.foundry_tab)
-                tezaver.ui.foundry_tab.render_foundry_page()
-            elif current_nav == "💾 Veri Merkezi": render_data_health_page()
-            elif current_nav == "⚙️ Sistem Paneli": 
-                from tezaver.ui.subpages.system_dashboard import render_system_dashboard
-                render_system_dashboard()
+        elif current_nav == "🧪 Simyacı":
+            import tezaver.ui.alchemist_tab
+            importlib.reload(tezaver.ui.alchemist_tab)
+            tezaver.ui.alchemist_tab.render_alchemist_page()
+        elif current_nav == "🏭 Dökümhane":
+            import tezaver.ui.foundry_tab
+            importlib.reload(tezaver.ui.foundry_tab)
+            tezaver.ui.foundry_tab.render_foundry_page()
+        elif current_nav == "⚙️ Sistem Paneli": 
+            from tezaver.ui.subpages.system_dashboard import render_system_dashboard
+            render_system_dashboard()
         
     elif current_mode == 'CLOUD': render_cloud_mode()
     elif current_mode == 'SIM': render_matrix_mode()

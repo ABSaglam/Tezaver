@@ -114,10 +114,19 @@ def render_batch_operations():
                     current_step += 1
                     my_bar.progress(current_step / total_steps, text=f"Scanning {s} {t}...")
                     
-                    # FETCH FROM STORE
-                    rallies = assembler.get_ony_review_rallies(s, t)
                     
-                    # Filter by Tiers
+                    # FETCH FROM STORE (Optimized with Tier)
+                    # We only query specifically requested Tiers to avoid over-fetching
+                    queried_rallies = []
+                    for t_filter in tiers: 
+                        # This is slightly inefficient if we loop tiers inside symbols inside tfs
+                        # But get_ony_review_rallies uses SQL filtering now.
+                        subset = assembler.get_ony_review_rallies(s, t, tier=t_filter)
+                        queried_rallies.extend(subset)
+                    
+                    rallies = queried_rallies
+                    
+                    # Filter by Tiers (Redundant if query works, but safe to keep)
                     filtered = [r for r in rallies if r.tier in tiers]
                     
                     if filtered:
@@ -146,16 +155,6 @@ def render_batch_operations():
                 "symbol_selection": symbol,
                 "tf_selection": tf
             }
-            
-        # Execute Block
-        if 'batch_preview' in st.session_state:
-            prev = st.session_state['batch_preview']
-            st.info(f"🎯 Hedef: {prev['count']} adet olay (Seçim: {prev['symbol_selection']} / {prev['tf_selection']})")
-            
-            # Summary stats
-            df_prev = pd.DataFrame(prev['events'])
-            if not df_prev.empty:
-                st.write(df_prev['tier'].value_counts())
             
             if st.button(f"🚀 ONAYLA ({prev['count']} Adet)", type="primary", use_container_width=True):
                 store = RallyStore()
@@ -249,6 +248,8 @@ def render_ony_studio():
     
     # Load Rallies via Steel Core Assembler
     assembler = RallyAssembler()
+    # Studio needs ALL tiers to calculate counts for tabs. 
+    # For single coin/tf, dataset is small enough (<1000 usually) so fetching all is acceptable.
     rallies = assembler.get_ony_review_rallies(symbol, timeframe)
     
     # Tier Logic

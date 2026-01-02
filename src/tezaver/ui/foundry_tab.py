@@ -194,30 +194,65 @@ def render_kasa_tab():
             cipher = json.load(f)
         
         st.divider()
-        st.subheader("Şifre Detayları")
+        st.subheader(f"🔐 Şifre Detayı: {cipher.get('cipher_id', 'Unknown')}")
         
-        # Display cipher details
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.write("**Hedef:**")
-            st.json(cipher.get('target', {}))
-        
-        with col2:
-            st.write("**Giriş Kuralları:**")
-            features = cipher.get('entry_rules', {}).get('selected_features', [])
-            st.write(f"Toplam {len(features)} özellik:")
-            for i, feat in enumerate(features[:10], 1):
-                st.text(f"{i}. {feat}")
-            if len(features) > 10:
-                st.text(f"... ve {len(features) - 10} daha")
-        
-        st.write("**Eğitim İstatistikleri:**")
-        st.json(cipher.get('training_stats', {}))
-        
-        st.write("**Özet:**")
+        # 1. ÖZET (SUMMARY)
         summary = cipher.get('human_readable_summary', {})
-        st.info(summary.get('tr', 'Özet mevcut değil'))
+        summary_text = summary.get('tr', summary.get('en', 'Özet bulunamadı.'))
+        st.info(f"**📝 Konsept:** {summary_text}")
+
+        # 2. İSTATİSTİKLER (STATS)
+        stats = cipher.get('training_stats', {})
+        if stats:
+            s1, s2, s3, s4 = st.columns(4)
+            with s1:
+                 st.metric("Eğitim Verisi", f"{stats.get('rally_count', 0)} Ralli")
+            with s2:
+                 pos_ratio = stats.get('positive_ratio', 0) * 100
+                 st.metric("Pozitif Oran", f"%{pos_ratio:.1f}")
+            with s3:
+                 st.metric("Feature Havuzu", stats.get('feature_pool_size', 0))
+            with s4:
+                 st.metric("Seçilen Özellik", len(cipher.get('entry_rules', {}).get('selected_features', [])))
+        
+        st.markdown("---")
+
+        # 3. KURALLAR ve ÖZELLİKLER (RULES)
+        c_rules, c_feats = st.columns([1, 1])
+        
+        with c_rules:
+            st.markdown("### 🎯 Hedef Kitle")
+            target = cipher.get('target', {})
+            t_df = pd.DataFrame([
+                {"Kriter": "Tier", "Değer": target.get('tier')},
+                {"Kriter": "Archetype", "Değer": target.get('archetype')},
+                {"Kriter": "Coin Sınıfı", "Değer": target.get('coin_class')},
+                {"Kriter": "Zaman Dilimi", "Değer": target.get('timeframe')},
+            ])
+            st.table(t_df)
+
+        with c_feats:
+            st.markdown("### 🧬 DNA (Giriş Kuralları)")
+            features = cipher.get('entry_rules', {}).get('selected_features', [])
+            
+            if features:
+                # Show as a nice list
+                feat_df = pd.DataFrame(features, columns=["İndikatör Kombinasyonu"])
+                st.dataframe(feat_df, use_container_width=True, hide_index=True)
+            else:
+                st.warning("Özellik listesi boş.")
+        
+        # 4. EXPORT (Placeholder/Ready)
+        st.markdown("### 📦 Aksiyonlar")
+        
+        json_str = json.dumps(cipher, indent=2)
+        st.download_button(
+             label="📤 Matriks Formatında İndir (JSON)",
+             data=json_str,
+             file_name=f"CIPHER_{cipher.get('cipher_id')}.json",
+             mime="application/json",
+             key="btn_dl_cipher"
+        )
 
 
 def render_paketci_tab():

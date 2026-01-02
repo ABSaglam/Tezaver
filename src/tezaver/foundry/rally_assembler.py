@@ -68,7 +68,7 @@ class RallyAssembler:
     def __init__(self):
         self.store = RallyStore()
 
-    def get_assembled_rallies(self, symbol: str, timeframe: str) -> List[AssembledRally]:
+    def get_assembled_rallies(self, symbol: str, timeframe: str, tier: str = None, status: str = None) -> List[AssembledRally]:
         """
         The Master Function. Returns fully merged rallies for a coin/tf using SQLite.
         Handles 'TÜMÜ' or None for wildcard.
@@ -76,24 +76,30 @@ class RallyAssembler:
         # Handle Wildcards
         target_sym = None if symbol in ["TÜMÜ", None, ""] else symbol
         target_tf = None if timeframe in ["TÜMÜ", None, ""] else timeframe
+        target_tier = None if tier in ["TÜMÜ", None, ""] else tier
         
         # 1. Fetch from SQLite
-        rows = self.store.list_rallies(symbol=target_sym, timeframe=target_tf)
+        rows = self.store.list_rallies(symbol=target_sym, timeframe=target_tf, tier=target_tier, status=status)
         return [self._assemble_rally_from_row(row) for row in rows]
 
-    def get_ony_review_rallies(self, symbol: str, timeframe: str) -> List[AssembledRally]:
+    def get_ony_review_rallies(self, symbol: str, timeframe: str, tier: str = None, status: str = None) -> List[AssembledRally]:
         """
-        Returns ALL rallies (Raw + Annotated) for the Revize/Ony Review Screen.
-        Identical to get_assembled_rallies() now because Store holds everything unified.
+        Returns rallies for the Revize/Ony Review Screen.
         """
-        return self.get_assembled_rallies(symbol, timeframe)
+        return self.get_assembled_rallies(symbol, timeframe, tier=tier, status=status)
 
-    def get_moldable_rallies(self, symbol: str, timeframe: str) -> List[AssembledRally]:
+    def get_moldable_rallies(self, symbol: str, timeframe: str, tier: str = None) -> List[AssembledRally]:
         """
-        Get rallies ready for Molder (Approved).
+        Get rallies ready for Molder (Approved AND Unlabeled).
         """
-        all_rallies = self.get_assembled_rallies(symbol, timeframe)
-        return [r for r in all_rallies if r.status == SniperStatus.APPROVED]
+        # Fetch ONLY Approved from DB (SQL Optimization)
+        all_rallies = self.get_assembled_rallies(symbol, timeframe, tier, status=SniperStatus.APPROVED)
+        
+        # Filter: Must be Approved AND not yet have an Archetype
+        return [
+            r for r in all_rallies 
+            if r.status == SniperStatus.APPROVED and (not r.archetype or r.archetype == "None")
+        ]
 
     def get_alchemist_ready_rallies(self, symbol: str, timeframe: str) -> List[AssembledRally]:
         """
