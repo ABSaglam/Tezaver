@@ -384,11 +384,14 @@ def render_ony_studio():
     
     with inp1:
         default_entry = existing_ann.entry_bar_offset if existing_ann else 0
+        max_entry = bars_to_peak + 50
+        safe_entry = min(max(default_entry, -50), max_entry)  # Clamp to valid range
+        
         entry_offset = st.number_input(
             "Giriş",
             min_value=-50,  # Negatif değer izni (±)
-            max_value=bars_to_peak + 50,
-            value=default_entry,
+            max_value=max_entry,
+            value=safe_entry,
             step=1,
             key="ony_entry_offset",
             label_visibility="collapsed"

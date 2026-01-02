@@ -50,17 +50,14 @@ from tezaver.core.coin_class_utils import (
     COIN_CLASS_INFO,
 )
 
-# @st.cache_data(ttl=60)  # Temporarily disabled for debugging
+@st.cache_data(ttl=60)
 def load_moldable_history(symbol: str, timeframe: str) -> Optional[pd.DataFrame]:
     """
     Load history and enrich with RSI/VolumeRel for Molder AI.
     Cached to optimize AI Scan loops.
     """
-    print(f"DEBUG load_moldable_history: symbol={symbol}, timeframe={timeframe}")
     df_cached = load_history_data(symbol, timeframe)
-    print(f"DEBUG load_moldable_history: df_cached is None? {df_cached is None}")
     if df_cached is None or df_cached.empty:
-        print(f"DEBUG load_moldable_history: Returning None (cached data is None or empty)")
         return None
         
     df = df_cached.copy()
@@ -226,41 +223,15 @@ def render_molder_boutique_view():
 
     # Calculate default index
     default_idx = 0
-    
-    # Check for auto-advance flag (from archetype button click)
-    next_rally = st.session_state.get('_molder_next_rally', None)
-    print(f"DEBUG AUTO-ADVANCE: next_rally={next_rally}")
-    
-    if next_rally and next_rally in list_options:
-        default_idx = list_options.index(next_rally)
-        print(f"DEBUG AUTO-ADVANCE: Moving to index {default_idx}, rally: {next_rally}")
-        # Clear the flag after using it
-        st.session_state['_molder_next_rally'] = None
-        # Increment counter to force widget refresh
-        if '_molder_select_counter' not in st.session_state:
-            st.session_state['_molder_select_counter'] = 0
-        st.session_state['_molder_select_counter'] += 1
-    else:
-        # Check for prefill from revize
-        prefill_id = st.session_state.pop('molder_prefill_event_id', None)
-        if prefill_id:
-            for i, lbl in enumerate(list_options):
-                r = list_map.get(lbl)
-                if r and r.event_id == prefill_id:
-                    default_idx = i
-                    break
-    
-    print(f"DEBUG AUTO-ADVANCE: final default_idx={default_idx}")
-    
-    # Use counter in key to force widget refresh on auto-advance
-    select_counter = st.session_state.get('_molder_select_counter', 0)
-    selected_label_str = st.selectbox(
-        "Ralli Seçiniz", 
-        list_options, 
-        index=default_idx, 
-        key=f"molder_list_select_{select_counter}", 
-        label_visibility="collapsed"
-    )
+    prefill_id = st.session_state.pop('molder_prefill_event_id', None)
+    if prefill_id:
+        for i, lbl in enumerate(list_options):
+            r = list_map.get(lbl)
+            if r and r.event_id == prefill_id:
+                default_idx = i
+                break
+
+    selected_label_str = st.selectbox("Ralli Seçiniz", list_options, index=default_idx, key="molder_list_select", label_visibility="collapsed")
     
     if not selected_label_str:
         return
@@ -268,93 +239,70 @@ def render_molder_boutique_view():
     current_rally = list_map[selected_label_str] # AssembledRally object
     
     # ==========================
-    # 1. AI PREDICTION (SYSTEM RECOMMENDATION)
+    # 1. AI PREDICTIONS (System Analysis)
     # ==========================
-    
-    # Only show AI if specific coin selected (not "TÜMÜ")
-    if sel_sym == "TÜMÜ":
-        st.info(" AI tavsiyesi için lütfen belirli bir coin seçin")
-        df_hist_curr = None
-    else:
-        df_hist_curr = load_moldable_history(sel_sym, sel_tf)
+    df_hist_curr = load_history_data(sel_sym, sel_tf)
+    scores = []
     
     if df_hist_curr is not None:
-        print("DEBUG: df_hist_curr loaded successfully")
-        curr_ts = current_rally.event_time
-        if curr_ts:
-            print(f"DEBUG: curr_ts: {curr_ts}")
-            # Ensure TZ naive for comparison
-            if curr_ts.tzinfo: curr_ts = curr_ts.tz_localize(None)
-            
-            if df_hist_curr.index.dtype.kind == 'M': t_idx = df_hist_curr.index 
-            else: t_idx = pd.DatetimeIndex(pd.to_datetime(df_hist_curr['open_time']))
-            if t_idx.tz is not None: t_idx = t_idx.tz_localize(None)
-            
-            # Enrich Indicators
-            if 'rsi' not in df_hist_curr.columns:
-                period = 14
-                delta = df_hist_curr['close'].diff()
-                gain = delta.where(delta > 0, 0).ewm(alpha=1/period, adjust=False).mean()
-                loss = -delta.where(delta < 0, 0).ewm(alpha=1/period, adjust=False).mean()
-                rs = gain / loss
-                df_hist_curr['rsi'] = 100 - (100 / (1 + rs))
-            if 'volume_rel' not in df_hist_curr.columns:
-                if 'volume' in df_hist_curr.columns: df_hist_curr['volume_rel'] = df_hist_curr['volume'] / df_hist_curr['volume'].rolling(20).mean()
-                else: df_hist_curr['volume_rel'] = 0
-            
-            # Locate and Slice
-            pos = t_idx.searchsorted(curr_ts)
-            print(f"DEBUG: pos={pos}, len={len(df_hist_curr)}")
-            if pos < len(df_hist_curr):
-                eff_idx = min(pos + (current_rally.entry_offset or 0), len(df_hist_curr)-1)
-                idx_start = max(0, eff_idx - 59)
-                window_slice = df_hist_curr.iloc[idx_start:eff_idx+1]
-                w_rsi = window_slice['rsi'].tolist()
-                w_vol = window_slice['volume_rel'].tolist()
-                
-                print(f"DEBUG: w_rsi len={len(w_rsi)}, w_vol len={len(w_vol)}")
-                
-                # PREDICT SCORES
-                scores = ArchetypeService.analyze_trend_scores(w_rsi, w_vol)
-                print(f"DEBUG: scores={scores}")
-                
-                if scores:
-                    best = scores[0]
-                    p_arch = best['arch']
-                    p_conf = best['conf']
-                    p_reason = best['reason']
-                    
-                    c1, c2 = st.columns([1, 6])
-                    with c1:
-                        st.metric("Sistem Önerisi", p_arch, f"%{p_conf}")
-                    with c2:
-                        try:
-                            p_arch_enum = Archetype(p_arch)
-                            p_desc = ARCHETYPE_DESCRIPTIONS.get(p_arch_enum, "")
-                        except:
-                            p_desc = ""
-                        st.success(f"**{p_arch}** ({p_desc})\n\n👉 **Gerekçe:** {p_reason}")
-                        
-                    if len(scores) > 1 and scores[1]['conf'] > 50:
-                        sec = scores[1]
-                        with st.expander(f"Alternatif: {sec['arch']} (%{sec['conf']})"):
-                             try:
-                                 s_arch_enum = Archetype(sec['arch'])
-                                 s_desc = ARCHETYPE_DESCRIPTIONS.get(s_arch_enum, "")
-                             except:
-                                 s_desc = ""
-                             st.write(f"**Tanım:** {s_desc}")
-                             st.write(f"**Gerekçe:** {sec['reason']}")
-                else:
-                    print("DEBUG: No scores returned!")
-                    st.warning("Hiçbir kalıp tespit edilemedi.")
-            else:
-                print("DEBUG: pos >= len(df_hist_curr)")
-        else:
-            print("DEBUG: curr_ts is None")
-    else:
-        print("DEBUG: df_hist_curr is None!")
-        st.warning("Grafik verisi yüklenemedi.")
+         curr_ts = current_rally.event_time
+         if curr_ts:
+             # Ensure TZ naive for comparison
+             if curr_ts.tzinfo: curr_ts = curr_ts.tz_localize(None)
+             
+             if df_hist_curr.index.dtype.kind == 'M': t_idx = df_hist_curr.index 
+             else: t_idx = pd.DatetimeIndex(pd.to_datetime(df_hist_curr['open_time']))
+             if t_idx.tz is not None: t_idx = t_idx.tz_localize(None)
+             
+             # Enrich Indicators
+             if 'rsi' not in df_hist_curr.columns:
+                 period = 14
+                 delta = df_hist_curr['close'].diff()
+                 gain = delta.where(delta > 0, 0).ewm(alpha=1/period, adjust=False).mean()
+                 loss = -delta.where(delta < 0, 0).ewm(alpha=1/period, adjust=False).mean()
+                 rs = gain / loss
+                 df_hist_curr['rsi'] = 100 - (100 / (1 + rs))
+             if 'volume_rel' not in df_hist_curr.columns:
+                 if 'volume' in df_hist_curr.columns: df_hist_curr['volume_rel'] = df_hist_curr['volume'] / df_hist_curr['volume'].rolling(20).mean()
+                 else: df_hist_curr['volume_rel'] = 0
+             
+             # Locate and Slice
+             pos = t_idx.searchsorted(curr_ts)
+             if pos < len(df_hist_curr):
+                 eff_idx = min(pos + (current_rally.entry_offset or 0), len(df_hist_curr)-1)
+                 idx_start = max(0, eff_idx - 59)
+                 window_slice = df_hist_curr.iloc[idx_start:eff_idx+1]
+                 w_rsi = window_slice['rsi'].tolist()
+                 w_vol = window_slice['volume_rel'].tolist()
+                 
+                 # PREDICT SCORES
+                 scores = ArchetypeService.analyze_trend_scores(w_rsi, w_vol)
+                 
+                 if scores:
+                      best = scores[0]
+                      p_arch = best['arch']
+                      p_conf = best['conf']
+                      p_reason = best['reason']
+                      
+                      c1, c2 = st.columns([1, 6])
+                      with c1:
+                          st.metric("Sistem Önerisi", p_arch, f"%{p_conf}")
+                      with c2:
+                           try:
+                               p_arch_enum = Archetype(p_arch)
+                               p_desc = ARCHETYPE_DESCRIPTIONS.get(p_arch_enum, "")
+                           except:
+                               p_desc = ""
+                          st.success(f"**{p_arch}** ({p_desc})\n\n👉 **Gerekçe:** {p_reason}")
+                          
+                      if len(scores) > 1 and scores[1]['conf'] > 50:
+                          sec = scores[1]
+                          with st.expander(f"Alternatif: {sec['arch']} (%{sec['conf']})"):
+                               s_desc = ARCHETYPE_DESCRIPTIONS.get(sec['arch'], "")
+                               st.write(f"**Tanım:** {s_desc}")
+                               st.write(f"**Gerekçe:** {sec['reason']}")
+                 else:
+                      st.warning("Hiçbir kalıp tespit edilemedi.")
 
 
 
@@ -385,7 +333,6 @@ def render_molder_boutique_view():
         is_active = (current_rally.archetype == mold.value)
         
         with col:
-            # Always show button (not conditional on is_active)
             if st.button(
                 label, 
                 key=f"btn_{mold.value}", 
@@ -393,36 +340,35 @@ def render_molder_boutique_view():
                 type="primary" if is_active else "secondary",
                 help=desc
             ):
-                # ALWAYS save and advance, even if same archetype
-                store = RallyStore()
+                # SAVE to Store
                 doc = store.get_rally(current_rally.event_id)
+                rev_data = doc.get('rev_data', {}) or {}
+                molder_data = doc.get('molder_data', {}) or {}
                 
-                if doc:
-                    # Update both layers
-                    molder_data = doc.get('molder_data', {}) or {}
-                    molder_data['archetype'] = mold.value
-                    molder_data['updated_at'] = pd.Timestamp.now()
-                    
-                    rev_data = doc.get('rev_data', {}) or {}
-                    rev_data['archetype'] = mold.value
-                    rev_data['updated_at'] = pd.Timestamp.now()
-                    
-                    store.upsert_rally(current_rally.event_id, molder_data, layer='molder')
-                    store.upsert_rally(current_rally.event_id, rev_data, layer='rev')
-                    
-                    # Find current rally index and move to next
-                    available_rallies_labels = list_options
-                    current_index = available_rallies_labels.index(selected_label_str)
-                    
-                    if current_index < len(available_rallies_labels) - 1:
-                        # Set flag for next rally
-                        st.session_state['_molder_next_rally'] = available_rallies_labels[current_index + 1]
-                        st.toast(f"✅ {label} → Sonraki rally")
-                    else:
-                        # Last rally
-                        st.toast(f"✅ {label} kaydedildi (Son rally)")
-                    
-                    st.rerun()
+                # Auto-detect coin class
+                current_coin_class = get_coin_class_with_override(current_rally.symbol)
+                
+                # Update Archetype in Rev Data (Labeling)
+                rev_data.update({
+                    'archetype': mold.value, # Use mold.value for arch_key
+                    'coin_class': current_coin_class, # Auto-detected class
+                    'updated_at': pd.Timestamp.now()
+                })
+                
+                # Update Molder Metadata
+                molder_data.update({
+                    'archetype': mold.value, # Use mold.value for arch_key
+                    'coin_class': current_coin_class, # Auto-detected class
+                    'confidence': scores[0]['conf'] if (scores and scores[0]['arch'] == mold.value) else 0.5, # Simple logic
+                    'labeled_at': pd.Timestamp.now()
+                })
+                
+                store.upsert_rally(current_rally.event_id, rev_data, layer='rev')
+                store.upsert_rally(current_rally.event_id, molder_data, layer='molder')
+                
+                st.success(f"✅ Kaydedildi! ({mold.value})")
+                st.toast(f"✅ Etiketlendi: {label}")
+                st.rerun()
 
     # --- CHART ---
     event_time = current_rally.event_time
@@ -965,14 +911,14 @@ def render_molder_gallery_view():
         
         with c_stats:
              # STATS DISPLAY
-             st.markdown(
+              st.markdown(
                  f"<div style='margin-top: 5px; font-size: 0.9em;'>"
-                 f"🔹 <b>Toplam:</b> {total_approved_cnt} | "
+                 f"🔹 <b>Toplam:</b> {len(approved_rallies)} | "
                  f"🔸 <b>Kalıplanacak:</b> {unlabeled_cnt} | "
                  f"✨ <b>Görüntülenen:</b> {total_count}"
                  f"</div>", 
                  unsafe_allow_html=True
-             )
+              )
             
     with r2_c3:
         # Pagination [Prev] [Text] [Next]
@@ -1152,6 +1098,68 @@ def render_molder_gallery_view():
                          st.error(f"Chart: {e}")
                 else:
                     st.caption("Veri yok")
+
+                # --- INLINE ARCHETYPE SELECTOR (styled) ---
+                # Aggressive CSS for dropdown menu items
+                st.markdown("""
+                <style>
+                /* Target all dropdown menus globally */
+                ul[role="listbox"] li,
+                ul[role="listbox"] li > div,
+                ul[role="listbox"] li span,
+                [data-baseweb="menu"] li {
+                    font-size: 0.65em !important;
+                    line-height: 1.4 !important;
+                    padding: 4px 10px !important;
+                }
+                ul[role="listbox"] {
+                    font-size: 0.65em !important;
+                }
+                </style>
+                """, unsafe_allow_html=True)
+                
+                current_arch = rally.archetype if rally.archetype and rally.archetype != "None" else None
+                
+                # Format options with icons
+                arch_options_display = ["Seç..."]
+                arch_options_values = [None]
+                for a in Archetype:
+                    label = ARCHETYPE_LABELS.get(a, a.value)
+                    arch_options_display.append(label)
+                    arch_options_values.append(a.value)
+                
+                current_idx = 0
+                if current_arch:
+                    try:
+                        current_idx = arch_options_values.index(current_arch)
+                    except:
+                        pass
+                
+                selected_idx = st.selectbox(
+                    "Kalıp", 
+                    range(len(arch_options_display)),
+                    format_func=lambda i: arch_options_display[i],
+                    index=current_idx,
+                    key=f"arch_sel_{rally.event_id}_{i}",
+                    label_visibility="collapsed"
+                )
+                
+                selected_arch = arch_options_values[selected_idx]
+                # Save if changed
+                if selected_arch and selected_arch != current_arch:
+                    store = RallyStore()
+                    doc = store.get_rally(rally.event_id)
+                    if doc:
+                        molder_data = doc.get("molder_data", {}) or {}
+                        molder_data["archetype"] = selected_arch
+                        molder_data["updated_at"] = pd.Timestamp.now()
+                        rev_data = doc.get("rev_data", {}) or {}
+                        rev_data["archetype"] = selected_arch
+                        rev_data["updated_at"] = pd.Timestamp.now()
+                        store.upsert_rally(rally.event_id, molder_data, layer="molder")
+                        store.upsert_rally(rally.event_id, rev_data, layer="rev")
+                        st.success(f"✅ {selected_arch}", icon="✅")
+                        st.rerun()
 
                 # Action Checkbox
                 # Key is critical

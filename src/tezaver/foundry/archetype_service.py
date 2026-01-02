@@ -112,7 +112,7 @@ class ArchetypeService:
         if scores:
             best = scores[0]
             return best['arch'], best['reason'], best['conf']
-        return "OTHER", "No pattern", 0
+        return None, "No clear pattern", 0
         
     # Legacy wrapper for vector calls
     @staticmethod
@@ -133,7 +133,7 @@ class ArchetypeService:
         # Initialize buckets
         archetypes = {
             "GRIND": [], "GUILLOTINE": [], "SUPERNOVA": [], 
-            "PHOENIX": [], "NINJA": [], "SURFER": [], "OTHER": []
+            "PHOENIX": [], "NINJA": [], "SURFER": []
         }
         tiers = {
             "DIAMOND 💎": [], # >= 30%

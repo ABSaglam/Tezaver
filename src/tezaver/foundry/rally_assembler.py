@@ -68,7 +68,7 @@ class RallyAssembler:
     def __init__(self):
         self.store = RallyStore()
 
-    def get_assembled_rallies(self, symbol: str, timeframe: str, tier: str = None, status: str = None) -> List[AssembledRally]:
+    def get_assembled_rallies(self, symbol: str, timeframe: str, tier: str = None, status: str = None, limit: int = 20000) -> List[AssembledRally]:
         """
         The Master Function. Returns fully merged rallies for a coin/tf using SQLite.
         Handles 'TÜMÜ' or None for wildcard.
@@ -79,7 +79,7 @@ class RallyAssembler:
         target_tier = None if tier in ["TÜMÜ", None, ""] else tier
         
         # 1. Fetch from SQLite
-        rows = self.store.list_rallies(symbol=target_sym, timeframe=target_tf, tier=target_tier, status=status)
+        rows = self.store.list_rallies(symbol=target_sym, timeframe=target_tf, tier=target_tier, status=status, limit=limit)
         return [self._assemble_rally_from_row(row) for row in rows]
 
     def get_ony_review_rallies(self, symbol: str, timeframe: str, tier: str = None, status: str = None) -> List[AssembledRally]:

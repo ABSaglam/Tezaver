@@ -15,7 +15,7 @@ class Archetype(str, Enum):
     PHOENIX = "PHOENIX"
     NINJA = "NINJA"
     SURFER = "SURFER"
-    OTHER = "OTHER"
+    CRASH = "CRASH"
 
 # User-Facing Labels with Emojis
 ARCHETYPE_LABELS: Dict[Archetype, str] = {
@@ -25,7 +25,7 @@ ARCHETYPE_LABELS: Dict[Archetype, str] = {
     Archetype.PHOENIX: "PHOENIX 🔥",
     Archetype.NINJA: "NINJA 🥷",
     Archetype.SURFER: "SURFER 🏄‍♂️",
-    Archetype.OTHER: "OTHER 👽"
+    Archetype.CRASH: "CRASH ⚠️"
 }
 
 ARCHETYPE_DESCRIPTIONS: Dict[Archetype, str] = {
@@ -35,7 +35,7 @@ ARCHETYPE_DESCRIPTIONS: Dict[Archetype, str] = {
     Archetype.PHOENIX: "Önceki zirveden düşüş sonrası küllerinden doğuş (Rebound).",
     Archetype.NINJA: "Yatay piyasada hacimsiz kırılım ve sessiz ilerleyiş.",
     Archetype.SURFER: "Hareketli ortalama üzerinde (MA50/EMA) trend sörfü.",
-    Archetype.OTHER: "Belirgin bir kalıba uymayan veya karmaşık yapılar."
+    Archetype.CRASH: "Piyasa çöküşü sonrası reflex toparlanma (Yüksek risk)."
 }
 
 def get_all_archetypes() -> List[Archetype]:

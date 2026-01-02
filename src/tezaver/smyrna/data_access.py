@@ -72,6 +72,10 @@ def get_rally_context(
     if isinstance(event_time, str):
         event_time = pd.Timestamp(event_time)
     
+    # Localize to UTC if naive
+    if event_time.tz is None:
+        event_time = event_time.tz_localize('UTC')
+    
     logger.info(f"Loading context for {rally_id}: symbol={symbol}, tf={timeframe}, T-0={event_time}")
     
     # 2. Load Historical Price Data
@@ -83,11 +87,16 @@ def get_rally_context(
     
     df_full = pd.read_parquet(tf_file)
     
-    # Ensure timestamp index
-    if 'timestamp' in df_full.columns and df_full.index.name != 'timestamp':
-        df_full = df_full.set_index('timestamp')
+    # Ensure proper datetime index
+    # Price files have 'datetime' column (already formatted) OR 'timestamp' column (unix ms)
+    if 'datetime' in df_full.columns:
+        df_full['datetime'] = pd.to_datetime(df_full['datetime'])
+        df_full = df_full.set_index('datetime')
+    elif 'timestamp' in df_full.columns:
+        # Timestamp is in milliseconds (unix epoch)
+        df_full['datetime'] = pd.to_datetime(df_full['timestamp'], unit='ms')
+        df_full = df_full.set_index('datetime')
     
-    df_full.index = pd.to_datetime(df_full.index)
     df_full = df_full.sort_index()
     
     # 3. CRITICAL: Slice to T-0 Boundary
