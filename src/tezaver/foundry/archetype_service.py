@@ -93,13 +93,9 @@ class ArchetypeService:
         if curr_rsi > 60:
              results.append({"arch": "SURFER", "conf": 85, "reason": f"RSI {curr_rsi:.1f} > 60 (Trend)"})
              
-        # 5. NINJA
-        if avg_vol_20 < 1.3 and curr_rsi <= 55:
-             results.append({"arch": "NINJA", "conf": 85, "reason": f"AvgVol {avg_vol_20:.1f} (Stealth) & RSI {curr_rsi:.0f}"})
-             
-        # 6. GRIND
-        if avg_vol_20 < 1.8:
-             results.append({"arch": "GRIND", "conf": 80, "reason": f"AvgVol {avg_vol_20:.1f} (Accumulation)"})
+        # 5. GRIND (Low volume accumulation/stealth)
+        if avg_vol_20 < 1.8 and 30 < curr_rsi < 70:
+             results.append({"arch": "GRIND", "conf": 83, "reason": f"AvgVol {avg_vol_20:.1f} (Stealth/Accumulation) & RSI {curr_rsi:.0f}"})
              
         # Sort by Confidence Descending
         results.sort(key=lambda x: x['conf'], reverse=True)
@@ -114,10 +110,9 @@ class ArchetypeService:
             return best['arch'], best['reason'], best['conf']
         return None, "No clear pattern", 0
         
-    # Legacy wrapper for vector calls
     @staticmethod
     def classify_vector(rsi, vol):
-        return ArchetypeService.classify_trend([rsi]*60, [vol]*60)
+        return ArchetypeService.classify_trend([rsi]*100, [vol]*100)
 
     @st.cache_data(ttl=300)
     def scan_coin_archetypes(_self, symbol: str, timeframe: str = "15m") -> Dict[str, Dict[str, List[Dict]]]:
@@ -133,13 +128,12 @@ class ArchetypeService:
         # Initialize buckets
         archetypes = {
             "GRIND": [], "GUILLOTINE": [], "SUPERNOVA": [], 
-            "PHOENIX": [], "NINJA": [], "SURFER": []
+            "PHOENIX": [], "SURFER": []
         }
         tiers = {
             "DIAMOND 💎": [], # >= 30%
             "GOLD 🥇": [],    # 20-30%
             "SILVER 🥈": [],  # 10-20%
-            "BRONZE 🥉": []   # 5-10%
         }
         
         if not feat_path.exists():

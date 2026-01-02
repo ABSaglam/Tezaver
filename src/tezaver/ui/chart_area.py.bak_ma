@@ -1758,7 +1758,7 @@ def render_sniper_studio_chart(
     event_time: pd.Timestamp,
     bars_to_peak: int,
     entry_offset: int,
-    window_before: int = 150,
+    window_before: int = 50,
     window_after: int = 30,
     exit_offset: Optional[int] = None,
     raw_gain_pct: Optional[float] = None  # Orijinal gain yüzdesi (hesaplamadan bağımsız)
@@ -1901,28 +1901,6 @@ def render_sniper_studio_chart(
             showlegend=False
         ), row=1, col=1)
         
-        
-        # Add Moving Averages
-        if len(df_window) >= 20:
-            ma20 = df_window["close"].rolling(window=20).mean()
-            fig.add_trace(go.Scatter(
-                x=df_window["open_time"], y=ma20,
-                mode="lines",
-                line=dict(color="orange", width=1.5),
-                name="MA20",
-                hoverinfo="skip"
-            ), row=1, col=1)
-        
-        if len(df_window) >= 50:
-            ma50 = df_window["close"].rolling(window=50).mean()
-            fig.add_trace(go.Scatter(
-                x=df_window["open_time"], y=ma50,
-                mode="lines",
-                line=dict(color="blue", width=1.5),
-                name="MA50",
-                hoverinfo="skip"
-            ), row=1, col=1)
-
         # 2. Volume
         vol_enable = get_cfg('volume', 'enabled', True)
         if vol_enable:

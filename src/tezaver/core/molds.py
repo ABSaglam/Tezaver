@@ -13,7 +13,6 @@ class Archetype(str, Enum):
     GUILLOTINE = "GUILLOTINE"
     SUPERNOVA = "SUPERNOVA"
     PHOENIX = "PHOENIX"
-    NINJA = "NINJA"
     SURFER = "SURFER"
     CRASH = "CRASH"
 
@@ -23,17 +22,15 @@ ARCHETYPE_LABELS: Dict[Archetype, str] = {
     Archetype.GUILLOTINE: "GUILLOTINE 🩸",
     Archetype.SUPERNOVA: "SUPERNOVA 💥",
     Archetype.PHOENIX: "PHOENIX 🔥",
-    Archetype.NINJA: "NINJA 🥷",
     Archetype.SURFER: "SURFER 🏄‍♂️",
     Archetype.CRASH: "CRASH ⚠️"
 }
 
 ARCHETYPE_DESCRIPTIONS: Dict[Archetype, str] = {
-    Archetype.GRIND: "Sinsi, düşük hacimli, istikrarlı merdiven çıkışı.",
+    Archetype.GRIND: "Düşük hacimli, sinsi yükseliş (yatay kırılım veya mevcut trend devamı).",
     Archetype.GUILLOTINE: "Sert düşüş sonrası ani V-dönüşü / Ayı tuzağı.",
     Archetype.SUPERNOVA: "Ani ve devasa hacim patlaması ile dikey yükseliş.",
     Archetype.PHOENIX: "Önceki zirveden düşüş sonrası küllerinden doğuş (Rebound).",
-    Archetype.NINJA: "Yatay piyasada hacimsiz kırılım ve sessiz ilerleyiş.",
     Archetype.SURFER: "Hareketli ortalama üzerinde (MA50/EMA) trend sörfü.",
     Archetype.CRASH: "Piyasa çöküşü sonrası reflex toparlanma (Yüksek risk)."
 }

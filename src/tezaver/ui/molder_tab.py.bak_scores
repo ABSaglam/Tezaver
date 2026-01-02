@@ -310,8 +310,6 @@ def render_molder_boutique_view():
     else:
         df_hist_curr = load_moldable_history(sel_sym, sel_tf)
     
-    scores = []  # Initialize to prevent UnboundLocalError
-    
     if df_hist_curr is not None:
         print("DEBUG: df_hist_curr loaded successfully")
         curr_ts = current_rally.event_time
@@ -341,7 +339,7 @@ def render_molder_boutique_view():
             print(f"DEBUG: pos={pos}, len={len(df_hist_curr)}")
             if pos < len(df_hist_curr):
                 eff_idx = min(pos + (current_rally.entry_offset or 0), len(df_hist_curr)-1)
-                idx_start = max(0, eff_idx - 99)
+                idx_start = max(0, eff_idx - 59)
                 window_slice = df_hist_curr.iloc[idx_start:eff_idx+1]
                 w_rsi = window_slice['rsi'].tolist()
                 w_vol = window_slice['volume_rel'].tolist()

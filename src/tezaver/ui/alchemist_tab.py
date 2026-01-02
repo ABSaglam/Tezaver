@@ -45,7 +45,7 @@ def render_alchemist_page():
     with col2:
         target_archetype = st.selectbox(
             "Archetype",
-            ["Tümü", "PHOENIX", "GRIND", "GUILLOTINE", "SUPERNOVA", "NINJA", "SURFER"],
+            ["Tümü", "PHOENIX", "GRIND", "GUILLOTINE", "SUPERNOVA", "SURFER"],
             help="Hangi archetype için şifre üretilsin?"
         )
     
