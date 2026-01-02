@@ -102,6 +102,22 @@ class BackwardEliminationMiner:
                 continue
         
         X = pd.DataFrame(all_features)
+        
+        # CLEANUP: Remove raw price/volume columns that cause overfitting
+        # We only want RELATIVE features (Ratios, % changes, Oscillators)
+        blacklist = [
+            'open', 'high', 'low', 'close', 'volume', 
+            'bb_upper', 'bb_middle', 'bb_lower',
+            'ema_9', 'ema_21', 'ema_50', 'ema_200', # MA values are absolute prices
+            'fib_0.236', 'fib_0.382', 'fib_0.618'   # Fib levels are absolute prices
+        ]
+        
+        # Drop columns if they exist
+        cols_to_drop = [c for c in blacklist if c in X.columns]
+        if cols_to_drop:
+            logger.info(f"Dropping {len(cols_to_drop)} raw value columns to ensure generalization.")
+            X = X.drop(columns=cols_to_drop)
+
         y = pd.Series(all_labels)
         
         logger.info(f"Dataset prepared: {len(X)} samples, {len(X.columns)} features")

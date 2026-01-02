@@ -79,6 +79,19 @@ class EnsembleMiner:
         
         all_features = list(X.columns)
         
+        # CLEANUP: Remove raw price/volume columns
+        blacklist = [
+            'open', 'high', 'low', 'close', 'volume', 
+            'bb_upper', 'bb_middle', 'bb_lower',
+            'ema_9', 'ema_21', 'ema_50', 'ema_200',
+            'fib_0.236', 'fib_0.382', 'fib_0.618'
+        ]
+        
+        # Filter features for mining
+        # Note: We don't filter X here because miners do it internally now/or we pass full X
+        # But for voting logic, we should be aware
+        valid_features = [f for f in all_features if f not in blacklist]
+        
         # 1. Backward Elimination
         logger.info("\n🔍 Running Backward Elimination...")
         be_miner = BackwardEliminationMiner(
