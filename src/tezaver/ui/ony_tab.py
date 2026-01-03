@@ -201,8 +201,16 @@ def render_ony_studio():
     Rev. Stüdyo - Sadece problemli rallileri revize etme ekranı.
     "Durum" ve "Etiket" kavramları UI'dan gizlenmiştir.
     """
-    st.subheader("🛠️ Rev. Stüdyo")
+    # --- PENDING STATE APPLIER ---
+    # Widget render edilmeden önce bekleyen değişiklikleri uygula
+    if '_pending_ony_symbol' in st.session_state:
+        st.session_state['ony_symbol'] = st.session_state.pop('_pending_ony_symbol')
+    
+    if '_pending_ony_prefill_id' in st.session_state:
+        st.session_state['ony_prefill_event_id'] = st.session_state.pop('_pending_ony_prefill_id')
+    # -----------------------------
 
+    st.subheader("🛠️ Rev. Stüdyo")
     
     # Return to Molder Button (if came from Molder)
     if st.session_state.get('came_from_molder'):
@@ -339,23 +347,38 @@ def render_ony_studio():
         st.warning("Liste boş.")
         return
         
+    # Dynamic Key Logic for Auto-Advance
+    select_counter = st.session_state.get('_ony_select_counter', 0)
+    
     # Full width selectbox
-    selected_label = st.selectbox("Ralli Seçiniz", event_options, index=default_idx, key="ony_event_select", label_visibility="collapsed")
+    selected_label = st.selectbox(
+        "Ralli Seçiniz", 
+        event_options, 
+        index=default_idx, 
+        key=f"ony_event_select_{select_counter}", 
+        label_visibility="collapsed"
+    )
     current_rally = rally_map[selected_label]
     
     # Extract Data from Assembler Object (Unified Source)
+    # Extract Data from Assembler Object (Unified Source)
     event_id = current_rally.event_id
     event_time = current_rally.event_time
-    bars_to_peak = current_rally.bars_to_peak
     
-    # Since we use Repository inside Assembler, current_rally ALREADY reflects the DB state.
-    # But for the Edit Form, we can use the assembler object's properties as defaults.
-    # To be absolutely safe regarding latest DB state (concurrency), we can reload via repo if we want,
-    # but Assembler just loaded it. Let's rely on Assembler object.
-    
+    # Load from DB for Raw Data & Existing Annotation
     existing_ann = None
     doc = store.get_rally(event_id)
+    
+    # Default Raw Bars (Fallback from Assembler - carefully, might be revised!)
+    bars_to_peak = current_rally.bars_to_peak 
+    
     if doc:
+        # 1. Get RAW bars_to_peak (Original Duration) - Critical for Chart/Input Range
+        raw = doc.get('raw_data', {}) or {}
+        if 'bars_to_peak' in raw:
+             bars_to_peak = int(raw['bars_to_peak'])
+
+        # 2. Get Existing Annotation
         rev_data = doc.get('rev_data', {}) or {}
         if rev_data.get('status'): # If status exists, it's effectively an annotation
             existing_ann = SniperAnnotation(
@@ -376,8 +399,10 @@ def render_ony_studio():
     
     # --- COMPACT CONTROL BAR ---
     
-    # Row 1: Entry Label + Entry Input | Exit Label + Exit Input | KAYDET | ORJ
-    lbl1, inp1, lbl2, inp2, btn1, btn2 = st.columns([0.5, 1, 0.5, 1, 1.2, 0.8])
+    # --- COMPACT CONTROL BAR ---
+    
+    # Row 1: Entry Label + Entry Input | Exit Label + Exit Input | KAYDET | SONRAKİ | ORJ
+    lbl1, inp1, lbl2, inp2, btn1, btn2, btn3 = st.columns([0.5, 1, 0.5, 1, 1.2, 1.2, 0.8])
     
     with lbl1:
         st.markdown("**Giriş**")
@@ -385,11 +410,11 @@ def render_ony_studio():
     with inp1:
         default_entry = existing_ann.entry_bar_offset if existing_ann else 0
         max_entry = bars_to_peak + 50
-        safe_entry = min(max(default_entry, -50), max_entry)  # Clamp to valid range
+        safe_entry = min(max(default_entry, -50), max_entry)
         
         entry_offset = st.number_input(
             "Giriş",
-            min_value=-50,  # Negatif değer izni (±)
+            min_value=-50,
             max_value=max_entry,
             value=safe_entry,
             step=1,
@@ -401,48 +426,89 @@ def render_ony_studio():
         st.markdown("**Çıkış**")
     
     with inp2:
-        default_exit = existing_ann.exit_bar_offset if existing_ann and existing_ann.exit_bar_offset else bars_to_peak
+        default_exit = existing_ann.exit_bar_offset if existing_ann and existing_ann.exit_bar_offset is not None else bars_to_peak
+        
+        # Clamp Logic
+        min_exit = int(entry_offset) + 1
+        max_exit = bars_to_peak + 100
+        
+        # Ensure value is valid
+        safe_value = max(default_exit, min_exit)
+        safe_value = min(safe_value, max_exit)
+        
         exit_offset = st.number_input(
             "Çıkış",
-            min_value=entry_offset + 1,
-            max_value=bars_to_peak + 100,
-            value=default_exit,
+            min_value=min_exit,
+            max_value=max_exit,
+            value=safe_value,
             step=1,
             key="ony_exit_offset",
             label_visibility="collapsed"
         )
     
-    note = ""  # Sabit boş not
+    # Navigation Helper
+    # Navigation Helper
+    def advance_to_next():
+        # Increment counter to force widget refresh
+        if '_ony_select_counter' not in st.session_state:
+            st.session_state['_ony_select_counter'] = 0
+        st.session_state['_ony_select_counter'] += 1
+
+        current_idx = filtered_rallies.index(current_rally) if current_rally in filtered_rallies else -1
+        if current_idx < len(filtered_rallies) - 1:
+            # Next Rally in same list
+            next_rally = filtered_rallies[current_idx + 1]
+            st.session_state['_pending_ony_prefill_id'] = next_rally.event_id
+        else:
+            # Next Coin
+            all_syms = _get_available_symbols()
+            if symbol in all_syms:
+                curr_sym_idx = all_syms.index(symbol)
+                if curr_sym_idx < len(all_syms) - 1:
+                    next_sym = all_syms[curr_sym_idx + 1]
+                    st.session_state['_pending_ony_symbol'] = next_sym
+                    st.toast(f"Sonraki coin'e geçiliyor: {next_sym}")
+                else:
+                    st.success("Tüm coinler tamamlandı!")
     
     with btn1:
         if st.button("💾 KAYDET", type="primary", use_container_width=True):
-            # Calculate Rev Gain
+            # Calculate Rev Gain & Save Logic (Same as before)
             rev_gain = None
             try:
                 df = load_history_data(symbol, timeframe)
                 if df is not None:
+                    # Robust Index Finding (Dynamic)
+                    if df['open_time'].dtype == object: df['open_time'] = pd.to_datetime(df['open_time'])
+                    target_ts = pd.to_datetime(event_time)
+                    if target_ts.tzinfo: target_ts = target_ts.tz_localize(None)
+                    
+                    df_times = df['open_time']
+                    if df_times.dt.tz is not None: df_times = df_times.dt.tz_localize(None)
+                    
+                    time_diff = (df_times - target_ts).abs()
+                    start_pos = int(time_diff.argmin()) # Dynamic Index
+                    
                     curr_doc = store.get_rally(event_id)
                     raw = curr_doc.get('raw_data', {}) or {}
-                    event_idx = raw.get('event_index')
-                    raw_bars = raw.get('bars_to_peak', 0)
+                    raw_bars = int(raw.get('bars_to_peak', 0))
                     dip_price = raw.get('dip_price')
                     
-                    if event_idx is not None:
-                        start_pos = int(event_idx)
-                        entry_pos = min(start_pos + entry_offset, len(df)-1)
-                        if entry_offset == 0 and dip_price is not None:
-                            p_entry = float(dip_price)
-                        else:
-                            p_entry = df.iloc[entry_pos]['low']
-                        
-                        if exit_offset is not None and exit_offset > 0:
-                            exit_pos = min(start_pos + exit_offset, len(df)-1)
-                        else:
-                            exit_pos = min(start_pos + raw_bars, len(df)-1)
-                        
-                        p_exit = df.iloc[exit_pos]['high']
-                        if p_entry > 0:
-                            rev_gain = (p_exit - p_entry) / p_entry
+                    entry_pos = min(start_pos + entry_offset, len(df)-1)
+                    if entry_offset == 0 and dip_price is not None:
+                        p_entry = float(dip_price)
+                    else:
+                        p_entry = df.iloc[entry_pos]['low']
+                    
+                    if exit_offset is not None and exit_offset > 0:
+                        exit_pos = min(start_pos + exit_offset, len(df)-1)
+                    else:
+                        exit_pos = min(start_pos + raw_bars, len(df)-1)
+                    
+                    p_exit = df.iloc[exit_pos]['high']
+                    if p_entry > 0:
+                        rev_gain = (p_exit - p_entry) / p_entry
+                        st.toast(f"📐 Yeni Kazanç: %{rev_gain*100:.1f}")
             except Exception as e:
                 print(f"Gain calc error: {e}")
     
@@ -453,7 +519,7 @@ def render_ony_studio():
                     'event_id': event_id,
                     'entry_bar_offset': entry_offset,
                     'exit_bar_offset': exit_offset,
-                    'note': note,
+                    'note': "",
                     'status': "APPROVED",
                     'label': "REV",
                     'rev_gain': rev_gain,
@@ -468,16 +534,24 @@ def render_ony_studio():
             
             if st.session_state.get('came_from_molder'):
                     st.session_state['molder_return_target'] = event_id
-                    
-            st.success(f"✅ Kaydedildi")
+            
+            current_rally.is_revised = True # Update local state immediately
+            st.toast("✅ Kaydedildi")
+            
+            # Auto-Advance
+            advance_to_next()
             st.rerun()
-    
+
     with btn2:
+        if st.button("➡️ SONRAKİ", use_container_width=True):
+            advance_to_next()
+            st.rerun()
+            
+    with btn3:
         if st.button("↩️ ORJ", use_container_width=True, help="Orijinale dön"):
             # Reset to original values
             st.session_state['ony_entry_offset'] = 0
-            st.session_state['ony_exit_enabled'] = False
-            st.session_state['ony_note'] = ""
+            # st.session_state['ony_exit_offset'] = bars_to_peak # Not strictly needed if reloaded
             st.rerun()
 
     # --- CHART ---
@@ -525,31 +599,36 @@ def render_ony_studio():
                 try:
                     df = load_history_data(symbol, timeframe)
                     if df is not None:
-                        # raw_data'dan event_index al (doğrudan iloc için kullan)
+                        # Robust Index Finding (Dynamic)
+                        if df['open_time'].dtype == object: df['open_time'] = pd.to_datetime(df['open_time'])
+                        target_ts = pd.to_datetime(event_time)
+                        if target_ts.tzinfo: target_ts = target_ts.tz_localize(None)
+                        
+                        df_times = df['open_time']
+                        if df_times.dt.tz is not None: df_times = df_times.dt.tz_localize(None)
+                        
+                        time_diff = (df_times - target_ts).abs()
+                        start_pos = int(time_diff.argmin()) # Dynamic Index
+                        
                         curr_doc = store.get_rally(event_id)
                         raw = curr_doc.get('raw_data', {}) or {}
-                        event_idx = raw.get('event_index')
-                        raw_bars = raw.get('bars_to_peak', 0)
+                        raw_bars = int(raw.get('bars_to_peak', 0))
                         dip_price = raw.get('dip_price')
+                            
+                        entry_pos = min(start_pos + nr['entry_offset_out'], len(df)-1)
+                        if nr['entry_offset_out'] == 0 and dip_price is not None:
+                            p_entry = float(dip_price)
+                        else:
+                            p_entry = df.iloc[entry_pos]['low']
                         
-                        if event_idx is not None:
-                            start_pos = int(event_idx)
-                            
-                            entry_pos = min(start_pos + nr['entry_offset_out'], len(df)-1)
-                            # Entry: offset=0 ise dip_price, değilse low kullan
-                            if nr['entry_offset_out'] == 0 and dip_price is not None:
-                                p_entry = float(dip_price)
-                            else:
-                                p_entry = df.iloc[entry_pos]['low']
-                            
-                            if exit_offset is not None and exit_offset > 0:
-                                exit_pos = min(start_pos + exit_offset, len(df)-1)
-                            else:
-                                exit_pos = min(start_pos + raw_bars, len(df)-1)
-                            
-                            p_exit = df.iloc[exit_pos]['high']
-                            if p_entry > 0:
-                                rev_gain = (p_exit - p_entry) / p_entry
+                        if exit_offset is not None and exit_offset > 0:
+                            exit_pos = min(start_pos + exit_offset, len(df)-1)
+                        else:
+                            exit_pos = min(start_pos + raw_bars, len(df)-1)
+                        
+                        p_exit = df.iloc[exit_pos]['high']
+                        if p_entry > 0:
+                            rev_gain = (p_exit - p_entry) / p_entry
                 except Exception as e:
                     print(f"Gain calc error: {e}")
 

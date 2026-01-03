@@ -33,6 +33,12 @@ class BacktestConfig:
     initial_capital: float = 10000.0
     position_size_pct: float = 10.0  # 10% of capital per trade
     
+    # Risk Management (ATR)
+    use_atr_stops: bool = False
+    atr_stop_mult: float = 2.0
+    atr_profit_mult: float = 4.0
+    atr_column: str = 'atr_14'
+
 
 @dataclass
 class Trade:
@@ -46,7 +52,8 @@ class Trade:
     pnl_pct: float
     commission: float
     slippage: float
-    
+    exit_reason: str = "SIGNAL"  # SIGNAL, TIME, STOP_LOSS, TAKE_PROFIT
+
 
 @dataclass
 class BacktestResult:
@@ -69,6 +76,9 @@ class BacktestResult:
     trades: List[Trade]
     equity_curve: pd.Series
     
+    # Exit Stats
+    exit_reasons: Dict[str, int]
+
 
 class BacktestEngine:
     """
@@ -114,7 +124,8 @@ class BacktestEngine:
         entry_time: pd.Timestamp,
         exit_price: float,
         exit_time: pd.Timestamp,
-        capital: float
+        capital: float,
+        exit_reason: str = "SIGNAL"
     ) -> Trade:
         """
         Simulate single trade with realistic costs.
@@ -125,6 +136,7 @@ class BacktestEngine:
             exit_price: Exit price (before slippage)
             exit_time: Exit timestamp
             capital: Available capital
+            exit_reason: Reason for exit
             
         Returns:
             Trade object with realistic PnL
@@ -139,7 +151,7 @@ class BacktestEngine:
         # Position size in coins
         position_size_coins = (position_size_usd - entry_commission) / actual_entry_price
         
-        # Exit with slippage
+        # Exit with slippage (Conditional: Limit orders like TP don't have slippage usually, but Stops do. Keeping simple for now.)
         actual_exit_price = self.apply_slippage(exit_price, 'sell')
         exit_value = position_size_coins * actual_exit_price
         exit_commission = self.calculate_commission(exit_value)
@@ -164,7 +176,8 @@ class BacktestEngine:
             pnl=net_pnl,
             pnl_pct=pnl_pct,
             commission=entry_commission + exit_commission,
-            slippage=slippage_cost
+            slippage=slippage_cost,
+            exit_reason=exit_reason
         )
     
     def run_backtest(
@@ -177,7 +190,7 @@ class BacktestEngine:
         
         Args:
             signals: DataFrame with 'entry' and 'exit' boolean columns
-            price_data: OHLCV DataFrame
+            price_data: OHLCV DataFrame (must include ATR column if use_atr_stops is True)
             
         Returns:
             BacktestResult with statistics
@@ -187,39 +200,90 @@ class BacktestEngine:
         logger.info(f"Slippage: {self.config.slippage_pct}%")
         logger.info(f"Commission: {self.config.commission_pct}%")
         
+        if self.config.use_atr_stops:
+            logger.info(f"Risk Management: ATR Stops Enabled (Stop={self.config.atr_stop_mult}x, Profit={self.config.atr_profit_mult}x)")
+            if self.config.atr_column not in price_data.columns:
+                logger.warning(f"ATR column '{self.config.atr_column}' not found in price data! Disabling ATR stops.")
+                self.config.use_atr_stops = False
+        
         capital = self.config.initial_capital
         equity = [capital]
         trades = []
         
         in_position = False
         entry_idx = None
+        entry_price = 0.0
+        
+        # Dynamic Exit Levels
+        stop_loss_price = 0.0
+        take_profit_price = 0.0
         
         for i in range(len(signals)):
+            current_idx = signals.index[i]
+            
+            # --- CHECK EXITS (If in position) ---
+            if in_position:
+                # 1. Check Stop Loss / Take Profit
+                current_low = price_data.iloc[i]['low']
+                current_high = price_data.iloc[i]['high']
+                current_time = price_data.index[i]
+                
+                exit_triggered = False
+                exit_reason = "SIGNAL"
+                exec_price = 0.0
+                
+                if self.config.use_atr_stops:
+                    if current_low <= stop_loss_price:
+                        # STOP LOSS HIT
+                        exit_triggered = True
+                        exit_reason = "STOP_LOSS"
+                        exec_price = stop_loss_price # Assume filled at stop price (slippage applied later)
+                        
+                    elif current_high >= take_profit_price:
+                        # TAKE PROFIT HIT
+                        exit_triggered = True
+                        exit_reason = "TAKE_PROFIT"
+                        exec_price = take_profit_price
+                
+                # 2. Check Time Exit / Signal Exit (if SL/TP not hit)
+                if not exit_triggered and signals.iloc[i]['exit']:
+                     exit_triggered = True
+                     exit_reason = "TIME_EXIT" # Usually time-based in this system
+                     exec_price = price_data.iloc[i]['close']
+                
+                if exit_triggered:
+                    # Execute Exit
+                    entry_time_ts = price_data.index[entry_idx]
+                    
+                    trade = self.simulate_trade(
+                        entry_price, entry_time_ts,
+                        exec_price, current_time,
+                        capital,
+                        exit_reason
+                    )
+                    
+                    trades.append(trade)
+                    capital += trade.pnl
+                    equity.append(capital)
+                    
+                    in_position = False
+                    continue # Skip entry logic this bar
+            
+            # --- CHECK ENTRY (If not in position) ---
             if signals.iloc[i]['entry'] and not in_position:
                 # Enter position
                 entry_idx = i
                 in_position = True
+                entry_price = price_data.iloc[i]['close']
                 
-            elif signals.iloc[i]['exit'] and in_position:
-                # Exit position
-                entry_time = price_data.index[entry_idx]
-                entry_price = price_data.iloc[entry_idx]['close']
-                
-                exit_time = price_data.index[i]
-                exit_price = price_data.iloc[i]['close']
-                
-                # Simulate trade
-                trade = self.simulate_trade(
-                    entry_price, entry_time,
-                    exit_price, exit_time,
-                    capital
-                )
-                
-                trades.append(trade)
-                capital += trade.pnl
-                equity.append(capital)
-                
-                in_position = False
+                # Set Risk Levels
+                if self.config.use_atr_stops:
+                    atr_val = price_data.iloc[i][self.config.atr_column]
+                    if pd.isna(atr_val): 
+                        atr_val = 0 # Safety
+                        
+                    stop_loss_price = entry_price - (atr_val * self.config.atr_stop_mult)
+                    take_profit_price = entry_price + (atr_val * self.config.atr_profit_mult)
         
         # Calculate statistics
         if len(trades) == 0:
@@ -228,7 +292,8 @@ class BacktestEngine:
                 total_trades=0, winning_trades=0, losing_trades=0, win_rate=0.0,
                 total_pnl=0.0, avg_win=0.0, avg_loss=0.0, profit_factor=0.0,
                 max_drawdown=0.0, max_drawdown_pct=0.0, sharpe_ratio=0.0,
-                trades=[], equity_curve=pd.Series(equity)
+                trades=[], equity_curve=pd.Series(equity),
+                exit_reasons={}
             )
         
         winning_trades = [t for t in trades if t.pnl > 0]
@@ -248,12 +313,18 @@ class BacktestEngine:
         running_max = equity_series.expanding().max()
         drawdown = running_max - equity_series
         max_drawdown = drawdown.max()
-        max_drawdown_pct = (max_drawdown / running_max[drawdown.idxmax()]) * 100
+        max_drawdown_pct = (max_drawdown / running_max[drawdown.idxmax()]) * 100 if not drawdown.empty and drawdown.idxmax() in running_max else 0.0
+
         
         # Sharpe Ratio (simplified)
         returns = equity_series.pct_change().dropna()
         sharpe_ratio = (returns.mean() / returns.std()) * np.sqrt(252) if len(returns) > 1 else 0
         
+        # Exit Reasons Count
+        exit_reasons = {}
+        for t in trades:
+            exit_reasons[t.exit_reason] = exit_reasons.get(t.exit_reason, 0) + 1
+            
         result = BacktestResult(
             total_trades=len(trades),
             winning_trades=len(winning_trades),
@@ -267,17 +338,18 @@ class BacktestEngine:
             max_drawdown_pct=max_drawdown_pct,
             sharpe_ratio=sharpe_ratio,
             trades=trades,
-            equity_curve=equity_series
+            equity_curve=equity_series,
+            exit_reasons=exit_reasons
         )
         
         logger.info("\n" + "=" * 70)
-        logger.info("BACKTEST RESULTS")
+        logger.info("BACKTEST RESULTS (RISK MANAGED)")
         logger.info("=" * 70)
         logger.info(f"Total Trades: {result.total_trades}")
         logger.info(f"Win Rate: {result.win_rate:.2f}%")
         logger.info(f"Total PnL: ${result.total_pnl:,.2f}")
         logger.info(f"Profit Factor: {result.profit_factor:.2f}")
         logger.info(f"Max Drawdown: ${result.max_drawdown:,.2f} ({result.max_drawdown_pct:.2f}%)")
-        logger.info(f"Sharpe Ratio: {result.sharpe_ratio:.2f}")
+        logger.info(f"Exits: {result.exit_reasons}")
         
         return result

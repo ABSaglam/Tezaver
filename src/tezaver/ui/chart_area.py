@@ -1975,10 +1975,10 @@ def render_sniper_studio_chart(
         # Start: Entry Offset (default 0)
         # End: Exit Offset if exists, else Bars To Peak
         
-        idx_start = min(len(df)-1, max(0, event_idx + entry_offset))
+        idx_start = int(min(len(df)-1, max(0, event_idx + entry_offset)))
         
         eff_exit_offset = exit_offset if exit_offset is not None else bars_to_peak
-        idx_end = min(len(df)-1, max(0, event_idx + eff_exit_offset))
+        idx_end = int(min(len(df)-1, max(0, event_idx + eff_exit_offset)))
         
         # Only draw if we have a valid range (and not just a single point unless huge zoom)
         if idx_end > idx_start:
