@@ -640,6 +640,7 @@ def main():
                 "🔍 Detay",
                 "🎯 Revize",
                 "📐 Kalıpçı",
+                "💥 SuperNova",
                 "🧪 Simyacı",
                 "🏭 Dökümhane",
                 "⚙️ Sistem Paneli"
@@ -686,6 +687,10 @@ def main():
                         del sys.modules['tezaver.ui.molder_tab']
                     import tezaver.ui.molder_tab
                     tezaver.ui.molder_tab.render_molder_page()
+        elif current_nav == "💥 SuperNova":
+            import tezaver.ui.supernova_tab
+            importlib.reload(tezaver.ui.supernova_tab)
+            tezaver.ui.supernova_tab.render_supernova_page()
         elif current_nav == "🧪 Simyacı":
             import tezaver.ui.alchemist_tab
             importlib.reload(tezaver.ui.alchemist_tab)

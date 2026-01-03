@@ -94,6 +94,7 @@ UI_LOGO_HEIGHT_PX = int(os.getenv('UI_LOGO_HEIGHT_PX', '80'))
 
 # --- Coin & Timeframe Settings ---
 DEFAULT_COINS: List[str] = [
+    # === MAJÖRLER (Mevcut 20) ===
     "BTCUSDT",
     "ETHUSDT",
     "BNBUSDT",
@@ -114,7 +115,40 @@ DEFAULT_COINS: List[str] = [
     "OPUSDT",
     "INJUSDT",
     "SUIUSDT",
+    # === SUPERNOVA ADAYLARI (Yeni 30) ===
+    # Yüksek volatilite + Yeterli likidite
+    "1000PEPEUSDT",   # Meme - Çok volatil
+    "WIFUSDT",        # Meme - Yüksek hacim
+    "FETUSDT",        # AI - Volatil
+    "TAOUSDT",        # AI - Büyük dalgalanmalar
+    "RENDERUSDT",     # AI/GPU - Trend
+    "WLDUSDT",        # AI - Yüksek volatilite
+    "TONUSDT",        # L1 - Yüksek hacim
+    "SEIUSDT",        # L1 - Hızlı hareket
+    "TIAUSDT",        # Modüler - Volatil
+    "JUPUSDT",        # DeFi Solana - Aktif
+    "PENDLEUSDT",     # DeFi - Yield
+    "ONDOUSDT",       # RWA - Trending
+    "STRKUSDT",       # L2 ZK - Volatil
+    "BLURUSDT",       # NFT - Dalgalı
+    "ARKMUSDT",       # AI - Yeni
+    "ORDIUSDT",       # BTC Ecosystem
+    "ENSUSDT",        # Domains - Volatil
+    "AAVEUSDT",       # DeFi Blue Chip
+    "MKRUSDT",        # DeFi - Büyük hamleler
+    "LDOUSDT",        # Liquid Staking
+    "FILUSDT",        # Storage - Volatil
+    "GRTUSDT",        # Indexing
+    "ALGOUSDT",       # L1
+    "SANDUSDT",       # Metaverse
+    "MANAUSDT",       # Metaverse
+    "AXSUSDT",        # Gaming
+    "GALAUSDT",       # Gaming
+    "IMXUSDT",        # Gaming L2
+    "FTMUSDT",        # L1 - Çok volatil
+    "DYDXUSDT",       # DeFi Perp
 ]
+
 
 DEFAULT_HISTORY_TIMEFRAMES: List[str] = ["15m", "1h", "4h", "1d", "1w"]
 DEFAULT_FEATURE_TIMEFRAMES: List[str] = DEFAULT_HISTORY_TIMEFRAMES
