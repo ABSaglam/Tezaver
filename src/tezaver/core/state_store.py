@@ -3,14 +3,10 @@ from pathlib import Path
 from typing import List, Optional
 from datetime import datetime
 from .models import CoinState, DataState
+from .config import DEFAULT_COINS  # Single source of truth
 
 DATA_FILE_NAME = "coin_state.json"
-DEFAULT_COINS = [
-    "BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT",
-    "ADAUSDT", "DOGEUSDT", "AVAXUSDT", "DOTUSDT", "POLUSDT",
-    "LINKUSDT", "ATOMUSDT", "LTCUSDT", "UNIUSDT", "NEARUSDT",
-    "APTUSDT", "ARBUSDT", "OPUSDT", "INJUSDT", "SUIUSDT"
-]
+
 
 def get_data_dir() -> Path:
     """
