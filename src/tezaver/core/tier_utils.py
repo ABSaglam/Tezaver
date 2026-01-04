@@ -8,7 +8,7 @@ import pandas as pd
 from tezaver.rally.rally_grade_cards import compute_tier_from_gain_pct
 
 # Tier constants
-TIERS = ["DIAMOND", "GOLD", "SILVER", "BRONZE"]
+TIERS = ["DIAMOND", "GOLD", "SILVER", "BRONZE", "IRON"]
 
 def normalize_tier(value: Any) -> Optional[str]:
     """
@@ -40,6 +40,10 @@ def normalize_tier(value: Any) -> Optional[str]:
     # Bronze variants
     if s in ["BRONZE", "BRZ", "🥉"]:
         return "BRONZE"
+    
+    # Iron variants
+    if s in ["IRON", "IRN", "DEMIR", "🔩"]:
+        return "IRON"
     
     return None
 

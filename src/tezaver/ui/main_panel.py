@@ -637,6 +637,7 @@ def main():
             
             nav_options = [
                 "👁️ Insight Panel", 
+
                 "🔍 Detay",
                 "🎯 Revize",
                 "📐 Kalıpçı",
@@ -674,6 +675,7 @@ def main():
              render_coin_detail_page(sym)
              
         elif current_nav == "👁️ Insight Panel": render_insight_tab()
+
         elif current_nav == "🎯 Revize": render_ony_page()
         elif current_nav == "📐 Kalıpçı":
                 try:

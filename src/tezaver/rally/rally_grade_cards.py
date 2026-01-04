@@ -19,7 +19,9 @@ GRADE_THRESHOLDS = {
     "Gold": 0.20,     # 20%+
     "Silver": 0.10,   # 10%+
     "Bronze": 0.05,   # 5%+
+    "Iron":   0.00,   # 0%+ (0-5%)
 }
+
 
 MIN_SAMPLE_PER_GRADE = 3  # 3'ten az ise "yetersiz örnek" say
 
@@ -42,7 +44,8 @@ def compute_tier_from_gain_pct(gain_pct: float) -> Optional[str]:
         - GOLD:    >= 20%
         - SILVER:  >= 10%
         - BRONZE:  >= 5%
-        - None:    < 5% (excluded from all tiers)
+        - IRON:    >= 0% (0-5%)
+        - None:    < 0% (excluded)
     """
     if pd.isna(gain_pct) or gain_pct is None:
         return None
@@ -55,8 +58,10 @@ def compute_tier_from_gain_pct(gain_pct: float) -> Optional[str]:
         return "SILVER"
     elif gain_pct >= GRADE_THRESHOLDS["Bronze"]:
         return "BRONZE"
+    elif gain_pct >= GRADE_THRESHOLDS["Iron"]:
+        return "IRON"
     else:
-        return None  # Too low, exclude from all tiers
+        return None  # Too low (< 0%), exclude
 
 
 
