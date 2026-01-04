@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
+  <defs>
+    <!-- LIVE: Turquoise gradient for hexagon stroke (animated shimmer) -->
+    <linearGradient id="icon_grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00E5FF;stop-opacity:1">
+        <animate attributeName="stop-color" values="#00E5FF;#00BCD4;#18FFFF;#00E5FF" dur="3s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="100%" style="stop-color:#00838F;stop-opacity:1">
+        <animate attributeName="stop-color" values="#00838F;#006064;#00ACC1;#00838F" dur="3s" repeatCount="indefinite"/>
+      </stop>
+    </linearGradient>
+    <!-- UNIFIED: Gold gradient for T shape -->
+    <linearGradient id="icon_grad2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD600;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFC107;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    <filter id="turquoise_glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feFlood flood-color="#00E5FF" flood-opacity="0.6" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="colorBlur"/>
+      <feMerge>
+        <feMergeNode in="colorBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <g>
+      <!-- Main Hexagon Frame (Turquoise shimmer) -->
+      <path d="M200 50 L350 125 L350 275 L200 350 L50 275 L50 125 Z" 
+            stroke="url(#icon_grad1)" stroke-width="16" fill="none" filter="url(#turquoise_glow)">
+        <animate attributeName="stroke-width" values="16;18;16" dur="2s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.9;1;0.9" dur="2s" repeatCount="indefinite"/>
+      </path>
+      
+      <!-- Corner Dots (Turquoise pulsing) -->
+      <circle cx="200" cy="50" r="15" fill="#00E5FF" filter="url(#glow)">
+        <animate attributeName="fill" values="#00E5FF;#18FFFF;#00E5FF" dur="1.5s" repeatCount="indefinite" />
+        <animate attributeName="r" values="15;18;15" dur="1.5s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="50" cy="125" r="15" fill="#00E5FF" filter="url(#glow)">
+        <animate attributeName="fill" values="#00E5FF;#18FFFF;#00E5FF" dur="1.5s" begin="0.25s" repeatCount="indefinite" />
+        <animate attributeName="r" values="15;18;15" dur="1.5s" begin="0.25s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="50" cy="275" r="15" fill="#00E5FF" filter="url(#glow)">
+        <animate attributeName="fill" values="#00E5FF;#18FFFF;#00E5FF" dur="1.5s" begin="0.5s" repeatCount="indefinite" />
+        <animate attributeName="r" values="15;18;15" dur="1.5s" begin="0.5s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="200" cy="350" r="15" fill="#00E5FF" filter="url(#glow)">
+        <animate attributeName="fill" values="#00E5FF;#18FFFF;#00E5FF" dur="1.5s" begin="0.75s" repeatCount="indefinite" />
+        <animate attributeName="r" values="15;18;15" dur="1.5s" begin="0.75s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="350" cy="275" r="15" fill="#00E5FF" filter="url(#glow)">
+        <animate attributeName="fill" values="#00E5FF;#18FFFF;#00E5FF" dur="1.5s" begin="1.0s" repeatCount="indefinite" />
+        <animate attributeName="r" values="15;18;15" dur="1.5s" begin="1.0s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="350" cy="125" r="15" fill="#00E5FF" filter="url(#glow)">
+        <animate attributeName="fill" values="#00E5FF;#18FFFF;#00E5FF" dur="1.5s" begin="1.25s" repeatCount="indefinite" />
+        <animate attributeName="r" values="15;18;15" dur="1.5s" begin="1.25s" repeatCount="indefinite" />
+      </circle>
+
+      <!-- Inner T Shape (Gold) -->
+      <path d="M100 120 L300 120 L280 160 L120 160 Z" fill="url(#icon_grad2)" filter="url(#glow)" />
+      <path d="M170 160 L230 160 L220 300 L180 300 Z" fill="url(#icon_grad2)" filter="url(#glow)" />
+      
+      <!-- Center Core Pulse (Turquoise/Gold) -->
+      <circle cx="200" cy="200" r="25" fill="#FFFFFF">
+        <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite" />
+        <animate attributeName="r" values="25;32;25" dur="2s" repeatCount="indefinite" />
+        <animate attributeName="fill" values="#FFFFFF;#00E5FF;#FFD600;#FFFFFF" dur="4s" repeatCount="indefinite" />
+      </circle>
+  </g>
+</svg>
