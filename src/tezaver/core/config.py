@@ -95,58 +95,28 @@ UI_LOGO_HEIGHT_PX = int(os.getenv('UI_LOGO_HEIGHT_PX', '80'))
 # --- Coin & Timeframe Settings ---
 DEFAULT_COINS: List[str] = [
     # === MAJÖRLER (Mevcut 20) ===
-    "BTCUSDT",
-    "ETHUSDT",
-    "BNBUSDT",
-    "SOLUSDT",
-    "XRPUSDT",
-    "ADAUSDT",
-    "DOGEUSDT",
-    "AVAXUSDT",
-    "DOTUSDT",
-    "POLUSDT",
-    "LINKUSDT",
-    "ATOMUSDT",
-    "LTCUSDT",
-    "UNIUSDT",
-    "NEARUSDT",
-    "APTUSDT",
-    "ARBUSDT",
-    "OPUSDT",
-    "INJUSDT",
-    "SUIUSDT",
-    # === SUPERNOVA ADAYLARI (Yeni 30) ===
-    # Yüksek volatilite + Yeterli likidite
-    "1000PEPEUSDT",   # Meme - Çok volatil
-    "WIFUSDT",        # Meme - Yüksek hacim
-    "FETUSDT",        # AI - Volatil
-    "TAOUSDT",        # AI - Büyük dalgalanmalar
-    "RENDERUSDT",     # AI/GPU - Trend
-    "WLDUSDT",        # AI - Yüksek volatilite
-    "TONUSDT",        # L1 - Yüksek hacim
-    "SEIUSDT",        # L1 - Hızlı hareket
-    "TIAUSDT",        # Modüler - Volatil
-    "JUPUSDT",        # DeFi Solana - Aktif
-    "PENDLEUSDT",     # DeFi - Yield
-    "ONDOUSDT",       # RWA - Trending
-    "STRKUSDT",       # L2 ZK - Volatil
-    "BLURUSDT",       # NFT - Dalgalı
-    "ARKMUSDT",       # AI - Yeni
-    "ORDIUSDT",       # BTC Ecosystem
-    "ENSUSDT",        # Domains - Volatil
-    "AAVEUSDT",       # DeFi Blue Chip
-    "MKRUSDT",        # DeFi - Büyük hamleler
-    "LDOUSDT",        # Liquid Staking
-    "FILUSDT",        # Storage - Volatil
-    "GRTUSDT",        # Indexing
-    "ALGOUSDT",       # L1
-    "SANDUSDT",       # Metaverse
-    "MANAUSDT",       # Metaverse
-    "AXSUSDT",        # Gaming
-    "GALAUSDT",       # Gaming
-    "IMXUSDT",        # Gaming L2
-    "FTMUSDT",        # L1 - Çok volatil
-    "DYDXUSDT",       # DeFi Perp
+    "BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT",
+    "ADAUSDT", "DOGEUSDT", "AVAXUSDT", "DOTUSDT", "POLUSDT",
+    "LINKUSDT", "ATOMUSDT", "LTCUSDT", "UNIUSDT", "NEARUSDT",
+    "APTUSDT", "ARBUSDT", "OPUSDT", "INJUSDT", "SUIUSDT",
+    # === SUPERNOVA ADAYLARI (Mevcut 30) ===
+    "1000PEPEUSDT", "WIFUSDT", "FETUSDT", "TAOUSDT", "RENDERUSDT",
+    "WLDUSDT", "TONUSDT", "SEIUSDT", "TIAUSDT", "JUPUSDT",
+    "PENDLEUSDT", "ONDOUSDT", "STRKUSDT", "BLURUSDT", "ARKMUSDT",
+    "ORDIUSDT", "ENSUSDT", "AAVEUSDT", "MKRUSDT", "LDOUSDT",
+    "FILUSDT", "GRTUSDT", "ALGOUSDT", "SANDUSDT", "MANAUSDT",
+    "AXSUSDT", "GALAUSDT", "IMXUSDT", "FTMUSDT", "DYDXUSDT",
+    # === YENİ EKLEMELER (50 Koin) ===
+    "SHIBUSDT", "TRXUSDT", "BCHUSDT", "ICPUSDT", "STXUSDT",
+    "ETCUSDT", "HBARUSDT", "VETUSDT", "RUNEUSDT", "PYTHUSDT",
+    "FLOKIUSDT", "BONKUSDT", "JASMYUSDT", "ARUSDT", "NOTUSDT",
+    "OMUSDT", "ENAUSDT", "COREUSDT", "BAKEUSDT", "ZKUSDT",
+    "IOUSDT", "ZROUSDT", "LISTAUSDT", "BBUSDT", "TRBUSDT",
+    "EGLDUSDT", "THETAUSDT", "WAVESUSDT", "LUNCUSDT", "LUNAUSDT",
+    "USTCUSDT", "1000SHIBUSDT", "1000BONKUSDT", "1000FLOKIUSDT", "BOMEUSDT",
+    "MEWUSDT", "POPCATUSDT", "DOGSUSDT", "CATIUSDT", "HMSTRUSDT",
+    "NEIROUSDT", "TURBOUSDT", "BIGTIMEUSDT", "PIXELUSDT", "PORTALUSDT",
+    "XAIUSDT", "JITOUSDT", "ACEUSDT", "MANTAUSDT", "ALTUSDT"
 ]
 
 
