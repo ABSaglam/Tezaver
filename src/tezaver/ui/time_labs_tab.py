@@ -155,11 +155,62 @@ def render_time_labs_tab(symbol: str, timeframe: str):
     
     if events_df is None:
         st.info(f"Bu coin için '{timeframe}' zaman diliminde henüz Time-Labs rallisi bulunamadı.")
+        
+        # Manual Scan Button
+        btn_label = f"🚀 {timeframe} Taramasını Başlat"
+        if st.button(btn_label, use_container_width=True, type="primary"):
+            import subprocess
+            import sys
+            
+            with st.status(f"⚙️ {symbol} {timeframe} Taraması Yapılıyor...", expanded=True) as status:
+                st.write("🔄 Script hazırlanıyor...")
+                
+                # Command Mapping
+                if timeframe == "15m":
+                    cmd = [sys.executable, "src/tezaver/rally/run_fast15_rally_scan.py", "--symbol", symbol]
+                else:
+                    cmd = [sys.executable, "src/tezaver/rally/run_time_labs_scan.py", "--tf", timeframe, "--symbol", symbol]
+                
+                try:
+                    # Run subprocess and stream output
+                    st.write(f"🏃 Çalıştırılıyor: `{' '.join(cmd)}`")
+                    process = subprocess.Popen(
+                        cmd,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT,
+                        text=True,
+                        bufsize=1
+                    )
+                    
+                    # Log collector
+                    log_container = st.empty()
+                    full_log = ""
+                    
+                    for line in process.stdout:
+                        full_log += line
+                        # Show last 5 lines for feedback
+                        snippet = "\n".join(full_log.splitlines()[-5:])
+                        log_container.code(snippet)
+                        
+                    process.wait()
+                    
+                    if process.returncode == 0:
+                        status.update(label=f"✅ {timeframe} Taraması Başarıyla Tamamlandı!", state="complete", expanded=False)
+                        st.success("Veriler güncellendi, sayfa yenileniyor...")
+                        st.rerun()
+                    else:
+                        status.update(label="❌ Tarama Başarısız!", state="error", expanded=True)
+                        st.error(f"Hata Kodu: {process.returncode}")
+                
+                except Exception as e:
+                    status.update(label="❌ Sistem Hatası!", state="error")
+                    st.error(f"Beklenmedik hata: {e}")
+        
+        st.markdown("---")
+        st.markdown(f"**Veya terminal üzerinden çalıştırın:**")
         if timeframe == "15m":
-             st.markdown(f"**Taramayı çalıştırmak için:**")
              st.code(f"python src/tezaver/rally/run_fast15_rally_scan.py --symbol {symbol}", language="bash")
         else:
-            st.markdown(f"**Taramayı çalıştırmak için:**")
             st.code(f"python src/tezaver/rally/run_time_labs_scan.py --tf {timeframe} --symbol {symbol}", language="bash")
         return
     
@@ -444,7 +495,7 @@ def render_time_labs_tab(symbol: str, timeframe: str):
                 st.warning("⚠️ **HAM VERİ**")
         
         with h_c2:
-            if st.button("🛠️ Değiştir / Revize Et", help="ONY Stüdyosunda aç", key=f"jmp_{symbol}_{scanner_ts_sec}"):
+            if st.button("🛠️ Değiştir / Revize Et", help="ONY Stüdyosunda aç", key=f"jmp_{symbol}_{timeframe}_{scanner_ts_sec}"):
                 # Redirect Logic
                 st.session_state['nav_selection'] = "🎯 Revize"
                 

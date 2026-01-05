@@ -347,28 +347,33 @@ def render_main_price_chart(symbol: str):
 from tezaver.ui.time_labs_tab import render_time_labs_tab
 
 def render_coin_detail_page(symbol: str):
-    # COIN SELECTOR (NEW)
-    states = state_store.load_coin_states()
-    if states:
-        all_syms = [s.symbol for s in states]
-        if symbol in all_syms:
-            curr_idx = all_syms.index(symbol)
-        else:
-            curr_idx = 0
-            
-        c_sel, c_space = st.columns([1, 4])
-        with c_sel:
-            new_sym = st.selectbox(
-                "Coin Değiştir", 
-                all_syms, 
-                index=curr_idx, 
-                key="detail_page_coin_selector",
-                label_visibility="collapsed"
-            )
-            
-        if new_sym != symbol:
-            st.session_state['selected_coin'] = new_sym
-            st.rerun()
+    # COIN SELECTOR - Ensure fresh config and full list
+    import tezaver.core.config as cfg
+    import importlib
+    importlib.reload(cfg)
+    all_syms = cfg.DEFAULT_COINS
+    
+    st.markdown(f"**Toplam Coin Sayısı:** {len(all_syms)}")
+    
+    if symbol in all_syms:
+        curr_idx = all_syms.index(symbol)
+    else:
+        curr_idx = 0
+        symbol = all_syms[0]
+        
+    c_sel, c_space = st.columns([1, 4])
+    with c_sel:
+        new_sym = st.selectbox(
+            "Coin Değiştir", 
+            all_syms, 
+            index=curr_idx, 
+            key="detail_page_coin_selector",
+            label_visibility="collapsed"
+        )
+        
+    if new_sym != symbol:
+        st.session_state['selected_coin'] = new_sym
+        st.rerun()
 
     # HEADER
     render_coin_header(symbol)
