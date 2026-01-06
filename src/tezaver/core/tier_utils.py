@@ -10,6 +10,15 @@ from tezaver.rally.rally_grade_cards import compute_tier_from_gain_pct
 # Tier constants
 TIERS = ["DIAMOND", "GOLD", "SILVER", "BRONZE", "IRON"]
 
+# Rally bucket to tier mapping
+BUCKET_TO_TIER = {
+    '30p_plus': 'DIAMOND',
+    '20p_30p': 'GOLD',
+    '10p_20p': 'SILVER',
+    '5p_10p': 'BRONZE',
+    '0p_5p': 'IRON',
+}
+
 def normalize_tier(value: Any) -> Optional[str]:
     """
     Normalize tier/grade string to standard tier name.

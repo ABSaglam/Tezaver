@@ -234,7 +234,8 @@ def render_ony_studio():
     c_sym, c_tf, c_tier = st.columns([1, 1, 3])
     
     with c_sym:
-        symbols = _get_available_symbols()
+        raw_symbols = _get_available_symbols()
+        symbols = ["TÜMÜ"] + raw_symbols
         # Default Logic: Check Session State first
         sess_sym = st.session_state.get('ony_symbol')
         if sess_sym and sess_sym in symbols:

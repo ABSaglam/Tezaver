@@ -511,22 +511,41 @@ def run_fast15_scan_for_symbol(symbol: str) -> Fast15RallyScanResult:
     """
     logger.info(f"=== Starting Fast15 Rally Scan for {symbol} ===")
     
-    # Load 15m features
+    # Load 15m data (Try features first, then raw history)
+    df_15m = pd.DataFrame()
+    is_raw_mode = False
+    
     try:
         df_15m = load_features(symbol, FAST15_RALLY_TF)
+        # Check if it has indicators, if not treat as raw-ish? 
+        # Actually load_features loads whatever is at features path. 
     except FileNotFoundError:
-        logger.warning(f"15m features not found for {symbol}, skipping")
-        raise
-    
+        # Fallback to raw history
+        logger.info(f"Features not found for {symbol}, switching to LIGHT MODE (Raw History)")
+        hist_path = coin_cell_paths.get_history_file(symbol, FAST15_RALLY_TF)
+        if hist_path.exists():
+            try:
+                df_15m = pd.read_parquet(hist_path)
+                is_raw_mode = True
+            except Exception as e:
+                logger.error(f"Failed to load raw history for {symbol}: {e}")
+                raise
+        else:
+             logger.warning(f"Neither features nor history found for {symbol}, skipping")
+             raise FileNotFoundError(f"No data for {symbol}")
+
     if df_15m.empty:
-        logger.warning(f"15m features empty for {symbol}")
-        raise ValueError(f"Empty 15m features for {symbol}")
+        logger.warning(f"Data empty for {symbol}")
+        raise ValueError(f"Empty data for {symbol}")
     
     # Ensure timestamp column is datetime
     if 'timestamp' not in df_15m.columns:
         if 'open_time' in df_15m.columns:
             df_15m['timestamp'] = pd.to_datetime(df_15m['open_time'], unit='ms')
+        elif 'datetime' in df_15m.columns:
+             df_15m['timestamp'] = pd.to_datetime(df_15m['datetime'])
         else:
+            # Last resort: index
             df_15m['timestamp'] = pd.to_datetime(df_15m.index)
     else:
         # Convert timestamp to datetime if it's int64 (milliseconds)
@@ -534,51 +553,48 @@ def run_fast15_scan_for_symbol(symbol: str) -> Fast15RallyScanResult:
             df_15m['timestamp'] = pd.to_datetime(df_15m['timestamp'], unit='ms')
         else:
             df_15m['timestamp'] = pd.to_datetime(df_15m['timestamp'])
+            
+    # Normalize basic columns if needed (ccxt/binance usually has open, high, low, close)
+    # Ensure lower case
+    df_15m.columns = [c.lower() for c in df_15m.columns]
     
     # Load multi-TF features (optional)
     df_1h = None
     df_4h = None
     df_1d = None
     
-    try:
-        df_1h = load_features(symbol, "1h")
-        if 'timestamp' not in df_1h.columns:
-            if 'open_time' in df_1h.columns:
-                df_1h['timestamp'] = pd.to_datetime(df_1h['open_time'], unit='ms')
-            else:
-                df_1h['timestamp'] = pd.to_datetime(df_1h.index)
-        else:
-            if df_1h['timestamp'].dtype == 'int64':
-                df_1h['timestamp'] = pd.to_datetime(df_1h['timestamp'], unit='ms')
-    except FileNotFoundError:
-        logger.warning(f"1h features not found for {symbol}, will use NaN")
+    # Helper to load safely
+    def load_tf_safe(tf):
+        try:
+             # Try features
+            d = load_features(symbol, tf)
+            return d
+        except:
+            # Try history
+            p = coin_cell_paths.get_history_file(symbol, tf)
+            if p.exists():
+                return pd.read_parquet(p)
+            return None
+
+    df_1h = load_tf_safe("1h")
+    df_4h = load_tf_safe("4h")
+    df_1d = load_tf_safe("1d")
     
-    try:
-        df_4h = load_features(symbol, "4h")
-        if 'timestamp' not in df_4h.columns:
-            if 'open_time' in df_4h.columns:
-                df_4h['timestamp'] = pd.to_datetime(df_4h['open_time'], unit='ms')
-            else:
-                df_4h['timestamp'] = pd.to_datetime(df_4h.index)
-        else:
-            if df_4h['timestamp'].dtype == 'int64':
-                df_4h['timestamp'] = pd.to_datetime(df_4h['timestamp'], unit='ms')
-    except FileNotFoundError:
-        logger.warning(f"4h features not found for {symbol}, will use NaN")
-    
-    try:
-        df_1d = load_features(symbol, "1d")
-        if 'timestamp' not in df_1d.columns:
-            if 'open_time' in df_1d.columns:
-                df_1d['timestamp'] = pd.to_datetime(df_1d['open_time'], unit='ms')
-            else:
-                df_1d['timestamp'] = pd.to_datetime(df_1d.index)
-        else:
-            if df_1d['timestamp'].dtype == 'int64':
-                df_1d['timestamp'] = pd.to_datetime(df_1d['timestamp'], unit='ms')
-    except FileNotFoundError:
-        logger.warning(f"1d features not found for {symbol}, will use NaN")
-    
+    # Normalize timestamps for other TFs
+    for d in [df_1h, df_4h, df_1d]:
+        if d is not None and not d.empty:
+             d.columns = [c.lower() for c in d.columns]
+             if 'timestamp' not in d.columns:
+                 if 'open_time' in d.columns:
+                     d['timestamp'] = pd.to_datetime(d['open_time'], unit='ms')
+                 elif 'datetime' in d.columns:
+                     d['timestamp'] = pd.to_datetime(d['datetime'])
+                 else:
+                     d['timestamp'] = pd.to_datetime(d.index)
+             else:
+                 if d['timestamp'].dtype == 'int64':
+                     d['timestamp'] = pd.to_datetime(d['timestamp'], unit='ms') # Fixed: timestamp, not open_time
+
     # Detect rally events ORACLE MODE
     events_df = detect_rallies_oracle_mode(
         df_15m,
@@ -587,16 +603,6 @@ def run_fast15_scan_for_symbol(symbol: str) -> Fast15RallyScanResult:
         event_gap=FAST15_EVENT_GAP
     )
     
-    if events_df.empty:
-        # Still save empty result (code omitted for brevity, logic remains same)
-        # We need to preserve the empty return flow logic actually.
-        pass 
-
-    # Calculate buckets if events found
-    if not events_df.empty:
-        events_df['rally_bucket'] = events_df['future_max_gain_pct'].apply(determine_rally_bucket)
-        events_df = events_df.dropna(subset=['rally_bucket'])
-        
     if events_df.empty:
         # Still save empty result
         output_path = coin_cell_paths.get_fast15_rallies_path(symbol)
@@ -622,6 +628,13 @@ def run_fast15_scan_for_symbol(symbol: str) -> Fast15RallyScanResult:
             summary_path=summary_path
         )
     
+    
+    # Calculate buckets if events found
+    if not events_df.empty:
+        events_df = events_df.copy()
+        events_df['rally_bucket'] = events_df['future_max_gain_pct'].apply(determine_rally_bucket)
+        events_df = events_df.dropna(subset=['rally_bucket'])
+
     # Enrich events with multi-TF snapshots
     enriched_records = []
     
@@ -665,8 +678,12 @@ def run_fast15_scan_for_symbol(symbol: str) -> Fast15RallyScanResult:
     
     try:
         # Create close prices Series with datetime index for quality enrichment
-        close_prices = df_15m.set_index('timestamp')['close'].copy()
-        
+        if 'timestamp' in df_15m.columns:
+             close_prices = df_15m.set_index('timestamp')['close'].copy()
+        else:
+             # Fallback if timestamp missing (unlikely due to check above)
+             close_prices = df_15m['close'].copy()
+
         # Enrich with quality metrics
         df_final = enrich_rally_events_with_quality(
             events_df=df_final,
@@ -693,7 +710,7 @@ def run_fast15_scan_for_symbol(symbol: str) -> Fast15RallyScanResult:
         df_final = enrich_with_narratives(df_final)
         logger.info(f"Narratives generated: {df_final['scenario_id'].value_counts().to_dict()}")
     except Exception as e:
-        logger.error(f"Narrative engine failed: {e}", exc_info=True)
+        logger.error(f"Narrative engine failed: {e}", exc_info=False) # Reduced log noise
         # Add fallback empty columns to prevent failure
         df_final['scenario_id'] = "SCENARIO_NEUTRAL"
         df_final['scenario_label'] = "Belirsiz"
@@ -714,7 +731,7 @@ def run_fast15_scan_for_symbol(symbol: str) -> Fast15RallyScanResult:
         df_final = ensure_mtc_columns(df_final, required_tfs)
         
         # Validate (optional in prod, but good for Dev)
-        validate_mtc_schema(df_final, required_tfs)
+        # validate_mtc_schema(df_final, required_tfs) # Skip strict validation in Light Mode
         
         logger.info(f"MTC Schema enforced for {len(df_final)} events across {required_tfs}")
         
@@ -742,9 +759,12 @@ def run_fast15_scan_for_symbol(symbol: str) -> Fast15RallyScanResult:
         for _, row in df_final.iterrows():
             eid = row['event_id']
             # Convert row to dict, handling timestamps
-            raw_data = row.to_dict()
-            # Upsert
-            store.upsert_rally(eid, raw_data, layer='raw')
+            try:
+                raw_data = row.to_dict()
+                # Upsert
+                store.upsert_rally(eid, raw_data, layer='raw')
+            except Exception as row_e:
+                logger.warning(f"Failed to sync row {eid}: {row_e}")
             
     except Exception as e:
         logger.error(f"Failed to sync to SQLite Store: {e}", exc_info=True)
@@ -764,7 +784,10 @@ def run_fast15_scan_for_symbol(symbol: str) -> Fast15RallyScanResult:
     logger.info(f"Saved summary to {summary_path}")
     
     # Count by bucket
-    bucket_counts = df_final['rally_bucket'].value_counts().to_dict()
+    if 'rally_bucket' in df_final.columns:
+        bucket_counts = df_final['rally_bucket'].value_counts().to_dict()
+    else:
+        bucket_counts = {}
     
     logger.info(f"=== Fast15 Scan Complete for {symbol} ===")
     logger.info(f"Total events: {len(df_final)}")

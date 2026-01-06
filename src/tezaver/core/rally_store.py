@@ -154,7 +154,7 @@ class RallyStore:
             return self._row_to_dict(row)
         return None
 
-    def list_rallies(self, symbol: str = None, timeframe: str = None, tier: str = None, status: str = None, limit: int = 5000) -> List[Dict[str, Any]]:
+    def list_rallies(self, symbol: str = None, timeframe: str = None, tier: str = None, status: str = None, limit: int = None) -> List[Dict[str, Any]]:
         """Query rallies with filters."""
         conn = self._get_conn()
         conn.row_factory = sqlite3.Row
@@ -182,8 +182,11 @@ class RallyStore:
             query += " AND rev_data LIKE ?"
             params.append(f'%"{status}"%')
             
-        query += " ORDER BY event_time DESC LIMIT ?"
-        params.append(limit)
+        query += " ORDER BY event_time DESC"
+        
+        if limit:
+            query += " LIMIT ?"
+            params.append(limit)
         
         cursor.execute(query, tuple(params))
         rows = cursor.fetchall()

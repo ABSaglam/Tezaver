@@ -42,7 +42,45 @@ def safe_pct(value, decimals: int = 1) -> str:
 
 @st.cache_data(ttl=600)
 def load_time_labs_rallies(symbol: str, timeframe: str) -> Optional[pd.DataFrame]:
-    """Load Time-Labs events parquet."""
+    """
+    Load Time-Labs events from SQLite (primary) with parquet fallback.
+    
+    After migration is complete, parquet fallback can be removed.
+    """
+    # Primary: SQLite
+    try:
+        from tezaver.core.rally_store import RallyStore
+        store = RallyStore()
+        rows = store.list_rallies(symbol=symbol, timeframe=timeframe)
+        
+        if rows:
+            # Convert to DataFrame
+            records = []
+            for row in rows:
+                raw = row.get('raw_data', {}) or {}
+                record = {
+                    'event_id': row['id'],
+                    'symbol': row['symbol'],
+                    'event_time': pd.to_datetime(row['event_time']),
+                    'rally_bucket': raw.get('rally_bucket', 'unknown'),
+                    'future_max_gain_pct': raw.get('future_max_gain_pct', 0),
+                    'bars_to_peak': raw.get('bars_to_peak', 0),
+                }
+                # Add additional raw columns if available
+                for key in ['rsi_15m', 'rsi_ema_15m', 'volume_rel_15m', 'macd_hist_15m', 
+                           'macd_phase_15m', 'atr_pct_15m', 'quality_score', 'rally_shape']:
+                    if key in raw:
+                        record[key] = raw[key]
+                records.append(record)
+            
+            df = pd.DataFrame(records)
+            if not df.empty:
+                logger.debug(f"Loaded {len(df)} rallies from SQLite for {symbol} {timeframe}")
+                return df
+    except Exception as e:
+        logger.debug(f"SQLite load failed for {symbol} {timeframe}: {e}")
+    
+    # Fallback: Parquet (for backward compatibility)
     try:
         if timeframe == "15m":
             path = coin_cell_paths.get_fast15_rallies_path(symbol)
@@ -241,13 +279,25 @@ def render_time_labs_tab(symbol: str, timeframe: str):
         
         # Assign grades FIRST (before building options)
         if 'rally_grade' not in events_df.columns:
-            def get_grade(pct):
-                if pct >= 0.30: return "💎 Diamond"
-                if pct >= 0.20: return "🥇 Gold"
-                if pct >= 0.10: return "🥈 Silver"
-                if pct >= 0.05: return "🥉 Bronze"
+            def get_grade_from_bucket(bucket):
+                """Map rally_bucket to display grade."""
+                if bucket == '30p_plus': return "💎 Diamond"
+                if bucket == '20p_30p': return "🥇 Gold"
+                if bucket == '10p_20p': return "🥈 Silver"
+                if bucket == '5p_10p': return "🥉 Bronze"
                 return "🎗️ Weak"
-            events_df['rally_grade'] = events_df['future_max_gain_pct'].apply(get_grade)
+            
+            if 'rally_bucket' in events_df.columns:
+                events_df['rally_grade'] = events_df['rally_bucket'].apply(get_grade_from_bucket)
+            else:
+                # Fallback to gain_pct if no bucket
+                def get_grade(pct):
+                    if pct >= 0.30: return "💎 Diamond"
+                    if pct >= 0.20: return "🥇 Gold"
+                    if pct >= 0.10: return "🥈 Silver"
+                    if pct >= 0.05: return "🥉 Bronze"
+                    return "🎗️ Weak"
+                events_df['rally_grade'] = events_df['future_max_gain_pct'].apply(get_grade)
         
         # Build badge options with stats
         badge_options = ["♾️ Hepsi"]

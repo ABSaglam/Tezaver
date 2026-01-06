@@ -363,21 +363,63 @@ def run_timeframe_rally_scan_for_symbol(
     
     for tf in required_context_tfs:
         try:
+            # TRY FEATURES FIRST
             df = load_features(symbol, tf)
+            
+            # If load_features returns empty but no error, try history? usually it raises FileNotFoundError if file missing.
+            # But assume if it returns, it's good.
+            
             # Ensure datetime index
             if not df.empty:
                 if 'timestamp' not in df.columns:
                     # Fallback or error
                     if 'open_time' in df.columns:
                         df['timestamp'] = pd.to_datetime(df['open_time'], unit='ms')
+                    elif 'datetime' in df.columns:
+                         df['timestamp'] = pd.to_datetime(df['datetime'])
                     else:
                          df['timestamp'] = pd.to_datetime(df.index)
-                elif df['timestamp'].dtype == 'int64':
-                    df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-                else:
-                    df['timestamp'] = pd.to_datetime(df['timestamp'])
+                else: 
+                     if df['timestamp'].dtype == 'int64':
+                        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+                     else:
+                        df['timestamp'] = pd.to_datetime(df['timestamp'])
             
             loaded_dfs[tf] = df
+            
+        except FileNotFoundError:
+            # FALLBACK TO LIGHT MODE (RAW HISTORY)
+            # Only critical for timeframe being scanned, but good to have context if possible
+            hist_path = coin_cell_paths.get_history_file(symbol, tf)
+            if hist_path.exists():
+                try:
+                    df = pd.read_parquet(hist_path)
+                    
+                    # Normalized columns
+                    df.columns = [c.lower() for c in df.columns]
+                    
+                    if 'timestamp' not in df.columns:
+                        if 'open_time' in df.columns:
+                            df['timestamp'] = pd.to_datetime(df['open_time'], unit='ms')
+                        elif 'datetime' in df.columns:
+                             df['timestamp'] = pd.to_datetime(df['datetime'])
+                        else:
+                             df['timestamp'] = pd.to_datetime(df.index)
+                    else:
+                        if df['timestamp'].dtype == 'int64':
+                            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+                        else:
+                            df['timestamp'] = pd.to_datetime(df['timestamp'])
+                            
+                    loaded_dfs[tf] = df
+                    # logger.info(f"Loaded raw history for {symbol} {tf} (Light Mode)")
+                    
+                except Exception as e:
+                    logger.debug(f"Could not load raw history for {symbol} {tf}: {e}")
+                    loaded_dfs[tf] = pd.DataFrame()
+            else:
+                loaded_dfs[tf] = pd.DataFrame()
+                
         except Exception as e:
             logger.debug(f"Could not load {tf} for {symbol}: {e}")
             loaded_dfs[tf] = pd.DataFrame()

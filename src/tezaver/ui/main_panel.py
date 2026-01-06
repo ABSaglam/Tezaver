@@ -647,6 +647,8 @@ def main():
                 "🎯 Revize",
                 "📐 Kalıpçı",
                 "💥 SuperNova",
+                "🎯 Strateji Stüdyosu",
+                "📝 Script Tarama",
                 "🧪 Simyacı",
                 "🏭 Dökümhane",
                 "⚙️ Sistem Paneli"
@@ -698,6 +700,14 @@ def main():
             import tezaver.ui.supernova_tab
             importlib.reload(tezaver.ui.supernova_tab)
             tezaver.ui.supernova_tab.render_supernova_page()
+        elif current_nav == "🎯 Strateji Stüdyosu":
+            import tezaver.ui.strategy_studio_tab
+            importlib.reload(tezaver.ui.strategy_studio_tab)
+            tezaver.ui.strategy_studio_tab.render_strategy_studio_page()
+        elif current_nav == "📝 Script Tarama":
+            import tezaver.ui.script_scanner_tab
+            importlib.reload(tezaver.ui.script_scanner_tab)
+            tezaver.ui.script_scanner_tab.render_script_scanner_page()
         elif current_nav == "🧪 Simyacı":
             import tezaver.ui.alchemist_tab
             importlib.reload(tezaver.ui.alchemist_tab)

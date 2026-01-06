@@ -95,14 +95,21 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--days", type=int, default=800)
+    parser.add_argument("--tf", type=str, default=None, help="Specific timeframe (e.g. 5m, 15m). If None, uses config defaults.")
+    parser.add_argument("--symbol", type=str, default=None, help="Specific symbol. If None, uses all config coins.")
     args = parser.parse_args()
 
     client = BinanceClient()
     logger.info(f"Starting Gap Sync (Target: {args.days} days)")
     
-    for symbol in DEFAULT_COINS:
+    symbols = [args.symbol] if args.symbol else DEFAULT_COINS
+    timeframes = [args.tf] if args.tf else DEFAULT_HISTORY_TIMEFRAMES
+    
+    logger.info(f"Syncing {len(symbols)} symbols across {timeframes} timeframes.")
+
+    for symbol in symbols:
         logger.info(f"Processing {symbol}...")
-        for tf in DEFAULT_HISTORY_TIMEFRAMES:
+        for tf in timeframes:
             try:
                 sync_symbol_tf(client, symbol, tf, args.days)
             except Exception as e:
