@@ -56,7 +56,7 @@ class Fast15RallyScanResult:
     symbol: str
     num_events_total: int
     num_events_by_bucket: Dict[str, int]
-    output_path: Path
+    output_path: Optional[Path]
     summary_path: Path
 
 
@@ -114,7 +114,7 @@ def determine_rally_bucket(gain_pct: float, buckets: List[float] = FAST15_RALLY_
     if gain_pct < buckets[0]:
         return None  # Below minimum
         
-    labels = ["5p_10p", "10p_20p", "20p_30p", "30p_plus"]
+    labels = ["10p_20p", "20p_30p", "30p_plus"]
     
     # Iterate through buckets to find which range it falls into
     for i in range(len(buckets) - 1):
@@ -605,11 +605,11 @@ def run_fast15_scan_for_symbol(symbol: str) -> Fast15RallyScanResult:
     
     if events_df.empty:
         # Still save empty result
-        output_path = coin_cell_paths.get_fast15_rallies_path(symbol)
+        output_path = None # coin_cell_paths.get_fast15_rallies_path(symbol)
         summary_path = coin_cell_paths.get_fast15_rallies_summary_path(symbol)
         
-        # Save empty parquet
-        pd.DataFrame().to_parquet(output_path, index=False)
+        # Save empty parquet - DISABLED
+        # pd.DataFrame().to_parquet(output_path, index=False)
         
         # Save summary
         stats = generate_summary_stats(events_df, symbol)
@@ -658,6 +658,7 @@ def run_fast15_scan_for_symbol(symbol: str) -> Fast15RallyScanResult:
         record = {
             'event_id': eid,
             'symbol': symbol,
+            'timeframe': "15m", # Critical for Store mapping
             'event_time': event_time,  # Use converted datetime
             'rally_bucket': event['rally_bucket'],
             'future_max_gain_pct': event['future_max_gain_pct'],
@@ -769,10 +770,11 @@ def run_fast15_scan_for_symbol(symbol: str) -> Fast15RallyScanResult:
     except Exception as e:
         logger.error(f"Failed to sync to SQLite Store: {e}", exc_info=True)
 
-    # Save parquet (Legacy/Backup)
-    output_path = coin_cell_paths.get_fast15_rallies_path(symbol)
-    df_final.to_parquet(output_path, index=False)
-    logger.info(f"Saved {len(df_final)} events to {output_path}")
+    # Save parquet (Legacy/Backup) - DISABLED for Single Source Verification
+    output_path = None # coin_cell_paths.get_fast15_rallies_path(symbol)
+    # df_final.to_parquet(output_path, index=False)
+    # logger.info(f"Saved {len(df_final)} events to {output_path}")
+    logger.info(f"Skipped Parquet Write (SQLite Only Mode)")
     
     # Generate and save summary
     stats = generate_summary_stats(df_final, symbol)

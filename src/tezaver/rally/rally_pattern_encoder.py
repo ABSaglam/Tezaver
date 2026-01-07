@@ -30,10 +30,10 @@ class PatternWindowConfig:
 
 def _load_btc_15m_rally_dataset() -> pd.DataFrame:
     """Load BTC 15m rally dataset."""
-    rallies_path = Path("library/fast15_rallies/BTCUSDT/fast15_rallies.parquet")
-    if not rallies_path.exists():
+    try:
+        return _load_rally_dataset_for_symbol("BTCUSDT", "15m")
+    except FileNotFoundError:
         return pd.DataFrame()
-    return pd.read_parquet(rallies_path)
 
 
 def _compute_slope(series: pd.Series) -> float:
@@ -338,29 +338,52 @@ def load_btc_15m_rally_pattern_dataset_v1() -> Tuple[Optional[pd.DataFrame], Opt
 # GENERIC MULTI-COIN PATTERN ENCODER
 # =============================================================================
 
+
+from tezaver.core.rally_store import RallyStore
+
+def _load_btc_15m_rally_dataset() -> pd.DataFrame:
+    """Load BTC 15m rally dataset from RallyStore."""
+    return _load_rally_dataset_for_symbol("BTCUSDT", "15m")
+
+
 def _load_rally_dataset_for_symbol(symbol: str, timeframe: str) -> pd.DataFrame:
     """
-    Load raw rally dataset for any symbol.
-    
-    Args:
-        symbol: Trading symbol (e.g., "BTCUSDT", "ETHUSDT", "SOLUSDT").
-        timeframe: Timeframe ("15m" for fast15_rallies).
-        
-    Returns:
-        DataFrame with rally events.
-        
-    Raises:
-        FileNotFoundError: If rally dataset doesn't exist.
+    Load raw rally dataset for any symbol using RallyStore.
+    Returns flattened DataFrame from raw_data.
     """
-    if timeframe == "15m":
-        rallies_path = Path(f"library/fast15_rallies/{symbol}/fast15_rallies.parquet")
-    else:
-        rallies_path = Path(f"library/time_labs/{timeframe}/{symbol}/rallies_{timeframe}.parquet")
+    store = RallyStore()
+    rallies = store.list_rallies(symbol=symbol, timeframe=timeframe)
     
-    if not rallies_path.exists():
-        raise FileNotFoundError(f"Rally dataset not found: {rallies_path}")
-    
-    return pd.read_parquet(rallies_path)
+    if not rallies:
+        # Instead of error, returning empty DF is often safer for builders, 
+        # but the original raised FileNotFoundError.
+        # Let's verify behavior. Original raised only in _load_rally_dataset_for_symbol.
+        # _load_btc_15m_rally_dataset returned empty df.
+        # So for BTC helper we need empty df, for generic one we raise error?
+        # Let's standardize to raising error if generic, or handling it.
+        # The generic function raised FileNotFoundError.
+        raise FileNotFoundError(f"Rally dataset not found in RallyStore for {symbol} {timeframe}")
+        
+    # Flatten data
+    data_list = []
+    for r in rallies:
+        item = {}
+        if r.get('raw_data'):
+            item.update(r['raw_data'])
+        
+        item['id'] = r['id']
+        item['symbol'] = r['symbol']
+        item['event_tf'] = r['timeframe']
+        
+        # Ensure ID fields present if raw_data missed them
+        if 'rally_bucket' not in item: item['rally_bucket'] = None
+        if 'rally_shape' not in item: item['rally_shape'] = None
+        if 'event_time' not in item: item['event_time'] = r['event_time']
+        
+        data_list.append(item)
+        
+    return pd.DataFrame(data_list)
+
 
 
 def build_rally_patterns_for_symbol_timeframe(

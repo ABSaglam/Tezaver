@@ -17,28 +17,40 @@ from tezaver.sim.sim_config import RallySimConfig
 
 logger = get_logger(__name__)
 
+from tezaver.core.rally_store import RallyStore
+
 def load_rally_events(symbol: str, timeframe: str) -> pd.DataFrame:
     """
-    Load rally events for the given symbol and timeframe.
+    Load rally events for the given symbol and timeframe using RallyStore.
     Supports "15m" (Fast15) and "1h"/"4h" (Time-Labs).
     """
     try:
-        if timeframe == "15m":
-            path = coin_cell_paths.get_fast15_rallies_path(symbol)
-        else:
-            path = coin_cell_paths.get_time_labs_rallies_path(symbol, timeframe)
-            
-        if not path.exists():
-            logger.warning(f"Rally events not found: {path}")
+        store = RallyStore()
+        rows = store.list_rallies(symbol=symbol, timeframe=timeframe)
+        
+        if not rows:
+            logger.warning(f"Rally events not found for {symbol} {timeframe}")
             return pd.DataFrame()
             
-        df = pd.read_parquet(path)
+        flat_rows = []
+        for r in rows:
+            item = dict(r)
+            raw = item.pop('raw_data', {}) or {}
+            if raw:
+                item.update(raw)
+            flat_rows.append(item)
+            
+        df = pd.DataFrame(flat_rows)
         
         # Ensure quality fields exist (fill defaults if missing)
         if 'quality_score' not in df.columns:
             df['quality_score'] = 0.0
         if 'rally_shape' not in df.columns:
             df['rally_shape'] = 'unknown'
+        
+        # Ensure event_time is datetime (critical for sim)
+        if 'event_time' in df.columns:
+             df['event_time'] = pd.to_datetime(df['event_time'])
             
         return df
     except Exception as e:

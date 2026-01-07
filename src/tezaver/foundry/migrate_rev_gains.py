@@ -40,23 +40,22 @@ def migrate():
             # Load DF History once per file
             df = None
             
-            # Load Raw Rallies for Fallback Bars
+            # Load Raw Rallies for Fallback Bars (via RallyStore)
             raw_map = {}
             try:
-                if tf == "15m":
-                    rp = coin_cell_paths.get_fast15_rallies_path(symbol)
-                else:
-                    rp = coin_cell_paths.get_time_labs_rallies_path(symbol, tf)
+                from tezaver.core.rally_store import RallyStore
+                store = RallyStore()
+                rows = store.list_rallies(symbol=symbol, timeframe=tf)
                 
-                if rp.exists():
-                    rdf = pd.read_parquet(rp)
-                    # Map event_id -> bars_to_peak
-                    # Also handle _RVZ_ mismatch by stripping?
-                    # Annotations usually have same ID now.
-                    for _, row in rdf.iterrows():
-                        raw_map[str(row['event_id'])] = int(row['bars_to_peak'])
+                for r in rows:
+                    raw = r.get('raw_data', {}) or {}
+                    eid = r.get('id')
+                    bars = raw.get('bars_to_peak')
+                    if eid and bars:
+                        raw_map[str(eid)] = int(bars)
+                        
             except Exception as e:
-                print(f"Raw load error {symbol} {tf}: {e}")
+                print(f"Store load error {symbol} {tf}: {e}")
 
             for ann in anns:
                 # Criteria: APPROVED and (Modified Offsets or Label=REV) and Missing rev_gain

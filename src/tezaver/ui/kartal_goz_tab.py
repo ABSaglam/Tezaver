@@ -15,24 +15,39 @@ from tezaver.core import coin_cell_paths
 from tezaver.ui.chart_area import load_history_data, DEFAULT_INDICATOR_SETTINGS
 
 
+from tezaver.core.rally_store import RallyStore
+
 def load_all_rallies(symbol: str) -> tuple:
-    """Load 4h, 1h, and 15m rally data."""
-    # 4h rallies
-    path_4h = coin_cell_paths.get_time_labs_rallies_path(symbol, "4h")
-    rallies_4h = pd.read_parquet(path_4h) if path_4h.exists() else pd.DataFrame()
+    """Load 4h, 1h, and 15m rally data from RallyStore (SQLite)."""
+    store = RallyStore()
     
-    # 1h rallies
-    path_1h = coin_cell_paths.get_time_labs_rallies_path(symbol, "1h")
-    rallies_1h = pd.read_parquet(path_1h) if path_1h.exists() else pd.DataFrame()
-    
-    # 15m rallies  
-    path_15m = coin_cell_paths.get_fast15_rallies_path(symbol)
-    rallies_15m = pd.read_parquet(path_15m) if path_15m.exists() else pd.DataFrame()
+    def fetch_df(tf):
+        rows = store.list_rallies(symbol=symbol, timeframe=tf)
+        if not rows:
+            return pd.DataFrame()
+        
+        flat_rows = []
+        for r in rows:
+            # flatten: base row + raw_data
+            item = dict(r)
+            raw = item.pop('raw_data', {}) or {}
+            if raw:
+                item.update(raw)
+            flat_rows.append(item)
+            
+        return pd.DataFrame(flat_rows)
+
+    rallies_4h = fetch_df("4h")
+    rallies_1h = fetch_df("1h")
+    rallies_15m = fetch_df("15m")
     
     # Ensure datetime
     for df in [rallies_4h, rallies_1h, rallies_15m]:
-        if not df.empty and 'event_time' in df.columns:
-            df['event_time'] = pd.to_datetime(df['event_time'])
+        if not df.empty:
+            # Handle event_time generic
+            if 'event_time' in df.columns:
+                 # It might be string ISO from SQLite adapter or Timestamp
+                 df['event_time'] = pd.to_datetime(df['event_time'])
     
     return rallies_4h, rallies_1h, rallies_15m
 

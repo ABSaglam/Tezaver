@@ -64,7 +64,7 @@ class TimeframeRallyScanResult:
     timeframe: str  # "1h" or "4h"
     num_events_total: int
     num_events_by_bucket: Dict[str, int]
-    output_path: Path
+    output_path: Optional[Path]
     summary_path: Path
 
 
@@ -270,7 +270,7 @@ def generate_time_labs_summary(
     
     # Calculate Buckets
     buckets_data = {}
-    valid_buckets = ["5p_10p", "10p_20p", "20p_30p", "30p_plus"]
+    valid_buckets = ["10p_20p", "20p_30p", "30p_plus"]
     
     for b_name in valid_buckets:
         subset = df_events[df_events['rally_bucket'] == b_name]
@@ -469,6 +469,9 @@ def run_timeframe_rally_scan_for_symbol(
         row_data.update(snapshot)
         row_data['event_id'] = eid
         row_data['symbol'] = symbol
+        row_data['timeframe'] = timeframe # Critical for Store mapping
+        row_data['tier'] = tier
+        row_data['rally_grade'] = tier
         # row_data['event_tf'] = timeframe # Will be set by MTC utils anyway
         
         enriched_rows.append(row_data)
@@ -497,6 +500,8 @@ def run_timeframe_rally_scan_for_symbol(
     # 5. MTC v1 Schema Enforcement
     try:
         df_final["event_tf"] = timeframe
+        # CRITICAL FIX: Ensure 'timeframe' column exists for RallyStore mapping
+        df_final["timeframe"] = timeframe
         
         # ensure_mtc_columns ensures we have all columns for [15m, 1h, 4h, 1d]
         # or whatever is defined as standard.
@@ -531,8 +536,9 @@ def run_timeframe_rally_scan_for_symbol(
     except Exception as e:
         logger.error(f"Failed to sync to SQLite Store: {e}", exc_info=True)
 
-    output_path = coin_cell_paths.get_time_labs_rallies_path(symbol, timeframe)
-    df_final.to_parquet(output_path, index=False)
+    output_path = None # coin_cell_paths.get_time_labs_rallies_path(symbol, timeframe)
+    # df_final.to_parquet(output_path, index=False)
+    logger.info(f"Skipped Parquet Write (SQLite Only Mode)")
     
     summary = generate_time_labs_summary(
         df_final, 
@@ -562,13 +568,13 @@ def run_timeframe_rally_scan_for_symbol(
 
 def _handle_empty_result(symbol, timeframe, lookahead, min_gain):
     """Helper to save empty state."""
-    output_path = coin_cell_paths.get_time_labs_rallies_path(symbol, timeframe)
+    output_path = None # coin_cell_paths.get_time_labs_rallies_path(symbol, timeframe)
     summary_path = coin_cell_paths.get_time_labs_rallies_summary_path(symbol, timeframe)
     
     # Empty DF with MTC schema
     df_empty = pd.DataFrame()
     df_empty = ensure_mtc_columns(df_empty, ["15m", "1h", "4h", "1d"])
-    df_empty.to_parquet(output_path, index=False)
+    # df_empty.to_parquet(output_path, index=False)
     
     summary = generate_time_labs_summary(
         pd.DataFrame(), 

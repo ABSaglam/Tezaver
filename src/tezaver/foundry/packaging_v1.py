@@ -442,80 +442,82 @@ def package_symbol_timeframe(
 
 from functools import lru_cache
 
-@lru_cache(maxsize=8)
-def _cached_read_parquet(path: str) -> Optional[pd.DataFrame]:
-    if not Path(path).exists():
-        return None
-    try:
-        df = pd.read_parquet(path)
-        if 'event_time' in df.columns:
-            df['event_time'] = pd.to_datetime(df['event_time'], errors='coerce')
-        return df
-    except:
-        return None
+
+from tezaver.core.rally_store import RallyStore
 
 def _load_event_row(symbol: str, timeframe: str, event_id: str) -> Optional[pd.Series]:
-    """Load event dataset row for the given event_id."""
-    event_path = _get_event_dataset_path(symbol, timeframe)
-    if not event_path:
-        return None
-        
-    df = _cached_read_parquet(event_path)
-    if df is None:
-        return None
+    """Load event dataset row for the given event_id via RallyStore."""
+    store = RallyStore()
     
+    # 1. Try Direct ID Fetch
+    rally_doc = store.get_rally(event_id)
+    
+    # 2. If valid doc found, convert to Series compatible format
+    if rally_doc:
+        data = {}
+        # Base on raw_data
+        if rally_doc.get('raw_data'):
+            data.update(rally_doc['raw_data'])
+        
+        # Overlay top-level metadata
+        data['event_id'] = rally_doc['id']
+        data['symbol'] = rally_doc['symbol']
+        data['event_tf'] = rally_doc['timeframe']
+        if rally_doc.get('event_time'):
+            data['event_time'] = rally_doc['event_time']
+        if rally_doc.get('tier'):
+            data['tier'] = rally_doc['tier']
+            
+        return pd.Series(data)
+        
+    # 3. Fallback: Search in list (if ID mismatch or legacy ID format)
+    # Optimization: Filter by symbol/tf
+    candidates = store.list_rallies(symbol=symbol, timeframe=timeframe)
+    if not candidates:
+        return None
+        
+    # ID Matching Logic
+    for r in candidates:
+        if r['id'] == event_id:
+             # Should have been caught by get_rally but consistent checking
+             return pd.Series(r['raw_data'] | {'event_id': r['id'], 'event_time': r['event_time']})
+             
+    # Timestamp Matching
     try:
-        # Determine ID column
-        id_col = None
-        for c in ["event_id", "event_idx", "entry_id"]:
-            if c in df.columns:
-                id_col = c
-                break
+        # Extract TS from requested event_id (Legacy support)
+        # ID: ..._170343...
+        parts = str(event_id).split("_")
+        ts_part = parts[-1]
         
-        matches = pd.DataFrame()
-        if id_col:
-            # Try match by ID
-            matches = df[df[id_col] == event_id]
-            if matches.empty:
-                matches = df[df[id_col].astype(str) == str(event_id)]
-        
-        # Fallback: Match by Timestamp
-        if matches.empty and 'event_time' in df.columns:
-            try:
-                # 1. Parse timestamp from event_id (Standard ID: SYMBOL_TF_YYYYMMDDHHMM)
-                ts_part = str(event_id).split("_")[-1]
+        if ts_part.isdigit():
+            target_ts = int(ts_part)
+            is_ms = len(ts_part) > 10
+            
+            for r in candidates:
+                r_time = r.get('event_time')
+                if not r_time: continue
                 
-                # Check if last part is numeric timestamp (Seconds or Ms)
-                if ts_part.isdigit():
-                    ts_val = int(ts_part)
-                    is_ms = len(ts_part) > 10
-                    
+                # Convert r_time to int timestamp
+                try:
+                    ts_val = pd.to_datetime(r_time).value # ns
                     if is_ms:
-                        df_ts = df['event_time'].astype('int64') // 10**6
+                        evt_ts = ts_val // 10**6
                     else:
-                        df_ts = df['event_time'].astype('int64') // 10**9
+                        evt_ts = ts_val // 10**9
                         
-                    matches = df[df_ts == ts_val]
-            except:
-                pass
-                
-        if not matches.empty:
-            return matches.iloc[0]
-        
-        return None
+                    if evt_ts == target_ts:
+                         return pd.Series(r['raw_data'] | {'event_id': r['id'], 'event_time': r['event_time']})
+                except:
+                    continue
     except:
-        return None
+        pass
+
+    return None
 
 
 def _get_event_dataset_path(symbol: str, timeframe: str) -> Optional[str]:
-    """Get path to event dataset for the given symbol/timeframe."""
-    if timeframe == "15m":
-        return f"library/fast15_rallies/{symbol}/fast15_rallies.parquet"
-    elif timeframe == "1h":
-        return f"library/time_labs/1h/{symbol}/rallies_1h.parquet"
-    elif timeframe == "4h":
-        return f"library/time_labs/4h/{symbol}/rallies_4h.parquet"
-    return None
+    """Deprecated: Get path to event dataset."""
+    return "RallyStore (SQLite)"
 
 
 def _extract_price_window(

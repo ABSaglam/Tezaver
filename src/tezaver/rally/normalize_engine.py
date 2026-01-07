@@ -52,9 +52,11 @@ def ensure_open_time(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+from tezaver.core import coin_cell_paths
+
 def load_history_for_normalize(symbol: str, timeframe: str) -> pd.DataFrame:
     """Load history bars for normalization."""
-    path = Path(f"coin_cells/{symbol}/data/history_{timeframe}.parquet")
+    path = coin_cell_paths.get_history_file(symbol, timeframe)
     
     if not path.exists():
         raise FileNotFoundError(

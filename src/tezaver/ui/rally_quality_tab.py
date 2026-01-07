@@ -17,39 +17,32 @@ from tezaver.core.logging_utils import get_logger
 logger = get_logger(__name__)
 
 
+from tezaver.core.rally_store import RallyStore
+
 def load_rally_quality_data(symbol: str, timeframe: str) -> Optional[pd.DataFrame]:
     """
-    Load rally events with quality metrics.
-    
-    Args:
-        symbol: Coin symbol
-        timeframe: Timeframe ('15m', '1h', '4h')
-    
-    Returns:
-        DataFrame with rally events including quality columns or None
+    Load rally events with quality metrics using RallyStore.
     """
-    if timeframe == "15m":
-        rallies_path = coin_cell_paths.get_fast15_rallies_path(symbol)
-    else:
-        rallies_path = coin_cell_paths.get_time_labs_rallies_path(symbol, timeframe)
-    
-    if not rallies_path.exists():
+    store = RallyStore()
+    rows = store.list_rallies(symbol=symbol, timeframe=timeframe)
+    if not rows:
         return None
+        
+    flat_rows = []
+    for r in rows:
+        item = dict(r)
+        raw = item.pop('raw_data', {}) or {}
+        if raw:
+            item.update(raw)
+        flat_rows.append(item)
     
-    try:
-        df = pd.read_parquet(rallies_path)
-        # Check if quality columns exist
-        quality_cols = ['rally_shape', 'quality_score', 'efficiency', 'retention_3', 'retention_10']
-        has_quality = all(col in df.columns for col in quality_cols[:2])  # At least shape and score
-        
-        if not has_quality:
-            logger.warning(f"Rally quality columns missing for {symbol} {timeframe}")
-            return None
-        
-        return df
-    except Exception as e:
-        logger.error(f"Error loading rally quality data for {symbol} {timeframe}: {e}")
-        return None
+    df = pd.DataFrame(flat_rows)
+    
+    # Ensure datetime
+    if 'event_time' in df.columns:
+        df['event_time'] = pd.to_datetime(df['event_time'])
+
+    return df
 
 
 def get_shape_emoji(shape: str) -> str:

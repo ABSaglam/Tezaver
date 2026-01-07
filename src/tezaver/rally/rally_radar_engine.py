@@ -117,40 +117,39 @@ class RallyRadarProfile:
 
 # --- Data Loading ---
 
+from tezaver.core.rally_store import RallyStore
+
 def load_rally_events_for_tf(symbol: str, tf: str, cfg: RallyRadarConfig) -> pd.DataFrame:
     """
-    Load rally events for a specific symbol and timeframe, filtered by lookback.
-    Returns empty DataFrame if file not found or empty.
+    Load rally events for a specific symbol and timeframe using RallyStore.
+    Filters by lookback.
     """
     try:
-        # Resolve path based on TF
-        if tf == "15m":
-            # Fast15 uses parquet output
-            # Note: get_fast15_rallies_path logic differs slightly for 'all' vs 'symbol'
-            # But the core function returns the file path.
-            # Assuming standard naming: data/coin_cells/{SYMBOL}/rallies/fast15_rallies.parquet
-            # Let's use the helper.
-            path = get_fast15_rallies_path(symbol)
-        elif tf in ["1h", "4h"]:
-            # Time-Labs uses parquet too: time_labs_{tf}_rallies.parquet
-            path = get_time_labs_rallies_path(symbol, tf)
-        else:
-            logger.warning(f"Unknown timeframe for Rally Radar: {tf}")
-            return pd.DataFrame()
+        store = RallyStore()
+        rows = store.list_rallies(symbol=symbol, timeframe=tf)
         
-        if not path.exists():
+        if not rows:
             return pd.DataFrame()
             
-        df = pd.read_parquet(path)
+        flat_rows = []
+        for r in rows:
+            item = dict(r)
+            raw = item.pop('raw_data', {}) or {}
+            if raw:
+                item.update(raw)
+            flat_rows.append(item)
+            
+        df = pd.DataFrame(flat_rows)
         if df.empty:
             return pd.DataFrame()
-            
+
         # Filter by lookback
         days = cfg.lookback_days.get(tf, 30)
         cutoff = datetime.utcnow() - timedelta(days=days)
         
         # Ensure event_time is datetime
         if 'event_time' in df.columns:
+            # SQLite adapter might return string
             df['event_time'] = pd.to_datetime(df['event_time'])
             df = df[df['event_time'] >= cutoff]
             

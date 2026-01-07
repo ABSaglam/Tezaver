@@ -86,209 +86,150 @@ def load_moldable_history(symbol: str, timeframe: str) -> Optional[pd.DataFrame]
 def render_molder_boutique_view():
     """
     Render the 'Tekli' (Boutique) Molder page.
-    This is the original, detailed view for deep analysis.
+    Refactored to match Ony Studio's robust loading logic.
     """
-
     
+    # --- PENDING STATE APPLIER (Copy from Ony) ---
+    if '_pending_molder_symbol' in st.session_state:
+        st.session_state['molder_sym'] = st.session_state.pop('_pending_molder_symbol')
+    
+    if '_pending_molder_prefill_id' in st.session_state:
+        st.session_state['molder_prefill_event_id'] = st.session_state.pop('_pending_molder_prefill_id')
+
     # Handle return from Revize
     if 'molder_target_id' in st.session_state:
         target_id = st.session_state.pop('molder_target_id')
         if target_id:
-            # Parse symbol and TF from event ID
             parts = target_id.split('_')
             if len(parts) >= 2:
                 st.session_state['molder_sym'] = parts[0]
                 st.session_state['molder_tf'] = parts[1]
             st.session_state['molder_prefill_event_id'] = target_id
             st.toast("📐 Revize'den döndünüz! Kalıp seçebilirsiniz.")
-    
+
     # Initialize repository & Assembler
     store = RallyStore()
     assembler = RallyAssembler()
 
-    # --- TOP FILTERS (Coin, TF, Status, Tier) ---
-    c_sym, c_tf, c_status, c_tier = st.columns([1, 1, 1, 2])
+    # --- COMPACT HEADER (Row 1) ---
+    # Col1: Coin, Col2: TF, Col3: Tier Filter
+    c_sym, c_tf, c_tier = st.columns([1, 1, 3])
     
     with c_sym:
-        symbols = ["TÜMÜ"] + _get_available_symbols()
-        idx = 0
-        
-        # Check for next coin flag (from last rally auto-advance)
-        next_coin = st.session_state.get('_molder_next_coin', None)
-        if next_coin and next_coin in symbols:
-            idx = symbols.index(next_coin)
-            st.session_state['_molder_next_coin'] = None  # Clear flag
-            # Increment counter to force widget refresh
-            if '_molder_coin_counter' not in st.session_state:
-                st.session_state['_molder_coin_counter'] = 0
-            st.session_state['_molder_coin_counter'] += 1
-            # Also reset rally counter
-            if '_molder_select_counter' not in st.session_state:
-                st.session_state['_molder_select_counter'] = 0
-            st.session_state['_molder_select_counter'] += 1
-        elif "molder_sym" in st.session_state and st.session_state["molder_sym"] in symbols:
-            idx = symbols.index(st.session_state["molder_sym"])
-        
-        # Use dynamic key
-        coin_counter = st.session_state.get('_molder_coin_counter', 0)
-        sel_sym = st.selectbox("Coin", symbols, index=idx, key=f"molder_sym_{coin_counter}", label_visibility="collapsed")
+        raw_symbols = _get_available_symbols()
+        symbols = ["TÜMÜ"] + raw_symbols
+        # Default Logic: Check Session State first
+        sess_sym = st.session_state.get('molder_sym')
+        if sess_sym and sess_sym in symbols:
+            default_sym_idx = symbols.index(sess_sym)
+        else:
+            default_sym_idx = 0
+            
+        sel_sym = st.selectbox("Coin", symbols, index=default_sym_idx, key="molder_sym", label_visibility="collapsed")
         
     with c_tf:
-        timeframes = ["15m", "1h", "4h"]
-        idx = 0
-        if "molder_tf" in st.session_state and st.session_state["molder_tf"] in timeframes:
-            idx = timeframes.index(st.session_state["molder_tf"])
-        sel_tf = st.selectbox("Timeframe", timeframes, index=idx, key="molder_tf", label_visibility="collapsed")
+        timeframes = ["15m", "1h", "4h", "1d"]
+        sess_tf = st.session_state.get('molder_tf')
+        if sess_tf and sess_tf in timeframes:
+            default_tf_idx = timeframes.index(sess_tf)
+        else:
+            default_tf_idx = 0
+            
+        sel_tf = st.selectbox("Timeframe", timeframes, index=default_tf_idx, key="molder_tf", label_visibility="collapsed")
 
-    with c_status:
-        status_filter = st.selectbox(
-            "Durum",
-            ["KALANLAR", "OLANLAR", "TÜMÜ"],
-            index=0,
-            key="boutique_status_filter",
-            label_visibility="collapsed"
-        )
-    
-    # --- DATA LOADING (Via RallyAssembler) ---
+    # Load Rallies via Assembler (ALL Rallies - Unlocked)
     target_sym = None if sel_sym == "TÜMÜ" else sel_sym
-    # Fetch ALL approved rallies (both labeled and unlabeled)
-    moldable_rallies = assembler.get_assembled_rallies(target_sym, sel_tf, status=SniperStatus.APPROVED)
     
-    if not moldable_rallies:
-         st.info("Bu coin/zaman için onaylanmış (Approved) ralli yok.")
-         return
+    # Fetch data - Show EVERYTHING (Pending + Approved)
+    # Increase limit to 100,000 to show full history
+    rallies = assembler.get_assembled_rallies(target_sym, sel_tf, status=None, limit=100000)
+    
+    # Tier Logic & Counts
+    if rallies:
+        counts = {t: 0 for t in TIERS}
+        for r in rallies:
+             if r.tier in counts: counts[r.tier] += 1
+        tier_options = [f"{t} ({counts.get(t,0)})" for t in TIERS]
+    else:
+        tier_options = TIERS
 
-    # --- APPLY STATUS FILTER ---
-    if status_filter == "KALANLAR":
-        # Only unlabeled (archetype is None or empty)
-        moldable_rallies = [r for r in moldable_rallies if not r.archetype or r.archetype == "None"]
-    elif status_filter == "OLANLAR":
-        # Only labeled (archetype exists)
-        moldable_rallies = [r for r in moldable_rallies if r.archetype and r.archetype != "None"]
-    # else TÜMÜ: keep all
+    # AUTO-SWITCH TIER (Jumper Fix)
+    if 'molder_prefill_event_id' in st.session_state and rallies:
+        target_id = str(st.session_state['molder_prefill_event_id'])
+        match = next((r for r in rallies if str(r.event_id) == target_id), None)
+        if match:
+             if match.tier in TIERS and st.session_state.get('molder_selected_tier') != match.tier:
+                 st.session_state['molder_selected_tier'] = match.tier
+                 st.rerun()
 
-    # Group by Tier
-    tier_groups = {t: [] for t in TIERS}
-    tier_groups["OTHER"] = [] 
-    
-    # Sort: Unlabeled first (Priority 1), then by Time (Newest First)
-    def molder_sort_key(r):
-        is_labeled = (r.archetype is not None and r.archetype != "None")
-        return (0 if is_labeled else 1, r.event_time)
-        
-    moldable_rallies.sort(key=molder_sort_key, reverse=True)
-    
-    for rally in moldable_rallies:
-        t = rally.tier
-        if t not in tier_groups: t = "OTHER"
-        tier_groups[t].append(rally)
-        
-    # --- Handle Return from Revize: Find Target Rally's Tier ---
-    prefill_id = st.session_state.get('molder_prefill_event_id')
-    if prefill_id:
-        for tier, items in tier_groups.items():
-            for r in items:
-                if r.event_id == prefill_id:
-                    st.session_state['molder_selected_tier'] = tier
-                    break
-
-    # --- TIER SELECTOR ---
-    tier_icons = {
-        "DIAMOND": "💎",
-        "GOLD": "🏅", 
-        "SILVER": "🥈",
-        "BRONZE": "🥉"
-    }
-    
-    tier_options = []
-    for t in TIERS:
-        count = len(tier_groups[t])
-        icon = tier_icons.get(t, "📦")
-        tier_options.append(f"{icon} {count}")
-    
     with c_tier:
         if 'molder_selected_tier' not in st.session_state:
             st.session_state['molder_selected_tier'] = "DIAMOND"
-            
-        def get_clean_tier(opt): 
-            # Extract icon and map back to tier name
-            icon = opt.split(" ")[0]
-            for tier_name, tier_icon in tier_icons.items():
-                if tier_icon == icon:
-                    return tier_name
-            return "DIAMOND"
         
-        current_sel_idx = 0
-        if st.session_state['molder_selected_tier'] in TIERS:
-            current_sel_idx = TIERS.index(st.session_state['molder_selected_tier'])
-            
+        # Horizontal Radio
         selected_tier_label = st.radio(
-            "Tier", 
-            tier_options, 
-            horizontal=True, 
+            "Tier",
+            tier_options,
+            horizontal=True,
             key="molder_tier_radio",
             label_visibility="collapsed",
-            index=current_sel_idx
+            index=TIERS.index(st.session_state['molder_selected_tier']) if st.session_state['molder_selected_tier'] in TIERS else 0
         )
-        selected_tier = get_clean_tier(selected_tier_label)
-        st.session_state['molder_selected_tier'] = selected_tier
+        selected_tier = selected_tier_label.split(" (")[0]
+        
+        if st.session_state['molder_selected_tier'] != selected_tier:
+            st.session_state['molder_selected_tier'] = selected_tier
+            # Reset selection if tier changes
+            if 'molder_event_select' in st.session_state:
+                del st.session_state['molder_event_select']
 
-    # --- LIST SELECTOR ---
-    current_list_items = tier_groups.get(selected_tier, [])
+    # --- LIST SELECTOR (Row 2) ---
+    if not rallies:
+        st.info(f"Bu coin/zaman için ralli yok.")
+        return
+        
+    # Filter by Tier
+    filtered_rallies = [r for r in rallies if r.tier == selected_tier]
     
-    if not current_list_items:
-        st.info(f"🔍 {selected_tier} katmanında etiketlenecek ralli yok.")
+    # Sort: Unlabeled first, Labeled last
+    def is_labeled(r):
+        has_arch = (r.archetype is not None and r.archetype != "None")
+        return int(has_arch) # 0 = Unlabeled, 1 = Labeled
+
+    filtered_rallies.sort(key=is_labeled)
+    
+    if not filtered_rallies:
+        st.info(f"🔍 {selected_tier} katmanında mold edilecek ralli yok.")
         return
 
-    # Helper for Icons
-    def get_arch_icon(arch_code):
-        if not arch_code: return "❓"
-        try:
-            lbl = ARCHETYPE_LABELS.get(Archetype(arch_code), "")
-            return lbl.split(" ")[-1] if " " in lbl else "🏷️"
-        except:
-            return "🏷️"
-
-    list_options = []
-    list_map = {}
-    
-    for rally in current_list_items:
-        list_options.append(rally.display_label)
-        list_map[rally.display_label] = rally
-
-    # Calculate default index
+    # Check for prefill request
+    prefill_id = st.session_state.pop('molder_prefill_event_id', None)
     default_idx = 0
     
-    # Check for auto-advance flag (from archetype button click)
-    next_rally = st.session_state.get('_molder_next_rally', None)
-    print(f"DEBUG AUTO-ADVANCE: next_rally={next_rally}")
+    # Build Options
+    event_options = []
+    rally_map = {}
     
-    if next_rally and next_rally in list_options:
-        default_idx = list_options.index(next_rally)
-        print(f"DEBUG AUTO-ADVANCE: Moving to index {default_idx}, rally: {next_rally}")
-        # Clear the flag after using it
-        st.session_state['_molder_next_rally'] = None
-        # Increment counter to force widget refresh
-        if '_molder_select_counter' not in st.session_state:
-            st.session_state['_molder_select_counter'] = 0
-        st.session_state['_molder_select_counter'] += 1
-    else:
-        # Check for prefill from revize
-        prefill_id = st.session_state.pop('molder_prefill_event_id', None)
-        if prefill_id:
-            for i, lbl in enumerate(list_options):
-                r = list_map.get(lbl)
-                if r and r.event_id == prefill_id:
-                    default_idx = i
-                    break
-    
-    print(f"DEBUG AUTO-ADVANCE: final default_idx={default_idx}")
-    
-    # Use counter in key to force widget refresh on auto-advance
+    for i, rally in enumerate(filtered_rallies):
+        # Prefill lookup
+        if prefill_id and str(rally.event_id) == str(prefill_id):
+            default_idx = i
+            
+        label = rally.display_label
+        event_options.append(label)
+        rally_map[label] = rally
+        
+    if not event_options:
+        st.warning("Liste boş.")
+        return
+
+    # Dynamic Key Logic for Auto-Advance
     select_counter = st.session_state.get('_molder_select_counter', 0)
+    
+    # Full width selectbox
     selected_label_str = st.selectbox(
         "Ralli Seçiniz", 
-        list_options, 
+        event_options, 
         index=default_idx, 
         key=f"molder_list_select_{select_counter}", 
         label_visibility="collapsed"
@@ -296,8 +237,8 @@ def render_molder_boutique_view():
     
     if not selected_label_str:
         return
-        
-    current_rally = list_map[selected_label_str] # AssembledRally object
+
+    current_rally = rally_map[selected_label_str]
     
     # ==========================
     # 1. AI PREDICTION (SYSTEM RECOMMENDATION)
@@ -440,6 +381,12 @@ def render_molder_boutique_view():
                     rev_data = doc.get('rev_data', {}) or {}
                     rev_data['archetype'] = mold.value
                     rev_data['updated_at'] = pd.Timestamp.now()
+                    
+                    # AUTO-APPROVE Logic (Unlock Workflow)
+                    if rev_data.get('status') != 'APPROVED':
+                        rev_data['status'] = 'APPROVED'
+                        rev_data['label'] = 'MOLDER_AUTO'
+                        st.toast(f"✅ Otomatik Onaylandı: {current_rally.display_label}")
                     
                     store.upsert_rally(current_rally.event_id, molder_data, layer='molder')
                     store.upsert_rally(current_rally.event_id, rev_data, layer='rev')
@@ -758,7 +705,7 @@ def render_molder_gallery_view():
          
     with c_fil_2:
          # Timeframe Filter
-         tfs = ["TÜMÜ", "15m", "1h", "4h"]
+         tfs = ["TÜMÜ", "15m", "1h", "4h", "1d"]
          sel_tf_raw = st.selectbox("Zaman", tfs, key="gal_tf", label_visibility="collapsed")
          target_tf = None if sel_tf_raw == "TÜMÜ" else sel_tf_raw
     
@@ -767,11 +714,12 @@ def render_molder_gallery_view():
         st.session_state['gal_tier_selected'] = "DIAMOND"
     
     # --- DATA LOADING (to determine available archetypes) ---
-    # Load ALL tiers first to get accurate counts
-    assembled_rows = assembler.get_assembled_rallies(target_sym, target_tf, tier=None)
+    # Load ALL tiers first to get accurate counts (Limit 100k)
+    assembled_rows = assembler.get_assembled_rallies(target_sym, target_tf, tier=None, limit=100000)
     
-    # Filter 1: Approved Only (The "Universe" for Molder)
-    approved_rallies = [r for r in assembled_rows if r.status == SniperStatus.APPROVED]
+    # Filter 1: APPROVED Filter REMOVED (Unlock Workflow)
+    # approved_rallies = [r for r in assembled_rows if r.status == SniperStatus.APPROVED]
+    approved_rallies = assembled_rows # Use ALL rallies
     total_approved_cnt = len(approved_rallies)
     
     # Count by tier for display
@@ -987,6 +935,12 @@ def render_molder_gallery_view():
                  except: pass # Fail silently on logging
                  
                  rev_data.update({'archetype': target_arch, 'coin_class': coin_cls, 'updated_at': pd.Timestamp.now()})
+                 
+                 # AUTO-APPROVE (Unlock)
+                 if rev_data.get('status') != 'APPROVED':
+                     rev_data['status'] = 'APPROVED'
+                     rev_data['label'] = 'MOLDER_AUTO'
+                     
                  molder_data.update({'archetype': target_arch, 'coin_class': coin_cls, 'labeled_at': pd.Timestamp.now(), 'confidence': 1.0})
                  
                  store.upsert_rally(eid, rev_data, layer='rev')

@@ -67,24 +67,6 @@ def get_library_root() -> Path:
         library_dir.mkdir(parents=True, exist_ok=True)
     return library_dir
 
-def get_fast15_rallies_dir(symbol: str) -> Path:
-    """
-    Returns library/fast15_rallies/{SYMBOL}/ directory.
-    Creates it if it doesn't exist.
-    """
-    lib_root = get_library_root()
-    fast15_dir = lib_root / "fast15_rallies" / symbol
-    if not fast15_dir.exists():
-        fast15_dir.mkdir(parents=True, exist_ok=True)
-    return fast15_dir
-
-def get_fast15_rallies_path(symbol: str) -> Path:
-    """
-    Returns library/fast15_rallies/{SYMBOL}/fast15_rallies.parquet path.
-    Does NOT create the file, only returns the path.
-    """
-    return get_fast15_rallies_dir(symbol) / "fast15_rallies.parquet"
-
 def get_coin_profile_dir(symbol: str) -> Path:
     """
     Returns the profile directory for a specific symbol.
@@ -97,6 +79,7 @@ def get_coin_profile_dir(symbol: str) -> Path:
         profile_dir.mkdir(parents=True, exist_ok=True)
     return profile_dir
 
+
 def get_fast15_rallies_summary_path(symbol: str) -> Path:
     """
     Returns data/coin_profiles/{SYMBOL}/fast15_rallies_summary.json path.
@@ -106,25 +89,12 @@ def get_fast15_rallies_summary_path(symbol: str) -> Path:
     return get_coin_profile_dir(symbol) / "fast15_rallies_summary.json"
 
 
-def get_time_labs_rallies_dir(symbol: str, timeframe: str) -> Path:
-    """
-    Returns library/time_labs/{TF}/{SYMBOL}/ directory.
-    Creates it if it doesn't exist.
-    """
-    lib_root = get_library_root()
-    # library/time_labs/1h/BTCUSDT
-    labs_dir = lib_root / "time_labs" / timeframe / symbol
-    if not labs_dir.exists():
-        labs_dir.mkdir(parents=True, exist_ok=True)
-    return labs_dir
 
-
-def get_time_labs_rallies_path(symbol: str, timeframe: str) -> Path:
-    """
-    Returns library/time_labs/{TF}/{SYMBOL}/rallies_{TF}.parquet path.
-    Does NOT create the file, only returns the path.
-    """
-    return get_time_labs_rallies_dir(symbol, timeframe) / f"rallies_{timeframe}.parquet"
+# DEPRECATED / REMOVED FUNCTIONS
+# get_fast15_rallies_dir -> Use RallyStore
+# get_fast15_rallies_path -> Use RallyStore
+# get_time_labs_rallies_dir -> Use RallyStore
+# get_time_labs_rallies_path -> Use RallyStore
 
 
 def get_time_labs_rallies_summary_path(symbol: str, timeframe: str) -> Path:
@@ -134,6 +104,8 @@ def get_time_labs_rallies_summary_path(symbol: str, timeframe: str) -> Path:
     Does NOT create the file, only returns the path.
     """
     return get_coin_profile_dir(symbol) / f"time_labs_{timeframe}_summary.json"
+
+
 
 def get_sim_promotion_path(symbol: str) -> Path:
     """

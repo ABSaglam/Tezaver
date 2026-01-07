@@ -306,36 +306,40 @@ def run_all(timeframes: List[str] = ["15m", "1h", "4h"], symbols: Optional[List[
     return all_reports
 
 
+
+from tezaver.core.rally_store import RallyStore
+
 def _load_event_dataset(symbol: str, timeframe: str) -> Optional[pd.DataFrame]:
-    """Load event dataset for the given symbol/timeframe."""
-    path = _get_event_dataset_path(symbol, timeframe)
-    if path and Path(path).exists():
-        try:
-            df = pd.read_parquet(path)
-            # Ensure event_time is datetime
-            if 'event_time' in df.columns:
-                df['event_time'] = pd.to_datetime(df['event_time'], errors='coerce')
-                
-                # Generate event_id if missing (for compatibility with legacy datasets)
-                if 'event_id' not in df.columns and 'symbol' in df.columns:
-                    # ID Format: SYMBOL_TF_YYYYMMDDHHMM (Standard Tezaver ID)
-                    # Note: We use the passed 'timeframe' argument
-                    df['event_id'] = df.apply(
-                        lambda row: f"{row['symbol']}_{timeframe}_{row['event_time'].strftime('%Y%m%d%H%M')}", 
-                        axis=1
-                    )
-            return df
-        except:
-            return None
-    return None
+    """Load event dataset for the given symbol/timeframe from RallyStore."""
+    store = RallyStore()
+    rallies = store.list_rallies(symbol=symbol, timeframe=timeframe)
+    
+    if not rallies:
+        return None
+        
+    data_list = []
+    for r in rallies:
+        item = {}
+        if r.get('raw_data'):
+            item.update(r['raw_data'])
+        
+        # Ensure critical fields
+        item['event_id'] = r['id']
+        item['symbol'] = r['symbol']
+        item['event_tf'] = r['timeframe']
+        if r.get('event_time'):
+             item['event_time'] = r['event_time'] # Should be datetime string or obj
+             
+        data_list.append(item)
+        
+    df = pd.DataFrame(data_list)
+    
+    if 'event_time' in df.columns:
+        df['event_time'] = pd.to_datetime(df['event_time'], errors='coerce')
+        
+    return df
 
 
 def _get_event_dataset_path(symbol: str, timeframe: str) -> Optional[str]:
-    """Get path to event dataset for the given symbol/timeframe."""
-    if timeframe == "15m":
-        return f"library/fast15_rallies/{symbol}/fast15_rallies.parquet"
-    elif timeframe == "1h":
-        return f"library/time_labs/1h/{symbol}/rallies_1h.parquet"
-    elif timeframe == "4h":
-        return f"library/time_labs/4h/{symbol}/rallies_4h.parquet"
-    return None
+    """Get path description for the dataset source."""
+    return "RallyStore (SQLite)"

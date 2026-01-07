@@ -76,12 +76,28 @@ def run_full_scan():
             except Exception as e:
                 logger.error(f"  ❌ 1h scan failed for {symbol}: {e}")
                 
-            # 4. 4h Time-Labs
             try:
                 run_4h_rally_scan_for_symbol(symbol)
                 logger.info(f"  ✅ 4h scan complete for {symbol}")
             except Exception as e:
                 logger.error(f"  ❌ 4h scan failed for {symbol}: {e}")
+                
+            # 5. 1d Time-Labs
+            try:
+                from tezaver.core.config import TIME_LABS_LOOKAHEAD_BARS, TIME_LABS_MIN_GAIN, TIME_LABS_RALLY_BUCKETS, TIME_LABS_EVENT_GAP
+                from tezaver.rally.time_labs_scanner import run_timeframe_rally_scan_for_symbol
+                
+                run_timeframe_rally_scan_for_symbol(
+                    symbol=symbol,
+                    timeframe="1d",
+                    lookahead=TIME_LABS_LOOKAHEAD_BARS["1d"],
+                    min_gain=TIME_LABS_MIN_GAIN["1d"],
+                    buckets=TIME_LABS_RALLY_BUCKETS,
+                    event_gap=TIME_LABS_EVENT_GAP["1d"]
+                )
+                logger.info(f"  ✅ 1d scan complete for {symbol}")
+            except Exception as e:
+                logger.error(f"  ❌ 1d scan failed for {symbol}: {e}")
 
             success_count += 1
             

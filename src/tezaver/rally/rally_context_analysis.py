@@ -24,12 +24,26 @@ from tezaver.rally.rally_memory_engine import (
 # VERİ YÜKLEME VE KAYDETME
 # =============================================================================
 
+
+from tezaver.core.rally_store import RallyStore
+
 def load_btc_15m_rallies() -> pd.DataFrame:
-    """BTCUSDT 15 Dakika rally dataset'ini yükler."""
-    path = Path("library/fast15_rallies/BTCUSDT/fast15_rallies.parquet")
-    if not path.exists():
-        raise FileNotFoundError(f"Rally dataset bulunamadı: {path}")
-    return pd.read_parquet(path)
+    """BTCUSDT 15 Dakika rally dataset'ini yükler (RallyStore'dan)."""
+    store = RallyStore()
+    rallies = store.list_rallies(symbol="BTCUSDT", timeframe="15m")
+    
+    if not rallies:
+        raise FileNotFoundError("Rally dataset bulunamadı: RallyStore")
+        
+    data_list = []
+    for r in rallies:
+        item = {}
+        if r.get('raw_data'):
+            item.update(r['raw_data'])
+        item['id'] = r['id']
+        data_list.append(item)
+        
+    return pd.DataFrame(data_list)
 
 
 def compute_btc_15m_context_scores(df: pd.DataFrame) -> pd.DataFrame:
@@ -42,8 +56,9 @@ def compute_btc_15m_context_scores(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def save_btc_15m_with_context(df: pd.DataFrame) -> str:
-    """Zenginleştirilmiş dataset'i yeni bir parquet dosyasına yazar."""
-    out_path = Path("library/fast15_rallies/BTCUSDT/fast15_rallies_with_context_v1.parquet")
+    """Zenginleştirilmiş dataset'i yeni bir parquet dosyasına yazar (Analiz çıktısı)."""
+    # Changed path to coin_profiles/analysis to avoid cluttering library/
+    out_path = Path("data/coin_profiles/BTCUSDT/analysis/fast15_rallies_with_context_v1.parquet")
     out_path.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(out_path, index=False)
     return str(out_path)
@@ -120,8 +135,8 @@ def build_btc_15m_rally_context_report(df: pd.DataFrame) -> Dict[str, Any]:
     report = {
         "symbol": "BTCUSDT",
         "timeframe": "15m",
-        "source_dataset": "library/fast15_rallies/BTCUSDT/fast15_rallies.parquet",
-        "output_dataset": "library/fast15_rallies/BTCUSDT/fast15_rallies_with_context_v1.parquet",
+        "source_dataset": "RallyStore (SQLite)",
+        "output_dataset": "data/coin_profiles/BTCUSDT/analysis/fast15_rallies_with_context_v1.parquet",
         "score_column": "rally_context_score_v1",
         "stats": {
             "all": stats_all,

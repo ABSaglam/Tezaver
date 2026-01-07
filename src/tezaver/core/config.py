@@ -273,8 +273,8 @@ GOLDEN_FAST15_SOL_77_PATH = 'library/fast15_rallies/SOLUSDT/fast15_rallies_GOLDE
 # --- Fast15 Rally Scanner Settings ---
 FAST15_RALLY_TF: str = "15m"
 FAST15_LOOKAHEAD_BARS: int = 21  # 1-21 bars lookahead window
-FAST15_RALLY_BUCKETS: tuple[float, ...] = (0.00, 0.05, 0.10, 0.20, 0.30)  # 0%, 5%, 10%, 20%, 30% (IRON, BRONZE, SILVER, GOLD, DIAMOND)
-FAST15_MIN_GAIN: float = 0.00  # Minimum 0% gain - includes IRON tier
+FAST15_RALLY_BUCKETS: tuple[float, ...] = (0.10, 0.20, 0.30)  # 10%, 20%, 30% (SILVER, GOLD, DIAMOND)
+FAST15_MIN_GAIN: float = 0.10  # Minimum 10% gain - SILVER+ ONLY
 FAST15_EVENT_GAP: int = 3  # Minimum 3 bars between events to prevent overlap
 
 # MACD Phase classification thresholds for Fast15
@@ -282,28 +282,28 @@ FAST15_MACD_SLEEP_THRESHOLD: float = 0.0005  # Very small histogram = sleep
 FAST15_MACD_WAKE_THRESHOLD: float = 0.001    # Rising from sleep = awakening
 FAST15_MACD_RUN_THRESHOLD: float = 0.003     # Strong positive momentum = running
 
-
 # --- Time-Labs v1 Settings ---
-TIME_LABS_TFS: List[str] = ["5m", "1h", "4h"]
-
+TIME_LABS_TFS: List[str] = ["5m", "1h", "4h", "1d"]
 TIME_LABS_LOOKAHEAD_BARS: Dict[str, int] = {
     "5m": 12,  # 1 hour window
     "1h": 10,  # 1-10 bars window (~10 hours)
     "4h": 10,  # 1-10 bars window (~40 hours)
+    "1d": 7,   # 1 week window
 }
-
-TIME_LABS_RALLY_BUCKETS: List[float] = [0.00, 0.05, 0.10, 0.20, 0.30]  # 0%, 5%, 10%, 20%, 30% (IRON, BRONZE, SILVER, GOLD, DIAMOND)
+TIME_LABS_RALLY_BUCKETS: List[float] = [0.10, 0.20, 0.30]  # 10%, 20%, 30% (SILVER, GOLD, DIAMOND)
 
 TIME_LABS_MIN_GAIN: Dict[str, float] = {
-    "5m": 0.03,  # 3% for 5m to catch micro-rallies
-    "1h": 0.05,  # 5%
-    "4h": 0.07,  # 7%
+    "5m": 0.03,
+    "1h": 0.10,  # 10%
+    "4h": 0.10,  # 10%
+    "1d": 0.10,  # 10%
 }
 
 TIME_LABS_EVENT_GAP: Dict[str, int] = {
     "5m": 5,
     "1h": 3,
     "4h": 2,
+    "1d": 2,
 }
 
 # --- Indicator Settings ---

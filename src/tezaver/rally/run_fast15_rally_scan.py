@@ -109,7 +109,8 @@ def main():
         logger.warning(f"  {', '.join(skipped)}")
     
     logger.info("\nOutputs saved to:")
-    logger.info("  - library/fast15_rallies/{SYMBOL}/fast15_rallies.parquet")
+    logger.info("  - library/rallies.db (SQLite Unified Storage)")
+    logger.info("  - [Legacy Parquet Disabled]")
     logger.info("  - data/coin_profiles/{SYMBOL}/fast15_rallies_summary.json")
 
 

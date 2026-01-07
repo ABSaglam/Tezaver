@@ -186,24 +186,28 @@ def _build_grade_summary(
 def compute_btc_15m_grade_summaries() -> Dict[str, GradeSummary]:
     """
     Compute grade summaries for BTCUSDT 15m:
-    - Reads library/fast15_rallies/BTCUSDT/fast15_rallies.parquet
+    - Reads from RallyStore (via helper)
     - Returns Diamond/Gold/Silver/Bronze summaries
     """
-    rallies_path = Path("library/fast15_rallies/BTCUSDT/fast15_rallies.parquet")
-    if not rallies_path.exists():
-        raise FileNotFoundError(
-            f"BTCUSDT 15m rally dataset not found at {rallies_path}. "
-            "Grade kartları için bu dosyanın üretilmiş olması gerekiyor."
-        )
-
-    df = pd.read_parquet(rallies_path)
+    df = _load_btc_15m_rally_dataset()
+    
+    if df.empty:
+        # If DB is empty for BTC, return empty summaries or raise error
+        # Returning empty to be safe
+        # raise FileNotFoundError("BTCUSDT 15m rally dataset not found in RallyStore.")
+        pass # Will handle below with check
 
     # Check required column
     if "future_max_gain_pct" not in df.columns:
-        raise ValueError(
-            "Dataset missing 'future_max_gain_pct' column. "
-            "Grade kartları için bu alan gerekli."
-        )
+        # If empty df, columns are missing too.
+        # Fallback to empty if genuinely empty
+        if df.empty:
+            df = pd.DataFrame(columns=["future_max_gain_pct"])
+        else:
+            raise ValueError(
+                "Dataset missing 'future_max_gain_pct' column. "
+                "Grade kartları için bu alan gerekli."
+            )
 
     # Sort thresholds descending for proper range assignment
     ordered = sorted(GRADE_THRESHOLDS.items(), key=lambda x: x[1], reverse=True)
@@ -256,34 +260,46 @@ def _safe_value_counts(s: pd.Series) -> Dict[str, float]:
     return {str(k): float(v) for k, v in vc.to_dict().items()}
 
 
+
+from tezaver.core.rally_store import RallyStore
+
 def _load_btc_15m_rally_dataset() -> pd.DataFrame:
-    """Load BTC 15m rally dataset."""
-    rallies_path = Path("library/fast15_rallies/BTCUSDT/fast15_rallies.parquet")
-    if not rallies_path.exists():
-        return pd.DataFrame()
-    return pd.read_parquet(rallies_path)
+    """Load BTC 15m rally dataset from RallyStore."""
+    return _load_rally_dataset("BTCUSDT", "15m")
 
 
 def _load_rally_dataset(symbol: str, timeframe: str) -> pd.DataFrame:
     """
-    Load rally dataset for any supported timeframe.
-    
-    Paths:
-      - 15m: library/fast15_rallies/{symbol}/fast15_rallies.parquet
-      - 1h:  library/time_labs/1h/{symbol}/rallies_1h.parquet
-      - 4h:  library/time_labs/4h/{symbol}/rallies_4h.parquet
+    Load rally dataset for any supported timeframe using RallyStore.
+    Returns a DataFrame flattened from raw_data.
     """
-    if timeframe == "15m":
-        path = Path(f"library/fast15_rallies/{symbol}/fast15_rallies.parquet")
-    elif timeframe in ["1h", "4h"]:
-        path = Path(f"library/time_labs/{timeframe}/{symbol}/rallies_{timeframe}.parquet")
-    else:
+    store = RallyStore()
+    rallies = store.list_rallies(symbol=symbol, timeframe=timeframe)
+    
+    if not rallies:
         return pd.DataFrame()
     
-    if not path.exists():
-        return pd.DataFrame()
-    
-    return pd.read_parquet(path)
+    # Flatten data: primarily use raw_data
+    data_list = []
+    for r in rallies:
+        item = {}
+        # Start with raw_data
+        if r.get('raw_data'):
+            item.update(r['raw_data'])
+            
+        # Ensure critical metadata matches DB
+        item['id'] = r['id']
+        item['symbol'] = r['symbol']
+        item['event_tf'] = r['timeframe']
+        
+        # Ensure future_max_gain_pct exists (critical for classification)
+        if 'future_max_gain_pct' not in item:
+            item['future_max_gain_pct'] = None
+            
+        data_list.append(item)
+        
+    return pd.DataFrame(data_list)
+
 
 
 def _get_tf_column_names(timeframe: str) -> Dict[str, str]:

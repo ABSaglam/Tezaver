@@ -128,14 +128,20 @@ class RallyStore:
             cursor.execute(sql, (rally_id, symbol, timeframe, tier, event_time, json_str, now, now))
             
         else:
-            # Update existing
+            # Update existing + metadata columns (in case they were wrong/changed)
+             # Extract meta from data if available, else placeholders
+            symbol = data.get('symbol', 'UNKNOWN')
+            timeframe = data.get('timeframe', 'UNKNOWN')
+            tier = data.get('rally_grade') or data.get('tier', 'UNKNOWN')
+            event_time = data.get('event_time', now)
+
             col_name = f"{layer}_data"
             sql = f"""
                 UPDATE rallies 
-                SET {col_name} = ?, updated_at = ?
+                SET symbol = ?, timeframe = ?, tier = ?, event_time = ?, {col_name} = ?, updated_at = ?
                 WHERE id = ?
             """
-            cursor.execute(sql, (json_str, now, rally_id))
+            cursor.execute(sql, (symbol, timeframe, tier, event_time, json_str, now, rally_id))
             
         conn.commit()
         conn.close()

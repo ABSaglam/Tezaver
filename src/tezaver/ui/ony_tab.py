@@ -246,7 +246,7 @@ def render_ony_studio():
         symbol = st.selectbox("Coin", symbols, index=default_sym_idx, key="ony_symbol", label_visibility="collapsed")
         
     with c_tf:
-        timeframes = ["15m", "1h", "4h"]
+        timeframes = ["15m", "1h", "4h", "1d"]
         sess_tf = st.session_state.get('ony_timeframe')
         if sess_tf and sess_tf in timeframes:
             default_tf_idx = timeframes.index(sess_tf)

@@ -56,7 +56,7 @@ class AssembledRally:
         if self.archetype:
             return "🏷️"
         
-        tier_icons = {"DIAMOND": "💎", "GOLD": "🥇", "SILVER": "🥈", "BRONZE": "🥉"}
+        tier_icons = {"DIAMOND": "💎", "GOLD": "🥇", "SILVER": "🥈", "BRONZE": "🥉", "IRON": "🔩"}
         return tier_icons.get(self.tier, "⚪")
 
 class RallyAssembler:
@@ -159,7 +159,7 @@ class RallyAssembler:
                 pass
             
         # Label Construction
-        tier_map = {"DIAMOND": "💎", "GOLD": "🥇", "SILVER": "🥈", "BRONZE": "🥉", "OTHER": "🔹"}
+        tier_map = {"DIAMOND": "💎", "GOLD": "🥇", "SILVER": "🥈", "BRONZE": "🥉", "IRON": "🔩", "OTHER": "🔹"}
         t_icon = tier_map.get(tier, "🔹")
         rev_icon = "🛠️" if is_revised else ""
         

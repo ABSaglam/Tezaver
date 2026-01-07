@@ -394,9 +394,8 @@ def render_coin_detail_page(symbol: str):
     
     tabs = st.tabs(tab_names)
     
-    # 1. Rally (Fast15 + Time-Labs + Radar + Quality + Families)
     with tabs[0]:
-        sub_tabs = st.tabs(["🦅 Kartal Göz", "⚡ 15 Dakika", "⏱ 1 Saat", "⏱ 4 Saat", "📡 Rally Radar", "🎯 Rally Quality", "🧬 Rally Aileleri"])
+        sub_tabs = st.tabs(["🦅 Kartal Göz", "⚡ 15 Dakika", "⏱ 1 Saat", "⏱ 4 Saat", "⏱ 1 Gün", "📡 Rally Radar", "🎯 Rally Quality", "🧬 Rally Aileleri"])
         
         with sub_tabs[0]:
             render_kartal_goz_tab(symbol)
@@ -407,10 +406,12 @@ def render_coin_detail_page(symbol: str):
         with sub_tabs[3]:
             render_time_labs_tab(symbol, "4h")
         with sub_tabs[4]:
-            render_rally_radar_tab(symbol)
+            render_time_labs_tab(symbol, "1d")
         with sub_tabs[5]:
-            render_rally_quality_tab(symbol)
+            render_rally_radar_tab(symbol)
         with sub_tabs[6]:
+            render_rally_quality_tab(symbol)
+        with sub_tabs[7]:
             render_rally_families_tab(symbol)
 
     # 2. Bilgelik (Wisdom)

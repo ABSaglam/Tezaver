@@ -13,26 +13,28 @@ import argparse
 import sys
 from typing import List
 
-from tezaver.core.config import DEFAULT_COINS
+from tezaver.core.config import DEFAULT_COINS, TIME_LABS_LOOKAHEAD_BARS, TIME_LABS_MIN_GAIN, TIME_LABS_RALLY_BUCKETS, TIME_LABS_EVENT_GAP
 from tezaver.core.logging_utils import get_logger
-from tezaver.rally.time_labs_scanner import (
-    run_1h_rally_scan_for_symbol,
-    run_4h_rally_scan_for_symbol
-)
+from tezaver.rally.time_labs_scanner import run_timeframe_rally_scan_for_symbol
 from tezaver.ony.auto_approver import OnyAutoApprover
 
 logger = get_logger(__name__)
 
 def run_for_symbol(symbol: str, tf: str):
-    """Dispatch to correct scanner function."""
+    """Dispatch to generic scanner function."""
     try:
-        if tf == "1h":
-            result = run_1h_rally_scan_for_symbol(symbol)
-        elif tf == "4h":
-            result = run_4h_rally_scan_for_symbol(symbol)
-        else:
-            logger.error(f"Unknown timeframe: {tf}")
-            return
+        if tf not in TIME_LABS_LOOKAHEAD_BARS:
+             logger.error(f"Unknown timeframe/config missing: {tf}")
+             return
+
+        result = run_timeframe_rally_scan_for_symbol(
+            symbol=symbol,
+            timeframe=tf,
+            lookahead=TIME_LABS_LOOKAHEAD_BARS[tf],
+            min_gain=TIME_LABS_MIN_GAIN[tf],
+            buckets=TIME_LABS_RALLY_BUCKETS,
+            event_gap=TIME_LABS_EVENT_GAP[tf]
+        )
             
         logger.info(f"Scan complete for {symbol} ({tf}): {result.num_events_total} events found.")
         
@@ -48,7 +50,8 @@ def run_for_symbol(symbol: str, tf: str):
 
 def main():
     parser = argparse.ArgumentParser(description="Tezaver Time-Labs Scan Runner")
-    parser.add_argument("--tf", type=str, required=True, choices=["1h", "4h"], help="Timeframe to scan (1h or 4h)")
+    # Added 1d and 5m support to CLI
+    parser.add_argument("--tf", type=str, required=True, choices=["5m", "15m", "1h", "4h", "1d"], help="Timeframe (e.g. 1h, 4h, 1d)")
     
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--symbol", type=str, help="Specific symbol to scan (e.g. BTCUSDT)")
@@ -65,7 +68,9 @@ def main():
     else:
         symbols_to_scan = [args.symbol]
         
-    for sym in symbols_to_scan:
+    for i, sym in enumerate(symbols_to_scan):
+        if args.all_symbols and i % 10 == 0:
+            print(f"Progress: {i}/{len(symbols_to_scan)}...")
         run_for_symbol(sym, args.tf)
         
     logger.info("Time-Labs Scan Job Completed.")

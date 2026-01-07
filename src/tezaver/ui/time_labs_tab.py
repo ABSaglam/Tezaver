@@ -81,27 +81,11 @@ def load_time_labs_rallies(symbol: str, timeframe: str) -> Optional[pd.DataFrame
         logger.debug(f"SQLite load failed for {symbol} {timeframe}: {e}")
     
     # Fallback: Parquet (for backward compatibility)
-    try:
-        if timeframe == "15m":
-            path = coin_cell_paths.get_fast15_rallies_path(symbol)
-        else:
-            path = coin_cell_paths.get_time_labs_rallies_path(symbol, timeframe)
-    except TypeError:
-        logger.error(f"Invalid path helper signature for {timeframe}")
-        return None
-        
-    if not path.exists():
-        logger.debug(f"Time-Labs {timeframe} events not found for {symbol}")
-        return None
-        
-    try:
-        df = pd.read_parquet(path)
-        if df.empty:
-            return None
-        return df
-    except Exception as e:
-        logger.error(f"Error loading Time-Labs {timeframe} events: {e}")
-        return None
+    # Fallback removed - Single Source is RallyStore
+    if timeframe == "15m" and symbol == "BTCUSDT":
+        logger.debug("Debug hint: Ensure run_fast15_rally_scan.py was run for BTCUSDT.")
+    
+    return None
 
 
 @st.cache_data(ttl=600)
@@ -182,8 +166,10 @@ def render_time_labs_tab(symbol: str, timeframe: str):
         tf_label = "1 Saat"
     elif timeframe == "4h":
         tf_label = "4 Saat"
-    else:
+    elif timeframe == "15m":
         tf_label = "15 Dakika"
+    else:
+        tf_label = timeframe
         
     st.markdown(f"### ⏱ {tf_label} Time-Labs (Rally Laboratuvarı)")
     
@@ -235,6 +221,8 @@ def render_time_labs_tab(symbol: str, timeframe: str):
                     if process.returncode == 0:
                         status.update(label=f"✅ {timeframe} Taraması Başarıyla Tamamlandı!", state="complete", expanded=False)
                         st.success("Veriler güncellendi, sayfa yenileniyor...")
+                        # Clear cache to force reload
+                        load_time_labs_rallies.clear()
                         st.rerun()
                     else:
                         status.update(label="❌ Tarama Başarısız!", state="error", expanded=True)
@@ -285,6 +273,7 @@ def render_time_labs_tab(symbol: str, timeframe: str):
                 if bucket == '20p_30p': return "🥇 Gold"
                 if bucket == '10p_20p': return "🥈 Silver"
                 if bucket == '5p_10p': return "🥉 Bronze"
+                if bucket == '0p_5p': return "🔩 Iron"
                 return "🎗️ Weak"
             
             if 'rally_bucket' in events_df.columns:
@@ -296,6 +285,7 @@ def render_time_labs_tab(symbol: str, timeframe: str):
                     if pct >= 0.20: return "🥇 Gold"
                     if pct >= 0.10: return "🥈 Silver"
                     if pct >= 0.05: return "🥉 Bronze"
+                    if pct >= 0.03: return "🔩 Iron" # 3% threshold for Iron
                     return "🎗️ Weak"
                 events_df['rally_grade'] = events_df['future_max_gain_pct'].apply(get_grade)
         
@@ -305,14 +295,14 @@ def render_time_labs_tab(symbol: str, timeframe: str):
             "♾️ Hepsi": f"♾️ Hepsi ({len(events_df)})"
         }
         
-        for badge in ["💎 Diamond", "🥇 Gold", "🥈 Silver", "🥉 Bronze"]:
+        for badge in ["💎 Diamond", "🥇 Gold", "🥈 Silver", "🥉 Bronze", "🔩 Iron"]:
             subset = events_df[events_df['rally_grade'] == badge]
             count = len(subset)
             if count > 0:
                 avg_gain = subset['future_max_gain_pct'].mean() * 100
                 avg_qual = subset['quality_score'].mean() if 'quality_score' in subset.columns else 0
                 badge_options.append(badge)
-                badge_labels[badge] = f"{badge} ({count}) %{avg_gain:.0f} Q:{avg_qual:.0f}"
+                badge_labels[badge] = f"{badge} ({count}) %{avg_gain:.1f} Q:{avg_qual:.0f}"
             else:
                 badge_options.append(badge)
                 badge_labels[badge] = f"{badge} (0)"
@@ -382,6 +372,7 @@ def render_time_labs_tab(symbol: str, timeframe: str):
             elif gain >= 20: badge = "🥇"
             elif gain >= 10: badge = "🥈"
             elif gain >= 5: badge = "🥉"
+            elif gain >= 3: badge = "🔩"
             else: badge = "🎗️"
             
             label = f"{badge} | {event_dt.strftime('%d %b %Y %H:%M')} | %{gain:.1f} ({int(row.get('bars_to_peak', 0))} bar) | Q:{qual} | {shape}"
@@ -404,6 +395,7 @@ def render_time_labs_tab(symbol: str, timeframe: str):
         elif gain_pct >= 20: badge = "🥇 Gold"
         elif gain_pct >= 10: badge = "🥈 Silver"
         elif gain_pct >= 5: badge = "🥉 Bronze"
+        elif gain_pct >= 3: badge = "🔩 Iron"
         else: badge = "🎗️ Weak"
         
         shape_val = str(sel_event.get('rally_shape', 'Unknown')).capitalize()
