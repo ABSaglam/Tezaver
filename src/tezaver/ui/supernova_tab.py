@@ -22,14 +22,19 @@ def render_supernova_page():
     with col2:
         min_vol = st.number_input("Min Hacim (7x+)", value=7.0, step=0.5)
     with col3:
+        pass  # Placeholder for future controls
     # Tabs
-    tab1, tab2 = st.tabs(["🕵️ Klasik Dedektör", "🚀 Super Momentum (Scraper)"])
+    tab1, tab2, tab3 = st.tabs(["🕵️ Klasik Dedektör", "🚀 Super Momentum", "🎯 Günlük Radar"])
     
     with tab1:
         render_classic_detector(scan_days, min_vol)
         
     with tab2:
         render_super_momentum_tab()
+        
+    with tab3:
+        from tezaver.ui.daily_radar_tab import render_daily_radar_tab
+        render_daily_radar_tab()
 
 def render_super_momentum_tab():
     st.subheader("🚀 Super Momentum Scraper")

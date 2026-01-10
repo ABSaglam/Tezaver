@@ -5,6 +5,7 @@ import random
 from tezaver.core import system_state
 from tezaver.core import state_store
 from tezaver.core.rally_store import RallyStore
+from tezaver.mining.daily_radar_engine import DailyRadarEngine
 
 def render_insight_tab():
     # --- 1. WELCOME & DATE ---
@@ -124,13 +125,73 @@ def render_insight_tab():
 
     st.markdown("---")
 
-    # --- 3. SYSTEM PULSE (Metrics) ---
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Son 24s Ralli", len(rallies_24h), delta="Aktif")
-    col2.metric("Sistem Genleri", "142", delta="+3 (Simülasyon)") # Placeholder for DNA count
-    col3.metric("Lab Durumu", "Açık", delta_color="normal")
-    col4.metric("Son Bakım", sys_s.last_offline_maintenance_run_at.split('T')[1][:5] if sys_s.last_offline_maintenance_run_at else "-")
+    # --- 4. AMBUSH RADAR (The Pusu Pulse) ---
+    st.subheader("🎯 Pusu Radarı (Ambush)")
+    st.caption("Fırlamaya en hazır, sıkışmış yüksek kaliteli koinler.")
     
+    # Initialize Engine
+    radar_engine = DailyRadarEngine()
+    
+    # Grid for Refresh & Last Update
+    c_rad_btn, c_rad_info = st.columns([1, 4])
+    
+    with c_rad_btn:
+        if st.button("📡 Radar Yenile", use_container_width=True, help="Binance'den taze verileri çekip taramayı başlatır."):
+            with st.spinner("Veriler çekiliyor ve taranıyor..."):
+                radar_results = radar_engine.scan_all(refresh_data=True)
+                st.session_state['last_radar_results'] = radar_results
+                st.session_state['last_radar_time'] = datetime.now().strftime("%H:%M")
+                st.rerun()
+                
+    with c_rad_info:
+        last_t = st.session_state.get('last_radar_time', "-")
+        st.markdown(f"<div style='padding-top: 10px; color: gray;'>Son Tarama: {last_t}</div>", unsafe_allow_html=True)
+
+    # Display Results
+    radar_results = st.session_state.get('last_radar_results', [])
+    if not radar_results:
+        # Initial scan if session is empty (without refresh_data to be fast)
+        with st.spinner("Mevcut veriler taranıyor..."):
+            radar_results = radar_engine.scan_all(refresh_data=False)
+            st.session_state['last_radar_results'] = radar_results
+            st.session_state['last_radar_time'] = datetime.now().strftime("%H:%M")
+    
+    if radar_results:
+        # Filter for AMBUSH, TREND, NINJA
+        ambush_list = [r for r in radar_results if r.category == 'AMBUSH']
+        trend_list = [r for r in radar_results if r.category == 'TREND']
+        
+        c_ambush, c_trend = st.columns(2)
+        
+        with c_ambush:
+            st.markdown("**🏹 Pusu Adayları (Breakout Readiness)**")
+            if ambush_list:
+                df_ambush = pd.DataFrame([{
+                    "Koin": r.symbol.replace("USDT", ""),
+                    "Tier": r.dna_tier,
+                    "Puan": r.score,
+                    "Mid%": f"{r.daily.midpoint_pct:.1f}%",
+                    "RSI": f"{r.momentum.rsi:.1f}"
+                } for r in ambush_list])
+                st.dataframe(df_ambush, hide_index=True, use_container_width=True)
+            else:
+                st.caption("Şu an kriterlere uyan pusu adayı yok.")
+                
+        with c_trend:
+            st.markdown("**📈 Trend Gücü (Ongoing Rallies)**")
+            if trend_list:
+                df_trend = pd.DataFrame([{
+                    "Koin": r.symbol.replace("USDT", ""),
+                    "Tier": r.dna_tier,
+                    "Puan": r.score,
+                    "ATR%": f"{r.daily.atr_pct:.1f}%"
+                } for r in trend_list])
+                st.dataframe(df_trend, hide_index=True, use_container_width=True)
+            else:
+                st.caption("Sistemde aktif trend sinyali yok.")
+    else:
+        st.info("Henüz radar sinyali bulunamadı. Lütfen radarı yenileyin.")
+
     st.markdown("---")
 
     # --- 4. ACTION CARDS (Workflow) ---

@@ -155,10 +155,10 @@ def fetch_backfill_history(symbol: str, timeframe: str, days: int = 730) -> pd.D
         
     return df
 
-def update_history(symbol: str, timeframe: str, max_limit: int = 10000) -> pd.DataFrame:
+def update_history(symbol: str, timeframe: str, max_limit: int = 10000, fast_only: bool = False) -> pd.DataFrame:
     """
     Updates history for a coin.
-    If no history exists, performs a 2-year backfill.
+    If no history exists, performs a 2-year backfill (unless fast_only).
     If history exists, incrementally updates.
     """
     existing_df = load_existing_history(symbol, timeframe)
@@ -173,7 +173,7 @@ def update_history(symbol: str, timeframe: str, max_limit: int = 10000) -> pd.Da
     target_start_ts = now_ms - two_years_ms
     
     should_repair = False
-    if existing_df is not None and not existing_df.empty:
+    if not fast_only and existing_df is not None and not existing_df.empty:
         min_ts = existing_df["timestamp"].min()
         # If min_ts is newer than target_start by more than 30 days, we assume it's incomplete
         # (e.g. user has 30 days, but wants 730. 30 days start is way newer than 730 days start)
@@ -203,6 +203,10 @@ def update_history(symbol: str, timeframe: str, max_limit: int = 10000) -> pd.Da
     
     if existing_df is None or existing_df.empty:
         # Fetch fresh with smart backfill
+        if fast_only:
+            logger.info(f"Missing history for {symbol} {timeframe}. Skipping (Fast Only).")
+            return pd.DataFrame()
+            
         logger.info(f"Missing history for {symbol} {timeframe}. Starting 2-year backfill...")
         new_df = fetch_backfill_history(symbol, timeframe, days=730)
         
@@ -257,14 +261,14 @@ def update_history(symbol: str, timeframe: str, max_limit: int = 10000) -> pd.Da
         
         return existing_df
 
-def bulk_update_history(symbols: List[str], timeframes: List[str]) -> None:
+def bulk_update_history(symbols: List[str], timeframes: List[str], fast_only: bool = False) -> None:
     """
     Updates history for multiple coins and timeframes.
     """
     for symbol in symbols:
         for tf in timeframes:
             try:
-                update_history(symbol, tf)
+                update_history(symbol, tf, fast_only=fast_only)
             except Exception as e:
                 logger.error(f"Failed to update {symbol} {tf}: {e}", exc_info=True)
                 continue

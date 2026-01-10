@@ -1,0 +1,33 @@
+Pattern,Tier,Samples,WinRate%
+Standard-Alpha (Momentum),A,18,88.9
+Standard-Alpha (Momentum),C-,93,82.8
+Standard-Alpha (Momentum),D,34,82.4
+Standard-Alpha (Momentum),C+,827,80.7
+Standard-Alpha (Momentum),C,593,80.3
+Standard-Alpha (Momentum),B-,822,77.0
+Standard-Alpha (Momentum),B,420,75.7
+Standard-Alpha (Momentum),B+,109,66.1
+Standard-Beta (Squeeze),D,26,80.8
+Standard-Beta (Squeeze),C+,2459,58.7
+Standard-Beta (Squeeze),C,1470,58.1
+Standard-Beta (Squeeze),A,83,55.4
+Standard-Beta (Squeeze),C-,210,53.3
+Standard-Beta (Squeeze),B,2298,52.3
+Standard-Beta (Squeeze),B-,3625,52.1
+Standard-Beta (Squeeze),B+,1050,45.2
+Standard-Gamma (Recovery),D,213,53.5
+Standard-Gamma (Recovery),C+,11767,47.4
+Standard-Gamma (Recovery),C,7366,46.7
+Standard-Gamma (Recovery),C-,1093,45.5
+Standard-Gamma (Recovery),B-,15828,40.1
+Standard-Gamma (Recovery),B,9882,38.7
+Standard-Gamma (Recovery),A,459,38.1
+Standard-Gamma (Recovery),B+,4081,30.7
+Standard-General,D,442,64.3
+Standard-General,C+,32275,53.8
+Standard-General,C,19806,51.7
+Standard-General,C-,2722,51.0
+Standard-General,B-,46538,45.2
+Standard-General,B,30139,44.1
+Standard-General,A,1537,38.6
+Standard-General,B+,12971,37.1
