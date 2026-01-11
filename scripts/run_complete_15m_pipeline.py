@@ -69,34 +69,33 @@ def fetch_history(client, symbol: str, tf: str, start_ts: int):
     return df
 
 
+from tezaver.core.config import DEFAULT_COINS
+from tezaver.core import coin_cell_paths
+
 def get_symbols_missing_15m():
-    """Get symbols with coin_cells folder but no 15m history."""
-    coin_cells = Path("coin_cells")
+    """Get symbols from DEFAULT_COINS missing 15m history."""
     missing = []
-    
-    for d in coin_cells.iterdir():
-        if d.is_dir() and d.name.endswith("USDT"):
-            history_15m = d / "data" / "history_15m.parquet"
-            if not history_15m.exists():
-                missing.append(d.name)
-    
+    for symbol in DEFAULT_COINS:
+        history_15m = coin_cell_paths.get_history_file(symbol, "15m")
+        if not history_15m.exists():
+            missing.append(symbol)
     return sorted(missing)
 
 
 def get_symbols_needing_scan():
     """Get symbols with features but no rally scan."""
-    coin_cells = Path("coin_cells")
     fast15_dir = Path("library/fast15_rallies")
     
     with_features = set()
-    for d in coin_cells.iterdir():
-        if d.is_dir() and (d / "data" / "features_15m.parquet").exists():
-            with_features.add(d.name)
+    for symbol in DEFAULT_COINS:
+        if (coin_cell_paths.get_coin_data_dir(symbol) / "features_15m.parquet").exists():
+            with_features.add(symbol)
     
     scanned = set()
-    for d in fast15_dir.iterdir():
-        if d.is_dir() and (d / "fast15_rallies.parquet").exists():
-            scanned.add(d.name)
+    if fast15_dir.exists():
+        for d in fast15_dir.iterdir():
+            if d.is_dir() and (d / "fast15_rallies.parquet").exists():
+                scanned.add(d.name)
     
     return sorted(with_features - scanned)
 
@@ -134,14 +133,12 @@ def main():
     
     # Phase 2: Build features for symbols with history but no features
     print(f"\n📊 PHASE 2: Feature Calculation")
-    coin_cells = Path("coin_cells")
     need_features = []
-    for d in coin_cells.iterdir():
-        if d.is_dir() and d.name.endswith("USDT"):
-            history = d / "data" / "history_15m.parquet"
-            features = d / "data" / "features_15m.parquet"
-            if history.exists() and not features.exists():
-                need_features.append(d.name)
+    for symbol in DEFAULT_COINS:
+        history = coin_cell_paths.get_history_file(symbol, "15m")
+        features = coin_cell_paths.get_coin_data_dir(symbol) / "features_15m.parquet"
+        if history.exists() and not features.exists():
+            need_features.append(symbol)
     
     print(f"Need features: {len(need_features)}")
     feature_errors = []

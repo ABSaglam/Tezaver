@@ -90,58 +90,76 @@ class RallyStore:
     def upsert_rally(self, rally_id: str, data: Dict[str, Any], layer: str = 'raw'):
         """
         Insert or Update a rally record.
-        
-        Args:
-            rally_id: Unique ID
-            data: Dictionary of data to save
-            layer: Which layer to update ('raw', 'rev', 'molder', 'alchemy')
         """
         conn = self._get_conn()
         cursor = conn.cursor()
         
+        # Ensure data is a dict (if it was a Series, convert)
+        if hasattr(data, 'to_dict'):
+            data = data.to_dict()
+            
         json_str = json.dumps(data, default=str)
         now = datetime.now()
         
+        # Extract metadata from data with fallbacks
+        # Fallback to parsing the ID if keys are missing
+        # ID Format: SYMBOL_TF_TIER_TS
+        id_parts = rally_id.split('_')
+        
+        symbol = data.get('symbol')
+        if not symbol and len(id_parts) >= 1:
+            symbol = id_parts[0]
+            
+        timeframe = data.get('timeframe')
+        if not timeframe and len(id_parts) >= 2:
+            timeframe = id_parts[1]
+            
+        tier = data.get('rally_grade') or data.get('tier')
+        if not tier and len(id_parts) >= 3:
+            tier_map = {'D': 'DIAMOND', 'G': 'GOLD', 'S': 'SILVER', 'B': 'BRONZE', 'I': 'IRON'}
+            tier = tier_map.get(id_parts[2], 'UNKNOWN')
+            
+        event_time = data.get('event_time')
+        if not event_time and len(id_parts) >= 4:
+            try:
+                # TS is usually the last part
+                ts = int(id_parts[-1])
+                event_time = datetime.fromtimestamp(ts)
+            except:
+                event_time = now
+        elif isinstance(event_time, str):
+            try:
+                event_time = pd.to_datetime(event_time)
+            except:
+                event_time = now
+        elif not event_time:
+            event_time = now
+
+        # Convert event_time to string for SQLite if it's still a Timestamp/Datetime
+        if hasattr(event_time, 'isoformat'):
+            event_time_str = event_time.isoformat()
+        else:
+            event_time_str = str(event_time)
+
         # Check existence
         cursor.execute("SELECT id FROM rallies WHERE id = ?", (rally_id,))
         exists = cursor.fetchone()
         
         if not exists:
-            # Create new record (usually from Scanner/Raw layer)
-            if layer != 'raw':
-                # Rare case: annotating a non-existent raw rally? 
-                # Should we allow it? Yes, creating a placeholder.
-                pass
-            
-            # Extract meta from data if available, else placeholders
-            symbol = data.get('symbol', 'UNKNOWN')
-            timeframe = data.get('timeframe', 'UNKNOWN')
-            tier = data.get('rally_grade') or data.get('tier', 'UNKNOWN')
-            event_time = data.get('event_time', now)
-            
             col_name = f"{layer}_data"
-            
             sql = f"""
                 INSERT INTO rallies (id, symbol, timeframe, tier, event_time, {col_name}, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """
-            cursor.execute(sql, (rally_id, symbol, timeframe, tier, event_time, json_str, now, now))
-            
+            cursor.execute(sql, (rally_id, symbol, timeframe, tier, event_time_str, json_str, now, now))
         else:
-            # Update existing + metadata columns (in case they were wrong/changed)
-             # Extract meta from data if available, else placeholders
-            symbol = data.get('symbol', 'UNKNOWN')
-            timeframe = data.get('timeframe', 'UNKNOWN')
-            tier = data.get('rally_grade') or data.get('tier', 'UNKNOWN')
-            event_time = data.get('event_time', now)
-
             col_name = f"{layer}_data"
             sql = f"""
                 UPDATE rallies 
                 SET symbol = ?, timeframe = ?, tier = ?, event_time = ?, {col_name} = ?, updated_at = ?
                 WHERE id = ?
             """
-            cursor.execute(sql, (symbol, timeframe, tier, event_time, json_str, now, rally_id))
+            cursor.execute(sql, (symbol, timeframe, tier, event_time_str, json_str, now, rally_id))
             
         conn.commit()
         conn.close()
