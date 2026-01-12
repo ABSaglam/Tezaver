@@ -13,7 +13,7 @@ TUNEL = {
     'NINJA': {'atr_min': 12.0, 'rsi_min': 60, 'rsi_max': 75}
 }
 
-start_date = datetime.now() - timedelta(days=90)
+start_date = datetime.now() - timedelta(days=730)
 results = []
 
 print("Tarama başlıyor...")
@@ -60,7 +60,7 @@ for idx, symbol in enumerate(config.DEFAULT_COINS):
             
             if is_trend or is_ninja:
                 window_start = row['datetime']
-                window_end = row['datetime'] + timedelta(hours=72)
+                window_end = row['datetime'] + timedelta(hours=120)
                 
                 hit_tier = None
                 for r_time in sorted(rally_map.keys()):
@@ -82,12 +82,10 @@ for idx, symbol in enumerate(config.DEFAULT_COINS):
                     full_tier = hit_tier
                 else:
                     dd = max_loss
-                    if dd >= -5: full_tier = 'IRON'
-                    elif dd >= -10: full_tier = 'BRONZE'
-                    elif dd >= -15: full_tier = '-IRON'
-                    elif dd >= -20: full_tier = '-BRONZE'
-                    elif dd >= -30: full_tier = '-SILVER'
-                    elif dd >= -40: full_tier = '-GOLD'
+                    if dd >= -5: full_tier = '-IRON'
+                    elif dd >= -10: full_tier = '-BRONZE'
+                    elif dd >= -20: full_tier = '-SILVER'
+                    elif dd >= -30: full_tier = '-GOLD'
                     else: full_tier = '-DIAMOND'
                 
                 results.append({
@@ -109,7 +107,7 @@ total = len(df_res)
 tier_order = ['DIAMOND', 'GOLD', 'SILVER', 'BRONZE', 'IRON', '-IRON', '-BRONZE', '-SILVER', '-GOLD', '-DIAMOND']
 
 output = []
-output.append('# 🚇 AYAŞ TÜNELİ - 3 AYLIK BACKTEST RAPORU (10 Tier)')
+output.append('# 🚇 AYAŞ TÜNELİ - 2 SENELİK BACKTEST RAPORU (120h Penceresi)')
 output.append(f'Tarih: {datetime.now().strftime("%Y-%m-%d %H:%M")}')
 output.append('')
 output.append('## Özet')
@@ -171,8 +169,8 @@ output.append('')
 output.append(f'## Koinler ({len(all_coins)} adet)')
 output.append(', '.join(sorted(all_coins)))
 
-with open('analysis/ayas_tuneli_3ay_rapor.md', 'w') as f:
+with open('analysis/ayas_tuneli_2y_120h_rapor.md', 'w') as f:
     f.write('\n'.join(output))
 
-print(f"\nRapor kaydedildi: analysis/ayas_tuneli_3ay_rapor.md")
+print(f"\nRapor kaydedildi: analysis/ayas_tuneli_1y_rapor.md")
 print(f"Ralli: {d+g+s} ({(d+g+s)/total*100:.1f}%), Nötr: {b+i} ({(b+i)/total*100:.1f}%), Kayıp: {neg_count} ({neg_count/total*100:.1f}%)")
