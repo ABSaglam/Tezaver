@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  tezaver_bot:
+    container_name: tezaver_bot
+    build:
+      context: ../..
+      dockerfile: docker/cloud/Dockerfile
+    restart: unless-stopped
+    # Interactive mode for logs
+    stdin_open: true
+    tty: true
+    
+    # Mount data to host for persistence
+    volumes:
+      - ./data:/app/data/cloud
+      - ./out:/app/out/cloud_runs
+      
+    # Default environment variables
+    environment:
+      - PYTHONUNBUFFERED=1
+      - TZ=Europe/Istanbul
+      
+    # Default command (Overridden by setup script or user)
+    # Allows easily changing symbols later
+    command: >
+      python -m tezaver.cloud.run_live 
+      --mode LIVE 
+      --symbols BTCUSDT,ETHUSDT 
+      --tf 15m
