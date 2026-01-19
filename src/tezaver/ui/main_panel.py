@@ -645,6 +645,7 @@ def main():
                 "👁️ Insight Panel", 
 
                 "🔍 Detay",
+                "🎯 Coin Stratejileri",
                 "🎯 Revize",
                 "📐 Kalıpçı",
                 "💥 SuperNova",
@@ -683,7 +684,9 @@ def main():
              render_coin_detail_page(sym)
              
         elif current_nav == "👁️ Insight Panel": render_insight_tab()
-
+        elif current_nav == "🎯 Coin Stratejileri":
+            from tezaver.ui.coin_strategies_tab import main as render_coin_strategies
+            render_coin_strategies()
         elif current_nav == "🎯 Revize": render_ony_page()
         elif current_nav == "📐 Kalıpçı":
                 try:

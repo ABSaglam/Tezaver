@@ -33,7 +33,7 @@
             "rally_avg": 25.58,
             "normal_avg": 0.00,
             "difference_pct": 3427003,
-            "rank": "STRONGEST ACROSS ALL COINS"
+            "rank": "TÜM COİNLER ARASINDA EN GÜÇLÜ"
         },
         "secondary_discriminators": [
             {
@@ -45,14 +45,14 @@
                 "difference_pct": 11242
             }
         ],
-        "character_type": "Ultra-Strong Momentum",
+        "character_type": "Ultra-Güçlü Momentum",
         "notes": [
-            "mom_5d shows +3.4 MILLION percent difference - unprecedented!",
-            "Rally days average 25.6% 5-day momentum vs 0% on normal days",
-            "February 2023: 8 consecutive signals (Feb 16-24)",
-            "January-February 2025: Another cluster with 7 signals",
-            "Some individual rallies showed 100%+ mom_5d (e.g., 138.7% on Feb 20, 2023)",
-            "Very clean pattern - simple threshold works perfectly"
+            "mom_5d +3.4 MİLYON yüzde fark gösteriyor - benzeri görülmemiş!",
+            "Rally günleri ortalama %25.6 5-günlük momentum, normal günler %0",
+            "Şubat 2023: Ardışık 8 sinyal (16-24 Şubat)",
+            "Ocak-Şubat 2025: 7 sinyal içeren başka bir küme",
+            "Bazı rallilerde %100+ mom_5d görüldü (örn: 20 Şubat 2023'te %138.7)",
+            "Çok temiz pattern - basit eşik mükemmel çalışıyor"
         ]
     },
     "analysis_files": {
@@ -72,6 +72,6 @@
         "signal_count": "EXCELLENT",
         "uniqueness": "MOST_UNIQUE_DISCRIMINATOR",
         "confidence": "VERY_HIGH",
-        "recommendation": "This is the cleanest momentum pattern discovered. ACH rallies are preceded by very strong 5-day momentum buildups that are completely absent during normal trading. The +3.4M% discriminator difference is the strongest seen across all analyzed coins."
+        "recommendation": "Bu keşfedilen en temiz momentum pattern'idir. ACH rallileri, normal işlem günlerinde tamamen olmayan çok güçlü 5-günlük momentum birikimleriyle başlar. +3.4M% ayırıcı farkı, tüm analiz edilen coinler arasında en güçlüdür."
     }
 }
