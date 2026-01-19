@@ -1,0 +1,184 @@
+"""
+Pre-Rally Day Deep Dive
+========================
+What happens on the day BEFORE a DSG rally?
+Detailed bar-by-bar analysis.
+"""
+
+import sys
+import os
+import pandas as pd
+import numpy as np
+import json
+import sqlite3
+from datetime import datetime, timedelta
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
+from tezaver.core import coin_cell_paths
+
+DB_PATH = coin_cell_paths.get_library_root() / "rallies.db"
+
+def calculate_rsi(prices, period=14):
+    delta = prices.diff()
+    gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+    loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+    rs = gain / loss
+    return 100 - (100 / (1 + rs))
+
+def calculate_macd(prices, fast=12, slow=26, signal=9):
+    ema_fast = prices.ewm(span=fast).mean()
+    ema_slow = prices.ewm(span=slow).mean()
+    macd_line = ema_fast - ema_slow
+    signal_line = macd_line.ewm(span=signal).mean()
+    histogram = macd_line - signal_line
+    return macd_line, signal_line, histogram
+
+def analyze_pre_rally_day(symbol):
+    """Analyze what happens the day before DSG rallies."""
+    print(f"\n{'='*90}")
+    print(f"📅 {symbol} - PRE-RALLY DAY ANALYSIS")
+    print(f"{'='*90}")
+    
+    # Get DSG rallies
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute(f"""
+        SELECT tier, event_time, raw_data FROM rallies 
+        WHERE symbol = '{symbol}' AND tier IN ('DIAMOND', 'SILVER', 'GOLD')
+        ORDER BY event_time
+        LIMIT 100
+    """)
+    rallies = cursor.fetchall()
+    conn.close()
+    
+    if not rallies:
+        return None
+    
+    # Load daily data
+    path = coin_cell_paths.get_history_file(symbol, '1d')
+    if not path.exists():
+        return None
+    
+    df = pd.read_parquet(path).sort_values('timestamp')
+    df['datetime'] = pd.to_datetime(df['timestamp'], unit='ms')
+    df['rsi'] = calculate_rsi(df['close'])
+    df['rsi_ema'] = df['rsi'].ewm(span=9).mean()
+    df['ema9'] = df['close'].ewm(span=9).mean()
+    df['ema21'] = df['close'].ewm(span=21).mean()
+    
+    macd, macd_signal, hist = calculate_macd(df['close'])
+    df['macd_hist'] = hist
+    df['macd_rising'] = hist > hist.shift(1)
+    
+    df['vol_ma20'] = df['volume'].rolling(20).mean()
+    df['vol_ratio'] = df['volume'] / df['vol_ma20']
+    df['atr'] = (df['high'] - df['low']) / df['close'] * 100
+    
+    # Daily price action
+    df['body'] = abs(df['close'] - df['open']) / df['open'] * 100
+    df['upper_wick'] = (df['high'] - df[['open', 'close']].max(axis=1)) / df['open'] * 100
+    df['lower_wick'] = (df[['open', 'close']].min(axis=1) - df['low']) / df['open'] * 100
+    df['candle_type'] = df.apply(lambda x: 'GREEN' if x['close'] > x['open'] else 'RED', axis=1)
+    
+    # Analyze each rally's pre-day
+    pre_days = []
+    
+    for tier, event_time, raw_data in rallies:
+        raw = json.loads(raw_data)
+        start_time = pd.to_datetime(raw['start_time'])
+        sig_date = (start_time - timedelta(days=1)).date()
+        
+        sig_rows = df[df['datetime'].dt.date == sig_date]
+        if sig_rows.empty:
+            continue
+        
+        sig = sig_rows.iloc[0]
+        
+        pre_day = {
+            'tier': tier,
+            'date': event_time[:10],
+            'gain': raw['gain'],
+            # Price action
+            'candle': sig['candle_type'],
+            'body': sig['body'],
+            'upper_wick': sig['upper_wick'],
+            'lower_wick': sig['lower_wick'],
+            'close_vs_ema9': ((sig['close'] - sig['ema9']) / sig['ema9'] * 100),
+            'close_vs_ema21': ((sig['close'] - sig['ema21']) / sig['ema21'] * 100),
+            # Indicators
+            'rsi': sig['rsi'],
+            'rsi_vs_ema': sig['rsi'] - sig['rsi_ema'],
+            'macd_hist': sig['macd_hist'],
+            'macd_rising': sig['macd_rising'],
+            'vol_ratio': sig['vol_ratio'],
+            'atr': sig['atr']
+        }
+        
+        pre_days.append(pre_day)
+    
+    if not pre_days:
+        return None
+    
+    # Categorize by tier
+    diamonds = [p for p in pre_days if p['tier'] == 'DIAMOND']
+    golds = [p for p in pre_days if p['tier'] == 'GOLD']
+    silvers = [p for p in pre_days if p['tier'] == 'SILVER']
+    
+    print(f"\nAnalyzed {len(pre_days)} pre-rally days:")
+    print(f"  💎 {len(diamonds)} Diamonds")
+    print(f"  🥇 {len(golds)} Golds")
+    print(f"  🥈 {len(silvers)} Silvers")
+    
+    # === DIAMOND PRE-DAY SIGNATURE ===
+    if diamonds:
+        print(f"\n💎 DIAMOND PRE-DAY SIGNATURE ({len(diamonds)} samples):")
+        print(f"  Candle: {sum(1 for d in diamonds if d['candle']=='GREEN')}/{len(diamonds)} GREEN")
+        print(f"  Avg Body: {np.mean([d['body'] for d in diamonds]):.2f}%")
+        print(f"  Avg Upper Wick: {np.mean([d['upper_wick'] for d in diamonds]):.2f}%")
+        print(f"  Avg Lower Wick: {np.mean([d['lower_wick'] for d in diamonds]):.2f}%")
+        print(f"  RSI: {np.mean([d['rsi'] for d in diamonds]):.1f}")
+        print(f"  RSI vs EMA: {np.mean([d['rsi_vs_ema'] for d in diamonds]):+.1f}")
+        print(f"  Close vs EMA9: {np.mean([d['close_vs_ema9'] for d in diamonds]):+.2f}%")
+        print(f"  MACD Rising: {sum(1 for d in diamonds if d['macd_rising'])}/{len(diamonds)}")
+        print(f"  Vol Ratio: {np.mean([d['vol_ratio'] for d in diamonds]):.2f}x")
+        print(f"  ATR: {np.mean([d['atr'] for d in diamonds]):.2f}%")
+        
+        print(f"\n  📋 Sample Diamond Pre-Days:")
+        for d in sorted(diamonds, key=lambda x: x['gain'], reverse=True)[:5]:
+            candle_icon = '🟢' if d['candle'] == 'GREEN' else '🔴'
+            print(f\"    {d['date']}: {candle_icon} Body:{d['body']:.1f}% RSI:{d['rsi']:.0f} Vol:{d['vol_ratio']:.1f}x → %{d['gain']:.0f}\")
+    
+    # === ALL DSG PATTERN ===
+    print(f"\n📊 ALL DSG PRE-DAY PATTERN ({len(pre_days)} samples):")
+    print(f"  Green Candle: {sum(1 for p in pre_days if p['candle']=='GREEN')}/{len(pre_days)} ({sum(1 for p in pre_days if p['candle']=='GREEN')/len(pre_days)*100:.0f}%)")
+    print(f"  Avg RSI: {np.mean([p['rsi'] for p in pre_days]):.1f}")
+    print(f"  Avg Vol: {np.mean([p['vol_ratio'] for p in pre_days]):.2f}x")
+    print(f"  Avg ATR: {np.mean([p['atr'] for p in pre_days]):.2f}%")
+    print(f"  Above EMA9: {sum(1 for p in pre_days if p['close_vs_ema9'] > 0)}/{len(pre_days)} ({sum(1 for p in pre_days if p['close_vs_ema9'] > 0)/len(pre_days)*100:.0f}%)")
+    
+    return {
+        'symbol': symbol,
+        'total': len(pre_days),
+        'diamonds': diamonds,
+        'golds': golds,
+        'silvers': silvers
+    }
+
+if __name__ == "__main__":
+    top_10 = [
+        'PEPEUSDT', 'RAYUSDT', 'SYNUSDT', 'BONKUSDT', 'FTTUSDT',
+        'MAVUSDT', 'WLDUSDT', 'ARKMUSDT', 'FLOKIUSDT', 'VANRYUSDT'
+    ]
+    
+    results = []
+    for symbol in top_10:
+        result = analyze_pre_rally_day(symbol)
+        if result:
+            results.append(result)
+    
+    # Save
+    output_path = coin_cell_paths.get_library_root() / "pre_rally_analysis.json"
+    with open(output_path, 'w') as f:
+        json.dump(results, f, indent=2, default=str)
+    
+    print(f"\n✅ Pre-rally analysis saved to: {output_path}")
