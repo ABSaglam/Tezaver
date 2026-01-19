@@ -1,0 +1,87 @@
+{
+    "symbol": "AAVEUSDT",
+    "name": "Aave",
+    "version": "v2",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
+    "strategy": {
+        "version": "v2",
+        "rule": "daily_ch <= -15 AND mom_3d <= -20",
+        "type": "counter_trend_dipbuying",
+        "indicators_used": [
+            "daily_ch",
+            "mom_3d"
+        ],
+        "file": "scripts/coins/aave/aave_unique_v2.py",
+        "previous_versions": [
+            "v1: daily_ch <= -18 (1 signal only)"
+        ]
+    },
+    "performance_train": {
+        "total_signals": 2,
+        "precision_pct": 100.0,
+        "hits": 2,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 0,
+            "gold": 1,
+            "silver": 1
+        },
+        "avg_gain_pct": 18.5,
+        "note": "Low signal count but 100% precise"
+    },
+    "discovery": {
+        "strongest_discriminator": {
+            "indicator": "daily_ch",
+            "rally_avg": -4.64,
+            "normal_avg": 0.22,
+            "difference_pct": -2170,
+            "direction": "NEGATIVE"
+        },
+        "secondary_discriminators": [
+            {
+                "indicator": "ema_dist",
+                "difference_pct": -1354,
+                "direction": "NEGATIVE"
+            },
+            {
+                "indicator": "mom_3d",
+                "difference_pct": -1299,
+                "direction": "NEGATIVE"
+            }
+        ],
+        "character_type": "Reverse/Dip-Buying (UNIQUE)",
+        "notes": [
+            "COMPLETELY OPPOSITE to all other coins!",
+            "Rally days show NEGATIVE values (declines)",
+            "This is a 'buy the dip' / reversal pattern",
+            "Normal momentum strategies don't work",
+            "Hybrid strategy tested but failed (max 75% precision)",
+            "Only 2/11 DG rallies captured - rest have mixed patterns",
+            "Consecutive signals on April 12-13, 2024"
+        ]
+    },
+    "analysis_files": {
+        "pattern_discovery": "scripts/coins/aave/aave_pattern_discovery.py",
+        "threshold_sweep": "scripts/coins/aave/aave_threshold_sweep.py",
+        "missed_analysis": "scripts/coins/aave/aave_missed_analysis.py",
+        "hybrid_test": "scripts/coins/aave/aave_hybrid_test.py",
+        "final_strategy": "scripts/coins/aave/aave_unique_v2.py"
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": false,
+        "note": "Low signal count - consider as supplementary strategy only"
+    },
+    "ai_insights": {
+        "pattern_clarity": "UNIQUE_BUT_RARE",
+        "strategy_simplicity": "SIMPLE",
+        "signal_count": "LOW",
+        "uniqueness": "COMPLETELY_DIFFERENT_FROM_ALL_OTHERS",
+        "confidence": "MEDIUM",
+        "recommendation": "AAVE is a special case - it's the ONLY coin showing counter-trend/dip-buying pattern. While precise, it only captures 2 out of 11 DG rallies. The remaining rallies don't fit either dip-buying or momentum patterns. Use as a supplementary 'extreme dip' signal rather than primary strategy."
+    }
+}

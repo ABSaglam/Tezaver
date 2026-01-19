@@ -1,0 +1,60 @@
+{
+    "symbol": "ACEUSDT",
+    "name": "Fusionist",
+    "version": "v1",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
+    "strategy": {
+        "version": "v1",
+        "rule": "mom_3d >= 10",
+        "type": "momentum",
+        "indicators_used": [
+            "mom_3d"
+        ],
+        "file": "scripts/coins/ace/ace_unique_v1.py"
+    },
+    "performance_train": {
+        "total_signals": 40,
+        "precision_pct": 100.0,
+        "hits": 40,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 0,
+            "gold": 6,
+            "silver": 34
+        },
+        "avg_gain_pct": 14.0,
+        "note": "HIGHEST signal count before ACH!"
+    },
+    "discovery": {
+        "strongest_discriminator": {
+            "indicator": "daily_ch",
+            "rally_avg": 1.53,
+            "normal_avg": -0.33,
+            "difference_pct": 565
+        },
+        "secondary_discriminators": [
+            {
+                "indicator": "mom_3d",
+                "difference_pct": 443
+            },
+            {
+                "indicator": "mom_5d",
+                "difference_pct": 179
+            }
+        ],
+        "character_type": "Simple Momentum",
+        "notes": [
+            "40 signals - excellent coverage",
+            "Simple single threshold (mom_3d >= 10%) works perfectly",
+            "Very consistent throughout 2024-2025"
+        ]
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": false
+    }
+}

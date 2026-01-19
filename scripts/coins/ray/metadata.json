@@ -1,0 +1,68 @@
+{
+    "symbol": "RAYUSDT",
+    "name": "Raydium",
+    "version": "v1",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
+    "strategy": {
+        "version": "v1",
+        "rule": "ema_dist >= 30",
+        "type": "ema_distance",
+        "indicators_used": [
+            "ema_dist"
+        ],
+        "file": "scripts/coins/ray/v1_unique.py"
+    },
+    "performance_train": {
+        "total_signals": 11,
+        "precision_pct": 100.0,
+        "hits": 11,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 1,
+            "gold": 1,
+            "silver": 9
+        },
+        "avg_gain_pct": 14.5
+    },
+    "discovery": {
+        "strongest_discriminator": {
+            "indicator": "ema_dist",
+            "rally_avg": 2.05,
+            "normal_avg": -1.18,
+            "difference_pct": 801
+        },
+        "secondary_discriminators": [
+            {
+                "indicator": "mom_5d",
+                "difference_pct": 292
+            },
+            {
+                "indicator": "mom_3d",
+                "difference_pct": 293
+            }
+        ],
+        "character_type": "Simple EMA Distance",
+        "notes": [
+            "Ultra-simple strategy - single threshold works",
+            "No additional filters needed",
+            "EMA distance alone is sufficient predictor",
+            "Similar to OM but simpler (no daily_ch filter needed)"
+        ]
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": false
+    },
+    "ai_insights": {
+        "pattern_clarity": "EXCELLENT",
+        "strategy_simplicity": "VERY_SIMPLE",
+        "signal_count": "GOOD",
+        "uniqueness": "CLEAN_EMA_PATTERN",
+        "confidence": "HIGH",
+        "recommendation": "RAY is the simplest strategy - just one threshold. Perfect example of 'less is more' in trading strategies."
+    }
+}

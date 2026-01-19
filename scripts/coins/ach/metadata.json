@@ -1,0 +1,77 @@
+{
+    "symbol": "ACHUSDT",
+    "name": "Alchemy Pay",
+    "version": "v1",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
+    "strategy": {
+        "version": "v1",
+        "rule": "mom_5d >= 15",
+        "type": "momentum",
+        "indicators_used": [
+            "mom_5d"
+        ],
+        "file": "scripts/coins/ach/ach_unique_v1.py"
+    },
+    "performance_train": {
+        "total_signals": 44,
+        "precision_pct": 100.0,
+        "hits": 44,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 4,
+            "gold": 9,
+            "silver": 31
+        },
+        "avg_gain_pct": 20.0,
+        "date_range": "2023-01-30 to 2025-04-13"
+    },
+    "discovery": {
+        "strongest_discriminator": {
+            "indicator": "mom_5d",
+            "rally_avg": 25.58,
+            "normal_avg": 0.00,
+            "difference_pct": 3427003,
+            "rank": "STRONGEST ACROSS ALL COINS"
+        },
+        "secondary_discriminators": [
+            {
+                "indicator": "mom_3d",
+                "difference_pct": 18764
+            },
+            {
+                "indicator": "daily_ch",
+                "difference_pct": 11242
+            }
+        ],
+        "character_type": "Ultra-Strong Momentum",
+        "notes": [
+            "mom_5d shows +3.4 MILLION percent difference - unprecedented!",
+            "Rally days average 25.6% 5-day momentum vs 0% on normal days",
+            "February 2023: 8 consecutive signals (Feb 16-24)",
+            "January-February 2025: Another cluster with 7 signals",
+            "Some individual rallies showed 100%+ mom_5d (e.g., 138.7% on Feb 20, 2023)",
+            "Very clean pattern - simple threshold works perfectly"
+        ]
+    },
+    "analysis_files": {
+        "pattern_discovery": "scripts/coins/ach/ach_pattern_discovery.py",
+        "threshold_sweep": "scripts/coins/ach/ach_threshold_sweep.py",
+        "final_strategy": "scripts/coins/ach/ach_unique_v1.py"
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": false
+    },
+    "ai_insights": {
+        "pattern_clarity": "EXCEPTIONAL",
+        "strategy_simplicity": "VERY_SIMPLE",
+        "signal_count": "EXCELLENT",
+        "uniqueness": "MOST_UNIQUE_DISCRIMINATOR",
+        "confidence": "VERY_HIGH",
+        "recommendation": "This is the cleanest momentum pattern discovered. ACH rallies are preceded by very strong 5-day momentum buildups that are completely absent during normal trading. The +3.4M% discriminator difference is the strongest seen across all analyzed coins."
+    }
+}

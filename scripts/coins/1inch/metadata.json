@@ -1,0 +1,64 @@
+{
+    "symbol": "1INCHUSDT",
+    "name": "1inch Network",
+    "version": "v1",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
+    "strategy": {
+        "version": "v1",
+        "rule": "mom_5d >= 30",
+        "type": "momentum",
+        "indicators_used": [
+            "mom_5d"
+        ],
+        "file": "scripts/coins/1inch/v1_unique.py"
+    },
+    "performance_train": {
+        "total_signals": 9,
+        "precision_pct": 100.0,
+        "hits": 9,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 0,
+            "gold": 1,
+            "silver": 8
+        },
+        "avg_gain_pct": 13.7
+    },
+    "discovery": {
+        "strongest_discriminator": {
+            "indicator": "mom_5d",
+            "rally_avg": 12.21,
+            "normal_avg": -0.18,
+            "difference_pct": 6994
+        },
+        "secondary_discriminators": [
+            {
+                "indicator": "daily_ch",
+                "difference_pct": 6760
+            },
+            {
+                "indicator": "mom_3d",
+                "difference_pct": 6654
+            }
+        ],
+        "character_type": "Momentum",
+        "notes": [
+            "5-day momentum is key predictor",
+            "Similar to MDT but with different threshold (30% vs 35%)",
+            "Small dataset (14 DG rallies) but clean pattern"
+        ]
+    },
+    "analysis_files": {
+        "pattern_discovery": "scripts/coins/1inch/1inch_pattern_discovery.py",
+        "threshold_sweep": "scripts/coins/1inch/1inch_threshold_sweep.py",
+        "final_strategy": "scripts/coins/1inch/v1_unique.py"
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": false
+    }
+}
