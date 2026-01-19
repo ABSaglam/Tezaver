@@ -1,0 +1,75 @@
+{
+    "symbol": "ATOMUSDT",
+    "name": "Cosmos",
+    "version": "v1",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
+    "total_dg_rallies": 4,
+    "strategy": {
+        "version": "v1",
+        "rule": "mom_7d >= 3",
+        "type": "awakening-momentum",
+        "indicators_used": [
+            "mom_7d"
+        ],
+        "file": "scripts/coins/atom/atom_unique_v1.py"
+    },
+    "performance_train": {
+        "total_signals": 37,
+        "precision_pct": 100.0,
+        "hits": 37,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 0,
+            "gold": 0,
+            "silver": 37
+        },
+        "avg_gain_pct": 11.2,
+        "date_range": "2023-11-20 to 2025-11-29"
+    },
+    "discovery": {
+        "strongest_discriminator": {
+            "indicator": "daily_ch",
+            "rally_avg": -0.95,
+            "normal_avg": -0.02,
+            "difference_pct": -5206,
+            "rank": "Yüksek Fark (Düşük Sayı)"
+        },
+        "secondary_discriminators": [
+            {
+                "indicator": "mom_3d",
+                "difference_pct": -298
+            },
+            {
+                "indicator": "mom_5d",
+                "difference_pct": 41
+            }
+        ],
+        "character_type": "Sleeping Giant (Nadir)",
+        "notes": [
+            "ATOM 2.5 yılda sadece 4 adet büyük rally (DG) yapmış. Çok ağır bir coin.",
+            "Ancak Silver tier (küçük rally) hareketleri de dahil edildiğinde 37 başarılı sinyal yakalanabiliyor.",
+            "Hepsi Silver tier (%10-%20). Diamond veya Gold yok. Tam bir 'scalp/swing' coini."
+        ]
+    },
+    "analysis_files": {
+        "pattern_discovery": "scripts/coins/atom/atom_pattern_discovery.py",
+        "threshold_sweep": "scripts/coins/atom/atom_threshold_sweep.py",
+        "final_strategy": "scripts/coins/atom/atom_unique_v1.py"
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": false
+    },
+    "ai_insights": {
+        "pattern_clarity": "LOW",
+        "strategy_simplicity": "SIMPLE",
+        "signal_count": "LOW",
+        "uniqueness": "SLEEPING_GIANT",
+        "confidence": "MODERATE",
+        "recommendation": "ATOM'dan büyük beklentiye girilmemeli. %3'lük bir ivme yakalandığında %10 kar alıp çıkılmalı (Silver Only)."
+    }
+}

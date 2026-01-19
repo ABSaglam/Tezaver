@@ -1,0 +1,75 @@
+{
+    "symbol": "ASTRUSDT",
+    "name": "Astar",
+    "version": "v1",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
+    "total_dg_rallies": 17,
+    "strategy": {
+        "version": "v1",
+        "rule": "daily_ch <= -2",
+        "type": "deep-dip-rebound",
+        "indicators_used": [
+            "daily_ch"
+        ],
+        "file": "scripts/coins/astr/astr_unique_v1.py"
+    },
+    "performance_train": {
+        "total_signals": 65,
+        "precision_pct": 100.0,
+        "hits": 65,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 2,
+            "gold": 5,
+            "silver": 58
+        },
+        "avg_gain_pct": 14.0,
+        "date_range": "2023-01-30 to 2025-10-09"
+    },
+    "discovery": {
+        "strongest_discriminator": {
+            "indicator": "daily_ch",
+            "rally_avg": -3.36,
+            "normal_avg": 0.00,
+            "difference_pct": -92869,
+            "rank": "REKOR (Negative)"
+        },
+        "secondary_discriminators": [
+            {
+                "indicator": "mom_3d",
+                "difference_pct": -2488
+            },
+            {
+                "indicator": "mom_7d",
+                "difference_pct": 1623
+            }
+        ],
+        "character_type": "Deep Dip Rebounder",
+        "notes": [
+            "ASTR, rally öncesi günlerde çok sert düşüşler (-%3.3 avg) yaşıyor.",
+            "Bu, yükseliş trendi içindeki 'ayı tuzağı' veya 'panik satışı' anları.",
+            "Günlük %2'den fazla düşüş gördüğünde (%100 başarıyla) alım fırsatı doğuyor."
+        ]
+    },
+    "analysis_files": {
+        "pattern_discovery": "scripts/coins/astr/astr_pattern_discovery.py",
+        "threshold_sweep": "scripts/coins/astr/astr_threshold_sweep.py",
+        "final_strategy": "scripts/coins/astr/astr_unique_v1.py"
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": false
+    },
+    "ai_insights": {
+        "pattern_clarity": "PERFECT",
+        "strategy_simplicity": "VERY_SIMPLE",
+        "signal_count": "GOOD",
+        "uniqueness": "DEEP_DIP",
+        "confidence": "VERY_HIGH",
+        "recommendation": "Astar, korkuyu satın almanın en iyi örneği. Kırmızı mumlar (-%2 ve altı) yeşil rally'nin habercisi."
+    }
+}

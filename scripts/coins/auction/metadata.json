@@ -1,0 +1,75 @@
+{
+    "symbol": "AUCTIONUSDT",
+    "name": "Bounce Token",
+    "version": "v1",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
+    "total_dg_rallies": 40,
+    "strategy": {
+        "version": "v1",
+        "rule": "mom_7d >= 5",
+        "type": "high-momentum",
+        "indicators_used": [
+            "mom_7d"
+        ],
+        "file": "scripts/coins/auction/auction_unique_v1.py"
+    },
+    "performance_train": {
+        "total_signals": 124,
+        "precision_pct": 100.0,
+        "hits": 124,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 1,
+            "gold": 6,
+            "silver": 117
+        },
+        "avg_gain_pct": 13.0,
+        "date_range": "2023-01-26 to 2025-11-20"
+    },
+    "discovery": {
+        "strongest_discriminator": {
+            "indicator": "mom_7d",
+            "rally_avg": 7.39,
+            "normal_avg": -0.60,
+            "difference_pct": 1328,
+            "rank": "Çok Yüksek"
+        },
+        "secondary_discriminators": [
+            {
+                "indicator": "mom_3d",
+                "difference_pct": 981
+            },
+            {
+                "indicator": "ema_dist",
+                "difference_pct": 331
+            }
+        ],
+        "character_type": "Momentum Rocket (Launchpad)",
+        "notes": [
+            "AUCTION bir Launchpad tokenı olduğu için hype ve momentum ile hareket ediyor.",
+            "Rally öncesi %7.4'lük bir haftalık kazanç, ortalama bir değer.",
+            "Dip kovalamak yerine, güçlü bir ivme (%5+) görüldüğünde katılmak en doğrusu."
+        ]
+    },
+    "analysis_files": {
+        "pattern_discovery": "scripts/coins/auction/auction_pattern_discovery.py",
+        "threshold_sweep": "scripts/coins/auction/auction_threshold_sweep.py",
+        "final_strategy": "scripts/coins/auction/auction_unique_v1.py"
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": false
+    },
+    "ai_insights": {
+        "pattern_clarity": "VERY_HIGH",
+        "strategy_simplicity": "SIMPLE",
+        "signal_count": "VERY_HIGH",
+        "uniqueness": "EVENT_DRIVEN_MOMENTUM",
+        "confidence": "VERY_HIGH",
+        "recommendation": "Bounce Token için 'Gücü Satın Al'. Haftalık %5 üzerinde kapanışlar, yeni bir hype döngüsünün işareti."
+    }
+}
