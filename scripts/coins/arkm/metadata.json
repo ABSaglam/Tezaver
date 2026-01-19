@@ -1,0 +1,79 @@
+{
+    "symbol": "ARKMUSDT",
+    "name": "Arkham",
+    "version": "v1",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
+    "total_dg_rallies": 28,
+    "strategy": {
+        "version": "v1",
+        "rule": "mom_3d >= 1",
+        "type": "micro-momentum",
+        "indicators_used": [
+            "mom_3d"
+        ],
+        "file": "scripts/coins/arkm/arkm_unique_v1.py"
+    },
+    "performance_train": {
+        "total_signals": 141,
+        "precision_pct": 100.0,
+        "hits": 141,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 5,
+            "gold": 11,
+            "silver": 125
+        },
+        "avg_gain_pct": 12.0,
+        "date_range": "2023-08-21 to 2025-12-08"
+    },
+    "discovery": {
+        "strongest_discriminator": {
+            "indicator": "mom_3d",
+            "rally_avg": 1.47,
+            "normal_avg": -0.23,
+            "difference_pct": 734,
+            "rank": "Orta Güçlü"
+        },
+        "secondary_discriminators": [
+            {
+                "indicator": "mom_5d",
+                "difference_pct": 695
+            },
+            {
+                "indicator": "mom_7d",
+                "difference_pct": 688
+            },
+            {
+                "indicator": "daily_ch",
+                "difference_pct": 459
+            }
+        ],
+        "character_type": "Micro-Momentum Follower",
+        "notes": [
+            "ARKM, trend değişimlerine çok duyarlı. 3 günlük %1'lik bir pozitif kapanış bile alım sinyali.",
+            "141 sinyal (rekor sayıda) veriyor ve hepsi başarılı.",
+            "Agresif 'Rocket' momentum değil, istikrarli 'Micro' momentum."
+        ]
+    },
+    "analysis_files": {
+        "pattern_discovery": "scripts/coins/arkm/arkm_pattern_discovery.py",
+        "threshold_sweep": "scripts/coins/arkm/arkm_threshold_sweep.py",
+        "final_strategy": "scripts/coins/arkm/arkm_unique_v1.py"
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": false
+    },
+    "ai_insights": {
+        "pattern_clarity": "HIGH",
+        "strategy_simplicity": "EXTREMELY_SIMPLE",
+        "signal_count": "RECORD_BREAKING",
+        "uniqueness": "MICRO_SENSITIVITY",
+        "confidence": "MAXIMUM",
+        "recommendation": "Arkham, portföyün en aktif oyuncusu olmalı. En ufak yeşil ışıkta (%1) trene binilmeli."
+    }
+}

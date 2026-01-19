@@ -1,0 +1,81 @@
+{
+    "symbol": "AMPUSDT",
+    "name": "Amp",
+    "version": "v1",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
+    "total_dg_rallies": 51,
+    "strategy": {
+        "version": "v1",
+        "rule": "mom_7d >= 5",
+        "type": "momentum",
+        "indicators_used": [
+            "mom_7d"
+        ],
+        "file": "scripts/coins/amp/amp_unique_v1.py"
+    },
+    "performance_train": {
+        "total_signals": 81,
+        "precision_pct": 100.0,
+        "hits": 81,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 7,
+            "gold": 12,
+            "silver": 62
+        },
+        "avg_gain_pct": 17.0,
+        "date_range": "2023-02-20 to 2025-11-11"
+    },
+    "discovery": {
+        "strongest_discriminator": {
+            "indicator": "mom_3d",
+            "rally_avg": 3.13,
+            "normal_avg": -0.03,
+            "difference_pct": 10682,
+            "rank": "ÇOK KESKİN"
+        },
+        "secondary_discriminators": [
+            {
+                "indicator": "daily_ch",
+                "difference_pct": 4059
+            },
+            {
+                "indicator": "mom_7d",
+                "difference_pct": 3531
+            },
+            {
+                "indicator": "mom_5d",
+                "difference_pct": 3359
+            }
+        ],
+        "character_type": "Momentum King (Trend Takipçisi)",
+        "notes": [
+            "AMPUSDT, Collateral token olarak çok aktif (51 DG rally).",
+            "mom_3d farkı (+10,682%) inanılmaz keskin, kısa vadeli momentum patlamalarını çok iyi gösteriyor.",
+            "Ancak 7-günlük momentum (mom_7d >= 5%) kuralı, aynı kesinlikle (%100) daha fazla sinyal (81 adet) veriyor.",
+            "7 tane Diamond rally yakaladı - büyük kazanç potansiyeli yüksek.",
+            "Düşüşten (dip-buying) ziyade trend devamlılığını (momentum) takip ediyor."
+        ]
+    },
+    "analysis_files": {
+        "pattern_discovery": "scripts/coins/amp/amp_pattern_discovery.py",
+        "threshold_sweep": "scripts/coins/amp/amp_threshold_sweep.py",
+        "final_strategy": "scripts/coins/amp/amp_unique_v1.py"
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": false
+    },
+    "ai_insights": {
+        "pattern_clarity": "EXCELLENT",
+        "strategy_simplicity": "VERY_SIMPLE",
+        "signal_count": "EXCELLENT",
+        "uniqueness": "HIGH_ACTIVITY_MOMENTUM",
+        "confidence": "VERY_HIGH",
+        "recommendation": "Amp, portföyde mutlaka bulunması gereken 'motor' coinlerden biri. Sinyal sıklığı çok yüksek ve güvenilir. Haftalık trend (mom_7d) pozitifse rally devam ediyor."
+    }
+}

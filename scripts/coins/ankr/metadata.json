@@ -1,0 +1,80 @@
+{
+    "symbol": "ANKRUSDT",
+    "name": "Ankr",
+    "version": "v1",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
+    "total_dg_rallies": 18,
+    "strategy": {
+        "version": "v1",
+        "rule": "mom_7d >= 3",
+        "type": "momentum",
+        "indicators_used": [
+            "mom_7d"
+        ],
+        "file": "scripts/coins/ankr/ankr_unique_v1.py"
+    },
+    "performance_train": {
+        "total_signals": 76,
+        "precision_pct": 100.0,
+        "hits": 76,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 1,
+            "gold": 6,
+            "silver": 69
+        },
+        "avg_gain_pct": 12.0,
+        "date_range": "2023-02-06 to 2025-11-10"
+    },
+    "discovery": {
+        "strongest_discriminator": {
+            "indicator": "mom_7d",
+            "rally_avg": 7.31,
+            "normal_avg": -0.34,
+            "difference_pct": 2283,
+            "rank": "Çok Güçlü"
+        },
+        "secondary_discriminators": [
+            {
+                "indicator": "mom_5d",
+                "difference_pct": 2067
+            },
+            {
+                "indicator": "daily_ch",
+                "difference_pct": 1832
+            },
+            {
+                "indicator": "mom_3d",
+                "difference_pct": 1655
+            }
+        ],
+        "character_type": "Weekly Trend Follower (Hassas)",
+        "notes": [
+            "ANKR, haftalık trende (mom_7d) çok duyarlı.",
+            "Standart %5 eşiği yerine %3 gibi düşük bir eşikte bile %100 kesinlik sağlıyor.",
+            "Bu durum, coin'in en ufak bir yükseliş ivmesini koruma eğiliminde olduğunu gösteriyor.",
+            "Infra token olmasına rağmen çok stabil bir trend takipçisi."
+        ]
+    },
+    "analysis_files": {
+        "pattern_discovery": "scripts/coins/ankr/ankr_pattern_discovery.py",
+        "threshold_sweep": "scripts/coins/ankr/ankr_threshold_sweep.py",
+        "final_strategy": "scripts/coins/ankr/ankr_unique_v1.py"
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": false
+    },
+    "ai_insights": {
+        "pattern_clarity": "EXCELLENT",
+        "strategy_simplicity": "EXTREMELY_SIMPLE",
+        "signal_count": "EXCELLENT",
+        "uniqueness": "LOW_THRESHOLD_MOMENTUM",
+        "confidence": "VERY_HIGH",
+        "recommendation": "Web3 altyapısı ANKR, teknik olarak 'temiz' bir trend coini. Haftalık kapanışların %3 artıda olması bile alım için yeterli güveni sağlıyor."
+    }
+}

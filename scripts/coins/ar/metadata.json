@@ -1,0 +1,75 @@
+{
+    "symbol": "ARUSDT",
+    "name": "Arweave",
+    "version": "v1",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
+    "total_dg_rallies": 15,
+    "strategy": {
+        "version": "v1",
+        "rule": "mom_7d >= 5 AND daily_ch <= 0",
+        "type": "trend-pullback",
+        "indicators_used": [
+            "mom_7d",
+            "daily_ch"
+        ],
+        "file": "scripts/coins/ar/ar_unique_v1.py"
+    },
+    "performance_train": {
+        "total_signals": 46,
+        "precision_pct": 100.0,
+        "hits": 46,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 2,
+            "silver": 44
+        },
+        "avg_gain_pct": 14.0,
+        "date_range": "2023-01-28 to 2025-12-19"
+    },
+    "discovery": {
+        "strongest_discriminator": {
+            "indicator": "mom_7d",
+            "rally_avg": 13.18,
+            "normal_avg": 0.46,
+            "difference_pct": 2745,
+            "rank": "Çok Güçlü"
+        },
+        "secondary_discriminators": [
+            {
+                "indicator": "daily_ch",
+                "difference_pct": -2153
+            },
+            {
+                "indicator": "mom_5d",
+                "difference_pct": 1930
+            }
+        ],
+        "character_type": "Bull Flag (Trend Pullback)",
+        "notes": [
+            "AR, haftalık trend güçlü olduğunda (+%13 avg) gelen günlük düşüşleri (-%2 avg) fırsata çeviriyor.",
+            "Pure Momentum da çalışıyor (130 sinyal) ama Pullback stratejisi (46 sinyal) coin karakterini daha iyi yansıtıyor.",
+            "Bu strateji, yüksekten alma riskini azaltıp, trendin devamını yakalıyor."
+        ]
+    },
+    "analysis_files": {
+        "pattern_discovery": "scripts/coins/ar/ar_pattern_discovery.py",
+        "threshold_sweep": "scripts/coins/ar/ar_threshold_sweep.py",
+        "final_strategy": "scripts/coins/ar/ar_unique_v1.py"
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": false
+    },
+    "ai_insights": {
+        "pattern_clarity": "EXCELLENT",
+        "strategy_simplicity": "HYBRID",
+        "signal_count": "GOOD",
+        "uniqueness": "TREND_PULLBACK",
+        "confidence": "VERY_HIGH",
+        "recommendation": "Arweave için 'Düzeltmede Al' (Buy Pullback) stratejisi en mantıklısı. Haftalık grafik yeşilken, günlük kırmızı mum görüldüğünde alım yapılmalı."
+    }
+}

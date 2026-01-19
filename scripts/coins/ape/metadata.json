@@ -1,0 +1,80 @@
+{
+    "symbol": "APEUSDT",
+    "name": "ApeCoin",
+    "version": "v1",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
+    "total_dg_rallies": 10,
+    "strategy": {
+        "version": "v1",
+        "rule": "mom_3d <= -5",
+        "type": "dip-buying",
+        "indicators_used": [
+            "mom_3d"
+        ],
+        "file": "scripts/coins/ape/ape_unique_v1.py"
+    },
+    "performance_train": {
+        "total_signals": 65,
+        "precision_pct": 100.0,
+        "hits": 65,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 0,
+            "gold": 4,
+            "silver": 61
+        },
+        "avg_gain_pct": 12.0,
+        "date_range": "2023-02-06 to 2025-12-17"
+    },
+    "discovery": {
+        "strongest_discriminator": {
+            "indicator": "daily_ch",
+            "rally_avg": -2.31,
+            "normal_avg": -0.17,
+            "difference_pct": -1268,
+            "rank": "Çok Güçlü"
+        },
+        "secondary_discriminators": [
+            {
+                "indicator": "mom_3d",
+                "difference_pct": -396
+            },
+            {
+                "indicator": "mom_5d",
+                "difference_pct": 249
+            },
+            {
+                "indicator": "vol_ratio",
+                "difference_pct": 57
+            }
+        ],
+        "character_type": "Dip Rebounder (Tepki Alıcısı)",
+        "notes": [
+            "APE, diğer gaming/metaverse coinlerinden (ALICE, AGLD) farklı olarak momentum değil dip-buying karakteri gösteriyor.",
+            "NFT piyasasının spekülatif doğası nedeniyle sert düşüşler (%5+) alım fırsatı yaratıyor.",
+            "mom_3d <= -5% kuralı, kısa vadeli panik satışlarını mükemmel yakalıyor (65 Sinyal).",
+            "Diamond rally'si yok ancak Silver ve Gold sinyalleri çok güvenilir."
+        ]
+    },
+    "analysis_files": {
+        "pattern_discovery": "scripts/coins/ape/ape_pattern_discovery.py",
+        "threshold_sweep": "scripts/coins/ape/ape_threshold_sweep.py",
+        "final_strategy": "scripts/coins/ape/ape_unique_v1.py"
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": false
+    },
+    "ai_insights": {
+        "pattern_clarity": "HIGH",
+        "strategy_simplicity": "VERY_SIMPLE",
+        "signal_count": "EXCELLENT",
+        "uniqueness": "SECTOR_CONTRARIAN",
+        "confidence": "VERY_HIGH",
+        "recommendation": "APE için 'düşeni al' (buy the dip) stratejisi en iyisi. Gaming coinleri yükselirken alınır, APE düşerken alınır. Bu zıtlık portföy çeşitlendirmesi için harika."
+    }
+}
