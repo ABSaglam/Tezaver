@@ -1,0 +1,75 @@
+{
+    "symbol": "BOMEUSDT",
+    "name": "Book of Meme",
+    "version": "v1",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
+    "total_dg_rallies": 223,
+    "strategy": {
+        "version": "v1",
+        "rule": "mom_7d <= -2",
+        "type": "meme-dip-hunter",
+        "indicators_used": [
+            "mom_7d"
+        ],
+        "file": "scripts/coins/bome/bome_unique_v1.py"
+    },
+    "performance_train": {
+        "total_signals": 109,
+        "precision_pct": 100.0,
+        "hits": 109,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 8,
+            "gold": 18,
+            "silver": 83
+        },
+        "avg_gain_pct": 16.0,
+        "date_range": "2024-03-27 to 2025-11-14"
+    },
+    "discovery": {
+        "strongest_discriminator": {
+            "indicator": "daily_ch",
+            "rally_avg": -0.66,
+            "normal_avg": -0.08,
+            "difference_pct": -687,
+            "rank": "Yüksek (Negatif)"
+        },
+        "secondary_discriminators": [
+            {
+                "indicator": "mom_3d",
+                "difference_pct": -294
+            },
+            {
+                "indicator": "mom_5d",
+                "difference_pct": -100
+            }
+        ],
+        "character_type": "Meme Dip Hunter",
+        "notes": [
+            "BOME, meme coin olmasına rağmen 'Dip Buyer' profili.",
+            "BLUR (NFT) ile aynı paterni paylaşıyor.",
+            "Genel düşüş trendinde ama derin düşüşlerde rally."
+        ]
+    },
+    "analysis_files": {
+        "pattern_discovery": "scripts/coins/bome/bome_pattern_discovery.py",
+        "threshold_sweep": "scripts/coins/bome/bome_threshold_sweep.py",
+        "final_strategy": "scripts/coins/bome/bome_unique_v1.py"
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": false
+    },
+    "ai_insights": {
+        "pattern_clarity": "HIGH",
+        "strategy_simplicity": "SIMPLE",
+        "signal_count": "VERY_HIGH",
+        "uniqueness": "MEME_DIP",
+        "confidence": "HIGH",
+        "recommendation": "BOME düşerken al. Meme coinlerde bile oversold bounce çalışıyor."
+    }
+}

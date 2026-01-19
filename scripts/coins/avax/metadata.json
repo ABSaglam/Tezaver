@@ -1,0 +1,75 @@
+{
+    "symbol": "AVAXUSDT",
+    "name": "Avalanche",
+    "version": "v1",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
+    "total_dg_rallies": 223,
+    "strategy": {
+        "version": "v1",
+        "rule": "mom_7d >= 3",
+        "type": "high-beta-momentum",
+        "indicators_used": [
+            "mom_7d"
+        ],
+        "file": "scripts/coins/avax/avax_unique_v1.py"
+    },
+    "performance_train": {
+        "total_signals": 79,
+        "precision_pct": 100.0,
+        "hits": 79,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 6,
+            "gold": 21,
+            "silver": 52
+        },
+        "avg_gain_pct": 16.5,
+        "date_range": "2023-01-26 to 2025-12-16"
+    },
+    "discovery": {
+        "strongest_discriminator": {
+            "indicator": "mom_5d",
+            "rally_avg": 2.98,
+            "normal_avg": -0.06,
+            "difference_pct": 4875,
+            "rank": "Çok Yüksek"
+        },
+        "secondary_discriminators": [
+            {
+                "indicator": "mom_7d",
+                "difference_pct": 3690
+            },
+            {
+                "indicator": "ema_dist",
+                "difference_pct": 396
+            }
+        ],
+        "character_type": "High Beta Momentum",
+        "notes": [
+            "AVAX, büyük market cap (L1) olmasına rağmen çok volatil ve trend dostu.",
+            "Rally öncesi tüm momentum indikatörleri çok güçlü pozitif sinyal veriyor.",
+            "Dip beklemek yerine trende katılmak (%3 momentum) 79 işlemde %100 başarı getirdi."
+        ]
+    },
+    "analysis_files": {
+        "pattern_discovery": "scripts/coins/avax/avax_pattern_discovery.py",
+        "threshold_sweep": "scripts/coins/avax/avax_threshold_sweep.py",
+        "final_strategy": "scripts/coins/avax/avax_unique_v1.py"
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": false
+    },
+    "ai_insights": {
+        "pattern_clarity": "PERFECT",
+        "strategy_simplicity": "SIMPLE",
+        "signal_count": "HIGH",
+        "uniqueness": "HIGH_BETA_L1",
+        "confidence": "VERY_HIGH",
+        "recommendation": "AVAX'ta korkmadan trende binin. Haftalık momentum %3'ü geçtiğinde arkasına rüzgarı almış demektir."
+    }
+}

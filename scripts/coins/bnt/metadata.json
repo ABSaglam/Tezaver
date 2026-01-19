@@ -1,0 +1,76 @@
+{
+    "symbol": "BNTUSDT",
+    "name": "Bancor",
+    "version": "v1",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
+    "total_dg_rallies": 117,
+    "strategy": {
+        "version": "v1",
+        "rule": "mom_7d >= 5",
+        "type": "mega-momentum-monster",
+        "indicators_used": [
+            "mom_7d"
+        ],
+        "file": "scripts/coins/bnt/bnt_unique_v1.py"
+    },
+    "performance_train": {
+        "total_signals": 46,
+        "precision_pct": 100.0,
+        "hits": 46,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 5,
+            "gold": 10,
+            "silver": 31
+        },
+        "avg_gain_pct": 18.0,
+        "date_range": "2023-01-23 to 2025-11-25"
+    },
+    "discovery": {
+        "strongest_discriminator": {
+            "indicator": "mom_7d",
+            "rally_avg": 7.05,
+            "normal_avg": -0.05,
+            "difference_pct": 15411,
+            "rank": "REKOR!"
+        },
+        "secondary_discriminators": [
+            {
+                "indicator": "mom_5d",
+                "difference_pct": 5323
+            },
+            {
+                "indicator": "mom_3d",
+                "difference_pct": 2867
+            }
+        ],
+        "character_type": "Mega Momentum Monster",
+        "notes": [
+            "BNT, şu ana kadar görülen EN GÜÇLÜ momentum profili.",
+            "OG DeFi coini olarak normalde sessiz ama boğa gelince patlıyor.",
+            "%15 eşik bile %100 çalışıyor!",
+            "Yüksek volatilite = yüksek kazanç potansiyeli."
+        ]
+    },
+    "analysis_files": {
+        "pattern_discovery": "scripts/coins/bnt/bnt_pattern_discovery.py",
+        "threshold_sweep": "scripts/coins/bnt/bnt_threshold_sweep.py",
+        "final_strategy": "scripts/coins/bnt/bnt_unique_v1.py"
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": false
+    },
+    "ai_insights": {
+        "pattern_clarity": "EXCEPTIONAL",
+        "strategy_simplicity": "SIMPLE",
+        "signal_count": "MEDIUM",
+        "uniqueness": "RECORD_MOMENTUM",
+        "confidence": "VERY_HIGH",
+        "recommendation": "BNT patlarken kaçırma. %5 momentumda gir, canavarı sür."
+    }
+}

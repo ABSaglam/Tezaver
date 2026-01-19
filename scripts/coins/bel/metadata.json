@@ -1,0 +1,75 @@
+{
+    "symbol": "BELUSDT",
+    "name": "Bella Protocol",
+    "version": "v1",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
+    "total_dg_rallies": 260,
+    "strategy": {
+        "version": "v1",
+        "rule": "mom_5d >= 2",
+        "type": "momentum-hunter",
+        "indicators_used": [
+            "mom_5d"
+        ],
+        "file": "scripts/coins/bel/bel_unique_v1.py"
+    },
+    "performance_train": {
+        "total_signals": 125,
+        "precision_pct": 100.0,
+        "hits": 125,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 8,
+            "gold": 22,
+            "silver": 95
+        },
+        "avg_gain_pct": 14.0,
+        "date_range": "2023-01-18 to 2025-11-27"
+    },
+    "discovery": {
+        "strongest_discriminator": {
+            "indicator": "mom_3d",
+            "rally_avg": 1.02,
+            "normal_avg": -0.15,
+            "difference_pct": 791,
+            "rank": "Yüksek"
+        },
+        "secondary_discriminators": [
+            {
+                "indicator": "mom_7d",
+                "difference_pct": 727
+            },
+            {
+                "indicator": "mom_5d",
+                "difference_pct": 651
+            }
+        ],
+        "character_type": "Momentum Hunter",
+        "notes": [
+            "BEL, tüm momentum göstergeleri pozitifken rally yapıyor.",
+            "Düşük eşik (%2) bile çok güvenilir bir sinyal veriyor.",
+            "BCH/BAT/AVAX ile aynı aile."
+        ]
+    },
+    "analysis_files": {
+        "pattern_discovery": "scripts/coins/bel/bel_pattern_discovery.py",
+        "threshold_sweep": "scripts/coins/bel/bel_threshold_sweep.py",
+        "final_strategy": "scripts/coins/bel/bel_unique_v1.py"
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": false
+    },
+    "ai_insights": {
+        "pattern_clarity": "VERY_HIGH",
+        "strategy_simplicity": "SIMPLE",
+        "signal_count": "VERY_HIGH",
+        "uniqueness": "GENERIC_MOMENTUM",
+        "confidence": "VERY_HIGH",
+        "recommendation": "BEL basit: %2 ivme = al. Karmaşıklaştırma."
+    }
+}

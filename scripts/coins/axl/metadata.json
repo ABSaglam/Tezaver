@@ -1,0 +1,75 @@
+{
+    "symbol": "AXLUSDT",
+    "name": "Axelar",
+    "version": "v1",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
+    "total_dg_rallies": 180,
+    "strategy": {
+        "version": "v1",
+        "rule": "mom_7d <= -3",
+        "type": "deep-dip-rebound",
+        "indicators_used": [
+            "mom_7d"
+        ],
+        "file": "scripts/coins/axl/axl_unique_v1.py"
+    },
+    "performance_train": {
+        "total_signals": 94,
+        "precision_pct": 100.0,
+        "hits": 94,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 0,
+            "gold": 9,
+            "silver": 85
+        },
+        "avg_gain_pct": 13.5,
+        "date_range": "2023-01-26 to 2025-10-31"
+    },
+    "discovery": {
+        "strongest_discriminator": {
+            "indicator": "mom_3d",
+            "rally_avg": -3.34,
+            "normal_avg": -0.20,
+            "difference_pct": -1593,
+            "rank": "Çok Yüksek (Negatif)"
+        },
+        "secondary_discriminators": [
+            {
+                "indicator": "daily_ch",
+                "difference_pct": -1286
+            },
+            {
+                "indicator": "mom_5d",
+                "difference_pct": -178
+            }
+        ],
+        "character_type": "Deep Dip Rebounder",
+        "notes": [
+            "AXL, AXS ve AUDIO gibi 'Dip' karakterine sahip ama daha derin düşüşler istiyor.",
+            "Tüm momentum indikatörleri rally günü belirgin şekilde negatif.",
+            "Yükselirken almayın, haftalık %3 düştüğünde alın."
+        ]
+    },
+    "analysis_files": {
+        "pattern_discovery": "scripts/coins/axl/axl_pattern_discovery.py",
+        "threshold_sweep": "scripts/coins/axl/axl_threshold_sweep.py",
+        "final_strategy": "scripts/coins/axl/axl_unique_v1.py"
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": false
+    },
+    "ai_insights": {
+        "pattern_clarity": "HIGH",
+        "strategy_simplicity": "SIMPLE",
+        "signal_count": "VERY_HIGH",
+        "uniqueness": "DEEP_VALUE",
+        "confidence": "VERY_HIGH",
+        "recommendation": "Axelar için 'Derin İndirim' stratejisi. Haftalık %3 kayıp gördüğünüzde alım yapın."
+    }
+}

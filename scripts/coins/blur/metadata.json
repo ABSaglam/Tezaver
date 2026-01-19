@@ -1,0 +1,76 @@
+{
+    "symbol": "BLURUSDT",
+    "name": "Blur",
+    "version": "v1",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
+    "total_dg_rallies": 166,
+    "strategy": {
+        "version": "v1",
+        "rule": "mom_7d <= -2",
+        "type": "oversold-bounce",
+        "indicators_used": [
+            "mom_7d"
+        ],
+        "file": "scripts/coins/blur/blur_unique_v1.py"
+    },
+    "performance_train": {
+        "total_signals": 83,
+        "precision_pct": 100.0,
+        "hits": 83,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 4,
+            "gold": 14,
+            "silver": 65
+        },
+        "avg_gain_pct": 14.0,
+        "date_range": "2023-02-26 to 2025-11-12"
+    },
+    "discovery": {
+        "strongest_discriminator": {
+            "indicator": "daily_ch",
+            "rally_avg": -0.55,
+            "normal_avg": -0.15,
+            "difference_pct": -261,
+            "rank": "Yüksek (Negatif)"
+        },
+        "secondary_discriminators": [
+            {
+                "indicator": "mom_3d",
+                "difference_pct": -120
+            },
+            {
+                "indicator": "mom_7d",
+                "difference_pct": 45
+            }
+        ],
+        "character_type": "Oversold Bounce",
+        "notes": [
+            "BLUR, NFT bear market'ında genel düşüş trendinde.",
+            "Rally günlerinde daha derin düşüş var (Oversold).",
+            "En derin düştüğü noktada rally başlıyor.",
+            "Klasik 'Buy the Deep Dip' stratejisi."
+        ]
+    },
+    "analysis_files": {
+        "pattern_discovery": "scripts/coins/blur/blur_pattern_discovery.py",
+        "threshold_sweep": "scripts/coins/blur/blur_threshold_sweep.py",
+        "final_strategy": "scripts/coins/blur/blur_unique_v1.py"
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": false
+    },
+    "ai_insights": {
+        "pattern_clarity": "HIGH",
+        "strategy_simplicity": "SIMPLE",
+        "signal_count": "HIGH",
+        "uniqueness": "BEAR_MARKET_DIP",
+        "confidence": "HIGH",
+        "recommendation": "BLUR düşerken al. NFT bear'da bile rally fırsatları var."
+    }
+}

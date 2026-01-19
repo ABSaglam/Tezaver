@@ -1,0 +1,75 @@
+{
+    "symbol": "BCHUSDT",
+    "name": "Bitcoin Cash",
+    "version": "v1",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
+    "total_dg_rallies": 144,
+    "strategy": {
+        "version": "v1",
+        "rule": "mom_7d >= 3",
+        "type": "mega-momentum",
+        "indicators_used": [
+            "mom_7d"
+        ],
+        "file": "scripts/coins/bch/bch_unique_v1.py"
+    },
+    "performance_train": {
+        "total_signals": 70,
+        "precision_pct": 100.0,
+        "hits": 70,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 2,
+            "gold": 12,
+            "silver": 56
+        },
+        "avg_gain_pct": 14.0,
+        "date_range": "2023-01-13 to 2025-11-20"
+    },
+    "discovery": {
+        "strongest_discriminator": {
+            "indicator": "ema_dist",
+            "rally_avg": 2.80,
+            "normal_avg": 0.19,
+            "difference_pct": 1366,
+            "rank": "Çok Yüksek"
+        },
+        "secondary_discriminators": [
+            {
+                "indicator": "mom_3d",
+                "difference_pct": 1337
+            },
+            {
+                "indicator": "mom_7d",
+                "difference_pct": 739
+            }
+        ],
+        "character_type": "Mega Momentum",
+        "notes": [
+            "BCH, piyasanın en sert momentum oyuncularından biri.",
+            "Rally öncesi tüm indikatörler 'Aşırı Alım' bölgesine yakın ama yine de gidiyor.",
+            "Dip bekleyenler BCH rallilerini hep kaçırır."
+        ]
+    },
+    "analysis_files": {
+        "pattern_discovery": "scripts/coins/bch/bch_pattern_discovery.py",
+        "threshold_sweep": "scripts/coins/bch/bch_threshold_sweep.py",
+        "final_strategy": "scripts/coins/bch/bch_unique_v1.py"
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": false
+    },
+    "ai_insights": {
+        "pattern_clarity": "VERY_HIGH",
+        "strategy_simplicity": "SIMPLE",
+        "signal_count": "HIGH",
+        "uniqueness": "LEGACY_POWER",
+        "confidence": "VERY_HIGH",
+        "recommendation": "BCH'de gücü görünce (%3) korkmadan girin. Genelde arkası %14 kazanç."
+    }
+}

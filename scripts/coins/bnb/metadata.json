@@ -1,0 +1,76 @@
+{
+    "symbol": "BNBUSDT",
+    "name": "Binance Coin",
+    "version": "v1",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
+    "total_dg_rallies": 38,
+    "strategy": {
+        "version": "v1",
+        "rule": "daily_ch <= 0",
+        "type": "blue-chip-dip",
+        "indicators_used": [
+            "daily_ch"
+        ],
+        "file": "scripts/coins/bnb/bnb_unique_v1.py"
+    },
+    "performance_train": {
+        "total_signals": 20,
+        "precision_pct": 100.0,
+        "hits": 20,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 0,
+            "gold": 3,
+            "silver": 17
+        },
+        "avg_gain_pct": 11.0,
+        "date_range": "2023-03-13 to 2025-11-05"
+    },
+    "discovery": {
+        "strongest_discriminator": {
+            "indicator": "daily_ch",
+            "rally_avg": -0.76,
+            "normal_avg": 0.16,
+            "difference_pct": -569,
+            "rank": "Çok Yüksek (Negatif)"
+        },
+        "secondary_discriminators": [
+            {
+                "indicator": "mom_3d",
+                "difference_pct": -398
+            },
+            {
+                "indicator": "ema_dist",
+                "difference_pct": -187
+            }
+        ],
+        "character_type": "Blue Chip Dip Buyer",
+        "notes": [
+            "BNB, bir major coin olmasına rağmen 'Dip' karakteri gösteriyor.",
+            "Rally öncesi günlerde fiyat düşüşte (kırmızı mum).",
+            "Bu, 'korkudan sat' değil 'korkudan al' stratejisi.",
+            "Sinyal sayısı düşük (20) ama BNB seçici ralliler yapıyor."
+        ]
+    },
+    "analysis_files": {
+        "pattern_discovery": "scripts/coins/bnb/bnb_pattern_discovery.py",
+        "threshold_sweep": "scripts/coins/bnb/bnb_threshold_sweep.py",
+        "final_strategy": "scripts/coins/bnb/bnb_unique_v1.py"
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": false
+    },
+    "ai_insights": {
+        "pattern_clarity": "VERY_HIGH",
+        "strategy_simplicity": "SIMPLE",
+        "signal_count": "LOW",
+        "uniqueness": "CONTRARIAN_BLUE_CHIP",
+        "confidence": "HIGH",
+        "recommendation": "BNB kırmızıyken al. Major coinlerde panik = fırsat."
+    }
+}

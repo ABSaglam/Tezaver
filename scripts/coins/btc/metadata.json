@@ -1,0 +1,76 @@
+{
+    "symbol": "BTCUSDT",
+    "name": "Bitcoin",
+    "version": "v1",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
+    "total_dg_rallies": 27,
+    "strategy": {
+        "version": "v1",
+        "rule": "mom_7d <= 0",
+        "type": "blue-chip-dip-king",
+        "indicators_used": [
+            "mom_7d"
+        ],
+        "file": "scripts/coins/btc/btc_unique_v1.py"
+    },
+    "performance_train": {
+        "total_signals": 15,
+        "precision_pct": 100.0,
+        "hits": 15,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 1,
+            "gold": 3,
+            "silver": 11
+        },
+        "avg_gain_pct": 12.0,
+        "date_range": "2023-03-13 to 2025-10-09"
+    },
+    "discovery": {
+        "strongest_discriminator": {
+            "indicator": "ema_dist",
+            "rally_avg": -0.28,
+            "normal_avg": 0.52,
+            "difference_pct": -153,
+            "rank": "Yüksek (Negatif)"
+        },
+        "secondary_discriminators": [
+            {
+                "indicator": "mom_7d",
+                "difference_pct": -146
+            },
+            {
+                "indicator": "mom_5d",
+                "difference_pct": -135
+            }
+        ],
+        "character_type": "Blue Chip Dip King",
+        "notes": [
+            "BTC, BNB ile aynı 'Dip Buyer' profilini paylaşıyor.",
+            "Blue Chip Paradigm: Major coinlerde zayıfken al.",
+            "Rally öncesi haftalık momentum negatif veya sıfır.",
+            "Sinyal sayısı düşük (15) ama BTC çok seçici."
+        ]
+    },
+    "analysis_files": {
+        "pattern_discovery": "scripts/coins/btc/btc_pattern_discovery.py",
+        "threshold_sweep": "scripts/coins/btc/btc_threshold_sweep.py",
+        "final_strategy": "scripts/coins/btc/btc_unique_v1.py"
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": false
+    },
+    "ai_insights": {
+        "pattern_clarity": "VERY_HIGH",
+        "strategy_simplicity": "SIMPLE",
+        "signal_count": "LOW",
+        "uniqueness": "BLUE_CHIP_PARADIGM",
+        "confidence": "VERY_HIGH",
+        "recommendation": "BTC düşerken al. Kral bile zayıfken fırsat yaratır."
+    }
+}

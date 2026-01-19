@@ -1,0 +1,75 @@
+{
+    "symbol": "BEAMXUSDT",
+    "name": "Beam (Merit Circle)",
+    "version": "v1",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
+    "total_dg_rallies": 272,
+    "strategy": {
+        "version": "v1",
+        "rule": "mom_7d >= 2",
+        "type": "trend-runner",
+        "indicators_used": [
+            "mom_7d"
+        ],
+        "file": "scripts/coins/beamx/beamx_unique_v1.py"
+    },
+    "performance_train": {
+        "total_signals": 123,
+        "precision_pct": 100.0,
+        "hits": 123,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 6,
+            "gold": 21,
+            "silver": 96
+        },
+        "avg_gain_pct": 15.0,
+        "date_range": "2023-10-28 to 2025-12-19"
+    },
+    "discovery": {
+        "strongest_discriminator": {
+            "indicator": "daily_ch",
+            "rally_avg": -0.17,
+            "normal_avg": 0.01,
+            "difference_pct": -2971,
+            "rank": "Çok Yüksek (Dip)"
+        },
+        "secondary_discriminators": [
+            {
+                "indicator": "mom_7d",
+                "difference_pct": 244
+            },
+            {
+                "indicator": "mom_5d",
+                "difference_pct": 226
+            }
+        ],
+        "character_type": "Trend Runner (Hybrid)",
+        "notes": [
+            "BEAMX, hem dipte hem tepede fırsat veren çok aktif bir coin.",
+            "Günlükte düşüş (pullback) gösterse de, haftalık trendi (%2+) pozitif olduğunda girmek en çok sinyali üretiyor.",
+            "Kayıp yaşamadan trendi sürmek mümkün."
+        ]
+    },
+    "analysis_files": {
+        "pattern_discovery": "scripts/coins/beamx/beamx_pattern_discovery.py",
+        "threshold_sweep": "scripts/coins/beamx/beamx_threshold_sweep.py",
+        "final_strategy": "scripts/coins/beamx/beamx_unique_v1.py"
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": false
+    },
+    "ai_insights": {
+        "pattern_clarity": "HIGH",
+        "strategy_simplicity": "SIMPLE",
+        "signal_count": "VERY_HIGH",
+        "uniqueness": "HIGH_ACTIVITY",
+        "confidence": "VERY_HIGH",
+        "recommendation": "BEAMX rallileri kaçmaz. Haftalık yeşili görünce (%2) atlayın."
+    }
+}

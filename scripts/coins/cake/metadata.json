@@ -1,0 +1,76 @@
+{
+    "symbol": "CAKEUSDT",
+    "name": "PancakeSwap",
+    "version": "v1",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
+    "total_dg_rallies": 158,
+    "strategy": {
+        "version": "v1",
+        "rule": "mom_7d >= 5",
+        "type": "bsc-defi-rocket",
+        "indicators_used": [
+            "mom_7d"
+        ],
+        "file": "scripts/coins/cake/cake_unique_v1.py"
+    },
+    "performance_train": {
+        "total_signals": 72,
+        "precision_pct": 100.0,
+        "hits": 72,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 5,
+            "gold": 14,
+            "silver": 53
+        },
+        "avg_gain_pct": 16.0,
+        "date_range": "2023-02-14 to 2025-11-27"
+    },
+    "discovery": {
+        "strongest_discriminator": {
+            "indicator": "mom_7d",
+            "rally_avg": 8.26,
+            "normal_avg": -0.74,
+            "difference_pct": 1217,
+            "rank": "Mega Yüksek"
+        },
+        "secondary_discriminators": [
+            {
+                "indicator": "mom_5d",
+                "difference_pct": 1151
+            },
+            {
+                "indicator": "mom_3d",
+                "difference_pct": 1140
+            }
+        ],
+        "character_type": "BSC DeFi Rocket",
+        "notes": [
+            "CAKE, BNT ile aynı Mega Momentum profilini paylaşıyor.",
+            "Tüm momentum göstergeleri 1000%+ fark gösteriyor.",
+            "BSC ekosisteminin en büyük DEX'i.",
+            "BSC güçlü olduğunda CAKE patlıyor."
+        ]
+    },
+    "analysis_files": {
+        "pattern_discovery": "scripts/coins/cake/cake_pattern_discovery.py",
+        "threshold_sweep": "scripts/coins/cake/cake_threshold_sweep.py",
+        "final_strategy": "scripts/coins/cake/cake_unique_v1.py"
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": false
+    },
+    "ai_insights": {
+        "pattern_clarity": "EXCEPTIONAL",
+        "strategy_simplicity": "SIMPLE",
+        "signal_count": "HIGH",
+        "uniqueness": "BSC_ECOSYSTEM",
+        "confidence": "VERY_HIGH",
+        "recommendation": "BSC güçlüyken CAKE al. Ekosistem DEX coini."
+    }
+}

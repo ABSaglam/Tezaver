@@ -1,0 +1,75 @@
+{
+    "symbol": "BICOUSDT",
+    "name": "Biconomy",
+    "version": "v1",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
+    "total_dg_rallies": 253,
+    "strategy": {
+        "version": "v1",
+        "rule": "mom_7d >= 1",
+        "type": "quiet-momentum",
+        "indicators_used": [
+            "mom_7d"
+        ],
+        "file": "scripts/coins/bico/bico_unique_v1.py"
+    },
+    "performance_train": {
+        "total_signals": 124,
+        "precision_pct": 100.0,
+        "hits": 124,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 5,
+            "gold": 18,
+            "silver": 101
+        },
+        "avg_gain_pct": 13.5,
+        "date_range": "2023-01-29 to 2025-11-26"
+    },
+    "discovery": {
+        "strongest_discriminator": {
+            "indicator": "mom_5d",
+            "rally_avg": 1.27,
+            "normal_avg": -0.85,
+            "difference_pct": 251,
+            "rank": "Orta"
+        },
+        "secondary_discriminators": [
+            {
+                "indicator": "mom_7d",
+                "difference_pct": 213
+            },
+            {
+                "indicator": "mom_3d",
+                "difference_pct": 79
+            }
+        ],
+        "character_type": "Quiet Momentum",
+        "notes": [
+            "BICO, düşük yoğunluklu bir momentum coini.",
+            "Sadece %1 haftalık ivme bile güvenilir sinyal veriyor.",
+            "Mikro-trend takipçisi olarak kategorizasyon."
+        ]
+    },
+    "analysis_files": {
+        "pattern_discovery": "scripts/coins/bico/bico_pattern_discovery.py",
+        "threshold_sweep": "scripts/coins/bico/bico_threshold_sweep.py",
+        "final_strategy": "scripts/coins/bico/bico_unique_v1.py"
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": false
+    },
+    "ai_insights": {
+        "pattern_clarity": "HIGH",
+        "strategy_simplicity": "SIMPLE",
+        "signal_count": "VERY_HIGH",
+        "uniqueness": "LOW_THRESHOLD",
+        "confidence": "VERY_HIGH",
+        "recommendation": "BICO hassas: %1 bile yeterli. Karmaşıklaştırma."
+    }
+}

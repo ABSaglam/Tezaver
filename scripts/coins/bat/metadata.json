@@ -1,0 +1,75 @@
+{
+    "symbol": "BATUSDT",
+    "name": "Basic Attention Token",
+    "version": "v1",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
+    "total_dg_rallies": 164,
+    "strategy": {
+        "version": "v1",
+        "rule": "mom_7d >= 3",
+        "type": "momentum-awakening",
+        "indicators_used": [
+            "mom_7d"
+        ],
+        "file": "scripts/coins/bat/bat_unique_v1.py"
+    },
+    "performance_train": {
+        "total_signals": 79,
+        "precision_pct": 100.0,
+        "hits": 79,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 1,
+            "gold": 6,
+            "silver": 72
+        },
+        "avg_gain_pct": 12.0,
+        "date_range": "2023-01-08 to 2025-05-24"
+    },
+    "discovery": {
+        "strongest_discriminator": {
+            "indicator": "mom_5d",
+            "rally_avg": 2.42,
+            "normal_avg": -0.02,
+            "difference_pct": 10352,
+            "rank": "Çok Yüksek"
+        },
+        "secondary_discriminators": [
+            {
+                "indicator": "mom_7d",
+                "difference_pct": 3279
+            },
+            {
+                "indicator": "ema_dist",
+                "difference_pct": 389
+            }
+        ],
+        "character_type": "Momentum Awakening",
+        "notes": [
+            "BAT, normal zamanlarda ölü gibidir (Momentum %0).",
+            "Bu sessizlik, %3'lük bir ivme hareketiyle bozulduğunda güvenilir bir giriş sinyali oluşur.",
+            "AVAX ile benzer strateji ama arka planı farklı (Volatil vs Uykucu)."
+        ]
+    },
+    "analysis_files": {
+        "pattern_discovery": "scripts/coins/bat/bat_pattern_discovery.py",
+        "threshold_sweep": "scripts/coins/bat/bat_threshold_sweep.py",
+        "final_strategy": "scripts/coins/bat/bat_unique_v1.py"
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": false
+    },
+    "ai_insights": {
+        "pattern_clarity": "VERY_HIGH",
+        "strategy_simplicity": "SIMPLE",
+        "signal_count": "HIGH",
+        "uniqueness": "LEGACY_AWAKENING",
+        "confidence": "VERY_HIGH",
+        "recommendation": "BAT'ı uyurken değil, uyanırken alın. Haftalık %3 üzerinde kapanış, boğa uyanışıdır."
+    }
+}
