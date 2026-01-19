@@ -1,8 +1,8 @@
 """
-Quadratic Cluster Full History Detector
-=======================================
-Uses ALL data (2023-2026) for both DNA and testing.
-No restrictions.
+Quadratic Cluster Precision Optimizer
+=====================================
+Sweeps DNA threshold and EMA distance to find 100% precision clusters.
+Full History (2023-2026).
 """
 
 import sys
@@ -42,55 +42,57 @@ def main():
     conn = sqlite3.connect('library/rallies.db')
     cursor = conn.cursor()
     
-    signals = []
-
-    print("="*100)
-    print(f"{'COIN':<10} | {'DATE':<12} | {'TYPE':<8} | {'GAIN':<6} | {'SCORE':<6}")
-    print("-" * 100)
+    data = []
 
     for symbol in symbols:
-        cursor.execute("SELECT raw_data, tier FROM rallies WHERE symbol = ? AND tier IN ('DIAMOND', 'GOLD', 'SILVER')", (symbol,))
-        all_results = {pd.to_datetime(json.loads(r[0])['start_time']).date(): (r[1], json.loads(r[0])['gain']) for r in cursor.fetchall()}
+        cursor.execute("SELECT raw_data FROM rallies WHERE symbol = ? AND tier IN ('DIAMOND', 'GOLD', 'SILVER')", (symbol,))
+        dg_dates = set([pd.to_datetime(json.loads(r[0])['start_time']).date() for r in cursor.fetchall()])
         
         df_1d = pd.read_parquet(coin_cell_paths.get_history_file(symbol, '1d')).sort_values('timestamp').reset_index(drop=True)
         df_1d['datetime'] = pd.to_datetime(df_1d['timestamp'], unit='ms')
+        df_1d['ema9'] = df_1d['close'].ewm(span=9, adjust=False).mean()
+        df_1d['ema_dist'] = (df_1d['close'] / df_1d['ema9'] - 1) * 100
         
         df_1w = pd.read_parquet(coin_cell_paths.get_history_file(symbol, '1w')).sort_values('timestamp').reset_index(drop=True)
         df_1w['datetime'] = pd.to_datetime(df_1w['timestamp'], unit='ms')
         df_1w['w_slope'] = calculate_macd_hist(df_1w['close']).diff()
 
-        coin_archetypes = archetypes[symbol]
+        coin_archs = archetypes[symbol]
         
         for idx in range(25, len(df_1d)-1):
-            row_1d = df_1d.loc[idx]
-            dt = row_1d['datetime'].date()
-            
+            row = df_1d.loc[idx]
             norm_dna = normalize_sequence(df_1d.iloc[idx-1:idx+1])
             if norm_dna is None: continue
-            score = max([calculate_dna_score(norm_dna, np.array(v)) for v in coin_archetypes])
+            score = max([calculate_dna_score(norm_dna, np.array(v)) for v in coin_archs])
             
-            w_row = df_1w[df_1w['datetime'] <= row_1d['datetime']].iloc[-1]
-            
-            # SIMPLE RULES: DNA > 0.95 + Weekly Bullish
-            if score > 0.95 and w_row['w_slope'] > 0:
-                next_date = df_1d.loc[idx+1, 'datetime'].date()
-                res = all_results.get(next_date, ('NONE', 0.0))
-                is_hit = res[0] in ['DIAMOND', 'GOLD', 'SILVER']
-                
-                signals.append({'symbol': symbol, 'is_hit': is_hit, 'tier': res[0], 'gain': res[1]})
-                print(f"{symbol:<10} | {str(dt):<12} | {res[0]:<8} | %{res[1]:4.1f} | {score:.3f}")
+            w_row = df_1w[df_1w['datetime'] <= row['datetime']].iloc[-1]
+            if w_row['w_slope'] > 0 and score > 0.90:
+                is_hit = (df_1d.loc[idx+1, 'datetime'].date() in dg_dates)
+                data.append({'symbol': symbol, 'is_hit': is_hit, 'score': score, 'ema': row['ema_dist']})
 
-    df = pd.DataFrame(signals)
-    print("\n" + "="*50)
-    print("🎯 FULL HISTORY RECAP: 4-COIN CLUSTER")
-    print("="*50)
-    if not df.empty:
-        print(f"Total Signals: {len(df)}")
-        print(f"Global Precision: {(df['is_hit'].mean()*100):.1f}%")
-        print("\nBreakdown by Coin:")
-        print(df.groupby('symbol')['is_hit'].agg(['count', 'mean', 'sum']))
-    else:
-        print("No signals matched.")
+    df = pd.DataFrame(data)
+    
+    print("="*70)
+    print("🌊 PRECISION SWEEP (FULL HISTORY)")
+    print("="*70)
+    print(f"{'FILTERS':<20} | {'SIGNALS':<10} | {'HITS':<10} | {'PRECISION'}")
+    print("-" * 70)
+
+    best = None
+    for dna_limit in [0.95, 0.98, 0.99, 1.0]:
+        for ema_limit in [0, 5, 10, 15]:
+            subset = df[(df['score'] >= dna_limit) & (df['ema'] >= ema_limit)]
+            if not subset.empty:
+                prec = subset['is_hit'].mean() * 100
+                sig_count = len(subset)
+                hit_count = subset['is_hit'].sum()
+                label = f"DNA>={dna_limit:.2f}, EMA>={ema_limit}%"
+                print(f"{label:<20} | {sig_count:<10} | {hit_count:<10} | {prec:.1f}%")
+                if prec == 100.0 and (best is None or sig_count > best[0]):
+                    best = (sig_count, label)
+
+    if best:
+        print(f"\n🎯 BEST 100% PRECISION: {best[0]} signals with {best[1]}")
 
 if __name__ == "__main__":
     main()

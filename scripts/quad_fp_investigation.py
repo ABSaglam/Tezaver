@@ -1,8 +1,8 @@
 """
-Quadratic Cluster Full History Detector
-=======================================
-Uses ALL data (2023-2026) for both DNA and testing.
-No restrictions.
+Quadratic Cluster False Positive Investigation
+==============================================
+Identifies the 1-2 false positives in the best precision cluster.
+Goal: Find the final filter for 100%.
 """
 
 import sys
@@ -42,55 +42,63 @@ def main():
     conn = sqlite3.connect('library/rallies.db')
     cursor = conn.cursor()
     
-    signals = []
-
-    print("="*100)
-    print(f"{'COIN':<10} | {'DATE':<12} | {'TYPE':<8} | {'GAIN':<6} | {'SCORE':<6}")
-    print("-" * 100)
+    hits = []
+    fails = []
 
     for symbol in symbols:
-        cursor.execute("SELECT raw_data, tier FROM rallies WHERE symbol = ? AND tier IN ('DIAMOND', 'GOLD', 'SILVER')", (symbol,))
-        all_results = {pd.to_datetime(json.loads(r[0])['start_time']).date(): (r[1], json.loads(r[0])['gain']) for r in cursor.fetchall()}
+        cursor.execute("SELECT raw_data FROM rallies WHERE symbol = ? AND tier IN ('DIAMOND', 'GOLD', 'SILVER')", (symbol,))
+        dg_dates = set([pd.to_datetime(json.loads(r[0])['start_time']).date() for r in cursor.fetchall()])
         
         df_1d = pd.read_parquet(coin_cell_paths.get_history_file(symbol, '1d')).sort_values('timestamp').reset_index(drop=True)
         df_1d['datetime'] = pd.to_datetime(df_1d['timestamp'], unit='ms')
+        df_1d['ema9'] = df_1d['close'].ewm(span=9, adjust=False).mean()
+        df_1d['ema_dist'] = (df_1d['close'] / df_1d['ema9'] - 1) * 100
+        df_1d['daily_ch'] = (df_1d['close'] / df_1d['open'] - 1) * 100
         
         df_1w = pd.read_parquet(coin_cell_paths.get_history_file(symbol, '1w')).sort_values('timestamp').reset_index(drop=True)
         df_1w['datetime'] = pd.to_datetime(df_1w['timestamp'], unit='ms')
         df_1w['w_slope'] = calculate_macd_hist(df_1w['close']).diff()
 
-        coin_archetypes = archetypes[symbol]
+        coin_archs = archetypes[symbol]
         
         for idx in range(25, len(df_1d)-1):
-            row_1d = df_1d.loc[idx]
-            dt = row_1d['datetime'].date()
-            
+            row = df_1d.loc[idx]
             norm_dna = normalize_sequence(df_1d.iloc[idx-1:idx+1])
             if norm_dna is None: continue
-            score = max([calculate_dna_score(norm_dna, np.array(v)) for v in coin_archetypes])
+            score = max([calculate_dna_score(norm_dna, np.array(v)) for v in coin_archs])
             
-            w_row = df_1w[df_1w['datetime'] <= row_1d['datetime']].iloc[-1]
+            w_row = df_1w[df_1w['datetime'] <= row['datetime']].iloc[-1]
             
-            # SIMPLE RULES: DNA > 0.95 + Weekly Bullish
-            if score > 0.95 and w_row['w_slope'] > 0:
-                next_date = df_1d.loc[idx+1, 'datetime'].date()
-                res = all_results.get(next_date, ('NONE', 0.0))
-                is_hit = res[0] in ['DIAMOND', 'GOLD', 'SILVER']
-                
-                signals.append({'symbol': symbol, 'is_hit': is_hit, 'tier': res[0], 'gain': res[1]})
-                print(f"{symbol:<10} | {str(dt):<12} | {res[0]:<8} | %{res[1]:4.1f} | {score:.3f}")
+            # Best cluster: DNA >= 1.0, EMA >= 10%
+            if score >= 1.0 and row['ema_dist'] >= 10.0 and w_row['w_slope'] > 0:
+                is_hit = (df_1d.loc[idx+1, 'datetime'].date() in dg_dates)
+                entry = {
+                    'symbol': symbol,
+                    'date': row['datetime'].date(),
+                    'ema_dist': row['ema_dist'],
+                    'daily_ch': row['daily_ch'],
+                    'score': score
+                }
+                if is_hit: hits.append(entry)
+                else: fails.append(entry)
 
-    df = pd.DataFrame(signals)
-    print("\n" + "="*50)
-    print("🎯 FULL HISTORY RECAP: 4-COIN CLUSTER")
-    print("="*50)
-    if not df.empty:
-        print(f"Total Signals: {len(df)}")
-        print(f"Global Precision: {(df['is_hit'].mean()*100):.1f}%")
-        print("\nBreakdown by Coin:")
-        print(df.groupby('symbol')['is_hit'].agg(['count', 'mean', 'sum']))
+    print("="*80)
+    print("🔍 FALSE POSITIVE INVESTIGATION")
+    print("="*80)
+    
+    print(f"\nHITS ({len(hits)}):")
+    h_df = pd.DataFrame(hits)
+    print(h_df.describe().loc[['mean', 'min', 'max']])
+    
+    print(f"\nFAILS ({len(fails)}):")
+    if fails:
+        f_df = pd.DataFrame(fails)
+        print(f_df)
+        print("\n--- DETAIL ---")
+        for f in fails:
+            print(f"  {f['symbol']}: {f['date']} | EMA={f['ema_dist']:.1f}% | DailyCh={f['daily_ch']:.1f}%")
     else:
-        print("No signals matched.")
+        print("  No false positives!")
 
 if __name__ == "__main__":
     main()
