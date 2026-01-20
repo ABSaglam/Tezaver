@@ -1,0 +1,47 @@
+Ralli,Tarih,Tier,Faz,Baş_Mum,Bit_Mum,EMA9>21>50,ATR/ATR_MA,RSI,Hacim,Notlar
+1,2025-03-02,SILVER,F1,0,9,✅,1.12,88,↑,Uyanış: Hacim artışı 3.7x
+2,2024-04-24,SILVER,F1,0,3,❌,0.97,47,↓,Uyanış: Hacim artışı 2.0x
+2,2024-04-24,SILVER,F2,4,11,✅,0.86,51,↓,İlk Hamle: 75% yeşil mum
+2,2024-04-24,SILVER,F3,12,15,✅,1.75,74,↓,İlk Nefes: -3.1% geri çekilme
+2,2024-04-24,SILVER,F4,16,25,✅,1.74,74,↑,Israr: Yeni high 0.2644
+2,2024-04-24,SILVER,F5,26,36,✅,3.84,76,↑,Yorgunluk: 11/11 mum tepe altı
+3,2025-04-07,SILVER,F1,0,9,❌,1.65,28,↑,Uyanış: Hacim artışı 0.4x
+3,2025-04-07,SILVER,F2,10,17,❌,1.48,38,↓,İlk Hamle: 62% yeşil mum
+3,2025-04-07,SILVER,F3,18,21,❌,1.26,52,↓,İlk Nefes: -3.4% geri çekilme
+4,2024-11-16,SILVER,F1,0,4,✅,1.01,67,↑,Uyanış: Hacim artışı 1.0x
+5,2025-07-14,SILVER,F1,0,11,✅,0.95,60,↑,Uyanış: Hacim artışı 1.5x
+6,2024-11-24,SILVER,F1,0,2,❌,0.70,49,↑,Uyanış: Hacim artışı 0.7x
+7,2024-11-30,SILVER,F1,0,6,✅,1.13,75,↑,Uyanış: Hacim artışı 0.9x
+8,2024-12-03,SILVER,F1,0,4,❌,0.90,37,↑,Uyanış: Hacim artışı 0.6x
+9,2025-01-20,SILVER,F1,0,10,✅,0.93,27,↑,Uyanış: Hacim artışı 3.3x
+10,2025-08-22,SILVER,F1,0,4,❌,0.76,67,↑,Uyanış: Hacim artışı 0.8x
+11,2024-12-09,SILVER,F1,0,2,❌,0.78,57,↑,Uyanış: Hacim artışı 1.4x
+12,2024-12-06,SILVER,F1,0,8,❌,1.01,31,↑,Uyanış: Hacim artışı 0.6x
+14,2024-12-01,SILVER,F1,0,4,✅,0.96,51,↑,Uyanış: Hacim artışı 0.5x
+16,2024-11-26,SILVER,F1,0,7,❌,0.73,44,↑,Uyanış: Hacim artışı 1.0x
+16,2024-11-26,SILVER,F2,8,15,❌,0.94,35,↓,İlk Hamle: 75% yeşil mum
+16,2024-11-26,SILVER,F3,16,19,❌,0.92,59,↓,İlk Nefes: -1.3% geri çekilme
+16,2024-11-26,SILVER,F4,20,30,❌,0.88,62,↑,Israr: Yeni high 0.2749
+16,2024-11-26,SILVER,F5,31,41,❌,0.86,62,↓,Yorgunluk: 11/11 mum tepe altı
+17,2024-11-18,SILVER,F1,0,9,❌,0.98,35,↑,Uyanış: Hacim artışı 0.8x
+17,2024-11-18,SILVER,F2,10,17,❌,0.93,51,↓,İlk Hamle: 62% yeşil mum
+17,2024-11-18,SILVER,F3,18,21,✅,2.43,74,↑,İlk Nefes: 5.8% geri çekilme
+17,2024-11-18,SILVER,F4,22,32,✅,2.23,64,↑,Israr: Yeni high 0.2169
+18,2024-11-23,SILVER,F1,0,4,✅,0.89,63,↑,Uyanış: Hacim artışı 1.3x
+18,2024-11-23,SILVER,F2,5,12,✅,1.24,70,↓,İlk Hamle: 75% yeşil mum
+18,2024-11-23,SILVER,F3,13,16,✅,1.78,67,↓,İlk Nefes: -7.1% geri çekilme
+18,2024-11-23,SILVER,F4,17,26,✅,1.70,64,↑,Israr: Yeni high 0.3183
+18,2024-11-23,SILVER,F5,27,37,✅,1.66,69,↑,Yorgunluk: 10/11 mum tepe altı
+19,2024-12-24,SILVER,F1,0,11,✅,0.95,78,↑,Uyanış: Hacim artışı 1.2x
+20,2024-11-29,GOLD,F1,0,4,✅,1.23,61,↑,Uyanış: Hacim artışı 1.6x
+20,2024-11-29,GOLD,F2,5,12,✅,1.58,81,↓,İlk Hamle: 62% yeşil mum
+20,2024-11-29,GOLD,F3,13,16,✅,2.04,73,↓,İlk Nefes: -0.6% geri çekilme
+20,2024-11-29,GOLD,F4,17,20,✅,1.89,71,↑,Israr: Yeni high 0.3581
+20,2024-11-29,GOLD,F5,21,31,✅,1.41,55,↑,Yorgunluk: 11/11 mum tepe altı
+21,2024-11-17,SILVER,F1,0,9,✅,0.46,66,↑,Uyanış: Hacim artışı 0.7x
+22,2025-07-17,SILVER,F1,0,6,✅,1.24,51,↑,Uyanış: Hacim artışı 0.7x
+23,2024-12-10,SILVER,F1,0,8,❌,2.04,14,↑,Uyanış: Hacim artışı 1.4x
+23,2024-12-10,SILVER,F2,9,16,❌,2.09,38,↓,İlk Hamle: 62% yeşil mum
+23,2024-12-10,SILVER,F3,17,20,❌,1.02,70,↓,İlk Nefes: -4.9% geri çekilme
+25,2025-02-03,GOLD,F1,0,7,❌,1.31,56,↑,Uyanış: Hacim artışı 0.5x
+26,2025-10-10,GOLD,F1,0,8,✅,0.65,61,↑,Uyanış: Hacim artışı 0.8x
