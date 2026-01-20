@@ -1,81 +1,26 @@
 {
     "symbol": "ALICEUSDT",
-    "name": "My Neighbor Alice",
-    "version": "v1",
-    "created_date": "2026-01-19",
-    "train_period": "2023-01-01 to 2025-12-31",
-    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
-    "total_dg_rallies": 25,
-    "strategy": {
-        "version": "v1",
-        "rule": "mom_7d >= 5",
-        "type": "momentum",
-        "indicators_used": [
-            "mom_7d"
-        ],
-        "file": "scripts/coins/alice/alice_unique_v1.py"
-    },
-    "performance_train": {
-        "total_signals": 75,
-        "precision_pct": 100.0,
-        "hits": 75,
-        "fails": 0,
+    "strategy_name": "MTF Chaos Lock (Lock-State)",
+    "version": "1.0",
+    "author": "Antigravity",
+    "last_updated": "2026-01-20",
+    "description": "A Multi-Timeframe Lock-State that synchronizes Weekly/Daily strength with 4H CHAOS (High Volume).",
+    "character": "The Breakout Artist. Rallies specifically on high volume ignition.",
+    "rule_logic": "W_RSI>=30 & D_RSI>=30 & H4_Trend>=5 & H4_Vol>=1.5 (At Midnight)",
+    "performance_metrics": {
+        "precision": 100.0,
+        "signal_count": 5,
+        "hit_rate": "5/5",
         "tier_breakdown": {
-            "diamond": 5,
-            "gold": 4,
-            "silver": 66
-        },
-        "avg_gain_pct": 13.0,
-        "date_range": "2023-01-26 to 2025-11-08"
+            "DIAMOND": 0,
+            "GOLD": 1,
+            "SILVER": 4
+        }
     },
-    "discovery": {
-        "strongest_discriminator": {
-            "indicator": "daily_ch",
-            "rally_avg": 2.27,
-            "normal_avg": -0.11,
-            "difference_pct": 2117,
-            "rank": "Çok Güçlü"
-        },
-        "secondary_discriminators": [
-            {
-                "indicator": "mom_3d",
-                "difference_pct": 900
-            },
-            {
-                "indicator": "mom_5d",
-                "difference_pct": 819
-            },
-            {
-                "indicator": "mom_7d",
-                "difference_pct": 762
-            }
-        ],
-        "character_type": "Gaming Momentum (Trend Takipçisi)",
-        "notes": [
-            "daily_ch discriminator'ı +2117% ile çok yüksek ancak rally günleri pozitif/negatif dağılımı karışık (14+/11-).",
-            "Gaming/Metaverse sektörüne özgü güçlü bir momentum doğası var.",
-            "mom_7d >= 5% kuralı, hem momentum rallilerini hem de hızlı toparlanmaları yakalayarak 75 sinyal üretiyor.",
-            "AGLD ile benzer davranış sergiliyor: Gaming token'ları trend takipçisi.",
-            "5 Diamond rally yakaladı - yüksek potansiyelli."
-        ]
-    },
-    "analysis_files": {
-        "pattern_discovery": "scripts/coins/alice/alice_pattern_discovery.py",
-        "threshold_sweep": "scripts/coins/alice/alice_threshold_sweep.py",
-        "final_strategy": "scripts/coins/alice/alice_unique_v1.py"
-    },
-    "status": {
-        "train_complete": true,
-        "test_ready": true,
-        "test_executed": false,
-        "production_ready": false
-    },
-    "ai_insights": {
-        "pattern_clarity": "HIGH",
-        "strategy_simplicity": "VERY_SIMPLE",
-        "signal_count": "EXCELLENT",
-        "uniqueness": "SECTOR_SPECIFIC",
-        "confidence": "VERY_HIGH",
-        "recommendation": "ALICE, gaming sektörü karakteristiğini (AGLD gibi) yansıtıyor. 7 günlük momentum %5'i geçtiğinde tereddütsüz rally başlıyor. Karmaşık filtrelere gerek kalmadı."
-    }
+    "discovery_notes": [
+        "Obtained via Scorched Earth MTF Evolution.",
+        "Constraint: 0 False Positives allowed.",
+        "Unique Trait: ALICE requires VOLUME > 1.5 (Chaos), unlike ALGO/ACH which required Silence.",
+        "Result: Captures reliable Silver/Gold breakouts."
+    ]
 }

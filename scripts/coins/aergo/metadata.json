@@ -1,0 +1,24 @@
+{
+    "symbol": "AERGOUSDT",
+    "strategy_name": "Oversold Doughnut",
+    "version": "1.0",
+    "author": "Antigravity",
+    "last_updated": "2026-01-19",
+    "description": "A deep dip strategy that targets two specific RSI regimes: Resilient Dips (RSI > 40) or Capitulation Crashes (RSI < 25), while avoiding the 'Bleeding Death Zone' (RSI 25-40). Requires significant negative momentum on the 5-day window.",
+    "character": "Split Personality (Momentum vs Dip) - Solved by focusing exclusively on the Dip leg.",
+    "rule_logic": "mom_5d <= -15 AND (rsi >= 40 OR rsi <= 25) AND vol_ratio <= 2.0 AND daily_ch <= -5 AND ema_dist <= 10",
+    "performance_metrics": {
+        "precision": 100.0,
+        "signal_count": 4,
+        "hit_rate": "4/4",
+        "avg_gain": "Unknown (High Quality Dips)"
+    },
+    "discovery_notes": [
+        "AERGO displayed a 'Split Personality' with both Momentum and Dip rallies.",
+        "Momentum rallies were too noisy (precision < 25%) and were discarded.",
+        "Dip rallies showed a unique 'Doughnut' pattern in RSI.",
+        "Successful dips either maintained RSI strength (>40) despite price crash, OR went into extreme capitulation (<25).",
+        "Failures clustered in the RSI 29-37 zone (The Death Zone), representing steady bleeding with no reversal signs.",
+        "Volume filtering (Vol < 2.0) helped ensure accumulation rather than panic selling."
+    ]
+}

@@ -1,0 +1,50 @@
+{
+    "symbol": "ADAUSDT",
+    "name": "Cardano",
+    "version": "v1_repaired",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19",
+    "total_dg_rallies": 90,
+    "strategy": {
+        "version": "v1",
+        "rule": "mom_5d >= 25 AND ema_dist >= 20 AND rsi <= 85 AND mom_7d >= 25",
+        "type": "rational-supernova",
+        "indicators_used": [
+            "mom_5d",
+            "ema_dist",
+            "rsi",
+            "mom_7d"
+        ],
+        "file": "scripts/coins/ada/ada_unique_v1.py"
+    },
+    "performance_train": {
+        "total_signals": 6,
+        "precision_pct": 100.0,
+        "hits": 6,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 0,
+            "gold": 0,
+            "silver": 6
+        },
+        "avg_gain_pct": 9.4,
+        "notes": "Rational Supernova. ADA requires high momentum (Mom5 >= 25) BUT fails at blow-off tops (RSI > 85). Targets the 'Sweet Spot' of high power."
+    },
+    "discovery": {
+        "character_type": "Rational Supernova",
+        "notes": [
+            "Baseline mom_5d >= 10 had only 32% precision (110 fails).",
+            "Contrary to 'Blue Chip' hypothesis, ADA is a MOMENTUM coin, not a Dip Buyer.",
+            "However, it fails at extreme exhaustion levels (RSI > 85).",
+            "Strategy: Demand High Power (Mom >= 25) but Avoid Exhaustion (RSI <= 85).",
+            "Confirmed with Mom7 >= 25 to ensure trend durability."
+        ]
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": true
+    }
+}

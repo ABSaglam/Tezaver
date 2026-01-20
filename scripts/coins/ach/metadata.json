@@ -1,77 +1,26 @@
 {
     "symbol": "ACHUSDT",
-    "name": "Alchemy Pay",
-    "version": "v1",
-    "created_date": "2026-01-19",
-    "train_period": "2023-01-01 to 2025-12-31",
-    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
-    "strategy": {
-        "version": "v1",
-        "rule": "mom_5d >= 15",
-        "type": "momentum",
-        "indicators_used": [
-            "mom_5d"
-        ],
-        "file": "scripts/coins/ach/ach_unique_v1.py"
-    },
-    "performance_train": {
-        "total_signals": 44,
-        "precision_pct": 100.0,
-        "hits": 44,
-        "fails": 0,
+    "strategy_name": "MTF Quiet Lock (Lock-State)",
+    "version": "1.0",
+    "author": "Antigravity",
+    "last_updated": "2026-01-20",
+    "description": "A Multi-Timeframe Lock-State that synchronizes Weekly/Daily strength with 4H Quiet Trend.",
+    "character": "The Synchronized Climber. Rallies when all timeframes align in silence.",
+    "rule_logic": "W_RSI>=40 & D_RSI>=70 & H4_Trend>=10 & H4_Vol<=1.5 (At Midnight)",
+    "performance_metrics": {
+        "precision": 100.0,
+        "signal_count": 3,
+        "hit_rate": "3/3",
         "tier_breakdown": {
-            "diamond": 4,
-            "gold": 9,
-            "silver": 31
-        },
-        "avg_gain_pct": 20.0,
-        "date_range": "2023-01-30 to 2025-04-13"
+            "DIAMOND": 1,
+            "GOLD": 1,
+            "SILVER": 1
+        }
     },
-    "discovery": {
-        "strongest_discriminator": {
-            "indicator": "mom_5d",
-            "rally_avg": 25.58,
-            "normal_avg": 0.00,
-            "difference_pct": 3427003,
-            "rank": "TÜM COİNLER ARASINDA EN GÜÇLÜ"
-        },
-        "secondary_discriminators": [
-            {
-                "indicator": "mom_3d",
-                "difference_pct": 18764
-            },
-            {
-                "indicator": "daily_ch",
-                "difference_pct": 11242
-            }
-        ],
-        "character_type": "Ultra-Güçlü Momentum",
-        "notes": [
-            "mom_5d +3.4 MİLYON yüzde fark gösteriyor - benzeri görülmemiş!",
-            "Rally günleri ortalama %25.6 5-günlük momentum, normal günler %0",
-            "Şubat 2023: Ardışık 8 sinyal (16-24 Şubat)",
-            "Ocak-Şubat 2025: 7 sinyal içeren başka bir küme",
-            "Bazı rallilerde %100+ mom_5d görüldü (örn: 20 Şubat 2023'te %138.7)",
-            "Çok temiz pattern - basit eşik mükemmel çalışıyor"
-        ]
-    },
-    "analysis_files": {
-        "pattern_discovery": "scripts/coins/ach/ach_pattern_discovery.py",
-        "threshold_sweep": "scripts/coins/ach/ach_threshold_sweep.py",
-        "final_strategy": "scripts/coins/ach/ach_unique_v1.py"
-    },
-    "status": {
-        "train_complete": true,
-        "test_ready": true,
-        "test_executed": false,
-        "production_ready": false
-    },
-    "ai_insights": {
-        "pattern_clarity": "EXCEPTIONAL",
-        "strategy_simplicity": "VERY_SIMPLE",
-        "signal_count": "EXCELLENT",
-        "uniqueness": "MOST_UNIQUE_DISCRIMINATOR",
-        "confidence": "VERY_HIGH",
-        "recommendation": "Bu keşfedilen en temiz momentum pattern'idir. ACH rallileri, normal işlem günlerinde tamamen olmayan çok güçlü 5-günlük momentum birikimleriyle başlar. +3.4M% ayırıcı farkı, tüm analiz edilen coinler arasında en güçlüdür."
-    }
+    "discovery_notes": [
+        "Obtained via Full-Scope MTF Evolution.",
+        "Constraint: 0 False Positives allowed.",
+        "Result: A perfect capture of 1 Diamond, 1 Gold, 1 Silver.",
+        "Logic: Strong Daily Momentum (RSI>70) + established 4H Trend (>10) + LOW Volume (<1.5). Non-blowoff entries."
+    ]
 }

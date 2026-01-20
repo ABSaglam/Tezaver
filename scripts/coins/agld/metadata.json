@@ -1,0 +1,23 @@
+{
+    "symbol": "AGLDUSDT",
+    "strategy_name": "Shadow-Capped Supernova",
+    "version": "1.0",
+    "author": "Antigravity",
+    "last_updated": "2026-01-19",
+    "description": "A refined Momentum Breakout strategy. Targets high momentum moves (Supernova) but filters out 'Blow-off Tops' (Vol > 4.9) and 'Shooting Star' rejections (Upper Shadow > 0.45).",
+    "character": "Supernova (Breakout). Requires Volume control and Clean Closes.",
+    "rule_logic": "mom_5d >= 30 AND rsi >= 65 AND vol_ratio <= 4.9 AND upper_shadow_ratio <= 0.45",
+    "performance_metrics": {
+        "precision": 83.3,
+        "signal_count": 12,
+        "hit_rate": "10/12",
+        "avg_gain": "Unknown (Mix of Diamond/Silver)"
+    },
+    "discovery_notes": [
+        "AGLD has a 'Split Personality' but the Dip leg returns <5% precision.",
+        "Momentum leg is the winner (Supernova).",
+        "Key insight 1: Avoid 'Blow-off Tops'. Volume > 5.0 usually marks the exact top.",
+        "Key insight 2: Avoid 'Shooting Stars'. Upper Shadow > 0.45 indicates rejection.",
+        "The strategy accepts 'Rational Supernovas' - strong moves that haven't gone vertical enough to crash."
+    ]
+}

@@ -60,13 +60,23 @@ def get_rallies(symbol, tiers=['DIAMOND', 'GOLD', 'SILVER'], train_only=True):
         results = {}
         for raw_data, tier in cursor.fetchall():
             raw = json.loads(raw_data)
-            start_date = pd.to_datetime(raw['start_time']).date()
+            # Support both legacy 'start_time' and new 'event_time'
+            start_str = raw.get('start_time') or raw.get('event_time')
+            if not start_str:
+                continue # Skip if no date found
+                
+            start_date = pd.to_datetime(start_str).date()
             
             # Filter 2026 data if train_only=True
             if train_only and start_date >= TRAIN_CUTOFF:
                 continue
             
-            gain = raw['gain']
+            gain = raw.get('gain')
+            if gain is None:
+                 if 'impulse_gain_pct' in raw:
+                     gain = raw['impulse_gain_pct'] * 100
+                 else:
+                     gain = 0.0 # Default fallback
             results[start_date] = (tier, gain)
         
         return results

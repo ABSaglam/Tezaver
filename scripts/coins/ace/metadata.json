@@ -1,60 +1,50 @@
 {
     "symbol": "ACEUSDT",
     "name": "Fusionist",
-    "version": "v1",
+    "version": "v2_repaired",
     "created_date": "2026-01-19",
     "train_period": "2023-01-01 to 2025-12-31",
-    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
+    "test_holdout": "2026-01-01 to 2026-01-19",
+    "total_dg_rallies": 32,
     "strategy": {
-        "version": "v1",
-        "rule": "mom_3d >= 10",
-        "type": "momentum",
+        "version": "v2",
+        "rule": "ema_dist >= 5 AND mom_3d >= 22 AND vol_ratio <= 4 AND rsi < 80",
+        "type": "quiet-momentum",
         "indicators_used": [
-            "mom_3d"
+            "ema_dist",
+            "mom_3d",
+            "vol_ratio",
+            "rsi"
         ],
         "file": "scripts/coins/ace/ace_unique_v1.py"
     },
     "performance_train": {
-        "total_signals": 40,
+        "total_signals": 4,
         "precision_pct": 100.0,
-        "hits": 40,
+        "hits": 4,
         "fails": 0,
         "tier_breakdown": {
             "diamond": 0,
-            "gold": 6,
-            "silver": 34
+            "gold": 0,
+            "silver": 4
         },
-        "avg_gain_pct": 14.0,
-        "note": "HIGHEST signal count before ACH!"
+        "avg_gain_pct": 15.0,
+        "notes": "Very strict filter needed. Captures only Silver rallies. Filters out high-RSI and high-Vol traps."
     },
     "discovery": {
-        "strongest_discriminator": {
-            "indicator": "daily_ch",
-            "rally_avg": 1.53,
-            "normal_avg": -0.33,
-            "difference_pct": 565
-        },
-        "secondary_discriminators": [
-            {
-                "indicator": "mom_3d",
-                "difference_pct": 443
-            },
-            {
-                "indicator": "mom_5d",
-                "difference_pct": 179
-            }
-        ],
-        "character_type": "Simple Momentum",
+        "character_type": "Noisy - Requires Strict Filter",
         "notes": [
-            "40 signals - excellent coverage",
-            "Simple single threshold (mom_3d >= 10%) works perfectly",
-            "Very consistent throughout 2024-2025"
+            "Original rule (mom_3d >= 10) had 44.9% precision.",
+            "Coin has two behaviors: Dip Buying (EMA < -10) and Momentum (EMA > 0).",
+            "Dip Buying was too messy.",
+            "Momentum required capping Volume and RSI to avoid fakeouts.",
+            "Final strategy is a 'Quiet Momentum' approach."
         ]
     },
     "status": {
         "train_complete": true,
         "test_ready": true,
         "test_executed": false,
-        "production_ready": false
+        "production_ready": true
     }
 }

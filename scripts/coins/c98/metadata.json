@@ -1,0 +1,76 @@
+{
+    "symbol": "C98USDT",
+    "name": "Coin98",
+    "version": "v1",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19 (19 days)",
+    "total_dg_rallies": 218,
+    "strategy": {
+        "version": "v1",
+        "rule": "mom_3d >= 0",
+        "type": "sleeping-giant",
+        "indicators_used": [
+            "mom_3d"
+        ],
+        "file": "scripts/coins/c98/c98_unique_v1.py"
+    },
+    "performance_train": {
+        "total_signals": 111,
+        "precision_pct": 100.0,
+        "hits": 111,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 7,
+            "gold": 18,
+            "silver": 86
+        },
+        "avg_gain_pct": 14.0,
+        "date_range": "2023-01-24 to 2025-12-27"
+    },
+    "discovery": {
+        "strongest_discriminator": {
+            "indicator": "mom_5d",
+            "rally_avg": 0.36,
+            "normal_avg": -0.62,
+            "difference_pct": 157,
+            "rank": "Orta"
+        },
+        "secondary_discriminators": [
+            {
+                "indicator": "mom_3d",
+                "difference_pct": 151
+            },
+            {
+                "indicator": "mom_7d",
+                "difference_pct": 85
+            }
+        ],
+        "character_type": "Sleeping Giant",
+        "notes": [
+            "C98, en düşük hassasiyetli momentum coini.",
+            "Rally günlerinde bile momentum çok düşük (+0.36%, +0.18%).",
+            "mom_3d >= 0% = Sadece negatif olmaması yeterli.",
+            "BICO'dan bile daha sessiz bir coin."
+        ]
+    },
+    "analysis_files": {
+        "pattern_discovery": "scripts/coins/c98/c98_pattern_discovery.py",
+        "threshold_sweep": "scripts/coins/c98/c98_threshold_sweep.py",
+        "final_strategy": "scripts/coins/c98/c98_unique_v1.py"
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": false
+    },
+    "ai_insights": {
+        "pattern_clarity": "MODERATE",
+        "strategy_simplicity": "VERY_SIMPLE",
+        "signal_count": "VERY_HIGH",
+        "uniqueness": "ULTRA_LOW_THRESHOLD",
+        "confidence": "HIGH",
+        "recommendation": "C98 çok sessiz ama sadece düşüş olmaması yeterli. En basit strateji."
+    }
+}

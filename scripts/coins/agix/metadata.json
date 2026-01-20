@@ -1,0 +1,23 @@
+{
+    "symbol": "AGIXUSDT",
+    "strategy_name": "Pinbar at 20",
+    "version": "1.0",
+    "author": "Antigravity",
+    "last_updated": "2026-01-19",
+    "description": "A sniper strategy for catching deep dips that stabilize at the RSI 20-23 level with a Pinbar confirmation. Avoids the 'Waterfall' risk of RSI < 20.",
+    "character": "Falling Knife (Dangerous). Requires geometric confirmation (Pinbar).",
+    "rule_logic": "mom_5d <= -10 AND rsi >= 20 AND rsi <= 23 AND shadow_ratio >= 0.25",
+    "performance_metrics": {
+        "precision": 100.0,
+        "signal_count": 2,
+        "hit_rate": "2/2",
+        "avg_gain": "Unknown (Diamond Bottoms)"
+    },
+    "discovery_notes": [
+        "AGIX is a dangerous 'Falling Knife' coin. Blind dip buying fails 90% of the time.",
+        "RSI < 20 is a 'Death Zone' where price often continues to crash (Waterfall).",
+        "The sweet spot is RSI 20-23.",
+        "Geometric confirmation (Pinbar/Lower Shadow >= 0.25) is required to confirm rejection.",
+        "This filters out the 'solid red' capitulation candles that have no buying pressure."
+    ]
+}

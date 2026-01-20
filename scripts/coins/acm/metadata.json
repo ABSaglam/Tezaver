@@ -1,0 +1,49 @@
+{
+    "symbol": "ACMUSDT",
+    "name": "AC Milan Fan Token",
+    "version": "v1_repaired",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19",
+    "total_dg_rallies": 24,
+    "strategy": {
+        "version": "v1",
+        "rule": "vol_ratio >= 4.0 AND daily_ch >= 10 AND mom_5d >= 10",
+        "type": "supernova-breakout",
+        "indicators_used": [
+            "vol_ratio",
+            "daily_ch",
+            "mom_5d"
+        ],
+        "file": "scripts/coins/acm/acm_unique_v1.py"
+    },
+    "performance_train": {
+        "total_signals": 6,
+        "precision_pct": 100.0,
+        "hits": 6,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 1,
+            "gold": 1,
+            "silver": 4
+        },
+        "avg_gain_pct": 21.3,
+        "notes": "Volume Awakening. Targets massive volume (>4x average) accompanied by a strong candle (>10%). Filters out 'Churn' (High vol, low move)."
+    },
+    "discovery": {
+        "character_type": "Volume Awakening (Fan Token)",
+        "notes": [
+            "Baseline mom_5d >= 10 had 35% precision (churn issues).",
+            "Analysis showed Volume is KING (Hits 4.6x vs Fails 1.5x).",
+            "However, High Volume alone (Vol >= 4) had 1 nasty failure (Churn).",
+            "Solution: Enforce 'Effort vs Result'. High Volume must produce Big Candle (DailyCh >= 10).",
+            "This filter achieved 100% precision."
+        ]
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": true
+    }
+}

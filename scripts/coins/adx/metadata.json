@@ -1,0 +1,49 @@
+{
+    "symbol": "ADXUSDT",
+    "name": "Ambire AdEx",
+    "version": "v1_repaired",
+    "created_date": "2026-01-19",
+    "train_period": "2023-01-01 to 2025-12-31",
+    "test_holdout": "2026-01-01 to 2026-01-19",
+    "total_dg_rallies": 23,
+    "strategy": {
+        "version": "v1",
+        "rule": "mom_5d >= 25 AND mom_7d >= 20 AND ema_dist <= 40",
+        "type": "capped-aggression",
+        "indicators_used": [
+            "mom_5d",
+            "mom_7d",
+            "ema_dist"
+        ],
+        "file": "scripts/coins/adx/adx_unique_v1.py"
+    },
+    "performance_train": {
+        "total_signals": 5,
+        "precision_pct": 100.0,
+        "hits": 5,
+        "fails": 0,
+        "tier_breakdown": {
+            "diamond": 0,
+            "gold": 0,
+            "silver": 5
+        },
+        "avg_gain_pct": 14.2,
+        "notes": "Capped Aggression. Demands high momentum (Mom5 >= 25) BUT limits extension (EMA Dist <= 40) to filter blow-off tops."
+    },
+    "discovery": {
+        "character_type": "Capped Aggression",
+        "notes": [
+            "Baseline mom_5d >= 10 was too noisy (90 fails).",
+            "Demanding Aggressive Momentum (Mom5 >= 25) boosted precision to 71%.",
+            "Adding Mom7 confirmation pushed it to 83%.",
+            "The final failure was a Blow-off Top (Ema Dist 44.9).",
+            "Solution: Cap the extension (`ema_dist <= 40`). Precision -> 100%."
+        ]
+    },
+    "status": {
+        "train_complete": true,
+        "test_ready": true,
+        "test_executed": false,
+        "production_ready": true
+    }
+}
