@@ -63,7 +63,13 @@ def get_profile(day, df_w, df_d, df_h4, df_h1):
     except:
         return "neutral"
 
+import argparse
+
 def run_blind_test():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--day", help="Signal date (YYYY-MM-DD). Prediction will be for the next day.")
+    args = parser.parse_args()
+
     print("🔮 BLIND V4 PREDICTION (THE FIRE TRIAL) STARTING...")
     
     # Load Performance Data for Quality Check
@@ -76,18 +82,23 @@ def run_blind_test():
     except:
         print("⚠️ DNA Performance data not found. Stats will be empty.")
 
-    test_days = [
-        datetime(2026, 1, 17), # Targets Jan 18
-        datetime(2026, 1, 18), # Targets Jan 19
-        datetime(2026, 1, 19), # Targets Jan 20
-        datetime(2026, 1, 20)  # Targets Jan 21
-    ]
+    if args.day:
+        test_days = [datetime.strptime(args.day, '%Y-%m-%d')]
+    else:
+        test_days = [
+            datetime(2026, 1, 17), # Targets Jan 18
+            datetime(2026, 1, 18), # Targets Jan 19
+            datetime(2026, 1, 19), # Targets Jan 20
+            datetime(2026, 1, 20), # Targets Jan 21
+            datetime(2026, 1, 21)  # Targets Jan 22 (TODAY)
+        ]
 
     key_files = glob.glob("data/golden_keys/*_key.json")
     whitelist = [os.path.basename(f).split('_')[0] for f in key_files]
 
+    report_name = f"BLIND_PREDICTION_REPORT_{args.day if args.day else 'LATEST'}.md"
     report_lines = ["# 🔮 AYAŞ TÜNELİ v4: KÖR TEST TAHMİN RAPORU (BLIND PREDICTIONS)\n"]
-    report_lines.append(f"**Test Periyodu:** 18 Ocak - 21 Ocak 2026\n")
+    report_lines.append(f"**Oluşturulma Tarihi:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
     report_lines.append("**Yöntem:** Koinlerin kendi 'Altın Anahtarları' + Market Geneli Performans İstatistikleri\n\n")
     report_lines.append("---\n")
 
@@ -123,7 +134,12 @@ def run_blind_test():
                     df['ema21'] = df['close'].ewm(span=21, adjust=False).mean()
                     df['ema50'] = df['close'].ewm(span=50, adjust=False).mean()
 
-                if signal_date not in df_d.index: continue
+                # Search by finding exact index or closest match before
+                if signal_date not in df_d.index:
+                    # In case of manual run with slightly different time, let's try normalized date
+                    if pd.Timestamp(signal_date).normalize() in df_d.index:
+                        signal_date = pd.Timestamp(signal_date).normalize()
+                    else: continue
                 
                 profile = get_profile(signal_date, df_w, df_d, df_h4, df_h1)
                 
@@ -146,10 +162,13 @@ def run_blind_test():
         
         report_lines.append("\n---\n")
 
-    with open("BLIND_PREDICTION_REPORT.md", "w") as f:
+    with open(report_name, "w") as f:
         f.writelines(report_lines)
     
-    print("\n🏁 Blind Test Report Generated: BLIND_PREDICTION_REPORT.md")
+    print(f"\n🏁 Blind Test Report Generated: {report_name}")
+
+if __name__ == "__main__":
+    run_blind_test()
 
 if __name__ == "__main__":
     run_blind_test()
