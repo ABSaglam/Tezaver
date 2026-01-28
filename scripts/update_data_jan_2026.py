@@ -20,7 +20,7 @@ def update_fresh_data():
         
     print(f"🚀 DATA REFRESH: SYNCING JAN 2026 GAP")
     client = BinanceClient()
-    timeframes = ['1d', '4h', '1h']
+    timeframes = ['1d', '4h', '1h', '15m']
     root = "coin_cells"
     
     total = len(target_coins)

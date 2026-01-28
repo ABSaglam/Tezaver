@@ -41,10 +41,19 @@ def get_year_range(year: int):
     return int(start.timestamp() * 1000), int(end.timestamp() * 1000)
 
 def download_symbol(client, symbol, timeframe, start_ms, end_ms, existing_df=None):
-    """Downloads all bars for a symbol in chunks."""
+    """Downloads all bars for a symbol in chunks, starting from start_ms."""
     all_records = []
-    current_since = start_ms
     
+    # Optimizasyon: Eğer mevcut veri varsa, onun bittiği yerden başla
+    current_since = start_ms
+    if existing_df is not None and not existing_df.empty:
+        last_ms = existing_df['timestamp'].max()
+        if last_ms >= end_ms:
+            print("✓ Already up to date", end=" ")
+            return existing_df
+        current_since = last_ms + 1
+        print(f" (resuming from {pd.to_datetime(current_since, unit='ms', utc=True)})", end=" ", flush=True)
+
     ccxt_symbol = symbol.replace('USDT', '/USDT')
     
     while current_since < end_ms:
@@ -65,16 +74,15 @@ def download_symbol(client, symbol, timeframe, start_ms, end_ms, existing_df=Non
                         'volume': rec.volume
                     })
             
-            # Move to next chunk
             if records:
                 current_since = records[-1].timestamp + 1
             else:
                 break
                 
-            time.sleep(0.05)  # Rate limit respect
+            time.sleep(0.02)  # Faster rate limit for small updates
             
         except Exception as e:
-            print(f"    Error: {str(e)[:50]}")
+            print(f"Error: {str(e)[:50]}")
             time.sleep(1)
             break
     

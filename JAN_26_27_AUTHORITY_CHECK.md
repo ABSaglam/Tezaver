@@ -1,0 +1,10 @@
+# 🛡️ TÜNEL GİRİŞ İZİNLERİ (GOLDEN KEY CHECK)
+
+Bu liste, Tünel Sinyali (15m) üretsin ya da üretmesin, o gün **DNA'sı onaylı** olan (Tünele giriş hakkı kazanan) tüm coinleri listeler.
+
+## 📅 2026-01-26 (İzinli: 13)
+`AXSUSDT, BBUSDT, EDUUSDT, EIGENUSDT, FTTUSDT, INITUSDT, KITEUSDT, PENGUUSDT, PUMPUSDT, SAPIENUSDT, SOLUSDT, SOLVUSDT, TSTUSDT`
+
+## 📅 2026-01-27 (İzinli: 12)
+`DCRUSDT, DODOUSDT, GMTUSDT, HMSTRUSDT, JTOUSDT, LAZIOUSDT, LQTYUSDT, METUSDT, TUTUSDT, UNIUSDT, VELODROMEUSDT, XPLUSDT`
+

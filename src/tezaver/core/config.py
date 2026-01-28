@@ -297,3 +297,10 @@ MACD_SLOW: int = 26
 MACD_SIGNAL: int = 9
 
 ATR_PERIOD: int = 14
+
+# --- Directory Settings ---
+# Abs path to coin_cells directory
+COIN_CELLS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "coin_cells")
+# Fallback to user home if not found in src root (likely case during dev)
+if not os.path.exists(COIN_CELLS_DIR):
+    COIN_CELLS_DIR = os.path.expanduser("~/TezaverMac/coin_cells")

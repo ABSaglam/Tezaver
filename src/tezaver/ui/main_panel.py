@@ -653,6 +653,7 @@ def main():
                 "📝 Script Tarama",
                 "🧪 Simyacı",
                 "🏭 Dökümhane",
+                "🚇 Tünel (Tunnel Vision)",
                 "⚙️ Sistem Paneli"
             ]
             
@@ -720,6 +721,10 @@ def main():
             import tezaver.ui.foundry_tab
             importlib.reload(tezaver.ui.foundry_tab)
             tezaver.ui.foundry_tab.render_foundry_page()
+        elif current_nav == "🚇 Tünel (Tunnel Vision)":
+            import tezaver.ui.tabs.tunnel_tab
+            importlib.reload(tezaver.ui.tabs.tunnel_tab)
+            tezaver.ui.tabs.tunnel_tab.render_tunnel_tab()
         elif current_nav == "⚙️ Sistem Paneli": 
             from tezaver.ui.subpages.system_dashboard import render_system_dashboard
             render_system_dashboard()

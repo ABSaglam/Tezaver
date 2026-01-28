@@ -1,0 +1,5711 @@
+# 🕵️ KÜRESEL TÜNEL DENETİM RAPORU (VOLUMETRİK TETİK ANALİZİ)
+> NOT: **Vol-Change**, tetik barının bir önceki bara göre hacim farkıdır. **Vol-Avg**, tetik barının önceki 7 barın ortalamasına göre hacim farkıdır.
+
+## 📅 01 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ERAUSDT | %9.46 | **%-3.77** | 06:45 | Yes | +1145.6% | +950.2% | 🖊️ İmza (3 kez) |
+| | | | 07:15 | Yes | -7.9% | +124.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| CYBERUSDT | %9.32 | %6.64 | 09:30 | Yes | +793.7% | +156.2% | 🖊️ İmza (1 kez) |
+| | | | 10:30 | Yes | +179.6% | +196.3% | |
+| | | | 13:00 | Yes | +670.7% | +226.4% | |
+| | | | 14:30 | Yes | -64.6% | -83.3% | |
+| | | | 15:00 | Yes | -19.9% | -66.1% | |
+| | | | 18:15 |  | +154.7% | +244.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| AWEUSDT | %6.35 | %1.80 | 14:45 | Yes | +145.3% | +229.6% | 🖊️ İmza (1 kez) |
+| | | | 20:30 | Yes | +18093.9% | +3396.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| COMPUSDT | %5.91 | **%-2.87** | 10:30 | Yes | +110.8% | +308.4% | 🖊️ İmza (1 kez) |
+| | | | 17:30 | Yes | +55.8% | +349.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| KITEUSDT | %4.36 | **%-6.49** | 10:15 | Yes | +305.5% | +595.1% | 🖊️ İmza (1 kez) |
+| | | | 11:15 | Yes | +0.4% | -6.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HEIUSDT | %4.16 | %1.17 | 09:00 | Yes | -23.9% | +65.0% | 🖊️ İmza (1 kez) |
+| | | | 14:00 | Yes | +234.3% | +261.0% | |
+| | | | 14:30 | Yes | +27.5% | +23.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| LSKUSDT | %2.87 | **%-22.22** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ZROUSDT | %1.62 | **%-7.98** | 20:45 | Yes | -1.2% | +118.7% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| APEUSDT | %0.74 | **%-7.44** | - | - | - | - | 🖊️ İmza (4 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ZECUSDT | %0.55 | **%-19.61** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HAEDALUSDT | %0.54 | **%-7.76** | - | - | - | - | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| GIGGLEUSDT | %0.49 | **%-30.93** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ASTERUSDT | %0.38 | **%-9.39** | 23:15 | Yes | +8.9% | -22.4% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| METUSDT | %0.34 | **%-7.92** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SSVUSDT | %0.34 | **%-8.35** | 21:30 | Yes | -38.8% | -13.3% | 🖊️ İmza (5 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| VELODROMEUSDT | %0.34 | **%-10.14** | - | - | - | - | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| VIRTUALUSDT | %0.31 | **%-7.79** | 13:15 | Yes | +111.8% | +208.8% | 🖊️ İmza (2 kez) |
+| | | | 14:45 | Yes | -11.8% | -49.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| LINEAUSDT | %0.31 | **%-5.76** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1000CATUSDT | %0.30 | **%-8.06** | 23:15 | Yes | -95.5% | -98.3% | 🖊️ İmza (5 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PENGUUSDT | %0.30 | **%-8.96** | 10:30 | Yes | +93.1% | +6.9% | 🖊️ İmza (3 kez) |
+| | | | 23:15 | Yes | +19.5% | -23.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SPKUSDT | %0.29 | **%-7.48** | - | - | - | - | 🖊️ İmza (5 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ATUSDT | %0.28 | **%-22.85** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TAOUSDT | %0.28 | **%-8.34** | 21:30 | Yes | -7.0% | +27.3% | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| IOTAUSDT | %0.28 | **%-9.12** | - | - | - | - | 🖊️ İmza (4 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FETUSDT | %0.27 | **%-9.66** | - | - | - | - | 🖊️ İmza (5 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FTTUSDT | %0.27 | **%-12.38** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| EDENUSDT | %0.26 | **%-4.92** | 21:15 | Yes | -25.9% | -29.1% | 🖊️ İmza (2 kez) |
+| | | | 22:00 | Yes | +34.0% | +18.1% | |
+| | | | 22:45 | Yes | +249.4% | +164.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ONDOUSDT | %0.26 | **%-8.16** | 23:15 | Yes | +229.1% | -49.9% | 🖊️ İmza (3 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TUTUSDT | %0.26 | **%-3.47** | 22:00 | Yes | +468.8% | -22.0% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| YGGUSDT | %0.24 | **%-11.15** | 21:30 | Yes | +132.0% | -0.2% | 🖊️ İmza (4 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SKYUSDT | %0.22 | **%-6.27** | 18:45 | Yes | -35.2% | +1.8% | 🖊️ İmza (1 kez) |
+| | | | 23:00 | Yes | -16.9% | -44.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MORPHOUSDT | %0.21 | **%-4.95** | 23:15 | Yes | +48.2% | -69.3% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TWTUSDT | %0.20 | **%-6.71** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| WALUSDT | %0.19 | **%-14.49** | - | - | - | - | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SYSUSDT | %0.19 | **%-6.12** | - | - | - | - | 🖊️ İmza (5 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BIOUSDT | %0.18 | **%-8.59** | - | - | - | - | 🖊️ İmza (3 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PIXELUSDT | %0.17 | **%-9.39** | - | - | - | - | 🖊️ İmza (5 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NOTUSDT | %0.17 | **%-8.25** | - | - | - | - | 🖊️ İmza (5 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SHELLUSDT | %0.17 | **%-10.51** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HYPERUSDT | %0.15 | **%-6.96** | - | - | - | - | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BOMEUSDT | %0.14 | **%-6.96** | 23:15 | Yes | -88.2% | -77.9% | 🖊️ İmza (4 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| QTUMUSDT | %0.13 | **%-6.62** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ORDIUSDT | %0.12 | **%-11.60** | - | - | - | - | 🖊️ İmza (3 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 2ZUSDT | %0.10 | **%-4.63** | 15:45 | Yes | +81.4% | +172.6% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TREEUSDT | %0.08 | **%-6.67** | 22:30 | Yes | +36.5% | -68.6% | 🖊️ İmza (3 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BROCCOLI714USDT | %0.07 | **%-6.74** | 21:30 | Yes | +100.4% | +75.2% | 🖊️ İmza (5 kez) |
+| | | | 22:45 | Yes | +143.8% | -48.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| YBUSDT | %0.06 | **%-7.36** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FORMUSDT | %0.00 | **%-11.54** | - | - | - | - | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| CUSDT | %0.00 | **%-5.43** | - | - | - | - | 🖊️ İmza (5 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TOWNSUSDT | %0.00 | **%-7.42** | 10:15 | Yes | +1806.5% | +3580.2% | 🖊️ İmza (5 kez) |
+
+
+
+
+
+## 📅 02 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TURBOUSDT | %46.40 | %35.17 | 13:00 | Yes | +36.9% | +13.5% | 🖊️ İmza (1 kez) |
+| | | | 15:45 | Yes | -27.9% | -52.6% | |
+| | | | 18:30 | Yes | +63.2% | -38.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SUPERUSDT | %23.31 | %12.98 | 05:45 | Yes | +34.6% | +391.6% | 🖊️ İmza (1 kez) |
+| | | | 07:30 | Yes | +485.6% | +687.3% | |
+| | | | 08:30 | Yes | +421.9% | +301.8% | |
+| | | | 14:00 | Yes | +802.7% | +603.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| METUSDT | %12.12 | %8.20 | 01:00 | Yes | +249.6% | +66.0% | 🖊️ İmza (1 kez) |
+| | | | 02:30 | Yes | -46.9% | -23.9% | |
+| | | | 10:30 | Yes | +64.9% | +29.4% | |
+| | | | 17:00 |  | -15.1% | -62.8% | |
+| | | | 19:15 |  | +323.7% | +46.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ZECUSDT | %12.07 | **%-9.05** | 14:45 | Yes | +130.5% | +259.2% | 🖊️ İmza (1 kez) |
+| | | | 15:30 | Yes | +189.3% | +252.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PROVEUSDT | %10.29 | %9.33 | 11:00 | Yes | -74.1% | -18.5% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ACTUSDT | %10.00 | %2.86 | 14:00 | Yes | -41.9% | -57.0% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FFUSDT | %9.86 | %8.19 | 14:00 | Yes | +42.7% | +218.8% | 🖊️ İmza (1 kez) |
+| | | | 18:15 | Yes | -54.8% | -35.1% | |
+| | | | 21:45 |  | -45.9% | -22.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BARDUSDT | %8.55 | %0.28 | 13:15 | Yes | +62.7% | +23.6% | 🖊️ İmza (1 kez) |
+| | | | 14:00 | Yes | +1170.6% | +134.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MMTUSDT | %8.53 | %3.58 | 02:30 | Yes | +247.9% | +439.0% | 🖊️ İmza (2 kez) |
+| | | | 03:30 | Yes | +88.5% | +141.9% | |
+| | | | 04:00 | Yes | +178.2% | +174.8% | |
+| | | | 14:45 | Yes | -35.3% | +49.7% | |
+| | | | 15:30 | Yes | -34.4% | -7.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| EDENUSDT | %4.64 | %0.27 | 14:30 | Yes | +78.0% | +147.2% | 🖊️ İmza (1 kez) |
+| | | | 19:00 | Yes | -63.0% | -75.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| XPLUSDT | %3.56 | %0.59 | 00:15 | Yes | +207.6% | -20.4% | 🖊️ İmza (1 kez) |
+| | | | 14:45 | Yes | +136.0% | +218.4% | |
+| | | | 15:30 | Yes | +5.0% | +48.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BANKUSDT | %2.93 | **%-1.35** | 14:45 | Yes | -33.5% | +46.5% | 🖊️ İmza (2 kez) |
+| | | | 15:30 | Yes | -34.7% | +75.9% | |
+| | | | 16:15 | Yes | -73.9% | -72.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| AWEUSDT | %2.64 | %1.87 | 14:45 | Yes | -63.7% | -63.5% | 🖊️ İmza (1 kez) |
+| | | | 17:15 | Yes | -56.0% | -82.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| RESOLVUSDT | %0.00 | **%-6.46** | 15:00 | Yes | -46.9% | -3.5% | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 03 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SAPIENUSDT | %79.13 | %71.57 | 02:00 | Yes | +415.9% | +689.2% | 🖊️ İmza (1 kez) |
+| | | | 05:45 | Yes | +331.2% | +380.2% | |
+| | | | 13:00 | Yes | +8794.2% | +2994.8% | |
+| | | | 13:30 | Yes | -40.0% | +201.8% | |
+| | | | 17:00 | Yes | +72.4% | +31.3% | |
+| | | | 22:45 |  | +172.2% | +275.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ZECUSDT | %21.46 | %8.27 | 05:30 | Yes | +40.7% | +7.8% | 🖊️ İmza (1 kez) |
+| | | | 10:15 | Yes | +343.9% | +240.4% | |
+| | | | 17:45 | Yes | +16.8% | +25.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ACTUSDT | %20.28 | %4.61 | 02:15 | Yes | +4506.9% | +4760.1% | 🖊️ İmza (1 kez) |
+| | | | 21:45 | Yes | -24.7% | -55.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TURBOUSDT | %15.60 | **%-3.63** | 05:30 |  | +18.7% | +184.2% | 🖊️ İmza (1 kez) |
+| | | | 11:00 | Yes | +460.4% | +525.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BARDUSDT | %14.06 | %3.42 | 01:45 |  | +752.4% | +1184.0% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| YBUSDT | %13.63 | %10.56 | 10:00 | Yes | -89.0% | -70.3% | 🖊️ İmza (1 kez) |
+| | | | 16:00 | Yes | +211.1% | +347.4% | |
+| | | | 18:30 | Yes | -45.0% | +18.9% | |
+| | | | 20:00 | Yes | +111.1% | -43.8% | |
+| | | | 22:00 | Yes | +259.0% | -40.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FTTUSDT | %3.81 | %2.27 | 00:30 | Yes | +106.1% | +20.0% | 🖊️ İmza (1 kez) |
+| | | | 01:15 | Yes | -44.2% | -87.0% | |
+| | | | 02:00 | Yes | +1138.2% | +569.7% | |
+| | | | 06:15 |  | +319.7% | +625.7% | |
+| | | | 06:45 | Yes | -67.9% | -9.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HEIUSDT | %2.42 | **%-34.26** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| WIFUSDT | %0.99 | **%-1.24** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 04 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SXPUSDT | %32.88 | %15.18 | 05:30 |  | +543.0% | +222.3% | 🖊️ İmza (1 kez) |
+| | | | 07:30 | Yes | -46.2% | -79.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SYNUSDT | %19.21 | **%-5.13** | 19:15 | Yes | +7513.5% | +4070.9% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| YBUSDT | %13.56 | %11.27 | 02:00 |  | +1369.7% | +440.8% | 🖊️ İmza (1 kez) |
+| | | | 15:00 | Yes | -3.1% | +24.9% | |
+| | | | 15:30 | Yes | +27.9% | +106.5% | |
+| | | | 18:15 | Yes | -40.6% | +35.4% | |
+| | | | 19:30 | Yes | +150.6% | +122.8% | |
+| | | | 20:00 | Yes | +351.2% | +199.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ZECUSDT | %9.07 | %8.49 | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 2ZUSDT | %8.08 | **%-1.22** | 11:00 | Yes | +510.1% | +179.3% | 🖊️ İmza (2 kez) |
+| | | | 11:30 | Yes | +26.4% | +220.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| EDENUSDT | %4.93 | **%-2.89** | 02:45 |  | +70.2% | +262.0% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| USTCUSDT | %4.89 | %2.77 | 16:15 | Yes | +220.6% | +1050.9% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| CUSDT | %4.11 | **%-3.99** | 05:30 | Yes | +24.8% | +453.2% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ATUSDT | %3.42 | **%-3.00** | - | - | - | - | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| CVCUSDT | %1.92 | **%-0.64** | 09:45 | Yes | -61.3% | -46.6% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1000CHEEMSUSDT | %0.68 | **%-16.69** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SAPIENUSDT | %0.10 | **%-24.48** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 05 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| THEUSDT | %13.26 | %8.35 | 00:30 | Yes | +71.2% | +304.3% | 🖊️ İmza (1 kez) |
+| | | | 15:00 | Yes | +86.1% | +86.2% | |
+| | | | 17:45 | Yes | +102.2% | +74.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALLOUSDT | %6.82 | **%-4.83** | 02:00 | Yes | +37.7% | +55.5% | 🖊️ İmza (1 kez) |
+| | | | 02:30 | Yes | -37.7% | +17.3% | |
+| | | | 03:00 | Yes | +40.4% | +18.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BIFIUSDT | %3.36 | %0.53 | 10:30 | Yes | +306.6% | +119.0% | 🖊️ İmza (1 kez) |
+| | | | 21:00 | Yes | +1488.1% | +212.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| LAZIOUSDT | %1.95 | **%-6.72** | 02:15 | Yes | +224.6% | +408.3% | 🌐 Global (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BANANAS31USDT | %1.94 | **%-1.99** | 03:00 | Yes | +252.9% | +305.3% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1000SATSUSDT | %1.51 | **%-4.12** | - | - | - | - | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1000CATUSDT | %1.50 | **%-4.80** | - | - | - | - | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PUMPUSDT | %1.06 | **%-9.01** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 06 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| WINUSDT | %84.85 | %62.82 | 02:15 | Yes | +1260.4% | +1036.6% | 🖊️ İmza (1 kez) |
+| | | | 05:30 | Yes | +2323.8% | +1171.5% | |
+| | | | 07:00 | Yes | -74.7% | -45.8% | |
+| | | | 07:45 | Yes | -88.8% | -73.1% | |
+| | | | 09:30 | Yes | +200.2% | +396.0% | |
+| | | | 19:15 |  | +5337.9% | +3188.9% | |
+| | | | 21:15 | Yes | +300.5% | +27.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| QIUSDT | %36.01 | %6.09 | 02:30 | Yes | +18.8% | -11.5% | 🖊️ İmza (1 kez) |
+| | | | 03:00 | Yes | +262.2% | +105.8% | |
+| | | | 04:15 | Yes | -32.5% | +7.0% | |
+| | | | 05:00 | Yes | +125.8% | +12.8% | |
+| | | | 17:30 | Yes | -37.8% | +17.3% | |
+| | | | 19:15 | Yes | -25.1% | -5.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NOTUSDT | %19.35 | %17.54 | 16:30 | Yes | -32.4% | -33.0% | 🖊️ İmza (1 kez) |
+| | | | 17:15 | Yes | +90.7% | +15.0% | |
+| | | | 21:00 |  | -41.5% | -18.8% | |
+| | | | 21:30 | Yes | +84.9% | +183.3% | |
+| | | | 23:45 | Yes | +83.1% | -32.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| DENTUSDT | %10.89 | **%-1.21** | 02:15 | Yes | +147.9% | +233.1% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ZBTUSDT | %9.63 | %1.94 | 00:30 | Yes | +2410.9% | +564.5% | 🖊️ İmza (1 kez) |
+| | | | 01:15 | Yes | -15.0% | +44.3% | |
+| | | | 02:00 | Yes | +16.6% | -76.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| REDUSDT | %5.92 | **%-0.72** | 17:15 | Yes | +30.0% | +131.5% | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| RESOLVUSDT | %4.62 | **%-5.00** | 02:30 | Yes | +64.4% | +98.9% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BIOUSDT | %4.52 | %3.90 | 02:45 | Yes | -63.4% | -53.6% | 🖊️ İmza (2 kez) |
+| | | | 03:30 | Yes | +173.8% | -0.4% | |
+| | | | 16:15 | Yes | -35.7% | -21.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HEMIUSDT | %3.55 | %0.00 | 16:30 | Yes | +16.7% | +61.9% | 🖊️ İmza (1 kez) |
+| | | | 17:30 | Yes | -55.6% | -49.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SAPIENUSDT | %2.98 | %1.61 | 15:15 | Yes | +7.0% | +156.8% | 🖊️ İmza (1 kez) |
+| | | | 23:15 | Yes | +70.2% | +82.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| YBUSDT | %0.66 | **%-6.33** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ZECUSDT | %0.59 | **%-5.15** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 07 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MDTUSDT | %51.60 | %12.44 | 06:15 | Yes | -12.7% | +105.0% | 🖊️ İmza (1 kez) |
+| | | | 06:45 | Yes | +78.8% | +258.4% | |
+| | | | 08:30 | Yes | +81.0% | +28.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PHAUSDT | %17.40 | %0.25 | 13:00 | Yes | +2133.4% | +2559.0% | 🖊️ İmza (1 kez) |
+| | | | 15:15 | Yes | +429.7% | +160.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PUMPUSDT | %4.22 | **%-2.41** | 06:30 | Yes | +127.4% | +21.0% | 🖊️ İmza (1 kez) |
+| | | | 18:15 | Yes | +103.2% | -8.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NEIROUSDT | %4.11 | **%-5.30** | - | - | - | - | 🖊️ İmza (3 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ZECUSDT | %3.60 | %0.37 | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BOMEUSDT | %2.54 | **%-4.94** | 18:15 | Yes | -34.4% | -5.7% | 🖊️ İmza (3 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FLOKIUSDT | %2.44 | **%-3.02** | 00:30 | Yes | -1.2% | +49.6% | 🖊️ İmza (3 kez) |
+| | | | 17:30 | Yes | -8.0% | +112.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ONDOUSDT | %2.22 | **%-2.59** | 17:30 | Yes | -22.6% | +70.1% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SAPIENUSDT | %2.06 | **%-7.34** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1000CATUSDT | %1.76 | **%-4.99** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 08 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| RDNTUSDT | %49.06 | %16.68 | 04:15 | Yes | +124.4% | +134.9% | 🖊️ İmza (1 kez) |
+| | | | 05:15 | Yes | +9.1% | -1.6% | |
+| | | | 06:00 | Yes | -0.6% | -43.4% | |
+| | | | 09:15 | Yes | -74.3% | -62.8% | |
+| | | | 10:00 | Yes | +1728.3% | +418.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| USTCUSDT | %15.41 | %6.72 | 20:45 | Yes | -17.1% | +111.3% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ERAUSDT | %15.05 | %1.91 | 01:30 | Yes | -56.4% | -90.8% | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| GUNUSDT | %11.94 | %3.62 | 04:45 | Yes | +45.8% | -80.6% | 🖊️ İmza (1 kez) |
+| | | | 09:00 | Yes | +1328.9% | +1005.8% | |
+| | | | 10:00 | Yes | +347.9% | -41.6% | |
+| | | | 12:45 | Yes | +37.3% | -9.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ZENUSDT | %11.26 | %6.83 | 01:30 | Yes | +71.8% | +15.4% | 🖊️ İmza (1 kez) |
+| | | | 04:00 | Yes | +429.6% | +400.6% | |
+| | | | 04:30 | Yes | +80.0% | +203.8% | |
+| | | | 06:45 | Yes | +113.0% | +470.3% | |
+| | | | 07:45 | Yes | -16.9% | -30.0% | |
+| | | | 09:00 | Yes | +915.9% | +607.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| WLDUSDT | %9.19 | %8.48 | 09:15 | Yes | -72.3% | -3.1% | 🖊️ İmza (1 kez) |
+| | | | 10:00 | Yes | +57.9% | -29.6% | |
+| | | | 10:45 | Yes | -61.3% | -61.2% | |
+| | | | 12:15 | Yes | +28.3% | +44.1% | |
+| | | | 14:30 |  | +236.0% | +463.7% | |
+| | | | 21:30 | Yes | +9.8% | +8.9% | |
+| | | | 22:45 | Yes | +43.4% | +50.9% | |
+| | | | 23:30 | Yes | +25.7% | +26.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1000CATUSDT | %8.31 | %4.62 | 05:45 | Yes | +6.0% | +158.3% | 🖊️ İmza (2 kez) |
+| | | | 06:30 | Yes | -12.1% | -58.8% | |
+| | | | 09:00 | Yes | +154.3% | +352.4% | |
+| | | | 11:45 | Yes | +199.3% | -15.8% | |
+| | | | 13:15 | Yes | +19.7% | +123.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BATUSDT | %6.48 | %1.15 | 05:30 | Yes | +2245.7% | +434.9% | 🌐 Global (1 kez) |
+| | | | 09:00 | Yes | +1640.0% | +1336.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| WINUSDT | %6.37 | **%-3.42** | 13:00 | Yes | +67.6% | +188.9% | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FTTUSDT | %6.20 | %0.34 | 21:15 | Yes | +145.1% | +330.7% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ZBTUSDT | %5.74 | **%-0.09** | 12:45 | Yes | +331.5% | +299.0% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BIOUSDT | %5.47 | %2.32 | 08:15 | Yes | +335.0% | -3.4% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| KITEUSDT | %4.86 | **%-4.62** | 01:15 | Yes | -65.4% | -36.0% | 🖊️ İmza (1 kez) |
+| | | | 02:45 | Yes | +116.8% | +13.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NOTUSDT | %4.56 | %0.17 | 08:15 | Yes | -19.5% | -73.4% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BBUSDT | %4.23 | **%-0.94** | - | - | - | - | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HYPERUSDT | %1.89 | %0.15 | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ACEUSDT | %1.58 | **%-4.74** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 09 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HYPERUSDT | %41.26 | %13.85 | 12:30 | Yes | +18.2% | +36.8% | 🖊️ İmza (1 kez) |
+| | | | 13:15 | Yes | +571.9% | +144.6% | |
+| | | | 15:15 | Yes | -86.1% | -45.3% | |
+| | | | 18:30 | Yes | -58.9% | -66.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NILUSDT | %34.02 | %10.70 | 12:00 | Yes | -36.7% | -19.8% | 🖊️ İmza (1 kez) |
+| | | | 15:15 | Yes | +71.5% | +231.3% | |
+| | | | 20:45 | Yes | +115.2% | +70.8% | |
+| | | | 21:45 | Yes | +367.4% | +431.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FTTUSDT | %12.27 | %3.70 | 08:30 | Yes | +105.3% | +162.7% | 🖊️ İmza (1 kez) |
+| | | | 11:45 | Yes | +372.9% | +808.2% | |
+| | | | 16:15 | Yes | +163.7% | +521.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ZBTUSDT | %4.73 | %1.48 | 15:15 | Yes | -59.0% | -4.0% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TURTLEUSDT | %1.97 | **%-0.76** | 16:00 | Yes | +125.9% | +51.2% | 🖊️ İmza (1 kez) |
+| | | | 17:00 | Yes | +0.2% | -29.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| AWEUSDT | %1.93 | %0.36 | 15:15 | Yes | -33.0% | +70.4% | 🖊️ İmza (1 kez) |
+| | | | 17:45 | Yes | -20.7% | -56.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MUBARAKUSDT | %0.64 | **%-3.97** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 10 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| USTCUSDT | %27.04 | %7.45 | 09:30 | Yes | +346.6% | +611.1% | 🖊️ İmza (1 kez) |
+| | | | 10:00 | Yes | -39.9% | +25.8% | |
+| | | | 12:00 | Yes | +95.7% | +41.9% | |
+| | | | 14:45 | Yes | +3.6% | +36.5% | |
+| | | | 16:00 | Yes | +132.4% | +64.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SHELLUSDT | %10.11 | %7.45 | 18:30 | Yes | +96669.0% | +9123.1% | 🖊️ İmza (1 kez) |
+| | | | 21:15 | Yes | +117.1% | -11.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| COWUSDT | %8.29 | %0.49 | 04:30 | Yes | -73.9% | +77.9% | 🖊️ İmza (2 kez) |
+| | | | 07:30 | Yes | +345.9% | +818.2% | |
+| | | | 08:30 | Yes | +58.4% | -67.6% | |
+| | | | 10:00 | Yes | +3161.9% | +878.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HYPERUSDT | %7.39 | %3.53 | 06:45 | Yes | +13.2% | +101.1% | 🖊️ İmza (2 kez) |
+| | | | 15:15 | Yes | -3.9% | +243.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BARDUSDT | %4.54 | %2.06 | 03:30 | Yes | +279.0% | +530.9% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| EIGENUSDT | %3.70 | **%-7.21** | 18:30 | Yes | +165.0% | +78.7% | 🖊️ İmza (1 kez) |
+| | | | 19:00 | Yes | +308.7% | +465.3% | |
+| | | | 19:30 | Yes | +119.6% | +100.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SOMIUSDT | %2.22 | **%-2.35** | 19:00 | Yes | +1221.3% | +1346.1% | 🖊️ İmza (1 kez) |
+| | | | 20:00 | Yes | +38.1% | -20.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| STOUSDT | %0.67 | **%-0.17** | 17:15 | Yes | -28.4% | +96.1% | 🖊️ İmza (1 kez) |
+| | | | 20:00 | Yes | +259.4% | -12.9% | |
+
+
+
+
+
+## 📅 11 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SOMIUSDT | %20.50 | %17.15 | 11:15 | Yes | +20.7% | +9.6% | 🖊️ İmza (1 kez) |
+| | | | 12:15 | Yes | -26.2% | +50.3% | |
+| | | | 14:00 | Yes | +82.6% | +0.5% | |
+| | | | 17:30 |  | +432.3% | +743.8% | |
+| | | | 18:15 | Yes | +52.9% | +17.5% | |
+| | | | 21:45 |  | +55.9% | +96.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| USTCUSDT | %6.17 | **%-14.06** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SCRUSDT | %4.55 | %2.27 | 12:15 | Yes | -98.6% | -98.1% | 🖊️ İmza (1 kez) |
+| | | | 18:30 | Yes | +1662.2% | +1078.4% | |
+| | | | 21:15 | Yes | -59.5% | +92.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| GUNUSDT | %4.34 | %3.88 | 11:30 | Yes | +433.4% | +798.0% | 🖊️ İmza (1 kez) |
+| | | | 14:00 | Yes | +16.9% | +41.6% | |
+| | | | 18:30 | Yes | +1245.6% | +800.4% | |
+| | | | 23:30 | Yes | +150.6% | -41.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ENSOUSDT | %3.08 | **%-1.82** | 21:15 | Yes | +17.2% | +27.7% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ATUSDT | %0.17 | **%-10.23** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 12 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| USUALUSDT | %25.00 | %6.05 | 04:00 | Yes | +6221.9% | +4665.8% | 🖊️ İmza (1 kez) |
+| | | | 05:30 | Yes | +8.2% | -8.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SOMIUSDT | %11.34 | **%-2.74** | 03:30 | Yes | -6.6% | +69.3% | 🖊️ İmza (1 kez) |
+| | | | 22:45 | Yes | -28.9% | +107.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| GUNUSDT | %10.48 | %5.71 | 02:30 | Yes | +98.9% | +48.0% | 🖊️ İmza (1 kez) |
+| | | | 04:30 | Yes | +108.2% | -5.8% | |
+| | | | 05:30 | Yes | +426.4% | +10.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SHELLUSDT | %2.43 | **%-7.30** | 11:15 | Yes | +110.5% | +405.7% | 🖊️ İmza (1 kez) |
+| | | | 12:15 | Yes | +816.2% | +23.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HYPERUSDT | %0.00 | **%-6.71** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 13 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| JUVUSDT | %29.77 | %8.78 | 00:30 | Yes | -76.8% | -48.4% | 🖊️ İmza (1 kez) |
+| | | | 01:45 | Yes | +139.6% | +20.9% | |
+| | | | 02:45 | Yes | -26.4% | -0.3% | |
+| | | | 03:30 | Yes | +42.8% | +5.7% | |
+| | | | 11:45 | Yes | +41.9% | +70.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| GUNUSDT | %29.53 | %24.41 | 06:30 | Yes | -69.3% | +56.8% | 🖊️ İmza (1 kez) |
+| | | | 08:15 | Yes | +355.3% | +221.6% | |
+| | | | 13:45 |  | +220.5% | +186.7% | |
+| | | | 14:30 |  | -39.8% | -13.7% | |
+| | | | 20:15 | Yes | +221.9% | +203.9% | |
+| | | | 21:00 | Yes | +461.9% | +771.0% | |
+| | | | 23:15 |  | +48.4% | -16.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ORDIUSDT | %12.49 | %5.66 | 03:00 | Yes | +886.4% | +190.5% | 🖊️ İmza (1 kez) |
+| | | | 07:00 | Yes | +330.6% | +428.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HYPERUSDT | %7.05 | %2.42 | 08:00 | Yes | +642.1% | +579.6% | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 14 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SOMIUSDT | %13.79 | %3.40 | 16:00 | Yes | +695.3% | +688.3% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TRBUSDT | %6.18 | **%-3.75** | 22:00 | Yes | +5411.7% | +10049.5% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| GUNUSDT | %5.39 | %4.61 | 02:00 |  | +98.7% | +49.2% | 🖊️ İmza (1 kez) |
+| | | | 23:30 | Yes | +162.8% | +95.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BANKUSDT | %3.28 | **%-0.51** | 15:45 | Yes | +198.7% | +504.2% | 🖊️ İmza (1 kez) |
+| | | | 17:30 | Yes | +284.0% | -37.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MORPHOUSDT | %1.40 | **%-2.28** | 02:15 | Yes | -26.9% | -32.2% | 🖊️ İmza (1 kez) |
+| | | | 18:45 | Yes | +56.9% | +63.5% | |
+| | | | 19:45 | Yes | -2.8% | -33.5% | |
+
+
+
+
+
+## 📅 15 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ACEUSDT | %90.58 | %29.15 | 21:45 | Yes | +7838.7% | +5922.4% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FORMUSDT | %54.72 | %10.39 | 01:15 | Yes | +9098.0% | +2621.1% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BANANAS31USDT | %25.60 | %13.30 | 08:15 |  | +2310.3% | +1059.3% | 🖊️ İmza (1 kez) |
+| | | | 10:00 | Yes | -32.5% | -72.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| DEGOUSDT | %21.04 | %1.74 | 12:45 | Yes | +180203.2% | +28388.2% | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PYRUSDT | %16.12 | %2.45 | 08:00 | Yes | +1334.9% | +462.3% | 🖊️ İmza (2 kez) |
+| | | | 22:15 | Yes | +3747.4% | +13779.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PARTIUSDT | %6.66 | %2.06 | 18:00 |  | +2622.5% | +2690.0% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| EPICUSDT | %6.26 | %4.38 | 19:00 | Yes | +140.1% | +340.8% | 🖊️ İmza (2 kez) |
+| | | | 22:45 | Yes | +368.9% | +214.9% | |
+| | | | 23:30 | Yes | +12.8% | -32.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| JUVUSDT | %5.99 | **%-13.22** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ENSOUSDT | %5.83 | %2.91 | 05:45 | Yes | +91.2% | +225.9% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MMTUSDT | %5.20 | **%-5.77** | 03:00 | Yes | +641.3% | +644.3% | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| VIRTUALUSDT | %3.96 | **%-5.28** | 02:15 | Yes | -59.0% | +26.2% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BIOUSDT | %3.23 | **%-4.53** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| RAYUSDT | %2.72 | **%-6.52** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FFUSDT | %2.02 | **%-6.75** | - | - | - | - | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NXPCUSDT | %0.83 | **%-15.32** | - | - | - | - | 🖊️ İmza (2 kez) |
+
+
+
+
+
+## 📅 16 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| GHSTUSDT | %62.71 | **%-4.52** | 22:00 | Yes | +637542.2% | +50337.2% | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FORMUSDT | %51.84 | %46.30 | 03:45 | Yes | -34.3% | +5.3% | 🖊️ İmza (1 kez) |
+| | | | 11:15 |  | +4.1% | -13.8% | |
+| | | | 12:45 |  | +138.4% | +40.1% | |
+| | | | 13:30 |  | -41.0% | +48.6% | |
+| | | | 14:00 |  | +40.2% | -9.7% | |
+| | | | 18:30 |  | +555.3% | +454.3% | |
+| | | | 22:15 |  | -44.9% | -33.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| OMUSDT | %29.74 | %13.81 | 10:30 | Yes | +416.3% | +238.3% | 🖊️ İmza (2 kez) |
+| | | | 17:30 | Yes | +2851.3% | +1600.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ORCAUSDT | %23.11 | %3.69 | 03:00 | Yes | +351.6% | +964.6% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| CUSDT | %14.17 | %8.66 | 03:45 | Yes | +222.3% | +126.4% | 🖊️ İmza (1 kez) |
+| | | | 06:30 | Yes | +29.2% | +62.9% | |
+| | | | 08:15 | Yes | +406.3% | +436.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HEMIUSDT | %6.21 | %2.76 | 00:15 | Yes | +169.8% | +132.9% | 🖊️ İmza (1 kez) |
+| | | | 02:00 | Yes | +1.3% | +40.0% | |
+| | | | 02:30 | Yes | +11.5% | +119.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BARDUSDT | %1.76 | %0.70 | 20:30 | Yes | +106.6% | +9.8% | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 17 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HMSTRUSDT | %37.13 | **%-1.98** | 22:00 | Yes | +2025.5% | +3380.0% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ACTUSDT | %30.58 | %19.90 | 07:30 | Yes | +402.5% | +110.5% | 🖊️ İmza (1 kez) |
+| | | | 09:00 | Yes | -33.2% | +45.6% | |
+| | | | 09:30 | Yes | +30.0% | -25.2% | |
+| | | | 11:15 | Yes | -25.5% | +88.2% | |
+| | | | 12:15 | Yes | -6.6% | +130.4% | |
+| | | | 14:00 | Yes | +7.7% | -9.9% | |
+| | | | 15:00 | Yes | +428.8% | +1338.7% | |
+| | | | 21:00 | Yes | +117.3% | +9.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SAHARAUSDT | %24.03 | **%-5.63** | 02:00 | Yes | +99.6% | +248.8% | 🖊️ İmza (2 kez) |
+| | | | 11:15 | Yes | +2006.1% | +1446.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MMTUSDT | %16.03 | **%-4.70** | 17:00 | Yes | +11969.5% | +3070.1% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| USTCUSDT | %13.99 | **%-10.10** | 13:30 | Yes | +225.4% | +155.8% | 🖊️ İmza (2 kez) |
+| | | | 15:45 | Yes | +68.8% | -40.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NILUSDT | %13.41 | **%-3.06** | 06:15 | Yes | -59.9% | -13.4% | 🖊️ İmza (2 kez) |
+| | | | 09:45 | Yes | +254.1% | +1.3% | |
+| | | | 11:45 | Yes | +6522.9% | +1879.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| CUSDT | %10.99 | **%-2.29** | 03:45 | Yes | +116.5% | +197.2% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| OPENUSDT | %8.49 | **%-6.31** | 03:30 | Yes | +267.8% | +461.1% | 🖊️ İmza (2 kez) |
+| | | | 05:15 | Yes | -0.9% | -56.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SOPHUSDT | %6.17 | **%-6.69** | 06:00 | Yes | +63.2% | +86.2% | 🖊️ İmza (1 kez) |
+| | | | 07:15 | Yes | -10.5% | -16.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| LAUSDT | %5.39 | **%-4.19** | 11:15 | Yes | -17.1% | +8.0% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MORPHOUSDT | %4.34 | **%-0.43** | 00:00 | Yes | +121.9% | +103.1% | 🖊️ İmza (1 kez) |
+| | | | 00:45 | Yes | +56.4% | +5.0% | |
+| | | | 02:30 | Yes | -29.0% | -61.8% | |
+| | | | 12:00 | Yes | +120.6% | +149.4% | |
+| | | | 15:00 | Yes | +21.9% | +142.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SANDUSDT | %3.14 | **%-4.96** | 14:45 | Yes | +939.6% | +1762.7% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| WLFIUSDT | %2.66 | **%-4.29** | 14:45 | Yes | +957.9% | +1145.6% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HOLOUSDT | %1.67 | **%-6.53** | 11:45 | Yes | +1319.9% | +789.1% | 🖊️ İmza (3 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| AIXBTUSDT | %1.32 | **%-8.58** | 15:00 | Yes | -49.3% | +77.1% | 🖊️ İmza (3 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| GPSUSDT | %0.58 | **%-6.04** | 15:00 | Yes | -6.0% | +301.0% | 🖊️ İmza (3 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TURTLEUSDT | %0.34 | **%-6.63** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| AVNTUSDT | %0.00 | **%-9.11** | 15:00 | Yes | -54.7% | +101.3% | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 18 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| AIXBTUSDT | %39.93 | **%-5.04** | 09:00 | Yes | +621.8% | +1690.5% | 🖊️ İmza (4 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| WCTUSDT | %22.68 | %8.69 | 12:15 | Yes | +36.5% | +88.3% | 🖊️ İmza (1 kez) |
+| | | | 13:45 | Yes | -73.5% | -13.8% | |
+| | | | 21:45 | Yes | +1525.0% | +1434.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ACTUSDT | %21.54 | %18.70 | 09:45 | Yes | +111.1% | +256.5% | 🖊️ İmza (1 kez) |
+| | | | 13:00 | Yes | +253.9% | +425.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| JUVUSDT | %18.92 | %4.80 | 01:00 | Yes | +93.7% | +84.0% | 🖊️ İmza (1 kez) |
+| | | | 17:15 | Yes | +3805.6% | +3956.5% | |
+| | | | 19:00 | Yes | -15.2% | -23.7% | |
+| | | | 19:45 | Yes | +39.3% | +1.5% | |
+| | | | 20:15 | Yes | -18.1% | +8.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BIFIUSDT | %18.83 | **%-5.53** | 03:00 | Yes | +861.5% | +3398.5% | 🖊️ İmza (4 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ATUSDT | %13.76 | %6.59 | 10:00 | Yes | -41.0% | +6.5% | 🖊️ İmza (1 kez) |
+| | | | 14:00 | Yes | +66.6% | +133.3% | |
+| | | | 16:45 | Yes | +186.1% | +120.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SIGNUSDT | %9.16 | %0.28 | 13:00 | Yes | +173.1% | +31.5% | 🖊️ İmza (1 kez) |
+| | | | 14:15 | Yes | +183.5% | +222.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HOLOUSDT | %7.48 | **%-0.49** | 13:00 | Yes | +196.7% | +564.5% | 🖊️ İmza (4 kez) |
+| | | | 14:15 | Yes | -43.2% | -68.8% | |
+| | | | 15:15 | Yes | -67.7% | -93.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| VIRTUALUSDT | %5.47 | **%-5.47** | 13:30 | Yes | +819.9% | +1071.4% | 🖊️ İmza (4 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SKYUSDT | %5.04 | **%-0.86** | 00:45 | Yes | -63.2% | +32.9% | 🖊️ İmza (1 kez) |
+| | | | 02:30 | Yes | -24.6% | +2.5% | |
+| | | | 12:30 | Yes | +424.0% | +610.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ONDOUSDT | %4.17 | **%-5.63** | 13:00 | Yes | -9.1% | +193.4% | 🖊️ İmza (1 kez) |
+| | | | 13:30 | Yes | +683.3% | +492.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BMTUSDT | %4.13 | **%-3.67** | 08:45 | Yes | +89.3% | -15.8% | 🖊️ İmza (4 kez) |
+| | | | 11:45 | Yes | +1372.4% | +400.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PENGUUSDT | %3.67 | **%-8.13** | 13:30 | Yes | +727.9% | +920.9% | 🖊️ İmza (4 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| JTOUSDT | %3.58 | **%-4.18** | 13:00 | Yes | +99.4% | +200.4% | 🖊️ İmza (1 kez) |
+| | | | 13:30 | Yes | +1760.0% | +700.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ACEUSDT | %2.88 | **%-4.94** | 00:15 | Yes | -12.1% | +102.0% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TUTUSDT | %2.74 | **%-2.32** | - | - | - | - | 🖊️ İmza (4 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| EPICUSDT | %2.69 | **%-0.34** | 08:00 | Yes | +121.2% | +53.7% | 🖊️ İmza (1 kez) |
+| | | | 08:30 | Yes | +12.9% | +46.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TREEUSDT | %2.25 | **%-6.07** | 13:30 | Yes | +881.0% | +853.3% | 🖊️ İmza (4 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| GMTUSDT | %2.20 | **%-4.47** | 13:30 | Yes | +769.3% | +787.0% | 🖊️ İmza (4 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SOMIUSDT | %2.06 | **%-8.98** | 10:30 | Yes | -24.4% | -26.4% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NEWTUSDT | %2.01 | **%-4.44** | 09:00 | Yes | +103.4% | +336.6% | 🖊️ İmza (4 kez) |
+| | | | 13:30 | Yes | +710.2% | +382.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 2ZUSDT | %1.94 | **%-3.19** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| OXTUSDT | %1.65 | **%-6.61** | 13:30 | Yes | +809.5% | +33.6% | 🖊️ İmza (4 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| EDENUSDT | %0.80 | **%-5.12** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| GPSUSDT | %0.62 | **%-6.22** | 13:45 | Yes | -67.6% | +16.1% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HAEDALUSDT | %0.52 | **%-5.77** | - | - | - | - | 🖊️ İmza (4 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 0GUSDT | %0.26 | **%-5.79** | 13:30 | Yes | +108.8% | +223.3% | 🖊️ İmza (1 kez) |
+| | | | 14:15 | Yes | +30.0% | +92.8% | |
+| | | | 14:45 | Yes | -3.3% | -11.6% | |
+| | | | 15:15 | Yes | -18.7% | -55.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1000CATUSDT | %0.00 | **%-9.49** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 19 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| RESOLVUSDT | %56.16 | %35.18 | 03:15 |  | -76.5% | -4.5% | 🖊️ İmza (1 kez) |
+| | | | 04:30 | Yes | +1740.3% | +330.4% | |
+| | | | 09:45 |  | +19.0% | +35.8% | |
+| | | | 11:00 | Yes | +12.9% | +4.3% | |
+| | | | 15:00 |  | +0.9% | -38.3% | |
+| | | | 17:15 |  | -6.3% | -23.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PEOPLEUSDT | %23.79 | %16.50 | 03:00 | Yes | +8.8% | +56.6% | 🖊️ İmza (1 kez) |
+| | | | 07:00 | Yes | +127.3% | +53.9% | |
+| | | | 12:00 | Yes | +1929.2% | +1475.7% | |
+| | | | 17:00 | Yes | -28.2% | -78.7% | |
+| | | | 19:15 |  | -40.7% | +14.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ASRUSDT | %22.24 | %15.38 | 03:00 | Yes | -5.4% | -77.4% | 🖊️ İmza (1 kez) |
+| | | | 07:00 | Yes | +337.7% | +67.7% | |
+| | | | 10:45 | Yes | +36.2% | -16.1% | |
+| | | | 13:15 | Yes | +6119.5% | +12325.4% | |
+| | | | 18:45 | Yes | +513.3% | +624.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NILUSDT | %20.72 | %15.68 | 03:15 | Yes | -55.7% | -42.2% | 🖊️ İmza (1 kez) |
+| | | | 07:00 | Yes | +393.6% | +369.6% | |
+| | | | 10:30 | Yes | -79.1% | +17.8% | |
+| | | | 14:30 | Yes | -0.2% | +326.7% | |
+| | | | 15:45 | Yes | -50.9% | -68.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SXPUSDT | %14.26 | %8.02 | 00:00 | Yes | +10600.6% | +26752.0% | 🖊️ İmza (1 kez) |
+| | | | 06:30 | Yes | +77.7% | +223.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| AIXBTUSDT | %12.12 | %9.09 | 03:15 | Yes | -21.8% | +88.8% | 🖊️ İmza (2 kez) |
+| | | | 04:00 | Yes | -6.3% | +12.5% | |
+| | | | 04:45 | Yes | +20.4% | -69.9% | |
+| | | | 05:15 | Yes | +19.0% | -40.8% | |
+| | | | 07:00 | Yes | +44.1% | +292.7% | |
+| | | | 13:15 | Yes | -87.2% | -77.1% | |
+| | | | 14:15 | Yes | +233.3% | +77.0% | |
+| | | | 16:00 | Yes | +74.6% | -35.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| GPSUSDT | %8.63 | %7.96 | 03:15 | Yes | +171.8% | +291.1% | 🖊️ İmza (2 kez) |
+| | | | 06:45 | Yes | +51.7% | +72.7% | |
+| | | | 11:45 | Yes | -76.2% | -24.5% | |
+| | | | 13:15 | Yes | +4.8% | -51.0% | |
+| | | | 14:30 | Yes | +81.8% | +272.5% | |
+| | | | 22:45 | Yes | +305.4% | +384.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NOMUSDT | %8.57 | %8.41 | 00:30 | Yes | +14643.8% | +11571.1% | 🖊️ İmza (1 kez) |
+| | | | 07:00 | Yes | +55.5% | +123.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BANKUSDT | %5.67 | %4.53 | 07:00 | Yes | -36.6% | +96.8% | 🖊️ İmza (1 kez) |
+| | | | 07:30 | Yes | -65.4% | +12.7% | |
+| | | | 08:45 | Yes | +386.3% | +0.5% | |
+| | | | 16:15 |  | +442.3% | +392.7% | |
+| | | | 18:15 | Yes | -24.7% | -20.1% | |
+| | | | 19:00 | Yes | -41.3% | -53.7% | |
+| | | | 20:00 | Yes | +107.8% | +8.0% | |
+| | | | 20:45 | Yes | -83.3% | -87.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MBLUSDT | %4.37 | %3.82 | 06:45 | Yes | -53.1% | -32.3% | 🖊️ İmza (1 kez) |
+| | | | 17:00 | Yes | -9.7% | -6.1% | |
+| | | | 18:15 | Yes | -35.7% | -26.4% | |
+| | | | 19:15 | Yes | +9.6% | -12.0% | |
+
+
+
+
+
+## 📅 20 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ANIMEUSDT | %66.43 | %41.11 | 00:00 | Yes | +15523.3% | +12470.9% | 🖊️ İmza (1 kez) |
+| | | | 06:30 |  | +3912.5% | +7408.7% | |
+| | | | 10:30 |  | +387.4% | +859.5% | |
+| | | | 12:30 | Yes | +81.7% | -16.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ACTUSDT | %46.42 | %33.79 | 02:45 | Yes | +232.5% | +216.8% | 🖊️ İmza (1 kez) |
+| | | | 12:30 | Yes | +10.3% | +125.1% | |
+| | | | 13:15 | Yes | +17.0% | +19.5% | |
+| | | | 15:30 | Yes | -49.1% | +0.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NILUSDT | %26.28 | %14.77 | 03:30 | Yes | -17.3% | -23.0% | 🖊️ İmza (2 kez) |
+| | | | 20:15 | Yes | +712.2% | +393.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PLUMEUSDT | %17.76 | %12.56 | 00:30 | Yes | +115.8% | +735.4% | 🖊️ İmza (2 kez) |
+| | | | 11:30 | Yes | +293.8% | +478.3% | |
+| | | | 15:00 | Yes | +2939.1% | +226.0% | |
+| | | | 15:45 | Yes | -66.2% | -69.5% | |
+| | | | 17:00 | Yes | +243.0% | +114.3% | |
+| | | | 17:45 | Yes | +82.3% | +165.6% | |
+| | | | 19:45 |  | +1529.6% | +636.7% | |
+| | | | 22:00 | Yes | +265.6% | +15.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| OPENUSDT | %7.28 | %4.17 | 00:15 | Yes | +99.6% | +987.3% | 🖊️ İmza (1 kez) |
+| | | | 11:30 | Yes | +108.7% | +34.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BANKUSDT | %5.15 | %1.90 | 04:30 | Yes | +507.7% | +276.1% | 🖊️ İmza (1 kez) |
+| | | | 09:30 |  | +9892.1% | +1825.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| LAUSDT | %4.89 | **%-0.53** | 00:30 | Yes | +18.7% | -11.6% | 🖊️ İmza (1 kez) |
+| | | | 01:30 | Yes | -25.4% | -14.5% | |
+| | | | 03:30 | Yes | +234.6% | +34.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| REDUSDT | %4.63 | %3.03 | 01:30 | Yes | -94.3% | -85.2% | 🖊️ İmza (3 kez) |
+| | | | 02:30 | Yes | +407.9% | +396.4% | |
+| | | | 22:30 | Yes | -40.8% | -39.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HOLOUSDT | %3.57 | %1.34 | 08:30 | Yes | +31.4% | +298.8% | 🖊️ İmza (3 kez) |
+| | | | 11:30 | Yes | +170.2% | +501.3% | |
+| | | | 12:45 | Yes | +98.4% | +10.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TURTLEUSDT | %2.94 | %1.29 | 05:00 | Yes | -82.2% | -3.8% | 🖊️ İmza (1 kez) |
+| | | | 08:30 | Yes | +54.3% | +102.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| USUALUSDT | %2.89 | %2.07 | 04:45 | Yes | +1997.8% | +721.6% | 🖊️ İmza (1 kez) |
+| | | | 17:45 | Yes | +559.9% | +1366.3% | |
+| | | | 19:15 | Yes | -81.2% | -84.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FUSDT | %2.74 | **%-0.82** | 15:45 | Yes | +985.5% | +645.1% | 🖊️ İmza (1 kez) |
+| | | | 19:00 | Yes | +168.1% | +475.1% | |
+| | | | 19:30 | Yes | +105.4% | +153.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| JUVUSDT | %2.34 | %0.83 | 23:15 | Yes | +766.4% | +557.5% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| AVNTUSDT | %2.29 | **%-1.30** | 09:30 | Yes | +1609.8% | +757.6% | 🖊️ İmza (3 kez) |
+| | | | 11:30 | Yes | +978.9% | +403.1% | |
+| | | | 13:00 | Yes | -1.2% | +21.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| KMNOUSDT | %0.58 | %0.56 | 17:30 | Yes | -23.2% | -34.9% | 🖊️ İmza (1 kez) |
+| | | | 18:15 | Yes | -41.3% | -56.4% | |
+| | | | 21:30 | Yes | +14.3% | +51.9% | |
+| | | | 23:00 | Yes | +1013.0% | +42.8% | |
+| | | | 23:45 | Yes | -74.7% | -89.2% | |
+
+
+
+
+
+## 📅 21 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| VTHOUSDT | %38.58 | %14.65 | 00:00 | Yes | +77059.4% | +85176.2% | 🖊️ İmza (1 kez) |
+| | | | 02:45 | Yes | +15.5% | -27.2% | |
+| | | | 03:30 | Yes | +241.5% | +84.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BANKUSDT | %26.06 | %12.23 | 02:45 | Yes | -88.7% | -29.3% | 🖊️ İmza (1 kez) |
+| | | | 15:15 | Yes | +396.2% | +827.8% | |
+| | | | 18:45 | Yes | +179.8% | +36.2% | |
+| | | | 19:15 | Yes | +37.3% | +122.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FUSDT | %20.86 | %3.04 | 02:45 | Yes | +278.4% | +487.8% | 🖊️ İmza (1 kez) |
+| | | | 05:15 | Yes | +35.8% | -27.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TSTUSDT | %13.85 | %4.55 | 13:30 |  | +450.2% | +678.7% | 🖊️ İmza (1 kez) |
+| | | | 14:00 | Yes | +134.5% | +213.2% | |
+| | | | 14:30 | Yes | -59.3% | -28.2% | |
+| | | | 15:00 | Yes | +2.0% | -61.1% | |
+| | | | 16:15 | Yes | +69.5% | +272.3% | |
+| | | | 16:45 | Yes | +22.6% | -10.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| USUALUSDT | %11.34 | **%-1.21** | 08:00 | Yes | +712.2% | +4578.4% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| YGGUSDT | %8.84 | %5.74 | 16:30 | Yes | +17791.4% | +12810.6% | 🖊️ İmza (1 kez) |
+| | | | 22:45 | Yes | +369.4% | +1090.8% | |
+| | | | 23:15 | Yes | +102.8% | +176.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| AWEUSDT | %3.66 | **%-2.50** | 04:00 |  | +3833.9% | +15.1% | 🖊️ İmza (1 kez) |
+| | | | 05:30 | Yes | -23.5% | +103.1% | |
+| | | | 06:45 | Yes | -62.3% | -67.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FIDAUSDT | %0.99 | **%-3.20** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SIGNUSDT | %0.83 | %0.83 | 00:15 | Yes | +197.9% | +100.9% | 🖊️ İmza (1 kez) |
+| | | | 23:45 | Yes | +101.6% | -59.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MMTUSDT | %0.05 | **%-3.29** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NILUSDT | %0.00 | **%-3.52** | 21:00 | Yes | -41.7% | +35.8% | 🖊️ İmza (1 kez) |
+| | | | 22:45 | Yes | +87.9% | +9.9% | |
+
+
+
+
+
+## 📅 22 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ANIMEUSDT | %44.82 | %27.52 | 02:45 | Yes | -56.3% | -31.9% | 🖊️ İmza (1 kez) |
+| | | | 03:45 | Yes | +209.6% | +86.7% | |
+| | | | 04:45 | Yes | +51.2% | -45.8% | |
+| | | | 05:45 | Yes | +128.2% | +145.5% | |
+| | | | 15:30 | Yes | +321.2% | +747.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| EPICUSDT | %31.23 | %23.59 | 00:00 | Yes | +2030.6% | +106.9% | 🖊️ İmza (1 kez) |
+| | | | 05:00 | Yes | -15.3% | -34.8% | |
+| | | | 05:30 |  | +65.1% | +58.6% | |
+| | | | 06:00 |  | +34.8% | -18.9% | |
+| | | | 09:15 |  | -4.1% | +106.6% | |
+| | | | 10:45 |  | +35.4% | -18.2% | |
+| | | | 21:45 | Yes | -29.3% | +9.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ACTUSDT | %15.93 | %0.59 | 14:30 | Yes | -47.5% | +57.3% | 🖊️ İmza (1 kez) |
+| | | | 15:00 | Yes | -13.1% | -21.5% | |
+| | | | 18:15 | Yes | -1.6% | +89.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BANKUSDT | %13.03 | %9.48 | 06:00 | Yes | -42.8% | +27.0% | 🖊️ İmza (1 kez) |
+| | | | 11:00 | Yes | +49.3% | +60.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MMTUSDT | %9.80 | %8.47 | 02:15 | Yes | +11.3% | +73.1% | 🖊️ İmza (1 kez) |
+| | | | 05:45 | Yes | +23.2% | +201.3% | |
+| | | | 16:30 | Yes | +92.0% | +450.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| DUSDT | %7.27 | %2.07 | 00:00 | Yes | +1021.5% | +143.4% | 🖊️ İmza (1 kez) |
+| | | | 11:00 | Yes | +249.6% | +35.6% | |
+| | | | 11:30 | Yes | +53.7% | -45.6% | |
+| | | | 16:15 | Yes | +963.0% | +742.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BROCCOLI714USDT | %5.23 | %2.40 | 00:00 | Yes | +373.1% | +190.6% | 🖊️ İmza (1 kez) |
+| | | | 07:30 | Yes | -63.2% | +78.0% | |
+| | | | 08:15 | Yes | -83.2% | -53.3% | |
+| | | | 12:15 | Yes | -76.4% | +36.9% | |
+| | | | 18:00 |  | +1643.1% | +1001.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| DOLOUSDT | %2.42 | **%-3.80** | 22:45 | Yes | -10.0% | +51.2% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| GPSUSDT | %1.66 | **%-1.45** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 23 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| LUMIAUSDT | %35.29 | %8.82 | 00:15 | Yes | +729.6% | +109.5% | 🖊️ İmza (2 kez) |
+| | | | 04:45 | Yes | +1175.7% | +3980.0% | |
+| | | | 08:00 | Yes | -4.9% | -19.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| RAREUSDT | %22.12 | %2.40 | 00:15 | Yes | +184.0% | -97.3% | 🖊️ İmza (3 kez) |
+| | | | 17:00 | Yes | +119.3% | +90.0% | |
+| | | | 18:00 | Yes | +53.7% | +246.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| AVNTUSDT | %21.91 | %21.42 | 01:45 | Yes | +300.2% | +523.7% | 🖊️ İmza (2 kez) |
+| | | | 03:45 | Yes | +163.0% | +2.3% | |
+| | | | 07:15 | Yes | -14.9% | +19.7% | |
+| | | | 07:45 | Yes | +405.7% | +577.7% | |
+| | | | 08:15 | Yes | -14.6% | +139.1% | |
+| | | | 17:15 | Yes | -0.4% | +83.4% | |
+| | | | 22:45 | Yes | +260.6% | +177.7% | |
+| | | | 23:45 | Yes | +128.0% | +144.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| DOLOUSDT | %19.43 | %15.19 | 00:45 | Yes | +331.9% | -72.4% | 🖊️ İmza (1 kez) |
+| | | | 01:45 | Yes | +643.6% | -13.2% | |
+| | | | 05:45 |  | -57.7% | -24.5% | |
+| | | | 08:00 | Yes | -58.2% | -52.4% | |
+| | | | 19:00 | Yes | +283.1% | +453.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ANIMEUSDT | %18.58 | %2.22 | 10:15 |  | -44.2% | +130.2% | 🖊️ İmza (1 kez) |
+| | | | 12:15 | Yes | -23.7% | -38.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FUSDT | %17.34 | %9.08 | 11:15 | Yes | +40.7% | +236.8% | 🖊️ İmza (1 kez) |
+| | | | 22:00 | Yes | +305.3% | +1256.8% | |
+| | | | 23:30 | Yes | +313.8% | +20.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| KERNELUSDT | %7.29 | %2.64 | 11:15 | Yes | +5730.8% | +1819.9% | 🖊️ İmza (1 kez) |
+| | | | 13:15 | Yes | +905.2% | +465.9% | |
+| | | | 15:45 | Yes | -31.3% | +116.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SYNUSDT | %4.00 | %3.37 | 02:00 | Yes | +4930.9% | +7452.5% | 🖊️ İmza (3 kez) |
+| | | | 02:30 | Yes | +226.6% | +1106.5% | |
+| | | | 17:15 | Yes | +67.9% | +69.7% | |
+| | | | 18:30 | Yes | +1698.1% | +395.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| XPLUSDT | %3.97 | %1.32 | 11:30 | Yes | +24.8% | +105.3% | 🖊️ İmza (1 kez) |
+| | | | 17:00 | Yes | +468.9% | +141.3% | |
+| | | | 20:00 | Yes | -15.9% | +29.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ATUSDT | %3.73 | **%-4.26** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SAPIENUSDT | %2.49 | **%-4.07** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ZKCUSDT | %2.09 | %1.99 | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ROSEUSDT | %1.93 | **%-0.39** | 17:15 | Yes | -23.1% | -33.5% | 🖊️ İmza (3 kez) |
+| | | | 20:30 | Yes | +122.6% | +49.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NILUSDT | %1.62 | **%-12.59** | 00:15 | Yes | +76.8% | +2.5% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MIRAUSDT | %0.86 | **%-0.70** | 11:15 | Yes | -12.9% | +153.6% | 🖊️ İmza (1 kez) |
+| | | | 11:45 | Yes | -2.6% | -31.8% | |
+| | | | 22:15 | Yes | +819.9% | +1212.6% | |
+
+
+
+
+
+## 📅 24 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BANANAUSDT | %53.52 | %34.04 | 11:30 | Yes | +760.6% | +3111.2% | 🖊️ İmza (1 kez) |
+| | | | 13:45 | Yes | -29.8% | -80.6% | |
+| | | | 20:00 | Yes | +1385.1% | +112.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ZBTUSDT | %41.02 | %33.11 | 00:00 | Yes | +816.7% | +46.9% | 🖊️ İmza (1 kez) |
+| | | | 03:00 |  | -58.6% | +142.6% | |
+| | | | 06:00 | Yes | +209.3% | +20.5% | |
+| | | | 06:45 | Yes | -2.8% | -32.2% | |
+| | | | 13:45 |  | -45.1% | +95.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| METISUSDT | %26.62 | %22.00 | 14:30 | Yes | +203.1% | +727.1% | 🖊️ İmza (3 kez) |
+| | | | 19:45 | Yes | -45.0% | +28.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| AVNTUSDT | %22.65 | %15.77 | 04:45 |  | +256.7% | +170.2% | 🖊️ İmza (1 kez) |
+| | | | 06:30 | Yes | +138.7% | +88.7% | |
+| | | | 07:00 | Yes | +138.5% | +113.1% | |
+| | | | 23:30 | Yes | +171.8% | +34.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FARMUSDT | %20.00 | %3.26 | 00:30 | Yes | +86.0% | +35.3% | 🖊️ İmza (3 kez) |
+| | | | 11:30 | Yes | -7.4% | +144.7% | |
+| | | | 21:00 | Yes | +421.3% | +3188.8% | |
+| | | | 21:45 | Yes | +175.0% | +18.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ATUSDT | %19.93 | %11.14 | 10:00 | Yes | +140.9% | +19.4% | 🖊️ İmza (1 kez) |
+| | | | 12:15 | Yes | +24.8% | -6.5% | |
+| | | | 14:00 | Yes | -56.0% | -70.5% | |
+| | | | 14:45 | Yes | +20.4% | +0.9% | |
+| | | | 15:15 | Yes | +8.9% | -41.0% | |
+| | | | 16:00 | Yes | +36.4% | -35.4% | |
+| | | | 17:00 | Yes | +17.8% | +14.4% | |
+| | | | 18:15 |  | +505.6% | +250.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MIRAUSDT | %9.80 | %6.03 | 04:00 |  | +3306.4% | +1420.3% | 🖊️ İmza (3 kez) |
+| | | | 14:00 | Yes | +298.0% | +357.8% | |
+| | | | 15:45 | Yes | -2.1% | -54.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NOMUSDT | %9.35 | %3.68 | 01:30 |  | -42.4% | +187.4% | 🖊️ İmza (1 kez) |
+| | | | 02:30 | Yes | +133.4% | +5.2% | |
+| | | | 04:00 | Yes | +488.4% | +612.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| DCRUSDT | %8.11 | %2.91 | 10:00 | Yes | +4899.2% | +613.4% | 🖊️ İmza (1 kez) |
+| | | | 10:30 | Yes | -51.6% | +19.4% | |
+| | | | 17:45 | Yes | +53.7% | +107.7% | |
+| | | | 18:30 | Yes | +3.6% | -16.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HOLOUSDT | %8.08 | %7.04 | 04:00 |  | +43.6% | +464.8% | 🖊️ İmza (1 kez) |
+| | | | 07:30 | Yes | +310.2% | +237.4% | |
+| | | | 11:45 | Yes | -30.2% | -0.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 2ZUSDT | %6.38 | %4.22 | 14:00 | Yes | +625.7% | -34.1% | 🖊️ İmza (1 kez) |
+| | | | 16:45 | Yes | +9.9% | +29.2% | |
+| | | | 18:00 | Yes | +1763.7% | +793.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NEWTUSDT | %5.38 | %4.67 | 08:15 | Yes | +43.8% | +374.1% | 🖊️ İmza (1 kez) |
+| | | | 11:30 | Yes | +247.8% | +49.2% | |
+| | | | 12:00 | Yes | +1444.9% | +763.7% | |
+| | | | 14:00 | Yes | -21.1% | +50.6% | |
+| | | | 18:30 | Yes | -74.9% | +0.1% | |
+| | | | 20:45 | Yes | +1242.1% | +210.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FUSDT | %4.47 | %2.98 | 03:30 | Yes | +6.2% | +34.6% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BANKUSDT | %1.25 | **%-10.23** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 25 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BIFIUSDT | %262.34 | %63.99 | 02:00 | Yes | +920.1% | +304.6% | 🖊️ İmza (1 kez) |
+| | | | 03:15 | Yes | -3.3% | -25.1% | |
+| | | | 04:00 | Yes | +96.6% | +182.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ZBTUSDT | %70.02 | %57.95 | 03:00 | Yes | +112.4% | +152.6% | 🖊️ İmza (1 kez) |
+| | | | 06:00 | Yes | +26.5% | +160.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 0GUSDT | %55.04 | %30.01 | 11:15 | Yes | +1354.9% | +433.8% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| INITUSDT | %35.63 | %7.60 | 02:45 | Yes | -22.2% | +37.5% | 🖊️ İmza (1 kez) |
+| | | | 04:45 | Yes | -41.0% | -4.7% | |
+| | | | 07:30 | Yes | +2914.2% | +2731.2% | |
+| | | | 15:45 | Yes | +124.5% | +432.1% | |
+| | | | 23:15 |  | +5150.8% | +12680.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ACAUSDT | %18.75 | %2.08 | 07:00 | Yes | +383.2% | +304.7% | 🖊️ İmza (1 kez) |
+| | | | 14:00 |  | +973.2% | +3910.1% | |
+| | | | 22:30 | Yes | +92.7% | +109.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ATUSDT | %12.24 | %6.42 | 04:00 | Yes | +214.7% | +170.1% | 🖊️ İmza (1 kez) |
+| | | | 07:45 | Yes | +93.5% | +384.8% | |
+| | | | 16:45 | Yes | +138.7% | +119.5% | |
+| | | | 23:15 | Yes | +32.8% | +229.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| AVNTUSDT | %11.54 | **%-8.44** | 01:45 | Yes | +226.2% | +61.1% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PLUMEUSDT | %8.87 | %3.05 | 12:15 | Yes | -2.8% | -45.6% | 🖊️ İmza (1 kez) |
+| | | | 13:30 | Yes | +102.0% | +341.5% | |
+| | | | 19:15 | Yes | +1167.6% | +149.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BIOUSDT | %8.49 | **%-0.71** | 01:00 |  | -1.2% | +32.5% | 🖊️ İmza (2 kez) |
+| | | | 06:15 |  | +530.5% | +417.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FUSDT | %6.65 | %3.39 | 04:15 | Yes | +552.1% | +911.7% | 🖊️ İmza (1 kez) |
+| | | | 06:15 | Yes | -75.3% | -69.2% | |
+| | | | 07:30 | Yes | +245.6% | +263.7% | |
+| | | | 21:00 | Yes | +802.9% | +925.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BERAUSDT | %5.90 | **%-0.66** | 02:30 | Yes | -41.2% | -30.4% | 🖊️ İmza (2 kez) |
+| | | | 04:45 | Yes | -84.9% | -77.2% | |
+| | | | 07:30 | Yes | +82.7% | +150.7% | |
+| | | | 13:30 |  | +576.0% | +846.2% | |
+| | | | 17:30 | Yes | +24.1% | -11.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| DOLOUSDT | %5.62 | **%-9.68** | 03:00 | Yes | +44.0% | +167.9% | 🖊️ İmza (1 kez) |
+| | | | 03:45 | Yes | +177.0% | +62.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| DCRUSDT | %5.05 | %1.11 | 03:15 |  | +1621.5% | +1368.2% | 🖊️ İmza (1 kez) |
+| | | | 09:30 | Yes | +110.4% | +121.9% | |
+| | | | 10:00 | Yes | -63.7% | -88.9% | |
+| | | | 11:00 | Yes | +74.0% | -7.3% | |
+| | | | 15:15 | Yes | +528.8% | +615.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| METISUSDT | %5.01 | **%-11.99** | 03:00 |  | -26.0% | +11.5% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BANKUSDT | %4.42 | %0.00 | 01:15 | Yes | +184.7% | -10.4% | 🖊️ İmza (1 kez) |
+| | | | 06:45 | Yes | -52.5% | -45.3% | |
+| | | | 21:15 | Yes | +4670.5% | +356.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ERAUSDT | %3.81 | **%-0.54** | 01:15 |  | +116.9% | +55.8% | 🖊️ İmza (1 kez) |
+| | | | 07:45 | Yes | -4.2% | +177.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| METUSDT | %1.52 | **%-1.40** | 00:00 | Yes | +8.3% | +49.4% | 🖊️ İmza (1 kez) |
+| | | | 01:30 | Yes | -24.4% | -26.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MORPHOUSDT | %0.09 | **%-3.61** | 19:45 | Yes | -7.1% | -23.8% | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 26 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ATUSDT | %67.08 | %52.83 | 08:15 | Yes | +189.4% | +196.2% | 🖊️ İmza (2 kez) |
+| | | | 09:30 | Yes | -63.9% | -33.1% | |
+| | | | 12:45 | Yes | -40.1% | +7.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BIFIUSDT | %51.31 | %21.00 | 03:30 | Yes | +306.6% | +198.3% | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TRUUSDT | %43.18 | %29.55 | 13:30 | Yes | +604.8% | +2858.7% | 🖊️ İmza (1 kez) |
+| | | | 15:15 | Yes | -36.2% | -60.4% | |
+| | | | 19:30 |  | +448.7% | +770.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BANKUSDT | %34.65 | %13.95 | 02:00 | Yes | -56.8% | -63.4% | 🖊️ İmza (1 kez) |
+| | | | 06:00 | Yes | +241.6% | +265.9% | |
+| | | | 07:15 | Yes | +205.4% | +244.3% | |
+| | | | 07:45 | Yes | -17.2% | +34.3% | |
+| | | | 11:00 | Yes | +9.3% | +285.6% | |
+| | | | 11:45 | Yes | +460.5% | +45.8% | |
+| | | | 13:00 | Yes | -40.8% | -61.6% | |
+| | | | 13:30 | Yes | +356.4% | +108.3% | |
+| | | | 15:00 | Yes | +383.3% | +201.7% | |
+| | | | 15:45 | Yes | +156.9% | +105.8% | |
+| | | | 17:00 | Yes | +12.5% | -42.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| AVNTUSDT | %19.56 | %14.95 | 07:00 | Yes | -0.8% | +91.6% | 🖊️ İmza (1 kez) |
+| | | | 11:15 | Yes | +56.0% | +94.3% | |
+| | | | 14:00 | Yes | +119.2% | +122.6% | |
+| | | | 15:15 | Yes | +45.4% | +15.2% | |
+| | | | 22:30 | Yes | +31.4% | +170.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 0GUSDT | %17.83 | **%-4.41** | 00:15 |  | +10.5% | +433.2% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ZBTUSDT | %9.87 | **%-20.83** | 00:15 | Yes | +8.3% | +162.4% | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| XPLUSDT | %7.51 | %4.95 | 11:45 | Yes | +150.7% | +172.7% | 🖊️ İmza (1 kez) |
+| | | | 12:45 | Yes | -57.7% | -74.6% | |
+| | | | 18:30 | Yes | +2049.6% | +458.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| DUSKUSDT | %6.84 | %6.37 | 02:15 |  | -27.0% | +77.7% | 🖊️ İmza (2 kez) |
+| | | | 04:15 | Yes | +183.4% | +762.8% | |
+| | | | 05:45 | Yes | -19.2% | -40.9% | |
+| | | | 07:15 | Yes | -45.3% | -50.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SUSDT | %4.07 | %2.10 | 03:00 | Yes | +148.1% | +175.3% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1000CHEEMSUSDT | %1.10 | **%-0.11** | 02:15 | Yes | +130.5% | +327.1% | 🖊️ İmza (1 kez) |
+| | | | 07:15 | Yes | -4.0% | +0.5% | |
+
+
+
+
+
+## 📅 27 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SHELLUSDT | %18.89 | %11.11 | 00:15 | Yes | +53.6% | -67.4% | 🖊️ İmza (1 kez) |
+| | | | 03:30 | Yes | -57.8% | +18.0% | |
+| | | | 07:15 |  | +20825.2% | +3045.3% | |
+| | | | 08:30 | Yes | +27.4% | -41.3% | |
+| | | | 15:00 | Yes | +386.1% | +136.0% | |
+| | | | 19:15 | Yes | +624.5% | +1396.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BANKUSDT | %13.50 | %10.22 | 13:45 | Yes | -47.7% | +83.2% | 🖊️ İmza (1 kez) |
+| | | | 18:30 | Yes | +138.8% | +78.8% | |
+| | | | 20:00 | Yes | +321.9% | +62.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SPKUSDT | %12.07 | %7.39 | 00:45 | Yes | -16.6% | +80.1% | 🖊️ İmza (1 kez) |
+| | | | 01:30 | Yes | +1948.4% | +1786.7% | |
+| | | | 02:30 | Yes | -85.8% | -90.9% | |
+| | | | 03:30 | Yes | -56.9% | -45.3% | |
+| | | | 04:00 | Yes | +60.1% | -13.7% | |
+| | | | 10:15 | Yes | +717.9% | +276.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| XPLUSDT | %10.87 | %9.59 | 04:30 | Yes | +627.0% | +907.7% | 🖊️ İmza (1 kez) |
+| | | | 06:45 | Yes | +383.1% | +12.8% | |
+| | | | 09:15 | Yes | +543.3% | +601.3% | |
+| | | | 17:45 |  | -62.9% | +49.5% | |
+| | | | 21:00 | Yes | +46.5% | +173.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ATUSDT | %8.09 | **%-2.41** | 12:45 | Yes | +329.2% | +239.6% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ACTUSDT | %5.21 | %2.61 | 02:30 | Yes | -9.1% | +63.4% | 🖊️ İmza (1 kez) |
+| | | | 14:15 | Yes | +138.6% | +331.5% | |
+| | | | 20:00 | Yes | +24.8% | +74.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TUSDT | %3.75 | %3.40 | 12:30 | Yes | +11.8% | -68.2% | 🖊️ İmza (1 kez) |
+| | | | 20:45 | Yes | -52.1% | -49.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| DOLOUSDT | %0.82 | **%-5.56** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 28 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| STRAXUSDT | %41.02 | %7.33 | 00:15 | Yes | -84.4% | -72.5% | 🖊️ İmza (2 kez) |
+| | | | 20:45 |  | +1629.9% | +631.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ATUSDT | %26.66 | %21.03 | 04:30 | Yes | +171.9% | +56.7% | 🖊️ İmza (1 kez) |
+| | | | 12:45 | Yes | +215.3% | +108.8% | |
+| | | | 14:00 | Yes | +29.9% | -3.9% | |
+| | | | 16:00 | Yes | +1469.0% | +633.9% | |
+| | | | 18:15 | Yes | -1.1% | -12.8% | |
+| | | | 19:15 | Yes | -18.3% | +4.8% | |
+| | | | 19:45 | Yes | -50.4% | -72.4% | |
+| | | | 20:15 | Yes | +61.8% | -35.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BIGTIMEUSDT | %11.91 | %0.25 | 02:45 | Yes | +252.1% | +270.3% | 🖊️ İmza (1 kez) |
+| | | | 07:00 | Yes | +3107.8% | +624.8% | |
+| | | | 08:15 | Yes | +23.5% | +137.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| STORJUSDT | %9.96 | **%-12.22** | - | - | - | - | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| XPLUSDT | %7.57 | %1.50 | 08:45 |  | +4625.9% | +4069.8% | 🖊️ İmza (1 kez) |
+| | | | 09:15 | Yes | +131.6% | +118.4% | |
+| | | | 10:45 | Yes | -19.4% | -82.2% | |
+| | | | 11:30 | Yes | -71.7% | -68.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| AVNTUSDT | %3.54 | **%-5.15** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| YBUSDT | %2.34 | **%-1.62** | 02:45 | Yes | +1183.8% | +626.2% | 🖊️ İmza (1 kez) |
+| | | | 06:00 | Yes | +298.0% | +55.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HEMIUSDT | %1.89 | **%-5.03** | 15:30 | Yes | +111.2% | +625.8% | 🖊️ İmza (1 kez) |
+| | | | 16:15 | Yes | +50.2% | +168.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TOWNSUSDT | %0.00 | **%-6.01** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 0GUSDT | %0.00 | **%-7.44** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TURTLEUSDT | %0.00 | **%-3.34** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 29 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| STRAXUSDT | %26.92 | %8.91 | 08:15 | Yes | +646.2% | +956.0% | 🖊️ İmza (1 kez) |
+| | | | 12:00 | Yes | +705.5% | +290.6% | |
+| | | | 14:30 | Yes | -54.3% | +34.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 0GUSDT | %20.00 | %6.88 | 01:45 | Yes | +98.3% | +149.1% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| LUMIAUSDT | %19.44 | %13.89 | 07:00 | Yes | +2510.5% | +1088.9% | 🖊️ İmza (1 kez) |
+| | | | 18:30 | Yes | +485.8% | +912.2% | |
+| | | | 19:30 | Yes | -25.6% | -49.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ONGUSDT | %18.44 | %5.67 | 04:45 | Yes | +1361.5% | +1361.2% | 🖊️ İmza (1 kez) |
+| | | | 06:00 | Yes | +603.6% | +120.4% | |
+| | | | 07:00 | Yes | +379.7% | +482.7% | |
+| | | | 23:45 | Yes | +730.4% | +809.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| AVNTUSDT | %17.42 | %12.52 | 05:00 | Yes | +89.1% | +45.8% | 🖊️ İmza (1 kez) |
+| | | | 19:00 | Yes | +46.4% | +169.2% | |
+| | | | 21:00 | Yes | +17.5% | -27.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HIVEUSDT | %9.59 | %5.75 | 15:45 | Yes | -82.4% | -21.6% | 🖊️ İmza (1 kez) |
+| | | | 21:00 | Yes | -20.2% | +73.3% | |
+| | | | 22:45 | Yes | -29.1% | -31.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| XPLUSDT | %9.51 | %1.80 | 01:30 | Yes | -1.6% | +1.5% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 2ZUSDT | %8.85 | **%-0.29** | 02:00 | Yes | -35.8% | +274.0% | 🖊️ İmza (1 kez) |
+| | | | 03:00 | Yes | -65.6% | -90.8% | |
+| | | | 05:45 | Yes | -1.8% | +41.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| QTUMUSDT | %8.11 | %1.89 | 02:00 | Yes | +290.1% | -2.7% | 🖊️ İmza (1 kez) |
+| | | | 02:45 | Yes | +4416.9% | +432.3% | |
+| | | | 07:00 | Yes | +9430.0% | +2798.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ATUSDT | %7.64 | **%-14.59** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HOLOUSDT | %7.50 | **%-4.67** | 01:45 | Yes | -67.0% | -61.6% | 🖊️ İmza (1 kez) |
+| | | | 03:00 | Yes | +40.8% | +89.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| GUSDT | %7.11 | **%-1.11** | 01:15 | Yes | +2529.5% | +149.1% | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ICXUSDT | %5.79 | **%-1.81** | 07:15 | Yes | -15.4% | +284.0% | 🖊️ İmza (2 kez) |
+| | | | 15:15 | Yes | +213.8% | +1407.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HOMEUSDT | %4.70 | **%-4.17** | 03:45 | Yes | +179.2% | +438.7% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| WCTUSDT | %4.51 | **%-0.55** | 00:30 | Yes | +96.5% | +110.3% | 🖊️ İmza (1 kez) |
+| | | | 02:00 | Yes | +497.0% | +271.8% | |
+| | | | 02:45 | Yes | -24.1% | -45.7% | |
+| | | | 05:30 | Yes | +91.8% | +2.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BBUSDT | %3.21 | **%-4.63** | 00:15 | Yes | -66.6% | -21.8% | 🖊️ İmza (1 kez) |
+| | | | 01:30 | Yes | +656.1% | +43.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TRUUSDT | %2.91 | **%-2.91** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 30 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| POLYXUSDT | %30.16 | %9.92 | 00:15 | Yes | +56.5% | +815.7% | 🖊️ İmza (1 kez) |
+| | | | 05:30 | Yes | +484.5% | +2408.1% | |
+| | | | 06:45 | Yes | -38.7% | -72.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| REZUSDT | %13.47 | %6.18 | 09:15 | Yes | +3352.4% | +1377.5% | 🖊️ İmza (1 kez) |
+| | | | 22:00 | Yes | +271.1% | +88.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HOMEUSDT | %12.43 | %7.41 | 13:30 | Yes | +1231.9% | +1019.2% | 🖊️ İmza (1 kez) |
+| | | | 15:45 | Yes | -32.0% | -62.0% | |
+| | | | 18:30 | Yes | +53.1% | +113.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FORMUSDT | %11.83 | %10.09 | 13:15 | Yes | +9.3% | -65.3% | 🖊️ İmza (1 kez) |
+| | | | 14:15 | Yes | +28.4% | +136.1% | |
+| | | | 21:00 |  | +2178.7% | +523.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| WOOUSDT | %8.12 | %6.64 | 07:30 | Yes | +356.9% | +733.9% | 🖊️ İmza (1 kez) |
+| | | | 11:00 | Yes | +2.1% | -22.6% | |
+| | | | 23:15 | Yes | +371.6% | +34.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| CHZUSDT | %8.05 | %7.24 | 06:45 | Yes | +69.0% | +130.8% | 🖊️ İmza (1 kez) |
+| | | | 08:30 | Yes | +379.0% | +84.0% | |
+| | | | 21:00 | Yes | +247.3% | +482.8% | |
+| | | | 22:15 | Yes | +536.0% | +499.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ATUSDT | %7.59 | %5.45 | 18:00 | Yes | +790.3% | +781.1% | 🖊️ İmza (1 kez) |
+| | | | 21:15 | Yes | +123.1% | +41.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ZBTUSDT | %7.55 | **%-3.95** | 22:00 | Yes | -44.0% | +122.9% | 🖊️ İmza (1 kez) |
+| | | | 22:30 | Yes | +169.9% | +224.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| IOSTUSDT | %6.73 | %6.36 | 15:00 | Yes | +10464.3% | +3841.9% | 🖊️ İmza (1 kez) |
+| | | | 18:45 | Yes | +4.3% | -36.2% | |
+| | | | 19:15 | Yes | +100.9% | +65.8% | |
+| | | | 20:15 | Yes | +67.9% | +0.7% | |
+| | | | 21:15 | Yes | +63.2% | +60.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ORDIUSDT | %3.90 | %3.00 | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HEMIUSDT | %3.77 | %0.63 | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TURTLEUSDT | %2.92 | **%-2.43** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| KERNELUSDT | %2.27 | **%-1.73** | 10:30 | Yes | +262.9% | +868.8% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1000CATUSDT | %0.75 | **%-1.51** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 31 Aralık 2025
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BROCCOLI714USDT | %1162.83 | %37.33 | 03:45 | Yes | +2297.0% | +1250.9% | 🖊️ İmza (1 kez) |
+| | | | 05:45 | Yes | +126.1% | +109.9% | |
+| | | | 16:15 | Yes | +1851.6% | +601.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TLMUSDT | %118.46 | %24.99 | 19:30 |  | +134.6% | +567.6% | 🖊️ İmza (2 kez) |
+| | | | 21:15 | Yes | +4.5% | -33.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MUBARAKUSDT | %75.61 | %16.17 | 02:00 | Yes | +25.4% | +313.6% | 🖊️ İmza (2 kez) |
+| | | | 18:15 | Yes | -3.0% | +61.4% | |
+| | | | 19:00 | Yes | +314.2% | +796.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SAPIENUSDT | %32.85 | %6.89 | 04:00 | Yes | +451.9% | +550.6% | 🖊️ İmza (1 kez) |
+| | | | 04:45 | Yes | -16.1% | -28.4% | |
+| | | | 08:45 |  | +464.3% | +1118.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| AMPUSDT | %21.01 | %11.93 | 08:00 | Yes | +566.8% | +1993.2% | 🖊️ İmza (1 kez) |
+| | | | 09:00 | Yes | +122.4% | +319.6% | |
+| | | | 12:30 | Yes | +517.7% | +899.3% | |
+| | | | 17:15 |  | +108.8% | +199.1% | |
+| | | | 17:45 | Yes | -6.8% | +101.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TUTUSDT | %18.82 | %1.49 | 19:00 | Yes | +2503.9% | +526.3% | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| AIXBTUSDT | %17.06 | %12.71 | 01:30 | Yes | +142.0% | +485.3% | 🖊️ İmza (1 kez) |
+| | | | 04:30 | Yes | +72.3% | +83.1% | |
+| | | | 12:00 |  | +576.2% | +925.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ATUSDT | %14.70 | %2.73 | 02:00 |  | +108.6% | +156.3% | 🖊️ İmza (1 kez) |
+| | | | 04:00 | Yes | +28.9% | +19.9% | |
+| | | | 04:45 | Yes | +36.1% | -7.2% | |
+| | | | 05:30 | Yes | +14.6% | +7.7% | |
+| | | | 06:00 | Yes | -23.7% | -38.6% | |
+| | | | 07:00 | Yes | +21.2% | +49.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HOMEUSDT | %13.63 | %12.26 | 15:15 | Yes | +407.5% | +254.6% | 🖊️ İmza (1 kez) |
+| | | | 16:00 | Yes | +5.9% | +20.2% | |
+| | | | 17:15 | Yes | -8.5% | +18.2% | |
+| | | | 18:00 | Yes | +153.5% | +96.1% | |
+| | | | 23:00 |  | -5.2% | +220.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| IOSTUSDT | %13.52 | %5.28 | 02:45 | Yes | -53.6% | -34.4% | 🖊️ İmza (2 kez) |
+| | | | 05:45 | Yes | +6.6% | -49.7% | |
+| | | | 20:30 | Yes | -78.4% | -55.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MBOXUSDT | %12.37 | %1.34 | 08:00 | Yes | +245.2% | +765.8% | 🖊️ İmza (4 kez) |
+| | | | 20:15 | Yes | +1045.2% | +1650.9% | |
+| | | | 21:00 | Yes | +272.8% | +165.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1000CATUSDT | %11.88 | %4.60 | 19:30 | Yes | +393.0% | +1047.7% | 🖊️ İmza (1 kez) |
+| | | | 20:15 | Yes | -55.2% | +89.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| RONINUSDT | %8.96 | %3.35 | 10:00 | Yes | -38.4% | -2.1% | 🖊️ İmza (4 kez) |
+| | | | 10:30 | Yes | +1055.5% | +1192.8% | |
+| | | | 14:00 | Yes | +286.5% | +10.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PUMPUSDT | %6.95 | %3.91 | 01:15 | Yes | +150.7% | +43.3% | 🖊️ İmza (1 kez) |
+| | | | 03:15 | Yes | +67.6% | -45.3% | |
+| | | | 11:45 | Yes | +215.4% | +359.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FFUSDT | %5.21 | **%-0.09** | 01:45 | Yes | +40.3% | +114.2% | 🖊️ İmza (1 kez) |
+| | | | 08:15 | Yes | +493.1% | +990.9% | |
+| | | | 15:00 | Yes | +142.4% | +74.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ZBTUSDT | %5.02 | **%-11.68** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| LAUSDT | %4.51 | %3.74 | 02:45 | Yes | +4362.9% | +5063.5% | 🖊️ İmza (1 kez) |
+| | | | 09:30 | Yes | +70.3% | -36.2% | |
+| | | | 10:45 | Yes | +912.8% | +35.1% | |
+| | | | 11:30 | Yes | -14.4% | -78.1% | |
+| | | | 23:15 | Yes | +437.2% | +290.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PEOPLEUSDT | %3.57 | %2.38 | 21:00 | Yes | +23.5% | -3.3% | 🖊️ İmza (1 kez) |
+| | | | 23:15 | Yes | +128.4% | -62.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HOTUSDT | %3.39 | **%-2.33** | 16:15 | Yes | +541.6% | +622.7% | 🖊️ İmza (4 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SAGAUSDT | %3.23 | %1.08 | 00:30 | Yes | +462.0% | +860.0% | 🖊️ İmza (1 kez) |
+| | | | 10:30 | Yes | +29.9% | +94.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TURBOUSDT | %2.79 | **%-2.06** | 04:00 | Yes | +3.2% | +177.1% | 🖊️ İmza (1 kez) |
+| | | | 05:45 | Yes | -24.7% | +48.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| VICUSDT | %2.06 | **%-0.57** | 10:00 | Yes | +6.6% | -19.8% | 🖊️ İmza (4 kez) |
+| | | | 22:30 | Yes | -2.3% | -43.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NOTUSDT | %1.75 | %0.39 | 14:00 | Yes | +1118.1% | +2076.7% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BBUSDT | %1.61 | **%-1.25** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALTUSDT | %1.38 | **%-0.95** | 01:15 | Yes | -29.3% | -50.3% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BONKUSDT | %0.78 | **%-3.36** | 11:45 | Yes | -41.2% | -17.5% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| XNOUSDT | %0.57 | **%-1.57** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| WCTUSDT | %0.21 | **%-15.97** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| VELODROMEUSDT | %0.00 | **%-7.33** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 01 Ocak 2026
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| A2ZUSDT | %208.13 | %27.60 | 07:15 | Yes | +50.0% | +297.9% | 🖊️ İmza (1 kez) |
+| | | | 09:30 | Yes | +71.5% | -10.7% | |
+| | | | 10:45 | Yes | +997.3% | +4533.6% | |
+| | | | 11:45 | Yes | +37.6% | -8.9% | |
+| | | | 13:30 | Yes | +1889.7% | +422.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| LAUSDT | %33.65 | %6.05 | 00:00 | Yes | +11564.7% | +24221.1% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| AIXBTUSDT | %27.30 | %18.99 | 02:00 | Yes | +375.9% | +58.7% | 🖊️ İmza (2 kez) |
+| | | | 08:15 | Yes | +35.4% | +3.6% | |
+| | | | 20:00 | Yes | +104.3% | +99.8% | |
+| | | | 20:30 | Yes | +61.8% | +12.6% | |
+| | | | 22:15 | Yes | -15.8% | -68.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NEIROUSDT | %25.13 | %23.50 | 06:00 | Yes | -22.6% | +1.8% | 🖊️ İmza (1 kez) |
+| | | | 07:45 | Yes | +151.2% | +65.8% | |
+| | | | 15:30 | Yes | +147.8% | +135.7% | |
+| | | | 21:45 |  | +74.2% | +78.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PEPEUSDT | %23.27 | %21.78 | 06:00 | Yes | +407.1% | +21.7% | 🖊️ İmza (1 kez) |
+| | | | 08:45 | Yes | +43.4% | +34.2% | |
+| | | | 11:30 | Yes | -63.4% | -60.7% | |
+| | | | 15:30 | Yes | +279.4% | +856.9% | |
+| | | | 21:30 | Yes | -44.5% | -27.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FILUSDT | %19.72 | %14.25 | 09:00 | Yes | +136.6% | +88.0% | 🖊️ İmza (1 kez) |
+| | | | 11:45 | Yes | +499.9% | +378.8% | |
+| | | | 12:30 | Yes | +118.6% | +64.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| IMXUSDT | %17.35 | %16.89 | 09:45 | Yes | +42.5% | +203.3% | 🖊️ İmza (1 kez) |
+| | | | 13:15 | Yes | +50.8% | -31.4% | |
+| | | | 19:30 |  | +2875.1% | -14.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HOMEUSDT | %15.04 | %8.59 | 02:45 | Yes | -19.7% | +46.3% | 🖊️ İmza (1 kez) |
+| | | | 09:15 |  | +884.0% | +476.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| VELODROMEUSDT | %13.07 | %11.36 | 13:45 | Yes | -31.9% | +68.8% | 🖊️ İmza (1 kez) |
+| | | | 14:45 | Yes | +783.5% | +122.6% | |
+| | | | 21:30 |  | +151.5% | +61.7% | |
+| | | | 22:00 |  | +6472.9% | +3113.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PNUTUSDT | %12.21 | %10.90 | 05:30 | Yes | -16.7% | -55.2% | 🖊️ İmza (1 kez) |
+| | | | 09:00 | Yes | +297.9% | +177.9% | |
+| | | | 15:30 | Yes | +804.6% | +779.2% | |
+| | | | 22:45 | Yes | +256.5% | +245.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PUMPUSDT | %11.80 | %10.18 | 11:45 | Yes | -2.4% | -3.4% | 🖊️ İmza (1 kez) |
+| | | | 12:15 | Yes | -30.7% | -16.4% | |
+| | | | 16:15 |  | -87.2% | -55.2% | |
+| | | | 19:45 | Yes | +287.6% | +286.1% | |
+| | | | 22:45 | Yes | -69.9% | -44.9% | |
+| | | | 23:45 | Yes | +400.1% | +523.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| RAYUSDT | %11.61 | %10.26 | 09:00 | Yes | +46418.0% | +17258.6% | 🖊️ İmza (1 kez) |
+| | | | 10:45 | Yes | -81.8% | -82.2% | |
+| | | | 15:30 | Yes | +279.0% | +334.3% | |
+| | | | 19:15 |  | +86.0% | -1.5% | |
+| | | | 21:00 | Yes | +0.6% | -61.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PENGUUSDT | %9.88 | %9.25 | 09:00 | Yes | +187.2% | +374.4% | 🖊️ İmza (1 kez) |
+| | | | 10:00 | Yes | -11.4% | -57.9% | |
+| | | | 10:45 | Yes | +175.8% | +36.3% | |
+| | | | 14:00 |  | +70.8% | +92.4% | |
+| | | | 15:30 | Yes | +154.5% | +158.2% | |
+| | | | 22:15 |  | +479.2% | +566.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| XPLUSDT | %9.66 | %5.94 | 01:15 | Yes | -7.0% | +43.8% | 🖊️ İmza (1 kez) |
+| | | | 09:00 | Yes | -30.4% | +35.5% | |
+| | | | 11:45 | Yes | +863.0% | +696.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MUBARAKUSDT | %9.52 | **%-1.28** | 09:00 | Yes | +520.3% | +674.5% | 🖊️ İmza (2 kez) |
+| | | | 10:15 | Yes | +835.6% | +404.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| WLDUSDT | %9.15 | %8.40 | 09:00 | Yes | +71.5% | +281.1% | 🖊️ İmza (1 kez) |
+| | | | 10:45 | Yes | -77.3% | -73.6% | |
+| | | | 13:30 | Yes | -58.8% | -58.4% | |
+| | | | 22:15 |  | -33.4% | -42.0% | |
+| | | | 23:30 |  | +25.1% | +3.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| VIRTUALUSDT | %8.45 | %8.24 | 11:45 | Yes | +107.8% | +28.9% | 🖊️ İmza (1 kez) |
+| | | | 13:30 | Yes | -54.0% | -56.7% | |
+| | | | 14:45 | Yes | +48.5% | +9.0% | |
+| | | | 15:15 | Yes | +71.8% | +45.3% | |
+| | | | 16:45 | Yes | +429.3% | +22.1% | |
+| | | | 19:30 |  | -56.5% | -56.3% | |
+| | | | 21:00 |  | +485.2% | +51.5% | |
+| | | | 22:30 |  | +137.7% | +74.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HEMIUSDT | %4.65 | %0.58 | 09:00 | Yes | +339.0% | +459.2% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FORMUSDT | %3.91 | **%-0.96** | 01:15 | Yes | +2.7% | +61.7% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HOLOUSDT | %3.54 | %3.08 | 02:30 | Yes | -62.7% | +89.7% | 🖊️ İmza (1 kez) |
+| | | | 09:30 | Yes | +1043.0% | +1595.0% | |
+| | | | 10:00 | Yes | -80.0% | -80.7% | |
+| | | | 22:15 | Yes | +104.8% | +33.7% | |
+| | | | 22:45 | Yes | -37.0% | +74.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| WALUSDT | %2.61 | %2.35 | 11:00 | Yes | +1348.6% | -25.2% | 🖊️ İmza (1 kez) |
+| | | | 11:45 | Yes | -90.3% | -94.3% | |
+| | | | 12:45 | Yes | +440.8% | +72.3% | |
+| | | | 19:45 | Yes | -5.6% | -9.5% | |
+| | | | 22:30 | Yes | -33.5% | +12.1% | |
+
+
+
+
+
+## 📅 02 Ocak 2026
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HOLOUSDT | %57.31 | %27.16 | 00:00 | Yes | +34374.3% | +28942.1% | 🖊️ İmza (5 kez) |
+| | | | 01:45 | Yes | +44.7% | -68.4% | |
+| | | | 07:30 |  | +4717.0% | +1190.6% | |
+| | | | 11:30 | Yes | +275.8% | +379.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PEPEUSDT | %24.95 | %21.91 | 03:15 |  | -1.7% | +188.1% | 🖊️ İmza (3 kez) |
+| | | | 04:00 |  | -21.9% | -29.9% | |
+| | | | 06:00 |  | -10.9% | +57.6% | |
+| | | | 10:45 |  | +185.2% | +70.3% | |
+| | | | 12:30 | Yes | +953.8% | +1005.9% | |
+| | | | 16:45 | Yes | +457.7% | +547.6% | |
+| | | | 17:15 | Yes | -51.4% | -40.2% | |
+| | | | 22:45 |  | +112.4% | +52.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SAPIENUSDT | %24.47 | %11.94 | 02:30 | Yes | +23.7% | +9.2% | 🖊️ İmza (1 kez) |
+| | | | 16:00 | Yes | -6.3% | +177.7% | |
+| | | | 19:30 | Yes | +163.3% | +85.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TURBOUSDT | %22.50 | %18.81 | 03:15 |  | +286.0% | +506.6% | 🖊️ İmza (5 kez) |
+| | | | 05:30 | Yes | +108.7% | -8.2% | |
+| | | | 06:00 | Yes | +35.5% | +28.2% | |
+| | | | 09:30 |  | -44.0% | +15.1% | |
+| | | | 12:30 |  | +1439.7% | +438.8% | |
+| | | | 16:30 | Yes | +54.6% | +66.4% | |
+| | | | 19:30 | Yes | +51.8% | +7.1% | |
+| | | | 20:00 | Yes | +428.4% | +247.2% | |
+| | | | 21:15 | Yes | -20.8% | -21.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| VELODROMEUSDT | %17.35 | %11.73 | 01:45 |  | -42.8% | -14.4% | 🖊️ İmza (1 kez) |
+| | | | 10:45 |  | +5493.2% | +293.6% | |
+| | | | 11:30 | Yes | +904.7% | +573.4% | |
+| | | | 21:00 | Yes | +437.3% | +942.3% | |
+| | | | 23:00 | Yes | -51.2% | -68.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MEMEUSDT | %16.42 | %7.84 | 10:00 | Yes | +43.2% | +290.9% | 🖊️ İmza (3 kez) |
+| | | | 12:30 | Yes | +1220.7% | +1019.4% | |
+| | | | 13:15 | Yes | +104.7% | +65.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| VIRTUALUSDT | %14.01 | %11.50 | 03:45 |  | +0.4% | +8.5% | 🖊️ İmza (1 kez) |
+| | | | 06:30 | Yes | +150.8% | +309.8% | |
+| | | | 09:30 | Yes | +109.0% | +114.3% | |
+| | | | 10:45 | Yes | -48.5% | -44.6% | |
+| | | | 18:15 | Yes | +6.9% | -2.6% | |
+| | | | 19:30 | Yes | +44.8% | -0.2% | |
+| | | | 21:45 | Yes | -5.7% | -32.0% | |
+| | | | 23:45 | Yes | -52.1% | -70.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BONKUSDT | %13.76 | %13.03 | 03:15 |  | +169.3% | +459.2% | 🖊️ İmza (5 kez) |
+| | | | 09:30 |  | +10.6% | +11.8% | |
+| | | | 13:30 | Yes | -11.7% | -40.3% | |
+| | | | 16:45 | Yes | +43.2% | +133.7% | |
+| | | | 17:15 | Yes | -41.2% | -36.5% | |
+| | | | 21:30 | Yes | -32.5% | -48.2% | |
+| | | | 22:30 | Yes | +35.2% | -8.5% | |
+| | | | 23:30 | Yes | +13.0% | -26.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| WIFUSDT | %12.25 | %7.62 | 12:30 |  | +639.1% | +651.1% | 🖊️ İmza (2 kez) |
+| | | | 16:15 | Yes | +0.7% | +3.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PNUTUSDT | %11.13 | %8.38 | 03:30 |  | +202.4% | +502.3% | 🖊️ İmza (3 kez) |
+| | | | 16:45 | Yes | +66.5% | +139.6% | |
+| | | | 17:15 | Yes | -38.5% | -11.8% | |
+| | | | 21:45 | Yes | +0.1% | +13.8% | |
+| | | | 22:30 | Yes | +9.2% | -6.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NEIROUSDT | %7.54 | %3.92 | 12:30 | Yes | +627.5% | +343.8% | 🖊️ İmza (5 kez) |
+| | | | 22:00 | Yes | +17.6% | +86.2% | |
+| | | | 22:45 | Yes | +149.6% | +114.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ARKMUSDT | %6.32 | %5.79 | 04:30 | Yes | +33.9% | -28.6% | 🖊️ İmza (5 kez) |
+| | | | 18:00 | Yes | +16.4% | -42.6% | |
+| | | | 22:15 | Yes | -63.2% | +33.2% | |
+| | | | 23:45 | Yes | +14691.4% | +24.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| WLFIUSDT | %5.52 | %5.31 | 09:30 | Yes | +391.6% | +243.2% | 🖊️ İmza (1 kez) |
+| | | | 12:45 |  | -42.8% | +79.3% | |
+| | | | 17:15 | Yes | -50.9% | -56.4% | |
+| | | | 23:00 |  | +111.9% | +117.5% | |
+| | | | 23:45 | Yes | +418.4% | +171.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| EIGENUSDT | %5.22 | %4.18 | 00:45 | Yes | -48.2% | -65.9% | 🖊️ İmza (1 kez) |
+| | | | 01:45 | Yes | +8.4% | +11.1% | |
+| | | | 03:15 |  | -31.1% | +29.1% | |
+| | | | 10:15 |  | +85.4% | +155.6% | |
+| | | | 10:45 | Yes | -10.8% | +5.9% | |
+| | | | 17:15 | Yes | -75.7% | -49.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HEMIUSDT | %5.20 | %3.47 | 13:30 | Yes | -32.9% | +13.3% | 🖊️ İmza (2 kez) |
+| | | | 17:30 | Yes | +203.5% | +226.5% | |
+| | | | 23:00 | Yes | -49.9% | -21.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NOMUSDT | %4.64 | %3.85 | 00:30 | Yes | +161.8% | +269.2% | 🖊️ İmza (2 kez) |
+| | | | 08:30 | Yes | +261.0% | +130.0% | |
+| | | | 23:00 | Yes | -42.9% | -20.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ZKCUSDT | %3.85 | %3.41 | 06:15 | Yes | +798.0% | +914.7% | 🖊️ İmza (2 kez) |
+| | | | 22:45 | Yes | +440.4% | -55.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TUTUSDT | %1.86 | **%-0.60** | 07:00 | Yes | +111.0% | +463.8% | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| DATAUSDT | %1.82 | **%-18.54** | - | - | - | - | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| CUSDT | %1.60 | %0.00 | 23:15 | Yes | +437.0% | +305.4% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| QUICKUSDT | %0.98 | %0.71 | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 03 Ocak 2026
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SAPIENUSDT | %23.94 | %12.16 | 06:15 | Yes | +406.3% | +849.0% | 🖊️ İmza (1 kez) |
+| | | | 07:45 | Yes | +79.5% | +48.5% | |
+| | | | 10:15 | Yes | +199.0% | +424.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| VIRTUALUSDT | %14.99 | %12.29 | 02:30 |  | -1.0% | +24.8% | 🖊️ İmza (1 kez) |
+| | | | 23:00 | Yes | +393.9% | +218.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HUMAUSDT | %6.72 | %1.73 | 01:30 | Yes | +76.3% | +57.9% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| RESOLVUSDT | %4.89 | %2.93 | 01:00 |  | +10025.1% | +7984.0% | 🖊️ İmza (1 kez) |
+| | | | 17:00 | Yes | +6519.6% | +4956.7% | |
+| | | | 21:00 | Yes | +80.0% | -25.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BROCCOLI714USDT | %3.88 | **%-1.61** | 21:15 | Yes | +114.0% | +416.1% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TUTUSDT | %2.48 | **%-0.91** | - | - | - | - | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| XPLUSDT | %2.45 | %1.69 | 22:15 | Yes | +222.5% | +383.8% | 🖊️ İmza (2 kez) |
+| | | | 23:00 | Yes | -2.1% | -71.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ALTUSDT | %1.89 | %1.26 | 16:30 | Yes | -41.3% | -19.5% | 🖊️ İmza (2 kez) |
+| | | | 22:30 | Yes | +2684.2% | +749.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BANANAS31USDT | %1.84 | **%-2.67** | 06:00 | Yes | +588.7% | +195.5% | 🖊️ İmza (1 kez) |
+| | | | 12:15 | Yes | +218.2% | +203.2% | |
+| | | | 12:45 | Yes | +475.9% | +144.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BIOUSDT | %1.48 | %0.21 | 13:30 | Yes | -13.9% | -0.9% | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| YBUSDT | %1.43 | **%-1.62** | 02:00 | Yes | +1357.5% | +270.6% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MUBARAKUSDT | %1.16 | **%-4.11** | 16:00 | Yes | +263.5% | +287.7% | 🖊️ İmza (1 kez) |
+| | | | 21:30 | Yes | +725.8% | +506.7% | |
+
+
+
+
+
+## 📅 04 Ocak 2026
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BONKUSDT | %39.08 | %28.27 | 00:00 | Yes | +572.1% | +162.5% | 🖊️ İmza (4 kez) |
+| | | | 07:00 |  | +72.3% | +51.4% | |
+| | | | 07:30 |  | -17.4% | -40.7% | |
+| | | | 08:15 |  | -26.6% | -17.9% | |
+| | | | 11:45 |  | +93.9% | +36.2% | |
+| | | | 14:45 | Yes | -12.9% | -27.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BOMEUSDT | %29.60 | %25.33 | 02:30 | Yes | +349.5% | +464.0% | 🖊️ İmza (4 kez) |
+| | | | 03:00 | Yes | +116.0% | +193.7% | |
+| | | | 10:00 | Yes | -68.6% | -34.6% | |
+| | | | 14:30 | Yes | +358.2% | +576.0% | |
+| | | | 15:15 | Yes | -40.3% | -26.5% | |
+| | | | 22:15 |  | +45.2% | +271.4% | |
+| | | | 23:00 | Yes | +361.2% | +215.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| DOGSUSDT | %24.07 | %15.74 | 03:15 | Yes | +884.9% | +274.7% | 🖊️ İmza (2 kez) |
+| | | | 08:45 |  | +518.0% | +545.5% | |
+| | | | 17:00 | Yes | +73.1% | +134.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PENGUUSDT | %14.81 | %9.49 | 03:00 | Yes | +45.1% | +60.9% | 🖊️ İmza (4 kez) |
+| | | | 06:00 |  | +41.5% | +73.1% | |
+| | | | 09:45 | Yes | +79.5% | +47.8% | |
+| | | | 11:30 | Yes | -44.5% | -60.0% | |
+| | | | 14:00 |  | +18.9% | +24.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BANANAS31USDT | %14.51 | %5.61 | 04:45 | Yes | +946.7% | +406.1% | 🖊️ İmza (1 kez) |
+| | | | 07:45 | Yes | -23.7% | -26.0% | |
+| | | | 08:45 | Yes | +558.5% | +347.1% | |
+| | | | 10:45 | Yes | -3.8% | +54.3% | |
+| | | | 12:15 | Yes | +10.4% | -56.9% | |
+| | | | 13:15 |  | +490.2% | +533.2% | |
+| | | | 13:45 |  | -81.8% | -60.3% | |
+| | | | 15:00 |  | -63.7% | -52.4% | |
+| | | | 15:30 | Yes | +40.9% | +14.1% | |
+| | | | 16:00 | Yes | +5.7% | +67.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SUSDT | %14.27 | %10.76 | 00:00 | Yes | +1459.2% | +222.1% | 🖊️ İmza (2 kez) |
+| | | | 03:15 | Yes | +639.7% | +929.7% | |
+| | | | 04:15 | Yes | +272.0% | -41.7% | |
+| | | | 05:00 | Yes | +430.9% | +175.9% | |
+| | | | 07:30 | Yes | +665.0% | +273.2% | |
+| | | | 08:15 | Yes | +103.3% | +107.2% | |
+| | | | 10:00 |  | +376.8% | +63.7% | |
+| | | | 11:15 | Yes | +29.8% | -4.4% | |
+| | | | 12:30 | Yes | -64.0% | -52.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| JASMYUSDT | %10.45 | %5.61 | 00:00 | Yes | +56.5% | +111.7% | 🖊️ İmza (4 kez) |
+| | | | 01:00 | Yes | +24.4% | -41.8% | |
+| | | | 12:15 | Yes | -73.3% | -18.8% | |
+| | | | 13:45 | Yes | +205.6% | +135.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| KAIAUSDT | %8.01 | %6.64 | 03:00 | Yes | +996.8% | +485.1% | 🖊️ İmza (2 kez) |
+| | | | 04:45 | Yes | +5.1% | -45.4% | |
+| | | | 05:45 | Yes | -50.0% | -35.9% | |
+| | | | 09:00 | Yes | -18.3% | -62.0% | |
+| | | | 10:00 | Yes | -9.0% | +47.6% | |
+| | | | 12:15 |  | +24.9% | +4.6% | |
+| | | | 15:45 | Yes | -66.7% | -38.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HOTUSDT | %7.50 | %5.58 | 09:15 | Yes | -67.1% | -67.6% | 🖊️ İmza (2 kez) |
+| | | | 12:15 | Yes | -87.1% | -89.2% | |
+| | | | 17:00 | Yes | +582.3% | +74.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MORPHOUSDT | %6.58 | %2.02 | 00:00 | Yes | +440.0% | +386.3% | 🖊️ İmza (1 kez) |
+| | | | 03:00 | Yes | +64.1% | +26.0% | |
+| | | | 03:30 | Yes | +22.5% | -30.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| COOKIEUSDT | %6.43 | %3.55 | 00:00 | Yes | +113.4% | +333.3% | 🖊️ İmza (1 kez) |
+| | | | 12:00 | Yes | +206.4% | +627.8% | |
+| | | | 15:00 | Yes | +3245.4% | +574.5% | |
+| | | | 16:45 | Yes | -48.6% | -60.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| WALUSDT | %6.02 | %2.67 | 00:00 | Yes | +284.7% | +674.1% | 🖊️ İmza (1 kez) |
+| | | | 03:00 | Yes | +822.2% | +260.9% | |
+| | | | 15:30 | Yes | +60.5% | +539.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| XRPUSDT | %5.06 | %3.60 | 00:00 | Yes | +319.1% | +732.4% | 🖊️ İmza (1 kez) |
+| | | | 03:30 | Yes | -4.9% | +110.0% | |
+| | | | 04:45 | Yes | +219.5% | +22.3% | |
+| | | | 06:00 | Yes | +83.0% | -48.7% | |
+| | | | 12:15 | Yes | +251.5% | +353.0% | |
+| | | | 12:45 | Yes | +6.8% | +9.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| A2ZUSDT | %4.80 | %0.87 | 02:30 | Yes | +230.0% | +411.2% | 🖊️ İmza (1 kez) |
+| | | | 13:15 | Yes | +5614.7% | +4736.0% | |
+| | | | 16:00 | Yes | +727.3% | +551.5% | |
+| | | | 17:00 | Yes | +17.0% | -58.8% | |
+| | | | 18:00 | Yes | +174.4% | -29.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ENJUSDT | %4.42 | %2.71 | 03:00 | Yes | +3535.4% | +1805.4% | 🖊️ İmza (1 kez) |
+| | | | 16:15 | Yes | +78.3% | -17.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HEMIUSDT | %4.21 | **%-2.11** | 02:15 |  | +10153.6% | +3509.5% | 🖊️ İmza (2 kez) |
+| | | | 12:00 | Yes | -33.1% | -60.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ORCAUSDT | %4.19 | %2.94 | 00:00 | Yes | +650.0% | +323.1% | 🖊️ İmza (1 kez) |
+| | | | 03:00 | Yes | -14.8% | -46.5% | |
+| | | | 03:30 | Yes | +132.4% | +21.1% | |
+| | | | 16:45 | Yes | +49.0% | -75.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SCRUSDT | %3.80 | %0.00 | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MMTUSDT | %2.21 | %0.25 | 15:00 | Yes | +229.7% | +79.3% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| XPLUSDT | %2.01 | **%-3.12** | 10:30 | Yes | +116.6% | +371.5% | 🖊️ İmza (1 kez) |
+| | | | 14:00 | Yes | -19.7% | -12.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| KSMUSDT | %1.41 | %0.64 | 10:30 | Yes | +489.3% | +50.3% | 🖊️ İmza (2 kez) |
+
+
+
+
+
+## 📅 05 Ocak 2026
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| VIRTUALUSDT | %26.81 | %20.63 | 01:00 | Yes | -19.0% | +97.8% | 🖊️ İmza (1 kez) |
+| | | | 06:45 |  | +37.5% | +64.8% | |
+| | | | 14:30 |  | +341.5% | +345.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BROCCOLI714USDT | %24.28 | **%-7.83** | 01:45 | Yes | +141.7% | +100.7% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| A2ZUSDT | %22.09 | %4.02 | 09:00 | Yes | +443.6% | +369.7% | 🖊️ İmza (2 kez) |
+| | | | 11:30 | Yes | +1002.8% | +601.0% | |
+| | | | 12:30 | Yes | +116.8% | +33.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SPELLUSDT | %21.27 | %15.24 | 13:15 | Yes | +230.3% | +40.8% | 🖊️ İmza (2 kez) |
+| | | | 15:00 | Yes | +400.3% | +413.0% | |
+| | | | 20:45 | Yes | +3611.4% | +2140.6% | |
+| | | | 21:30 | Yes | +1488.2% | +479.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MBOXUSDT | %21.02 | %6.31 | 01:30 | Yes | -62.5% | -74.6% | 🖊️ İmza (1 kez) |
+| | | | 20:15 | Yes | -74.5% | -30.0% | |
+| | | | 22:45 | Yes | +26050.3% | +26450.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| CETUSUSDT | %9.56 | %6.99 | 18:45 | Yes | +35.2% | +298.1% | 🖊️ İmza (1 kez) |
+| | | | 23:30 | Yes | +525.3% | +4.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HOMEUSDT | %6.87 | %1.51 | 01:15 | Yes | -61.5% | -65.4% | 🖊️ İmza (1 kez) |
+| | | | 03:00 |  | +584.1% | +873.0% | |
+| | | | 04:45 | Yes | +12.1% | -57.6% | |
+| | | | 06:30 | Yes | -47.2% | -59.8% | |
+| | | | 07:00 | Yes | +19.6% | -48.4% | |
+| | | | 16:00 | Yes | +91.5% | +34.4% | |
+| | | | 16:30 | Yes | +63.8% | +223.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BONKUSDT | %6.84 | %1.00 | 20:15 | Yes | +140.4% | +198.9% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ZKUSDT | %6.11 | %4.62 | 14:30 | Yes | +249.7% | +175.0% | 🖊️ İmza (1 kez) |
+| | | | 15:30 | Yes | +39.8% | +0.2% | |
+| | | | 19:00 | Yes | +58.5% | +111.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SOMIUSDT | %5.50 | %3.58 | 01:30 | Yes | -24.5% | +14.5% | 🖊️ İmza (1 kez) |
+| | | | 13:15 | Yes | +412.5% | +186.1% | |
+| | | | 18:30 | Yes | -7.1% | -13.9% | |
+| | | | 19:45 | Yes | +36.6% | -45.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| XPLUSDT | %4.51 | **%-1.50** | 01:45 | Yes | +8.8% | +79.6% | 🖊️ İmza (1 kez) |
+| | | | 20:15 | Yes | +305.2% | +212.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MUBARAKUSDT | %4.49 | **%-0.54** | - | - | - | - | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NOMUSDT | %4.19 | %3.35 | 01:30 | Yes | +708.5% | +31.0% | 🖊️ İmza (1 kez) |
+| | | | 15:30 | Yes | +746.0% | +142.0% | |
+| | | | 17:30 | Yes | -73.7% | -85.8% | |
+| | | | 22:30 |  | -89.3% | -47.3% | |
+| | | | 23:15 | Yes | +1336.5% | +1114.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SCUSDT | %3.93 | %2.84 | 12:30 | Yes | +1909.4% | +3784.5% | 🖊️ İmza (1 kez) |
+| | | | 14:30 | Yes | -58.4% | +11.4% | |
+| | | | 16:00 | Yes | +237.6% | +42.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| REDUSDT | %2.91 | %2.14 | 19:15 | Yes | +471.2% | +372.0% | 🖊️ İmza (1 kez) |
+| | | | 20:00 | Yes | +349.6% | +69.0% | |
+| | | | 22:30 | Yes | +10.1% | -3.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HEMIUSDT | %2.67 | **%-2.67** | 20:15 | Yes | -80.8% | -65.0% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TUTUSDT | %2.40 | **%-2.56** | - | - | - | - | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ACEUSDT | %1.39 | **%-3.48** | 13:00 | Yes | +42.5% | +63.7% | 🖊️ İmza (1 kez) |
+| | | | 13:45 | Yes | +102.6% | +134.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TOWNSUSDT | %0.93 | %0.00 | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 06 Ocak 2026
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BREVUSDT | %500.00 | %368.80 | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BROCCOLI714USDT | %61.20 | %53.16 | 01:15 | Yes | +92.6% | +222.7% | 🖊️ İmza (1 kez) |
+| | | | 05:45 | Yes | +404.4% | +203.1% | |
+| | | | 06:15 | Yes | -56.1% | -44.3% | |
+| | | | 13:15 |  | +28.6% | +74.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| JASMYUSDT | %35.65 | %27.64 | 01:15 |  | +85.1% | -22.5% | 🖊️ İmza (1 kez) |
+| | | | 02:15 | Yes | +89.8% | +31.8% | |
+| | | | 06:15 |  | +201.3% | +499.5% | |
+| | | | 07:45 | Yes | +57.7% | -2.9% | |
+| | | | 10:45 |  | +81.2% | -23.8% | |
+| | | | 12:30 |  | +292.0% | +89.6% | |
+| | | | 15:15 |  | +0.3% | +82.0% | |
+| | | | 21:30 | Yes | +65.8% | +96.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SPKUSDT | %15.29 | %12.47 | 12:45 | Yes | +38.6% | +57.0% | 🖊️ İmza (2 kez) |
+| | | | 13:30 | Yes | +272.0% | +233.4% | |
+| | | | 18:45 |  | +954.9% | +1012.7% | |
+| | | | 22:45 | Yes | +138.1% | +132.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PUMPUSDT | %8.50 | %5.83 | 12:45 | Yes | +100.0% | +101.2% | 🖊️ İmza (1 kez) |
+| | | | 13:30 | Yes | +12.7% | -18.4% | |
+| | | | 14:15 | Yes | +233.8% | +271.5% | |
+| | | | 21:30 | Yes | -12.0% | +26.1% | |
+| | | | 23:15 | Yes | -15.5% | +22.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| QKCUSDT | %3.01 | %0.46 | 14:00 | Yes | +164.6% | +4.4% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| YBUSDT | %2.99 | **%-2.01** | 06:30 | Yes | +694.7% | +377.4% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BABYUSDT | %2.26 | %0.33 | 12:15 | Yes | -45.5% | -14.6% | 🖊️ İmza (1 kez) |
+| | | | 14:00 | Yes | -15.5% | -5.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| GPSUSDT | %1.53 | %0.51 | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TREEUSDT | %1.49 | %1.49 | 13:15 | Yes | -42.1% | -22.7% | 🖊️ İmza (2 kez) |
+| | | | 21:30 | Yes | -31.7% | +43.9% | |
+| | | | 23:45 | Yes | -8.2% | +83.9% | |
+
+
+
+
+
+## 📅 07 Ocak 2026
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ZKPUSDT | %129.17 | %106.78 | 23:45 | Yes | +435.6% | +915.0% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BREVUSDT | %69.46 | %23.83 | 02:15 | Yes | +148.1% | +363.8% | 🖊️ İmza (1 kez) |
+| | | | 03:30 | Yes | +30.4% | -60.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| GUNUSDT | %37.70 | %30.96 | 03:00 | Yes | +366.5% | +392.9% | 🖊️ İmza (1 kez) |
+| | | | 08:00 | Yes | +840.8% | +655.5% | |
+| | | | 13:15 | Yes | -15.0% | -52.5% | |
+| | | | 14:30 | Yes | +151.7% | +87.2% | |
+| | | | 16:00 | Yes | +71.0% | +252.7% | |
+| | | | 19:30 | Yes | -17.2% | -62.8% | |
+| | | | 20:15 | Yes | -32.9% | -0.2% | |
+| | | | 22:15 | Yes | -51.7% | -53.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| GUSDT | %20.54 | %2.49 | 04:00 | Yes | +841.7% | +718.2% | 🖊️ İmza (1 kez) |
+| | | | 11:45 | Yes | +757.1% | +4284.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SXPUSDT | %19.31 | %4.49 | 00:30 | Yes | +268.0% | +827.3% | 🖊️ İmza (4 kez) |
+| | | | 01:15 | Yes | +804.7% | +491.4% | |
+| | | | 02:00 | Yes | +671.3% | +277.2% | |
+| | | | 08:45 | Yes | +2267.3% | +2601.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ANIMEUSDT | %13.63 | %2.70 | 05:00 | Yes | +166.7% | +1224.7% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MBLUSDT | %10.69 | %2.11 | 00:30 | Yes | +108.2% | +107.9% | 🖊️ İmza (4 kez) |
+| | | | 01:00 | Yes | +21.2% | +134.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| CVCUSDT | %7.73 | %0.28 | 00:30 | Yes | +1196.5% | +467.0% | 🖊️ İmza (4 kez) |
+| | | | 08:15 |  | +2586.9% | +4132.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HUMAUSDT | %3.76 | %0.44 | 08:00 | Yes | -7.7% | -63.6% | 🖊️ İmza (1 kez) |
+| | | | 17:00 | Yes | +4.0% | +45.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| STEEMUSDT | %3.49 | **%-0.54** | 04:45 | Yes | +14456.8% | +968.5% | 🖊️ İmza (4 kez) |
+| | | | 07:00 | Yes | -18.8% | +81.4% | |
+| | | | 08:30 | Yes | -71.7% | -95.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HAEDALUSDT | %0.85 | **%-3.82** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| STXUSDT | %0.73 | **%-6.48** | - | - | - | - | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| WLFIUSDT | %0.68 | **%-3.82** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| IOTAUSDT | %0.27 | **%-4.62** | 08:00 | Yes | +196.0% | +81.1% | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BIFIUSDT | %0.21 | **%-15.07** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| GIGGLEUSDT | %0.03 | **%-12.70** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| UMAUSDT | %0.00 | **%-5.54** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 08 Ocak 2026
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| GUNUSDT | %24.54 | %4.81 | 00:30 |  | +173.3% | +41.3% | 🖊️ İmza (1 kez) |
+| | | | 15:00 | Yes | +271.2% | +757.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| JASMYUSDT | %22.91 | %14.80 | 15:30 | Yes | -1.6% | +11.0% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BREVUSDT | %14.17 | **%-8.59** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ACXUSDT | %9.21 | %8.65 | 16:45 | Yes | +637.1% | -28.7% | 🖊️ İmza (1 kez) |
+| | | | 18:15 | Yes | +170.0% | +431.4% | |
+| | | | 19:00 | Yes | -6.1% | -78.9% | |
+| | | | 20:15 | Yes | -40.1% | +171.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BABYUSDT | %7.50 | **%-9.55** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BIGTIMEUSDT | %7.29 | %2.37 | 01:45 | Yes | +254.7% | +214.7% | 🖊️ İmza (1 kez) |
+| | | | 04:30 | Yes | +98.0% | +11.1% | |
+| | | | 06:00 | Yes | +63.8% | +522.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ZKPUSDT | %6.67 | **%-24.08** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1000CHEEMSUSDT | %1.11 | **%-2.63** | 01:15 | Yes | -40.4% | -9.5% | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 09 Ocak 2026
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BIFIUSDT | %171.21 | %99.58 | 07:30 | Yes | +1845.1% | +1272.8% | 🖊️ İmza (1 kez) |
+| | | | 09:30 | Yes | -2.5% | -51.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| GUNUSDT | %35.14 | %19.52 | 01:00 | Yes | +340.3% | +36.5% | 🖊️ İmza (1 kez) |
+| | | | 01:45 | Yes | -41.0% | -43.2% | |
+| | | | 07:15 | Yes | +29.8% | +116.9% | |
+| | | | 09:00 | Yes | -20.2% | -31.5% | |
+| | | | 15:00 | Yes | +35.6% | -9.5% | |
+| | | | 18:00 | Yes | +386.1% | +259.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PUMPUSDT | %15.61 | %7.60 | 11:15 | Yes | +626.3% | +1215.6% | 🖊️ İmza (1 kez) |
+| | | | 13:15 | Yes | -19.6% | +32.4% | |
+| | | | 17:15 | Yes | +1003.2% | +1369.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| AEVOUSDT | %11.98 | %4.89 | 09:45 | Yes | -47.9% | +146.2% | 🖊️ İmza (1 kez) |
+| | | | 12:00 | Yes | +3417.0% | +1874.2% | |
+| | | | 20:00 | Yes | +1353.7% | +1876.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| CGPTUSDT | %8.94 | %5.71 | 12:15 | Yes | +64.8% | +228.2% | 🖊️ İmza (1 kez) |
+| | | | 14:15 | Yes | -32.8% | +14.3% | |
+| | | | 14:45 | Yes | -77.2% | -74.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| IOTXUSDT | %7.25 | %1.05 | 05:30 | Yes | +2667.2% | +1359.2% | 🖊️ İmza (1 kez) |
+| | | | 15:15 | Yes | +150.5% | +76.2% | |
+| | | | 16:00 | Yes | -66.8% | -74.8% | |
+| | | | 23:00 | Yes | +4563.4% | +224.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SANTOSUSDT | %2.17 | %0.81 | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| AVNTUSDT | %2.14 | %1.57 | 15:15 | Yes | +479.1% | +84.9% | 🖊️ İmza (1 kez) |
+| | | | 23:15 | Yes | +22694.0% | +13788.9% | |
+| | | | 23:45 | Yes | +151.7% | -9.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NEWTUSDT | %1.53 | %0.00 | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 10 Ocak 2026
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| GMTUSDT | %31.16 | %15.84 | 00:45 | Yes | +0.2% | +66.8% | 🖊️ İmza (1 kez) |
+| | | | 01:15 | Yes | +37.9% | +9.9% | |
+| | | | 03:30 | Yes | +386.3% | +211.5% | |
+| | | | 16:30 | Yes | -7.8% | +201.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MUBARAKUSDT | %12.40 | %8.52 | 04:00 | Yes | +198.6% | +60.4% | 🖊️ İmza (1 kez) |
+| | | | 17:00 | Yes | +132.4% | +466.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| GUNUSDT | %7.11 | **%-6.27** | 18:15 | Yes | +127.8% | +137.8% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PUMPUSDT | %4.55 | **%-2.68** | 09:15 | Yes | +7.1% | +7.3% | 🖊️ İmza (1 kez) |
+| | | | 09:45 | Yes | +133.3% | +189.0% | |
+| | | | 12:00 | Yes | +657.0% | +289.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PROMUSDT | %0.47 | **%-0.12** | 22:30 | Yes | +997.1% | +7.6% | 🖊️ İmza (1 kez) |
+| | | | 23:30 | Yes | +7.7% | +35.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| METUSDT | %0.08 | **%-5.70** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 11 Ocak 2026
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| AMPUSDT | %18.44 | %2.47 | 15:45 | Yes | +5440.9% | +12850.0% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| REZUSDT | %12.64 | %2.79 | 12:30 | Yes | +117.6% | +924.4% | 🖊️ İmza (1 kez) |
+| | | | 14:15 | Yes | +280.6% | -16.6% | |
+| | | | 15:15 | Yes | +438.4% | +174.1% | |
+| | | | 17:45 | Yes | -15.8% | +3.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ERAUSDT | %9.47 | %1.03 | 01:30 | Yes | +959.7% | +2553.5% | 🖊️ İmza (1 kez) |
+| | | | 03:00 | Yes | +329.0% | -60.5% | |
+| | | | 04:00 | Yes | +6.5% | -61.5% | |
+| | | | 09:00 | Yes | +237.5% | +339.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| WALUSDT | %8.68 | %2.35 | 03:15 | Yes | +154.8% | +479.7% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SANTOSUSDT | %5.13 | **%-1.59** | 10:45 | Yes | +222.8% | +347.4% | 🖊️ İmza (1 kez) |
+| | | | 12:45 | Yes | +152.6% | +151.9% | |
+
+
+
+
+
+## 📅 12 Ocak 2026
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| DOLOUSDT | %98.15 | %73.91 | 02:00 | Yes | +195.3% | +245.9% | 🖊️ İmza (1 kez) |
+| | | | 13:45 | Yes | +1105.4% | +1478.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ZILUSDT | %19.77 | %9.11 | 00:15 | Yes | -34.4% | +338.9% | 🖊️ İmza (1 kez) |
+| | | | 02:15 | Yes | +986.9% | +74.7% | |
+| | | | 23:30 | Yes | -2.5% | +127.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PARTIUSDT | %11.11 | %6.64 | 03:00 | Yes | +9.8% | -25.4% | 🖊️ İmza (1 kez) |
+| | | | 10:15 | Yes | +201.6% | +1036.0% | |
+| | | | 13:15 | Yes | -34.8% | -62.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PUMPUSDT | %10.59 | %1.63 | 15:30 | Yes | +123.9% | +97.7% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ZECUSDT | %9.72 | %6.65 | 01:15 | Yes | +28.7% | +278.6% | 🖊️ İmza (1 kez) |
+| | | | 05:00 | Yes | -15.8% | -44.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| DCRUSDT | %8.43 | %1.69 | 01:00 | Yes | +25.5% | +58.6% | 🖊️ İmza (1 kez) |
+| | | | 01:30 | Yes | -12.7% | +142.2% | |
+| | | | 02:00 | Yes | +1222.2% | +137.2% | |
+| | | | 02:45 | Yes | +52.7% | -49.0% | |
+| | | | 04:15 | Yes | +27.2% | -52.6% | |
+| | | | 11:00 | Yes | +565.8% | +1255.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| RUNEUSDT | %6.29 | %1.57 | 02:30 | Yes | +205.7% | +41.6% | 🖊️ İmza (1 kez) |
+| | | | 05:00 | Yes | +1298.3% | +878.6% | |
+| | | | 15:30 | Yes | -64.8% | -38.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BBUSDT | %5.91 | %1.44 | 16:30 | Yes | +449.7% | +1284.1% | 🖊️ İmza (1 kez) |
+| | | | 19:15 | Yes | -77.0% | -86.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| EIGENUSDT | %5.16 | **%-1.97** | 03:00 | Yes | -21.8% | -58.0% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PENGUUSDT | %4.77 | **%-2.16** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1000CHEEMSUSDT | %1.30 | **%-2.59** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| XPLUSDT | %1.21 | **%-6.91** | 16:30 | Yes | +0.6% | +27.5% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MOVEUSDT | %1.16 | **%-2.33** | 16:15 | Yes | +11.8% | -6.3% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HEMIUSDT | %0.61 | **%-1.23** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BREVUSDT | %0.00 | **%-6.25** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 13 Ocak 2026
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| DASHUSDT | %72.92 | %49.67 | 00:15 | Yes | +83.1% | +262.6% | 🖊️ İmza (2 kez) |
+| | | | 05:30 | Yes | -32.1% | -51.6% | |
+| | | | 06:15 |  | +105.1% | +5.7% | |
+| | | | 08:30 |  | +139.9% | +94.4% | |
+| | | | 22:30 | Yes | -72.0% | -53.8% | |
+| | | | 23:00 | Yes | +96.3% | -4.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1000SATSUSDT | %40.54 | %30.11 | 02:15 | Yes | -67.8% | -64.3% | 🖊️ İmza (2 kez) |
+| | | | 03:30 | Yes | +2672.1% | +1213.9% | |
+| | | | 04:00 | Yes | +155.8% | +56.5% | |
+| | | | 04:45 | Yes | -66.0% | -80.7% | |
+| | | | 05:15 | Yes | +18.1% | -38.1% | |
+| | | | 14:15 | Yes | -85.1% | -82.1% | |
+| | | | 18:45 | Yes | +38.3% | -55.0% | |
+| | | | 23:30 |  | +250.2% | +516.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| DCRUSDT | %39.75 | %19.39 | 03:30 | Yes | +314.0% | +1220.2% | 🖊️ İmza (2 kez) |
+| | | | 04:00 | Yes | +69.3% | +157.1% | |
+| | | | 06:30 | Yes | +162.4% | +7.5% | |
+| | | | 09:15 | Yes | +262.7% | +846.4% | |
+| | | | 11:30 | Yes | +198.2% | +225.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NOTUSDT | %29.27 | %22.82 | 04:00 | Yes | +4.8% | -52.0% | 🖊️ İmza (3 kez) |
+| | | | 04:45 | Yes | -17.0% | -85.3% | |
+| | | | 06:30 | Yes | -57.0% | -83.8% | |
+| | | | 08:45 | Yes | -3.9% | +154.4% | |
+| | | | 10:15 | Yes | -77.5% | -59.9% | |
+| | | | 12:00 | Yes | +66.9% | -44.0% | |
+| | | | 20:00 |  | +302.1% | +217.0% | |
+| | | | 21:15 |  | +178.8% | +315.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| AXSUSDT | %25.06 | %16.45 | 04:45 | Yes | -71.0% | -52.5% | 🖊️ İmza (2 kez) |
+| | | | 08:45 | Yes | +192.5% | +239.5% | |
+| | | | 10:45 | Yes | +1.8% | +194.6% | |
+| | | | 11:15 | Yes | -11.3% | -73.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| APEUSDT | %24.43 | %16.37 | 05:00 | Yes | +52.3% | +5.6% | 🖊️ İmza (3 kez) |
+| | | | 06:45 | Yes | +219.3% | +109.9% | |
+| | | | 08:00 | Yes | +103.4% | -57.0% | |
+| | | | 08:30 | Yes | +595.4% | +4.2% | |
+| | | | 11:30 | Yes | +6.2% | +113.4% | |
+| | | | 13:30 |  | +246.0% | +234.2% | |
+| | | | 15:30 | Yes | +25.7% | -22.8% | |
+| | | | 21:45 |  | +168.3% | +233.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| CKBUSDT | %20.60 | %11.21 | 09:15 | Yes | +591.5% | +386.8% | 🖊️ İmza (1 kez) |
+| | | | 11:15 | Yes | +95.9% | -65.0% | |
+| | | | 13:30 | Yes | +415.5% | +502.4% | |
+| | | | 15:30 | Yes | -46.8% | -20.9% | |
+| | | | 16:30 | Yes | -64.2% | -38.2% | |
+| | | | 17:15 | Yes | +187.2% | +34.9% | |
+| | | | 22:00 |  | +2253.6% | +1814.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ICPUSDT | %20.37 | %16.48 | 05:00 | Yes | +139.6% | +78.8% | 🖊️ İmza (2 kez) |
+| | | | 06:45 | Yes | +153.2% | +88.5% | |
+| | | | 07:30 | Yes | +137.7% | +18.2% | |
+| | | | 08:45 | Yes | +36.4% | +88.8% | |
+| | | | 10:00 | Yes | +138.5% | +73.6% | |
+| | | | 11:15 | Yes | +31.7% | -5.4% | |
+| | | | 14:30 |  | +153.0% | -2.4% | |
+| | | | 15:00 | Yes | +103.3% | +68.2% | |
+| | | | 22:45 | Yes | -33.3% | -45.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PARTIUSDT | %17.85 | %16.02 | 11:15 | Yes | -41.7% | -0.8% | 🖊️ İmza (1 kez) |
+| | | | 12:30 | Yes | -7.9% | -72.1% | |
+| | | | 13:30 | Yes | +21.6% | +181.9% | |
+| | | | 14:15 | Yes | -86.5% | -82.7% | |
+| | | | 16:30 | Yes | +141.3% | +10.4% | |
+| | | | 17:45 | Yes | -46.6% | -42.4% | |
+| | | | 18:45 | Yes | +21.8% | +18.0% | |
+| | | | 19:15 | Yes | -14.3% | -56.4% | |
+| | | | 22:15 |  | +35.8% | +15.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PIVXUSDT | %16.32 | %8.16 | 03:45 | Yes | +629.5% | +683.5% | 🖊️ İmza (1 kez) |
+| | | | 09:30 | Yes | -7.4% | +42.4% | |
+| | | | 10:15 | Yes | +117.5% | +430.2% | |
+| | | | 11:30 | Yes | +1.8% | -5.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ROSEUSDT | %15.59 | %10.90 | 01:00 | Yes | +103.7% | +32.7% | 🖊️ İmza (1 kez) |
+| | | | 02:00 | Yes | +541.4% | +507.0% | |
+| | | | 03:45 | Yes | +200.6% | +10.0% | |
+| | | | 08:30 |  | +71.8% | -25.9% | |
+| | | | 10:00 | Yes | +37.3% | +61.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PEPEUSDT | %15.33 | %14.46 | 05:15 | Yes | +1.6% | +149.6% | 🖊️ İmza (1 kez) |
+| | | | 08:45 | Yes | +148.6% | +182.8% | |
+| | | | 10:15 | Yes | -38.9% | -2.9% | |
+| | | | 19:45 | Yes | -12.2% | +21.5% | |
+| | | | 22:00 | Yes | +2157.4% | +1089.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| RONINUSDT | %14.46 | %13.77 | 05:00 | Yes | +297.2% | +95.3% | 🖊️ İmza (3 kez) |
+| | | | 06:45 | Yes | +241.9% | +155.3% | |
+| | | | 12:45 | Yes | +1091.3% | +1795.6% | |
+| | | | 15:00 | Yes | +137.1% | -12.5% | |
+| | | | 19:30 |  | +395.1% | +62.4% | |
+| | | | 22:00 |  | +2354.0% | +761.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PUMPUSDT | %13.13 | %9.36 | 06:45 | Yes | +140.3% | +38.0% | 🖊️ İmza (1 kez) |
+| | | | 14:15 | Yes | -38.3% | -29.0% | |
+| | | | 19:45 | Yes | -21.8% | -18.2% | |
+| | | | 22:30 | Yes | -41.4% | +24.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| VIRTUALUSDT | %9.54 | %6.74 | 09:30 | Yes | +150.4% | +261.3% | 🖊️ İmza (1 kez) |
+| | | | 13:30 | Yes | +852.1% | +709.1% | |
+| | | | 22:00 |  | +1556.4% | +1882.0% | |
+| | | | 22:30 | Yes | +11.9% | +139.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BIGTIMEUSDT | %8.95 | %8.06 | 06:45 | Yes | +500.4% | +380.6% | 🖊️ İmza (1 kez) |
+| | | | 14:15 | Yes | -61.6% | -73.1% | |
+| | | | 15:45 | Yes | -44.3% | -20.1% | |
+| | | | 16:30 | Yes | -47.0% | -53.9% | |
+| | | | 21:00 |  | +2078.6% | +663.5% | |
+| | | | 22:00 |  | +2301.8% | +863.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ASTERUSDT | %7.73 | %6.27 | 04:00 | Yes | -61.6% | -60.4% | 🖊️ İmza (1 kez) |
+| | | | 05:00 | Yes | +15.3% | +55.1% | |
+| | | | 12:30 | Yes | -54.1% | -7.9% | |
+| | | | 13:15 | Yes | +64.2% | +18.0% | |
+| | | | 14:15 | Yes | -33.8% | +7.5% | |
+| | | | 16:45 | Yes | +207.7% | +92.5% | |
+| | | | 22:00 |  | +884.6% | +545.6% | |
+| | | | 22:30 | Yes | -7.0% | +67.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BERAUSDT | %6.98 | %4.83 | 05:15 | Yes | +51.2% | -15.8% | 🖊️ İmza (1 kez) |
+| | | | 13:30 | Yes | +973.2% | +551.4% | |
+| | | | 14:15 | Yes | +62.8% | +6.6% | |
+| | | | 16:45 | Yes | -41.5% | +86.0% | |
+| | | | 22:15 | Yes | -52.3% | +132.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| DOLOUSDT | %2.07 | **%-18.62** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BIFIUSDT | %1.29 | **%-6.87** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BANKUSDT | %0.85 | **%-3.61** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| GNSUSDT | %0.79 | **%-5.65** | - | - | - | - | 🖊️ İmza (2 kez) |
+
+
+
+
+
+## 📅 14 Ocak 2026
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BLURUSDT | %35.81 | %18.42 | 00:00 | Yes | +2341.4% | +894.5% | 🖊️ İmza (3 kez) |
+| | | | 00:45 | Yes | +73.2% | +50.0% | |
+| | | | 02:00 | Yes | -83.5% | -49.4% | |
+| | | | 03:15 | Yes | -8.9% | -85.9% | |
+| | | | 04:30 |  | +473.7% | +585.2% | |
+| | | | 06:30 |  | -50.1% | +15.3% | |
+| | | | 07:00 |  | +110.0% | +180.6% | |
+| | | | 07:30 |  | +75.9% | +259.0% | |
+| | | | 11:45 |  | +534.6% | +725.8% | |
+| | | | 21:30 |  | +950.4% | +1024.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| DCRUSDT | %30.59 | %16.25 | 06:45 | Yes | +361.3% | +663.8% | 🖊️ İmza (1 kez) |
+| | | | 10:00 | Yes | -3.2% | +127.4% | |
+| | | | 10:30 | Yes | +158.0% | +475.8% | |
+| | | | 16:00 | Yes | +394.4% | +165.4% | |
+| | | | 18:15 | Yes | +192.1% | +362.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| METISUSDT | %21.72 | %12.92 | 00:45 | Yes | -44.2% | -75.5% | 🖊️ İmza (2 kez) |
+| | | | 09:15 | Yes | +45.6% | +155.0% | |
+| | | | 17:00 | Yes | -67.6% | +24.7% | |
+| | | | 19:00 | Yes | +593.3% | +238.7% | |
+| | | | 20:00 | Yes | +5.1% | -14.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| DOLOUSDT | %14.47 | %10.71 | 01:00 | Yes | +170.2% | +588.5% | 🖊️ İmza (1 kez) |
+| | | | 05:00 | Yes | +24.9% | +68.2% | |
+| | | | 19:15 | Yes | -24.8% | +126.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PUMPUSDT | %13.62 | %5.74 | 02:30 | Yes | -23.0% | +13.5% | 🖊️ İmza (1 kez) |
+| | | | 03:30 | Yes | -40.9% | -42.1% | |
+| | | | 16:00 | Yes | +152.4% | +134.1% | |
+| | | | 17:00 | Yes | -51.6% | -57.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PIVXUSDT | %13.51 | %6.75 | 09:45 | Yes | +511.3% | +397.2% | 🖊️ İmza (2 kez) |
+| | | | 13:15 | Yes | +672.8% | +750.8% | |
+| | | | 16:15 | Yes | +148.7% | +116.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MEUSDT | %11.85 | %6.23 | 00:45 |  | +226.7% | +136.9% | 🖊️ İmza (3 kez) |
+| | | | 06:30 | Yes | -20.1% | +165.6% | |
+| | | | 12:30 | Yes | -39.1% | +76.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MOVEUSDT | %11.14 | %4.18 | 00:45 | Yes | +66.8% | +25.7% | 🖊️ İmza (3 kez) |
+| | | | 12:00 | Yes | +57.7% | +304.1% | |
+| | | | 13:00 | Yes | +390.8% | +333.3% | |
+| | | | 14:00 | Yes | +390.4% | +538.3% | |
+| | | | 15:30 | Yes | -28.3% | -80.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TOWNSUSDT | %8.35 | %3.53 | 01:00 | Yes | +31.7% | +36.5% | 🖊️ İmza (2 kez) |
+| | | | 02:00 | Yes | +85.9% | -3.8% | |
+| | | | 09:00 |  | +1459.6% | +1087.6% | |
+| | | | 15:15 | Yes | -36.2% | +11.6% | |
+| | | | 16:00 | Yes | +3483.5% | +2004.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| CHZUSDT | %8.33 | %4.31 | 02:00 | Yes | +2059.7% | +856.3% | 🖊️ İmza (1 kez) |
+| | | | 02:30 | Yes | -60.2% | -43.1% | |
+| | | | 03:00 | Yes | +7.9% | -21.0% | |
+| | | | 18:45 | Yes | +3.5% | +24.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| KAVAUSDT | %7.72 | %4.03 | 02:00 | Yes | -24.0% | -35.5% | 🖊️ İmza (2 kez) |
+| | | | 06:45 | Yes | +30.2% | -15.8% | |
+| | | | 07:15 | Yes | +247.6% | +311.5% | |
+| | | | 12:00 | Yes | -20.2% | +76.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| DUSKUSDT | %7.44 | **%-0.15** | 06:45 | Yes | +765.4% | +801.1% | 🌐 Global (1 kez) |
+| | | | 16:15 | Yes | +383.0% | +408.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| LAUSDT | %6.84 | %4.35 | 02:30 | Yes | +36.5% | -91.2% | 🖊️ İmza (1 kez) |
+| | | | 04:15 | Yes | -32.0% | +192.3% | |
+| | | | 15:15 |  | -67.6% | -36.9% | |
+| | | | 15:45 | Yes | +10.6% | +22.0% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 2ZUSDT | %6.09 | %3.01 | 03:45 | Yes | +86.9% | +289.5% | 🖊️ İmza (2 kez) |
+| | | | 04:15 | Yes | +170.2% | +303.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| INITUSDT | %5.76 | %2.55 | 00:45 | Yes | +204.2% | +90.2% | 🖊️ İmza (1 kez) |
+| | | | 14:00 | Yes | +82.3% | +668.0% | |
+| | | | 21:00 | Yes | -83.0% | -55.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| USUALUSDT | %4.83 | %0.69 | 00:00 | Yes | +1580.5% | +382.1% | 🖊️ İmza (1 kez) |
+| | | | 00:30 | Yes | -35.0% | -72.6% | |
+| | | | 10:00 | Yes | -66.0% | +10.9% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MITOUSDT | %4.24 | %1.60 | 01:00 | Yes | +4186.1% | +1179.0% | 🖊️ İmza (1 kez) |
+| | | | 15:45 | Yes | +97.4% | -49.6% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HOLOUSDT | %3.35 | **%-0.26** | 01:00 | Yes | -78.6% | -69.1% | 🖊️ İmza (2 kez) |
+| | | | 15:15 | Yes | +80.0% | +167.6% | |
+| | | | 16:15 | Yes | -46.7% | -22.5% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SKYUSDT | %1.84 | %1.03 | 08:15 |  | +1079.7% | +620.6% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| IOUSDT | %1.79 | **%-2.38** | - | - | - | - | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ZBTUSDT | %1.65 | %0.09 | 16:00 | Yes | +285.9% | +26.4% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BARDUSDT | %1.55 | **%-8.16** | 02:15 | Yes | -92.0% | -66.1% | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ORDIUSDT | %1.44 | **%-8.06** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ZKPUSDT | %1.15 | **%-6.54** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BREVUSDT | %0.06 | **%-6.51** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 15 Ocak 2026
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FOGOUSDT | %177.37 | %39.29 | - | - | - | - | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FRAXUSDT | %93.84 | %15.87 | - | - | - | - | 🖊️ İmza (2 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| DCRUSDT | %31.92 | %14.52 | 06:00 | Yes | +190.5% | +251.9% | 🖊️ İmza (1 kez) |
+| | | | 09:30 | Yes | +311.5% | +188.0% | |
+| | | | 10:15 | Yes | +144.3% | +145.1% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MOVEUSDT | %24.87 | %5.08 | 00:00 |  | +6767.5% | +9674.5% | 🖊️ İmza (1 kez) |
+| | | | 21:15 |  | +5383.2% | +3312.7% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| HIGHUSDT | %16.38 | **%-3.02** | 22:00 | Yes | +52439.0% | +13556.3% | 🖊️ İmza (2 kez) |
+| | | | 22:30 | Yes | -46.1% | +17.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BREVUSDT | %9.19 | **%-3.68** | 07:00 | Yes | +65.3% | +90.2% | 🖊️ İmza (1 kez) |
+| | | | 07:30 | Yes | +29.8% | +24.9% | |
+| | | | 08:30 | Yes | +34.9% | +11.4% | |
+| | | | 10:15 | Yes | +1.7% | -7.2% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| DUSKUSDT | %8.66 | **%-3.50** | 07:30 | Yes | +1.5% | +345.3% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 2ZUSDT | %6.81 | **%-0.83** | 10:00 | Yes | +504.7% | +296.0% | 🖊️ İmza (2 kez) |
+| | | | 12:00 | Yes | +79.0% | -66.7% | |
+| | | | 12:30 | Yes | +272.8% | +203.8% | |
+| | | | 14:45 | Yes | -62.9% | -19.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SANTOSUSDT | %6.25 | %4.47 | 09:15 | Yes | +946.9% | +333.4% | 🌐 Global (1 kez) |
+| | | | 16:30 |  | +281.5% | +660.3% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PROMUSDT | %5.19 | **%-12.07** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SOPHUSDT | %3.21 | **%-2.41** | 06:45 | Yes | +2332.2% | +1628.0% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NILUSDT | %1.76 | **%-3.12** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| AXSUSDT | %0.65 | **%-11.35** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BBUSDT | %0.46 | **%-5.38** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| AWEUSDT | %0.00 | **%-4.68** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+
+## 📅 16 Ocak 2026
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| DUSKUSDT | %83.78 | %63.94 | 05:00 | Yes | +193.2% | +111.4% | 🖊️ İmza (1 kez) |
+| | | | 08:15 | Yes | +450.7% | +404.9% | |
+| | | | 11:45 | Yes | +536.4% | +619.8% | |
+| | | | 12:45 | Yes | -27.5% | -48.8% | |
+| | | | 21:45 |  | +968.7% | +1036.8% | |
+| | | | 23:00 | Yes | -50.0% | -29.8% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| METUSDT | %31.32 | %25.23 | 06:30 | Yes | -27.3% | -9.5% | 🖊️ İmza (1 kez) |
+| | | | 09:00 | Yes | +19.3% | -41.7% | |
+| | | | 12:15 |  | +0.2% | +74.6% | |
+| | | | 13:15 | Yes | +272.9% | +119.3% | |
+| | | | 21:00 | Yes | +226.7% | +359.6% | |
+| | | | 21:30 | Yes | -33.7% | +19.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FRAXUSDT | %5.67 | **%-17.06** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| MANAUSDT | %3.25 | %0.62 | 02:30 | Yes | +64.2% | +193.3% | 🖊️ İmza (1 kez) |
+| | | | 07:00 | Yes | -24.4% | +112.8% | |
+| | | | 20:30 | Yes | +91.2% | +297.9% | |
+| | | | 21:15 | Yes | +30.6% | -21.2% | |
+| | | | 22:00 | Yes | +23.0% | +22.4% | |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| LISTAUSDT | %2.78 | %2.21 | 20:45 | Yes | -82.2% | -18.4% | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| STOUSDT | %2.68 | %2.01 | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
+| COIN | GÜN İÇİ ZİRVE | GÜNLÜK KAPANIŞ | TETİK (15m) | Rsi-rib | Vol-Change | Vol-Avg | DNA FREKANSI |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NXPCUSDT | %0.50 | **%-1.20** | - | - | - | - | 🖊️ İmza (1 kez) |
+
+
+
+
