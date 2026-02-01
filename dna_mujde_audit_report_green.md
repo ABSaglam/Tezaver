@@ -1,0 +1,71 @@
+# DNA MÜJDE (YEŞİL) AUDITRAPORU
+Tarih: 2026-02-01 08:33:35.685281
+Koin: 65
+
+| Coin | Selected Strategy | Win Rate (Pre -> Post) | Signals (Pre -> Post) | Diamond Loss |
+|---|---|---|---|---|
+| SOPHUSDT | Base | 66.7% -> 66.7% | 3 -> 3 | 0 |
+| ZKUSDT | S3_NoSqueeze | 42.9% -> 60.0% | 7 -> 5 | 0 |
+| BCHUSDT | Base | 100.0% -> 100.0% | 1 -> 1 | 0 |
+| SYNUSDT | S7_Strict_ADX | 50.0% -> 100.0% | 2 -> 1 | 0 |
+| DEGOUSDT | S3_NoSqueeze | 33.3% -> 50.0% | 3 -> 2 | 0 |
+| SYSUSDT | S7_Strict_ADX | 33.3% -> 50.0% | 3 -> 2 | 0 |
+| PIVXUSDT | Base | 50.0% -> 50.0% | 6 -> 6 | 0 |
+| SCRTUSDT | S1_NoBear | 33.3% -> 50.0% | 3 -> 2 | 0 |
+| MTLUSDT | S1_NoBear | 50.0% -> 100.0% | 2 -> 1 | 0 |
+| BELUSDT | Base | 100.0% -> 100.0% | 1 -> 1 | 0 |
+| BERAUSDT | S1_NoBear | 33.3% -> 100.0% | 3 -> 1 | 0 |
+| MDTUSDT | S3_NoSqueeze | 50.0% -> 100.0% | 2 -> 1 | 0 |
+| HUMAUSDT | S1_NoBear | 33.3% -> 50.0% | 3 -> 2 | 0 |
+| TRUMPUSDT | S3_NoSqueeze | 50.0% -> 100.0% | 2 -> 1 | 0 |
+| SANTOSUSDT | S2_Vol | 33.3% -> 50.0% | 6 -> 4 | 0 |
+| ICPUSDT | S3_NoSqueeze | 50.0% -> 100.0% | 2 -> 1 | 0 |
+| MOVRUSDT | S1_NoBear | 50.0% -> 100.0% | 2 -> 1 | 0 |
+| SIGNUSDT | S2_Vol | 50.0% -> 100.0% | 2 -> 1 | 0 |
+| BROCCOLI714USDT | S4_Müjde | 50.0% -> 100.0% | 6 -> 1 | 0 |
+| MUBARAKUSDT | S3_NoSqueeze | 42.9% -> 75.0% | 7 -> 4 | 0 |
+| WCTUSDT | S1_NoBear | 62.5% -> 100.0% | 8 -> 3 | 0 |
+| TNSRUSDT | S4_Müjde | 40.0% -> 100.0% | 5 -> 1 | 0 |
+| RESOLVUSDT | Base | 50.0% -> 50.0% | 12 -> 12 | 0 |
+| LAUSDT | S1_NoBear | 50.0% -> 100.0% | 2 -> 1 | 0 |
+| MOVEUSDT | S1_NoBear | 50.0% -> 100.0% | 2 -> 1 | 0 |
+| STRAXUSDT | S4_Müjde | 33.3% -> 100.0% | 3 -> 1 | 0 |
+| SUSDT | Base | 100.0% -> 100.0% | 1 -> 1 | 0 |
+| WLDUSDT | Base | 33.3% -> 33.3% | 3 -> 3 | 0 |
+| PARTIUSDT | Base | 36.4% -> 36.4% | 11 -> 11 | 0 |
+| VTHOUSDT | Base | 100.0% -> 100.0% | 1 -> 1 | 0 |
+| ZENUSDT | Base | 33.3% -> 33.3% | 3 -> 3 | 0 |
+| TLMUSDT | Base | 100.0% -> 100.0% | 1 -> 1 | 0 |
+| DCRUSDT | S7_Strict_ADX | 66.7% -> 72.7% | 12 -> 11 | 0 |
+| PONDUSDT | Base | 100.0% -> 100.0% | 1 -> 1 | 0 |
+| HAEDALUSDT | Base | 50.0% -> 50.0% | 2 -> 2 | 0 |
+| POLYXUSDT | Base | 50.0% -> 50.0% | 2 -> 2 | 0 |
+| SUPERUSDT | S2_Vol | 40.0% -> 50.0% | 5 -> 2 | 0 |
+| STRKUSDT | S2_Vol | 60.0% -> 100.0% | 5 -> 1 | 0 |
+| ALCXUSDT | S2_Vol | 33.3% -> 50.0% | 3 -> 2 | 0 |
+| ANIMEUSDT | S1_NoBear | 33.3% -> 100.0% | 3 -> 1 | 0 |
+| PIXELUSDT | Base | 33.3% -> 33.3% | 3 -> 3 | 0 |
+| CTSIUSDT | S3_NoSqueeze | 50.0% -> 100.0% | 2 -> 1 | 0 |
+| HYPERUSDT | S1_NoBear | 33.3% -> 100.0% | 6 -> 1 | 0 |
+| LAYERUSDT | S1_NoBear | 50.0% -> 100.0% | 2 -> 1 | 0 |
+| SXPUSDT | S2_Vol | 50.0% -> 100.0% | 2 -> 1 | 0 |
+| STOUSDT | Base | 100.0% -> 100.0% | 1 -> 1 | 0 |
+| 1000SATSUSDT | S1_NoBear | 33.3% -> 50.0% | 3 -> 2 | 0 |
+| PLUMEUSDT | S3_NoSqueeze | 50.0% -> 100.0% | 2 -> 1 | 0 |
+| JUVUSDT | Base | 33.3% -> 33.3% | 3 -> 3 | 0 |
+| SAHARAUSDT | Base | 100.0% -> 100.0% | 1 -> 1 | 0 |
+| AAVEUSDT | S3_NoSqueeze | 50.0% -> 100.0% | 2 -> 1 | 0 |
+| DOLOUSDT | Base | 75.0% -> 75.0% | 4 -> 4 | 0 |
+| FARMUSDT | Base | 100.0% -> 100.0% | 1 -> 1 | 0 |
+| STORJUSDT | Base | 33.3% -> 33.3% | 3 -> 3 | 0 |
+| GMTUSDT | Base | 100.0% -> 100.0% | 2 -> 2 | 0 |
+| WOOUSDT | Base | 100.0% -> 100.0% | 1 -> 1 | 0 |
+| PEPEUSDT | Base | 100.0% -> 100.0% | 1 -> 1 | 0 |
+| FTTUSDT | Base | 100.0% -> 100.0% | 1 -> 1 | 0 |
+| IOTXUSDT | Base | 100.0% -> 100.0% | 1 -> 1 | 0 |
+| PUMPUSDT | S2_Vol | 33.3% -> 50.0% | 3 -> 2 | 0 |
+| ROSEUSDT | Base | 100.0% -> 100.0% | 1 -> 1 | 0 |
+| LRCUSDT | Base | 100.0% -> 100.0% | 1 -> 1 | 0 |
+| BIGTIMEUSDT | Base | 100.0% -> 100.0% | 1 -> 1 | 0 |
+| RIFUSDT | Base | 100.0% -> 100.0% | 1 -> 1 | 0 |
+| ZBTUSDT | Base | 100.0% -> 100.0% | 1 -> 1 | 0 |

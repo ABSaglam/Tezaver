@@ -1,0 +1,3809 @@
+{
+    "0GUSDT": {
+        "pos_threshold": 0.6,
+        "vol_threshold": 0.6,
+        "stats": {
+            "precision": 70.0,
+            "recall": 28.6,
+            "total_tiers": 49
+        }
+    },
+    "1000CATUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 35.4,
+            "recall": 34.4,
+            "total_tiers": 151
+        }
+    },
+    "1000CHEEMSUSDT": {
+        "pos_threshold": 0.4,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 31.6,
+            "recall": 35.2,
+            "total_tiers": 105
+        }
+    },
+    "1000SATSUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 38.6,
+            "recall": 38.9,
+            "total_tiers": 283
+        }
+    },
+    "1INCHUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 21.7,
+            "recall": 45.8,
+            "total_tiers": 227
+        }
+    },
+    "1MBABYDOGEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.6,
+        "stats": {
+            "precision": 35.7,
+            "recall": 41.7,
+            "total_tiers": 156
+        }
+    },
+    "2ZUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.9,
+        "stats": {
+            "precision": 56.0,
+            "recall": 32.6,
+            "total_tiers": 43
+        }
+    },
+    "A2ZUSDT": {
+        "pos_threshold": 0.5,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 39.2,
+            "recall": 38.5,
+            "total_tiers": 52
+        }
+    },
+    "AAVEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 27.4,
+            "recall": 42.8,
+            "total_tiers": 290
+        }
+    },
+    "ACAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 35.7,
+            "recall": 39.8,
+            "total_tiers": 384
+        }
+    },
+    "ACEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 34.7,
+            "recall": 36.4,
+            "total_tiers": 253
+        }
+    },
+    "ACHUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 30.3,
+            "recall": 41.8,
+            "total_tiers": 347
+        }
+    },
+    "ACMUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 20.5,
+            "recall": 46.0,
+            "total_tiers": 211
+        }
+    },
+    "ACTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 38.9,
+            "recall": 36.5,
+            "total_tiers": 167
+        }
+    },
+    "ACXUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 30.8,
+            "recall": 34.2,
+            "total_tiers": 120
+        }
+    },
+    "ADAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 21.8,
+            "recall": 47.5,
+            "total_tiers": 217
+        }
+    },
+    "ADXUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 20.8,
+            "recall": 39.4,
+            "total_tiers": 254
+        }
+    },
+    "AEVOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 34.2,
+            "recall": 42.2,
+            "total_tiers": 223
+        }
+    },
+    "AGLDUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 36.1,
+            "recall": 41.3,
+            "total_tiers": 368
+        }
+    },
+    "AIUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 40.0,
+            "recall": 44.0,
+            "total_tiers": 273
+        }
+    },
+    "AIXBTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 52.0,
+            "recall": 42.5,
+            "total_tiers": 181
+        }
+    },
+    "ALCXUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 29.6,
+            "recall": 46.0,
+            "total_tiers": 300
+        }
+    },
+    "ALGOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 22.9,
+            "recall": 46.3,
+            "total_tiers": 246
+        }
+    },
+    "ALICEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 28.2,
+            "recall": 43.9,
+            "total_tiers": 303
+        }
+    },
+    "ALLOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.9,
+        "stats": {
+            "precision": 42.1,
+            "recall": 33.3,
+            "total_tiers": 24
+        }
+    },
+    "ALPINEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 25.5,
+            "recall": 45.2,
+            "total_tiers": 263
+        }
+    },
+    "ALTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 39.3,
+            "recall": 43.4,
+            "total_tiers": 258
+        }
+    },
+    "AMPUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 30.1,
+            "recall": 39.2,
+            "total_tiers": 332
+        }
+    },
+    "ANIMEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 32.8,
+            "recall": 38.9,
+            "total_tiers": 113
+        }
+    },
+    "ANKRUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 24.5,
+            "recall": 50.0,
+            "total_tiers": 242
+        }
+    },
+    "APEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 23.4,
+            "recall": 39.6,
+            "total_tiers": 265
+        }
+    },
+    "API3USDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 30.0,
+            "recall": 41.5,
+            "total_tiers": 328
+        }
+    },
+    "APTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 27.1,
+            "recall": 46.1,
+            "total_tiers": 269
+        }
+    },
+    "ARBUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 26.9,
+            "recall": 47.8,
+            "total_tiers": 245
+        }
+    },
+    "ARDRUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 26.4,
+            "recall": 52.9,
+            "total_tiers": 238
+        }
+    },
+    "ARKMUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 42.0,
+            "recall": 43.1,
+            "total_tiers": 362
+        }
+    },
+    "ARKUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 34.0,
+            "recall": 45.3,
+            "total_tiers": 236
+        }
+    },
+    "ARPAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 29.4,
+            "recall": 48.0,
+            "total_tiers": 300
+        }
+    },
+    "ARUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 34.4,
+            "recall": 43.4,
+            "total_tiers": 348
+        }
+    },
+    "ASRUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 24.5,
+            "recall": 41.5,
+            "total_tiers": 253
+        }
+    },
+    "ASTERUSDT": {
+        "pos_threshold": 0.4,
+        "vol_threshold": 0.6,
+        "stats": {
+            "precision": 34.5,
+            "recall": 24.4,
+            "total_tiers": 41
+        }
+    },
+    "ASTRUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 27.6,
+            "recall": 44.1,
+            "total_tiers": 272
+        }
+    },
+    "ATAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 24.9,
+            "recall": 40.6,
+            "total_tiers": 298
+        }
+    },
+    "ATMUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 20.4,
+            "recall": 40.1,
+            "total_tiers": 232
+        }
+    },
+    "ATOMUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 15.2,
+            "recall": 41.7,
+            "total_tiers": 175
+        }
+    },
+    "ATUSDT": {
+        "pos_threshold": 0.4,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 47.6,
+            "recall": 38.5,
+            "total_tiers": 26
+        }
+    },
+    "AUCTIONUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 37.3,
+            "recall": 42.2,
+            "total_tiers": 360
+        }
+    },
+    "AUDIOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 27.6,
+            "recall": 44.7,
+            "total_tiers": 293
+        }
+    },
+    "AUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 18.1,
+            "recall": 38.2,
+            "total_tiers": 34
+        }
+    },
+    "AVAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 21.4,
+            "recall": 39.4,
+            "total_tiers": 264
+        }
+    },
+    "AVAXUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 26.8,
+            "recall": 49.4,
+            "total_tiers": 267
+        }
+    },
+    "AVNTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.6,
+        "stats": {
+            "precision": 39.5,
+            "recall": 29.4,
+            "total_tiers": 51
+        }
+    },
+    "AWEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 34.6,
+            "recall": 35.1,
+            "total_tiers": 77
+        }
+    },
+    "AXLUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 32.1,
+            "recall": 38.2,
+            "total_tiers": 212
+        }
+    },
+    "AXSUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 26.0,
+            "recall": 49.6,
+            "total_tiers": 246
+        }
+    },
+    "BABYUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 31.1,
+            "recall": 36.0,
+            "total_tiers": 89
+        }
+    },
+    "BANANAS31USDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 36.0,
+            "recall": 36.4,
+            "total_tiers": 110
+        }
+    },
+    "BANANAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 38.1,
+            "recall": 38.7,
+            "total_tiers": 194
+        }
+    },
+    "BANDUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 23.4,
+            "recall": 43.4,
+            "total_tiers": 256
+        }
+    },
+    "BANKUSDT": {
+        "pos_threshold": 0.7,
+        "vol_threshold": 0.9,
+        "stats": {
+            "precision": 100.0,
+            "recall": 12.8,
+            "total_tiers": 39
+        }
+    },
+    "BARDUSDT": {
+        "pos_threshold": 0.4,
+        "vol_threshold": 0.6,
+        "stats": {
+            "precision": 37.2,
+            "recall": 41.0,
+            "total_tiers": 39
+        }
+    },
+    "BARUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 20.7,
+            "recall": 45.5,
+            "total_tiers": 222
+        }
+    },
+    "BATUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 21.6,
+            "recall": 44.0,
+            "total_tiers": 241
+        }
+    },
+    "BBUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 44.0,
+            "recall": 41.2,
+            "total_tiers": 250
+        }
+    },
+    "BCHUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 20.3,
+            "recall": 42.2,
+            "total_tiers": 206
+        }
+    },
+    "BEAMXUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 44.5,
+            "recall": 45.9,
+            "total_tiers": 329
+        }
+    },
+    "BELUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 31.1,
+            "recall": 48.8,
+            "total_tiers": 334
+        }
+    },
+    "BERAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 39.5,
+            "recall": 36.3,
+            "total_tiers": 135
+        }
+    },
+    "BICOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 30.8,
+            "recall": 40.0,
+            "total_tiers": 315
+        }
+    },
+    "BIFIUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 18.7,
+            "recall": 42.4,
+            "total_tiers": 210
+        }
+    },
+    "BIGTIMEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.7,
+        "stats": {
+            "precision": 31.0,
+            "recall": 38.2,
+            "total_tiers": 68
+        }
+    },
+    "BIOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 52.3,
+            "recall": 39.4,
+            "total_tiers": 170
+        }
+    },
+    "BLURUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 32.0,
+            "recall": 38.8,
+            "total_tiers": 240
+        }
+    },
+    "BMTUSDT": {
+        "pos_threshold": 0.4,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 31.7,
+            "recall": 34.0,
+            "total_tiers": 94
+        }
+    },
+    "BNSOLUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 18.1,
+            "recall": 30.2,
+            "total_tiers": 96
+        }
+    },
+    "BNTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 19.5,
+            "recall": 45.9,
+            "total_tiers": 183
+        }
+    },
+    "BOMEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 42.8,
+            "recall": 39.5,
+            "total_tiers": 271
+        }
+    },
+    "BONKUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 45.2,
+            "recall": 42.3,
+            "total_tiers": 324
+        }
+    },
+    "BROCCOLI714USDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 49.2,
+            "recall": 41.4,
+            "total_tiers": 140
+        }
+    },
+    "BTCUSDT": {
+        "pos_threshold": 0.7,
+        "vol_threshold": 0.9,
+        "stats": {
+            "precision": 15.0,
+            "recall": 38.6,
+            "total_tiers": 83
+        }
+    },
+    "BTTCUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 24.6,
+            "recall": 45.7,
+            "total_tiers": 173
+        }
+    },
+    "C98USDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 27.9,
+            "recall": 41.5,
+            "total_tiers": 299
+        }
+    },
+    "CAKEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 26.0,
+            "recall": 47.1,
+            "total_tiers": 227
+        }
+    },
+    "CATIUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 36.5,
+            "recall": 38.5,
+            "total_tiers": 161
+        }
+    },
+    "CELOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 28.8,
+            "recall": 45.3,
+            "total_tiers": 287
+        }
+    },
+    "CELRUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 28.0,
+            "recall": 44.1,
+            "total_tiers": 311
+        }
+    },
+    "CETUSUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 41.2,
+            "recall": 41.2,
+            "total_tiers": 165
+        }
+    },
+    "CFXUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 32.3,
+            "recall": 41.8,
+            "total_tiers": 337
+        }
+    },
+    "CGPTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 32.7,
+            "recall": 39.4,
+            "total_tiers": 127
+        }
+    },
+    "CHESSUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 34.3,
+            "recall": 44.5,
+            "total_tiers": 371
+        }
+    },
+    "CHRUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 25.6,
+            "recall": 40.8,
+            "total_tiers": 304
+        }
+    },
+    "CHZUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 21.0,
+            "recall": 45.1,
+            "total_tiers": 224
+        }
+    },
+    "CITYUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 18.6,
+            "recall": 41.4,
+            "total_tiers": 210
+        }
+    },
+    "CKBUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 31.7,
+            "recall": 42.1,
+            "total_tiers": 328
+        }
+    },
+    "COMPUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 20.0,
+            "recall": 38.8,
+            "total_tiers": 237
+        }
+    },
+    "COOKIEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 42.4,
+            "recall": 40.1,
+            "total_tiers": 152
+        }
+    },
+    "COSUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 23.8,
+            "recall": 40.9,
+            "total_tiers": 269
+        }
+    },
+    "COTIUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 33.5,
+            "recall": 48.0,
+            "total_tiers": 325
+        }
+    },
+    "COWUSDT": {
+        "pos_threshold": 0.4,
+        "vol_threshold": 0.6,
+        "stats": {
+            "precision": 47.2,
+            "recall": 41.4,
+            "total_tiers": 162
+        }
+    },
+    "CRVUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 29.3,
+            "recall": 42.1,
+            "total_tiers": 330
+        }
+    },
+    "CTKUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 26.9,
+            "recall": 41.8,
+            "total_tiers": 275
+        }
+    },
+    "CTSIUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 29.1,
+            "recall": 42.0,
+            "total_tiers": 305
+        }
+    },
+    "CUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 45.3,
+            "recall": 38.2,
+            "total_tiers": 76
+        }
+    },
+    "CVCUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 27.1,
+            "recall": 48.9,
+            "total_tiers": 221
+        }
+    },
+    "CVXUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 30.7,
+            "recall": 41.0,
+            "total_tiers": 329
+        }
+    },
+    "CYBERUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 38.4,
+            "recall": 46.4,
+            "total_tiers": 289
+        }
+    },
+    "DASHUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 20.0,
+            "recall": 46.3,
+            "total_tiers": 214
+        }
+    },
+    "DATAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 28.0,
+            "recall": 36.8,
+            "total_tiers": 351
+        }
+    },
+    "DCRUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 32.0,
+            "recall": 51.5,
+            "total_tiers": 301
+        }
+    },
+    "DEGOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 32.5,
+            "recall": 45.0,
+            "total_tiers": 333
+        }
+    },
+    "DENTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 23.2,
+            "recall": 43.6,
+            "total_tiers": 257
+        }
+    },
+    "DEXEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 27.1,
+            "recall": 45.3,
+            "total_tiers": 278
+        }
+    },
+    "DFUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 25.7,
+            "recall": 43.1,
+            "total_tiers": 276
+        }
+    },
+    "DGBUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 23.1,
+            "recall": 42.6,
+            "total_tiers": 251
+        }
+    },
+    "DIAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 27.7,
+            "recall": 42.7,
+            "total_tiers": 300
+        }
+    },
+    "DODOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 29.5,
+            "recall": 45.4,
+            "total_tiers": 302
+        }
+    },
+    "DOGEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 25.7,
+            "recall": 48.4,
+            "total_tiers": 250
+        }
+    },
+    "DOGSUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 39.0,
+            "recall": 42.9,
+            "total_tiers": 182
+        }
+    },
+    "DOLOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.7,
+        "stats": {
+            "precision": 46.3,
+            "recall": 31.1,
+            "total_tiers": 61
+        }
+    },
+    "DOTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 16.9,
+            "recall": 45.8,
+            "total_tiers": 179
+        }
+    },
+    "DUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.6,
+        "stats": {
+            "precision": 33.3,
+            "recall": 32.6,
+            "total_tiers": 132
+        }
+    },
+    "DUSKUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 34.7,
+            "recall": 46.9,
+            "total_tiers": 356
+        }
+    },
+    "DYDXUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 26.7,
+            "recall": 38.8,
+            "total_tiers": 309
+        }
+    },
+    "DYMUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 40.4,
+            "recall": 44.4,
+            "total_tiers": 241
+        }
+    },
+    "EDENUSDT": {
+        "pos_threshold": 0.5,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 50.0,
+            "recall": 28.3,
+            "total_tiers": 53
+        }
+    },
+    "EDUUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 34.6,
+            "recall": 41.7,
+            "total_tiers": 314
+        }
+    },
+    "EGLDUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 24.8,
+            "recall": 54.3,
+            "total_tiers": 219
+        }
+    },
+    "EIGENUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 38.8,
+            "recall": 34.8,
+            "total_tiers": 210
+        }
+    },
+    "ENAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 46.9,
+            "recall": 39.8,
+            "total_tiers": 284
+        }
+    },
+    "ENJUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 24.4,
+            "recall": 46.8,
+            "total_tiers": 252
+        }
+    },
+    "ENSOUSDT": {
+        "pos_threshold": 0.4,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 55.9,
+            "recall": 39.6,
+            "total_tiers": 48
+        }
+    },
+    "ENSUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 30.8,
+            "recall": 45.5,
+            "total_tiers": 288
+        }
+    },
+    "EPICUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.7,
+        "stats": {
+            "precision": 40.2,
+            "recall": 38.7,
+            "total_tiers": 111
+        }
+    },
+    "ERAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 26.2,
+            "recall": 33.3,
+            "total_tiers": 48
+        }
+    },
+    "ETCUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 18.1,
+            "recall": 45.1,
+            "total_tiers": 173
+        }
+    },
+    "ETHFIUSDT": {
+        "pos_threshold": 0.4,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 42.1,
+            "recall": 40.4,
+            "total_tiers": 270
+        }
+    },
+    "ETHUSDT": {
+        "pos_threshold": 0.7,
+        "vol_threshold": 0.6,
+        "stats": {
+            "precision": 15.1,
+            "recall": 32.8,
+            "total_tiers": 119
+        }
+    },
+    "EULUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.7,
+        "stats": {
+            "precision": 38.5,
+            "recall": 38.5,
+            "total_tiers": 26
+        }
+    },
+    "FARMUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 21.5,
+            "recall": 40.7,
+            "total_tiers": 253
+        }
+    },
+    "FETUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 40.1,
+            "recall": 46.7,
+            "total_tiers": 405
+        }
+    },
+    "FFUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 40.4,
+            "recall": 40.4,
+            "total_tiers": 47
+        }
+    },
+    "FIDAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 39.4,
+            "recall": 49.2,
+            "total_tiers": 380
+        }
+    },
+    "FILUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 23.2,
+            "recall": 44.1,
+            "total_tiers": 245
+        }
+    },
+    "FIOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 28.5,
+            "recall": 46.6,
+            "total_tiers": 296
+        }
+    },
+    "FLOKIUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 38.0,
+            "recall": 45.8,
+            "total_tiers": 343
+        }
+    },
+    "FLOWUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 23.8,
+            "recall": 47.1,
+            "total_tiers": 221
+        }
+    },
+    "FLUXUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 31.3,
+            "recall": 46.1,
+            "total_tiers": 323
+        }
+    },
+    "FOGOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 60.0,
+            "recall": 37.5,
+            "total_tiers": 8
+        }
+    },
+    "FORMUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 28.4,
+            "recall": 28.4,
+            "total_tiers": 95
+        }
+    },
+    "FORTHUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 27.5,
+            "recall": 44.1,
+            "total_tiers": 281
+        }
+    },
+    "FRAXUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 66.7,
+            "recall": 36.4,
+            "total_tiers": 11
+        }
+    },
+    "FTTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 43.4,
+            "recall": 40.4,
+            "total_tiers": 317
+        }
+    },
+    "FUNUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 24.1,
+            "recall": 39.0,
+            "total_tiers": 264
+        }
+    },
+    "FUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 43.5,
+            "recall": 31.2,
+            "total_tiers": 32
+        }
+    },
+    "GALAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 31.3,
+            "recall": 45.9,
+            "total_tiers": 333
+        }
+    },
+    "GASUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 28.5,
+            "recall": 54.2,
+            "total_tiers": 212
+        }
+    },
+    "GHSTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 28.6,
+            "recall": 42.9,
+            "total_tiers": 273
+        }
+    },
+    "GIGGLEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 42.3,
+            "recall": 26.8,
+            "total_tiers": 41
+        }
+    },
+    "GLMRUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 26.5,
+            "recall": 45.7,
+            "total_tiers": 278
+        }
+    },
+    "GLMUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 33.6,
+            "recall": 52.3,
+            "total_tiers": 260
+        }
+    },
+    "GMTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 26.9,
+            "recall": 44.5,
+            "total_tiers": 274
+        }
+    },
+    "GMXUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 25.1,
+            "recall": 39.7,
+            "total_tiers": 262
+        }
+    },
+    "GNOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 19.3,
+            "recall": 40.6,
+            "total_tiers": 217
+        }
+    },
+    "GNSUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 22.0,
+            "recall": 41.9,
+            "total_tiers": 229
+        }
+    },
+    "GPSUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 40.7,
+            "recall": 37.0,
+            "total_tiers": 135
+        }
+    },
+    "GRTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 29.3,
+            "recall": 51.0,
+            "total_tiers": 292
+        }
+    },
+    "GTCUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 29.8,
+            "recall": 41.0,
+            "total_tiers": 317
+        }
+    },
+    "GUNUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 39.3,
+            "recall": 39.7,
+            "total_tiers": 121
+        }
+    },
+    "GUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 24.4,
+            "recall": 43.1,
+            "total_tiers": 116
+        }
+    },
+    "HAEDALUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 41.7,
+            "recall": 42.2,
+            "total_tiers": 83
+        }
+    },
+    "HBARUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 28.6,
+            "recall": 51.1,
+            "total_tiers": 268
+        }
+    },
+    "HEIUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 32.3,
+            "recall": 37.3,
+            "total_tiers": 110
+        }
+    },
+    "HEMIUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.6,
+        "stats": {
+            "precision": 43.9,
+            "recall": 32.7,
+            "total_tiers": 55
+        }
+    },
+    "HFTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 34.3,
+            "recall": 45.5,
+            "total_tiers": 347
+        }
+    },
+    "HIGHUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 35.4,
+            "recall": 43.4,
+            "total_tiers": 362
+        }
+    },
+    "HIVEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 20.0,
+            "recall": 53.1,
+            "total_tiers": 192
+        }
+    },
+    "HMSTRUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 25.4,
+            "recall": 34.1,
+            "total_tiers": 135
+        }
+    },
+    "HOLOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 41.3,
+            "recall": 43.2,
+            "total_tiers": 44
+        }
+    },
+    "HOMEUSDT": {
+        "pos_threshold": 0.4,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 37.0,
+            "recall": 47.2,
+            "total_tiers": 72
+        }
+    },
+    "HOOKUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 34.8,
+            "recall": 43.1,
+            "total_tiers": 357
+        }
+    },
+    "HOTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 23.8,
+            "recall": 48.4,
+            "total_tiers": 254
+        }
+    },
+    "HUMAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 35.2,
+            "recall": 37.3,
+            "total_tiers": 83
+        }
+    },
+    "HYPERUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 31.1,
+            "recall": 36.8,
+            "total_tiers": 87
+        }
+    },
+    "ICPUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 27.7,
+            "recall": 47.4,
+            "total_tiers": 268
+        }
+    },
+    "ICXUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 21.6,
+            "recall": 47.5,
+            "total_tiers": 217
+        }
+    },
+    "IDEXUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 26.2,
+            "recall": 38.7,
+            "total_tiers": 318
+        }
+    },
+    "IDUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 33.8,
+            "recall": 48.2,
+            "total_tiers": 278
+        }
+    },
+    "ILVUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 31.1,
+            "recall": 47.4,
+            "total_tiers": 293
+        }
+    },
+    "IMXUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 37.7,
+            "recall": 45.4,
+            "total_tiers": 383
+        }
+    },
+    "INITUSDT": {
+        "pos_threshold": 0.5,
+        "vol_threshold": 0.6,
+        "stats": {
+            "precision": 45.1,
+            "recall": 33.9,
+            "total_tiers": 109
+        }
+    },
+    "INJUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 39.2,
+            "recall": 45.9,
+            "total_tiers": 410
+        }
+    },
+    "IOSTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 20.4,
+            "recall": 44.8,
+            "total_tiers": 203
+        }
+    },
+    "IOTAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 24.4,
+            "recall": 50.0,
+            "total_tiers": 236
+        }
+    },
+    "IOTXUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 28.8,
+            "recall": 42.3,
+            "total_tiers": 293
+        }
+    },
+    "IOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 39.7,
+            "recall": 38.9,
+            "total_tiers": 239
+        }
+    },
+    "IQUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 22.9,
+            "recall": 53.0,
+            "total_tiers": 151
+        }
+    },
+    "JASMYUSDT": {
+        "pos_threshold": 0.4,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 34.5,
+            "recall": 44.9,
+            "total_tiers": 356
+        }
+    },
+    "JOEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 36.3,
+            "recall": 46.8,
+            "total_tiers": 342
+        }
+    },
+    "JSTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 15.4,
+            "recall": 54.1,
+            "total_tiers": 133
+        }
+    },
+    "JTOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 40.9,
+            "recall": 42.3,
+            "total_tiers": 281
+        }
+    },
+    "JUPUSDT": {
+        "pos_threshold": 0.4,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 41.7,
+            "recall": 55.6,
+            "total_tiers": 9
+        }
+    },
+    "JUVUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 18.5,
+            "recall": 32.8,
+            "total_tiers": 250
+        }
+    },
+    "KAIAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 25.7,
+            "recall": 48.4,
+            "total_tiers": 93
+        }
+    },
+    "KAITOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 35.8,
+            "recall": 38.3,
+            "total_tiers": 115
+        }
+    },
+    "KAVAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 25.3,
+            "recall": 49.6,
+            "total_tiers": 228
+        }
+    },
+    "KERNELUSDT": {
+        "pos_threshold": 0.4,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 48.1,
+            "recall": 39.7,
+            "total_tiers": 126
+        }
+    },
+    "KITEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.7,
+        "stats": {
+            "precision": 59.3,
+            "recall": 36.4,
+            "total_tiers": 44
+        }
+    },
+    "KMNOUSDT": {
+        "pos_threshold": 0.4,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 37.4,
+            "recall": 39.1,
+            "total_tiers": 87
+        }
+    },
+    "KNCUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 21.6,
+            "recall": 49.3,
+            "total_tiers": 205
+        }
+    },
+    "KSMUSDT": {
+        "pos_threshold": 0.4,
+        "vol_threshold": 0.6,
+        "stats": {
+            "precision": 23.9,
+            "recall": 42.1,
+            "total_tiers": 242
+        }
+    },
+    "LAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 55.7,
+            "recall": 50.0,
+            "total_tiers": 78
+        }
+    },
+    "LAYERUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 37.7,
+            "recall": 51.5,
+            "total_tiers": 101
+        }
+    },
+    "LAZIOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 22.7,
+            "recall": 44.6,
+            "total_tiers": 231
+        }
+    },
+    "LDOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 34.5,
+            "recall": 41.5,
+            "total_tiers": 371
+        }
+    },
+    "LINEAUSDT": {
+        "pos_threshold": 0.6,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 44.8,
+            "recall": 28.9,
+            "total_tiers": 45
+        }
+    },
+    "LINKUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 24.2,
+            "recall": 48.6,
+            "total_tiers": 245
+        }
+    },
+    "LISTAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 42.4,
+            "recall": 31.1,
+            "total_tiers": 235
+        }
+    },
+    "LPTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 31.0,
+            "recall": 40.8,
+            "total_tiers": 314
+        }
+    },
+    "LQTYUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 34.1,
+            "recall": 39.7,
+            "total_tiers": 335
+        }
+    },
+    "LRCUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 25.3,
+            "recall": 47.1,
+            "total_tiers": 259
+        }
+    },
+    "LSKUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 24.7,
+            "recall": 48.3,
+            "total_tiers": 234
+        }
+    },
+    "LTCUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 15.3,
+            "recall": 46.1,
+            "total_tiers": 165
+        }
+    },
+    "LUMIAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 44.6,
+            "recall": 42.9,
+            "total_tiers": 182
+        }
+    },
+    "LUNAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 27.3,
+            "recall": 43.5,
+            "total_tiers": 292
+        }
+    },
+    "LUNCUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 23.4,
+            "recall": 48.6,
+            "total_tiers": 243
+        }
+    },
+    "MAGICUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 34.8,
+            "recall": 36.8,
+            "total_tiers": 378
+        }
+    },
+    "MANAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 21.8,
+            "recall": 45.3,
+            "total_tiers": 234
+        }
+    },
+    "MANTAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 36.6,
+            "recall": 42.1,
+            "total_tiers": 254
+        }
+    },
+    "MASKUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 29.0,
+            "recall": 49.3,
+            "total_tiers": 274
+        }
+    },
+    "MAVUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 38.1,
+            "recall": 40.8,
+            "total_tiers": 333
+        }
+    },
+    "MBLUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 28.0,
+            "recall": 53.0,
+            "total_tiers": 230
+        }
+    },
+    "MBOXUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 33.0,
+            "recall": 48.0,
+            "total_tiers": 323
+        }
+    },
+    "MDTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 39.5,
+            "recall": 40.9,
+            "total_tiers": 403
+        }
+    },
+    "MEMEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 40.3,
+            "recall": 40.8,
+            "total_tiers": 311
+        }
+    },
+    "METISUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 33.7,
+            "recall": 40.5,
+            "total_tiers": 205
+        }
+    },
+    "METUSDT": {
+        "pos_threshold": 0.7,
+        "vol_threshold": 0.9,
+        "stats": {
+            "precision": 44.4,
+            "recall": 13.3,
+            "total_tiers": 30
+        }
+    },
+    "MEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 32.4,
+            "recall": 44.4,
+            "total_tiers": 108
+        }
+    },
+    "MINAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 26.2,
+            "recall": 45.4,
+            "total_tiers": 280
+        }
+    },
+    "MIRAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.6,
+        "stats": {
+            "precision": 52.9,
+            "recall": 43.9,
+            "total_tiers": 41
+        }
+    },
+    "MITOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.6,
+        "stats": {
+            "precision": 37.1,
+            "recall": 41.8,
+            "total_tiers": 55
+        }
+    },
+    "MLNUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 28.0,
+            "recall": 43.1,
+            "total_tiers": 288
+        }
+    },
+    "MMTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 42.3,
+            "recall": 33.3,
+            "total_tiers": 33
+        }
+    },
+    "MORPHOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 28.6,
+            "recall": 41.4,
+            "total_tiers": 29
+        }
+    },
+    "MOVEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 38.4,
+            "recall": 42.7,
+            "total_tiers": 124
+        }
+    },
+    "MOVRUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 31.3,
+            "recall": 45.9,
+            "total_tiers": 316
+        }
+    },
+    "MTLUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 25.7,
+            "recall": 49.2,
+            "total_tiers": 236
+        }
+    },
+    "MUBARAKUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 36.9,
+            "recall": 31.1,
+            "total_tiers": 132
+        }
+    },
+    "NEARUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 31.1,
+            "recall": 44.9,
+            "total_tiers": 325
+        }
+    },
+    "NEIROUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 44.8,
+            "recall": 39.5,
+            "total_tiers": 220
+        }
+    },
+    "NEOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 24.9,
+            "recall": 47.7,
+            "total_tiers": 241
+        }
+    },
+    "NEWTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 1.0,
+        "stats": {
+            "precision": 59.0,
+            "recall": 37.1,
+            "total_tiers": 62
+        }
+    },
+    "NFPUSDT": {
+        "pos_threshold": 0.4,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 40.3,
+            "recall": 41.6,
+            "total_tiers": 274
+        }
+    },
+    "NILUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 32.1,
+            "recall": 31.9,
+            "total_tiers": 113
+        }
+    },
+    "NKNUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.6,
+        "stats": {
+            "precision": 28.6,
+            "recall": 41.8,
+            "total_tiers": 292
+        }
+    },
+    "NMRUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 28.6,
+            "recall": 41.0,
+            "total_tiers": 312
+        }
+    },
+    "NOMUSDT": {
+        "pos_threshold": 0.5,
+        "vol_threshold": 0.9,
+        "stats": {
+            "precision": 72.7,
+            "recall": 32.7,
+            "total_tiers": 49
+        }
+    },
+    "NOTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 31.8,
+            "recall": 33.8,
+            "total_tiers": 210
+        }
+    },
+    "NTRNUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 33.7,
+            "recall": 40.5,
+            "total_tiers": 269
+        }
+    },
+    "NXPCUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 30.0,
+            "recall": 40.9,
+            "total_tiers": 66
+        }
+    },
+    "OGNUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 27.1,
+            "recall": 45.3,
+            "total_tiers": 276
+        }
+    },
+    "OGUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 30.2,
+            "recall": 38.2,
+            "total_tiers": 327
+        }
+    },
+    "OMUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 34.2,
+            "recall": 45.5,
+            "total_tiers": 352
+        }
+    },
+    "ONDOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 21.9,
+            "recall": 39.1,
+            "total_tiers": 64
+        }
+    },
+    "ONEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 30.3,
+            "recall": 45.6,
+            "total_tiers": 331
+        }
+    },
+    "ONGUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 24.1,
+            "recall": 49.3,
+            "total_tiers": 223
+        }
+    },
+    "ONTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 20.8,
+            "recall": 42.2,
+            "total_tiers": 230
+        }
+    },
+    "OPENUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 43.5,
+            "recall": 44.4,
+            "total_tiers": 45
+        }
+    },
+    "OPUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 30.7,
+            "recall": 41.3,
+            "total_tiers": 332
+        }
+    },
+    "ORCAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 35.8,
+            "recall": 44.6,
+            "total_tiers": 121
+        }
+    },
+    "ORDIUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 37.5,
+            "recall": 37.0,
+            "total_tiers": 308
+        }
+    },
+    "OSMOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 21.9,
+            "recall": 46.6,
+            "total_tiers": 206
+        }
+    },
+    "OXTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 24.1,
+            "recall": 38.7,
+            "total_tiers": 253
+        }
+    },
+    "PARTIUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 43.4,
+            "recall": 34.1,
+            "total_tiers": 126
+        }
+    },
+    "PENDLEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 36.3,
+            "recall": 38.9,
+            "total_tiers": 342
+        }
+    },
+    "PENGUUSDT": {
+        "pos_threshold": 0.5,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 44.6,
+            "recall": 33.1,
+            "total_tiers": 175
+        }
+    },
+    "PEOPLEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 36.0,
+            "recall": 38.5,
+            "total_tiers": 390
+        }
+    },
+    "PEPEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 41.4,
+            "recall": 46.1,
+            "total_tiers": 373
+        }
+    },
+    "PHAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 35.8,
+            "recall": 46.2,
+            "total_tiers": 359
+        }
+    },
+    "PHBUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.7,
+        "stats": {
+            "precision": 42.3,
+            "recall": 39.6,
+            "total_tiers": 409
+        }
+    },
+    "PIVXUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 31.0,
+            "recall": 42.4,
+            "total_tiers": 264
+        }
+    },
+    "PIXELUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 37.3,
+            "recall": 39.5,
+            "total_tiers": 256
+        }
+    },
+    "PLUMEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 42.4,
+            "recall": 43.1,
+            "total_tiers": 58
+        }
+    },
+    "PNUTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 38.8,
+            "recall": 33.0,
+            "total_tiers": 179
+        }
+    },
+    "POLUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 23.3,
+            "recall": 44.8,
+            "total_tiers": 105
+        }
+    },
+    "POLYXUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 30.9,
+            "recall": 46.0,
+            "total_tiers": 291
+        }
+    },
+    "PONDUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 29.2,
+            "recall": 43.7,
+            "total_tiers": 300
+        }
+    },
+    "PORTALUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 39.1,
+            "recall": 42.3,
+            "total_tiers": 272
+        }
+    },
+    "PORTOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 21.0,
+            "recall": 40.7,
+            "total_tiers": 243
+        }
+    },
+    "POWRUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 27.0,
+            "recall": 48.1,
+            "total_tiers": 243
+        }
+    },
+    "PROMUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 27.3,
+            "recall": 44.1,
+            "total_tiers": 247
+        }
+    },
+    "PROVEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 35.0,
+            "recall": 41.2,
+            "total_tiers": 51
+        }
+    },
+    "PSGUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 21.9,
+            "recall": 47.4,
+            "total_tiers": 211
+        }
+    },
+    "PUMPUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.6,
+        "stats": {
+            "precision": 50.0,
+            "recall": 38.5,
+            "total_tiers": 65
+        }
+    },
+    "PUNDIXUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 30.4,
+            "recall": 54.6,
+            "total_tiers": 251
+        }
+    },
+    "PYRUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 29.2,
+            "recall": 43.2,
+            "total_tiers": 303
+        }
+    },
+    "PYTHUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 32.5,
+            "recall": 42.2,
+            "total_tiers": 225
+        }
+    },
+    "QIUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 31.5,
+            "recall": 47.6,
+            "total_tiers": 307
+        }
+    },
+    "QKCUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 21.8,
+            "recall": 48.2,
+            "total_tiers": 193
+        }
+    },
+    "QNTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 19.7,
+            "recall": 46.9,
+            "total_tiers": 192
+        }
+    },
+    "QTUMUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 21.0,
+            "recall": 44.1,
+            "total_tiers": 222
+        }
+    },
+    "QUICKUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 27.9,
+            "recall": 42.2,
+            "total_tiers": 294
+        }
+    },
+    "RADUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 32.2,
+            "recall": 43.9,
+            "total_tiers": 335
+        }
+    },
+    "RAREUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 33.8,
+            "recall": 43.5,
+            "total_tiers": 340
+        }
+    },
+    "RAYUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 49.4,
+            "recall": 46.5,
+            "total_tiers": 454
+        }
+    },
+    "RDNTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 26.2,
+            "recall": 38.8,
+            "total_tiers": 263
+        }
+    },
+    "REDUSDT": {
+        "pos_threshold": 0.4,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 39.4,
+            "recall": 32.0,
+            "total_tiers": 122
+        }
+    },
+    "RENDERUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 34.2,
+            "recall": 45.3,
+            "total_tiers": 172
+        }
+    },
+    "REQUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 19.6,
+            "recall": 48.1,
+            "total_tiers": 206
+        }
+    },
+    "RESOLVUSDT": {
+        "pos_threshold": 0.4,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 45.3,
+            "recall": 32.1,
+            "total_tiers": 106
+        }
+    },
+    "REZUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 43.7,
+            "recall": 37.7,
+            "total_tiers": 265
+        }
+    },
+    "RIFUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 30.8,
+            "recall": 38.9,
+            "total_tiers": 329
+        }
+    },
+    "RLCUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 27.7,
+            "recall": 41.3,
+            "total_tiers": 310
+        }
+    },
+    "RONINUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 25.7,
+            "recall": 44.2,
+            "total_tiers": 156
+        }
+    },
+    "ROSEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 31.0,
+            "recall": 48.0,
+            "total_tiers": 329
+        }
+    },
+    "RPLUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 31.5,
+            "recall": 41.0,
+            "total_tiers": 305
+        }
+    },
+    "RSRUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 32.5,
+            "recall": 42.8,
+            "total_tiers": 362
+        }
+    },
+    "RUNEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 28.2,
+            "recall": 44.9,
+            "total_tiers": 303
+        }
+    },
+    "RVNUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 21.9,
+            "recall": 42.6,
+            "total_tiers": 237
+        }
+    },
+    "SAGAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 43.7,
+            "recall": 42.8,
+            "total_tiers": 250
+        }
+    },
+    "SAHARAUSDT": {
+        "pos_threshold": 0.4,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 28.2,
+            "recall": 45.8,
+            "total_tiers": 48
+        }
+    },
+    "SANDUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 22.7,
+            "recall": 46.9,
+            "total_tiers": 226
+        }
+    },
+    "SANTOSUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 26.6,
+            "recall": 39.9,
+            "total_tiers": 286
+        }
+    },
+    "SAPIENUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.6,
+        "stats": {
+            "precision": 41.7,
+            "recall": 26.3,
+            "total_tiers": 38
+        }
+    },
+    "SCRTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 30.2,
+            "recall": 42.2,
+            "total_tiers": 322
+        }
+    },
+    "SCRUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 41.2,
+            "recall": 41.0,
+            "total_tiers": 178
+        }
+    },
+    "SCUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 31.3,
+            "recall": 56.5,
+            "total_tiers": 260
+        }
+    },
+    "SEIUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 36.5,
+            "recall": 42.8,
+            "total_tiers": 292
+        }
+    },
+    "SFPUSDT": {
+        "pos_threshold": 0.4,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 16.9,
+            "recall": 43.6,
+            "total_tiers": 165
+        }
+    },
+    "SHELLUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 45.3,
+            "recall": 36.8,
+            "total_tiers": 144
+        }
+    },
+    "SHIBUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 23.2,
+            "recall": 49.3,
+            "total_tiers": 219
+        }
+    },
+    "SIGNUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 28.1,
+            "recall": 37.3,
+            "total_tiers": 67
+        }
+    },
+    "SKLUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 31.5,
+            "recall": 47.9,
+            "total_tiers": 307
+        }
+    },
+    "SKYUSDT": {
+        "pos_threshold": 0.5,
+        "vol_threshold": 0.8,
+        "stats": {
+            "precision": 21.9,
+            "recall": 22.6,
+            "total_tiers": 31
+        }
+    },
+    "SLPUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 29.6,
+            "recall": 47.3,
+            "total_tiers": 298
+        }
+    },
+    "SNXUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 30.7,
+            "recall": 42.6,
+            "total_tiers": 331
+        }
+    },
+    "SOLUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 26.0,
+            "recall": 45.7,
+            "total_tiers": 276
+        }
+    },
+    "SOLVUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 34.5,
+            "recall": 34.7,
+            "total_tiers": 118
+        }
+    },
+    "SOMIUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.6,
+        "stats": {
+            "precision": 52.3,
+            "recall": 35.9,
+            "total_tiers": 64
+        }
+    },
+    "SOPHUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 35.2,
+            "recall": 47.7,
+            "total_tiers": 65
+        }
+    },
+    "SPELLUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 24.3,
+            "recall": 41.4,
+            "total_tiers": 278
+        }
+    },
+    "SPKUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 39.7,
+            "recall": 30.7,
+            "total_tiers": 88
+        }
+    },
+    "SSVUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 35.8,
+            "recall": 33.3,
+            "total_tiers": 366
+        }
+    },
+    "STEEMUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 21.3,
+            "recall": 45.9,
+            "total_tiers": 205
+        }
+    },
+    "STGUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 25.9,
+            "recall": 46.0,
+            "total_tiers": 239
+        }
+    },
+    "STORJUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 30.5,
+            "recall": 50.7,
+            "total_tiers": 276
+        }
+    },
+    "STOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 33.7,
+            "recall": 35.2,
+            "total_tiers": 91
+        }
+    },
+    "STRAXUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 37.3,
+            "recall": 57.3,
+            "total_tiers": 288
+        }
+    },
+    "STRKUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 33.1,
+            "recall": 40.5,
+            "total_tiers": 227
+        }
+    },
+    "STXUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 40.1,
+            "recall": 48.7,
+            "total_tiers": 357
+        }
+    },
+    "SUIUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 32.6,
+            "recall": 41.6,
+            "total_tiers": 303
+        }
+    },
+    "SUNUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 19.5,
+            "recall": 52.8,
+            "total_tiers": 161
+        }
+    },
+    "SUPERUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 38.5,
+            "recall": 48.9,
+            "total_tiers": 360
+        }
+    },
+    "SUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 34.0,
+            "recall": 43.9,
+            "total_tiers": 114
+        }
+    },
+    "SUSHIUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 24.8,
+            "recall": 39.7,
+            "total_tiers": 287
+        }
+    },
+    "SXPUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 23.7,
+            "recall": 47.9,
+            "total_tiers": 236
+        }
+    },
+    "SXTUSDT": {
+        "pos_threshold": 0.4,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 33.7,
+            "recall": 37.8,
+            "total_tiers": 82
+        }
+    },
+    "SYNUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 41.0,
+            "recall": 40.7,
+            "total_tiers": 388
+        }
+    },
+    "SYSUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 30.3,
+            "recall": 45.7,
+            "total_tiers": 311
+        }
+    },
+    "TAOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 41.5,
+            "recall": 44.6,
+            "total_tiers": 231
+        }
+    },
+    "TFUELUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 28.3,
+            "recall": 47.6,
+            "total_tiers": 271
+        }
+    },
+    "THETAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 26.7,
+            "recall": 43.5,
+            "total_tiers": 294
+        }
+    },
+    "THEUSDT": {
+        "pos_threshold": 0.4,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 40.3,
+            "recall": 38.9,
+            "total_tiers": 149
+        }
+    },
+    "TIAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 36.2,
+            "recall": 41.0,
+            "total_tiers": 290
+        }
+    },
+    "TKOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 27.0,
+            "recall": 42.3,
+            "total_tiers": 284
+        }
+    },
+    "TLMUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 30.3,
+            "recall": 47.1,
+            "total_tiers": 310
+        }
+    },
+    "TNSRUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 37.5,
+            "recall": 37.7,
+            "total_tiers": 239
+        }
+    },
+    "TONUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 15.0,
+            "recall": 47.3,
+            "total_tiers": 74
+        }
+    },
+    "TOWNSUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 41.4,
+            "recall": 38.1,
+            "total_tiers": 63
+        }
+    },
+    "TRBUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 32.5,
+            "recall": 44.4,
+            "total_tiers": 340
+        }
+    },
+    "TREEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.8,
+        "stats": {
+            "precision": 56.4,
+            "recall": 33.3,
+            "total_tiers": 66
+        }
+    },
+    "TRUMPUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 27.9,
+            "recall": 39.5,
+            "total_tiers": 86
+        }
+    },
+    "TRUUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 38.2,
+            "recall": 41.7,
+            "total_tiers": 405
+        }
+    },
+    "TSTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 33.3,
+            "recall": 26.4,
+            "total_tiers": 129
+        }
+    },
+    "TURBOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 40.3,
+            "recall": 38.7,
+            "total_tiers": 194
+        }
+    },
+    "TURTLEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 44.4,
+            "recall": 44.4,
+            "total_tiers": 36
+        }
+    },
+    "TUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 27.8,
+            "recall": 49.2,
+            "total_tiers": 242
+        }
+    },
+    "TUTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 38.7,
+            "recall": 36.1,
+            "total_tiers": 119
+        }
+    },
+    "TWTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 17.4,
+            "recall": 45.8,
+            "total_tiers": 179
+        }
+    },
+    "UMAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 28.2,
+            "recall": 44.6,
+            "total_tiers": 294
+        }
+    },
+    "UNIUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 21.5,
+            "recall": 35.9,
+            "total_tiers": 251
+        }
+    },
+    "USTCUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 31.6,
+            "recall": 41.5,
+            "total_tiers": 313
+        }
+    },
+    "USUALUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 43.5,
+            "recall": 39.8,
+            "total_tiers": 176
+        }
+    },
+    "UTKUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 27.2,
+            "recall": 44.9,
+            "total_tiers": 294
+        }
+    },
+    "VANAUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 37.6,
+            "recall": 39.7,
+            "total_tiers": 141
+        }
+    },
+    "VANRYUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 42.9,
+            "recall": 43.8,
+            "total_tiers": 313
+        }
+    },
+    "VELODROMEUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 30.6,
+            "recall": 38.1,
+            "total_tiers": 118
+        }
+    },
+    "VETUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 20.9,
+            "recall": 44.2,
+            "total_tiers": 231
+        }
+    },
+    "VICUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 31.3,
+            "recall": 40.2,
+            "total_tiers": 246
+        }
+    },
+    "VIRTUALUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 48.6,
+            "recall": 43.9,
+            "total_tiers": 123
+        }
+    },
+    "VTHOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 26.8,
+            "recall": 40.5,
+            "total_tiers": 296
+        }
+    },
+    "WALUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.9,
+        "stats": {
+            "precision": 33.3,
+            "recall": 18.2,
+            "total_tiers": 33
+        }
+    },
+    "WANUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 24.0,
+            "recall": 50.2,
+            "total_tiers": 237
+        }
+    },
+    "WAXPUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 24.6,
+            "recall": 53.9,
+            "total_tiers": 217
+        }
+    },
+    "WBETHUSDT": {
+        "pos_threshold": 0.7,
+        "vol_threshold": 0.8,
+        "stats": {
+            "precision": 15.2,
+            "recall": 24.0,
+            "total_tiers": 104
+        }
+    },
+    "WCTUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 34.0,
+            "recall": 38.0,
+            "total_tiers": 92
+        }
+    },
+    "WIFUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 50.4,
+            "recall": 42.5,
+            "total_tiers": 315
+        }
+    },
+    "WINUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 19.2,
+            "recall": 45.6,
+            "total_tiers": 195
+        }
+    },
+    "WLDUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 42.7,
+            "recall": 43.5,
+            "total_tiers": 347
+        }
+    },
+    "WLFIUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.6,
+        "stats": {
+            "precision": 47.7,
+            "recall": 42.0,
+            "total_tiers": 50
+        }
+    },
+    "WOOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 33.3,
+            "recall": 44.4,
+            "total_tiers": 363
+        }
+    },
+    "WUSDT": {
+        "pos_threshold": 0.4,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 39.4,
+            "recall": 39.4,
+            "total_tiers": 226
+        }
+    },
+    "XAIUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 37.3,
+            "recall": 43.2,
+            "total_tiers": 259
+        }
+    },
+    "XECUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 23.5,
+            "recall": 46.9,
+            "total_tiers": 224
+        }
+    },
+    "XLMUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.7,
+        "stats": {
+            "precision": 15.3,
+            "recall": 40.6,
+            "total_tiers": 155
+        }
+    },
+    "XNOUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 25.4,
+            "recall": 42.8,
+            "total_tiers": 271
+        }
+    },
+    "XPLUSDT": {
+        "pos_threshold": 0.4,
+        "vol_threshold": 0.7,
+        "stats": {
+            "precision": 50.0,
+            "recall": 36.4,
+            "total_tiers": 55
+        }
+    },
+    "XRPUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 18.7,
+            "recall": 48.4,
+            "total_tiers": 182
+        }
+    },
+    "XTZUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 15.5,
+            "recall": 36.4,
+            "total_tiers": 198
+        }
+    },
+    "XVGUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 32.9,
+            "recall": 41.6,
+            "total_tiers": 356
+        }
+    },
+    "XVSUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 23.4,
+            "recall": 39.4,
+            "total_tiers": 259
+        }
+    },
+    "YBUSDT": {
+        "pos_threshold": 0.4,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 30.0,
+            "recall": 25.0,
+            "total_tiers": 36
+        }
+    },
+    "YFIUSDT": {
+        "pos_threshold": 0.4,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 18.6,
+            "recall": 49.4,
+            "total_tiers": 170
+        }
+    },
+    "YGGUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 38.7,
+            "recall": 41.5,
+            "total_tiers": 390
+        }
+    },
+    "ZBTUSDT": {
+        "pos_threshold": 0.7,
+        "vol_threshold": 0.9,
+        "stats": {
+            "precision": 100.0,
+            "recall": 19.4,
+            "total_tiers": 36
+        }
+    },
+    "ZECUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 29.8,
+            "recall": 47.3,
+            "total_tiers": 294
+        }
+    },
+    "ZENUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 34.5,
+            "recall": 43.6,
+            "total_tiers": 312
+        }
+    },
+    "ZILUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 20.6,
+            "recall": 47.9,
+            "total_tiers": 213
+        }
+    },
+    "ZKCUSDT": {
+        "pos_threshold": 0.5,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 61.5,
+            "recall": 36.4,
+            "total_tiers": 44
+        }
+    },
+    "ZKPUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 40.0,
+            "recall": 20.0,
+            "total_tiers": 10
+        }
+    },
+    "ZKUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 39.8,
+            "recall": 40.7,
+            "total_tiers": 221
+        }
+    },
+    "ZROUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 41.4,
+            "recall": 46.8,
+            "total_tiers": 216
+        }
+    },
+    "ZRXUSDT": {
+        "pos_threshold": 0.3,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 29.8,
+            "recall": 49.5,
+            "total_tiers": 281
+        }
+    },
+    "\u5e01\u5b89\u4eba\u751fUSDT": {
+        "pos_threshold": 0.5,
+        "vol_threshold": 0.5,
+        "stats": {
+            "precision": 66.7,
+            "recall": 26.7,
+            "total_tiers": 15
+        }
+    }
+}

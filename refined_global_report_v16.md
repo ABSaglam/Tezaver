@@ -1,5 +1,5 @@
 # TEZAVER GLOBAL AUDIT REPORT (REFINED v16)
-Generated on: 2026-01-28 04:06:37
+Generated on: 2026-01-29 09:46:07
 
 ## 📅 16 Ekim 2025 (Geçen: 18 Kalan: 10)
 | NO | SYM        | MAX    | CLOSE  | TIME  | SIG | TREND | POS | ANG      | VAL | P     | P-21   | BAR | NEXT       | R-Rib | Vrsi     | V100     | V21      | V-Mom    | VBoy    | V-Ch     | V-Avg    |
@@ -3633,19 +3633,15 @@ Generated on: 2026-01-28 04:06:37
 |----|----------|-------|-------|-------|-----|-------|-----|----------|-----|-------|------|-----|-------|-------|------|------|-----|-------|----------|--------|---------|
 | 1  | TUSDUSDT | +0.0% | <font color='red'>-0.0%</font> | 02:00 |     | 🟢🟢    | 🟡   | <font color='green'>**+6.3**</font> | 💚   | +0.0% | 0.0% | 1   | <font color='red'>-0.0%</font> | 🟢     | 4.7  | <font color='gray'>3.3</font>  | 3.3 | 1.0x  | <font color='green'>**10.0**</font> | +93.3% | +-22.5% |
 
-## 📅 28 Ocak 2026 (Geçen: 8 Kalan: 0)
-
-| NO | SYM        | DURUM | DENETİM (AYAŞ TÜNELİ) | DNA NOTU |
-|----|------------|-------|-----------------------|----------|
-| 1  | BANKUSDT   | ✅    | VİZE VERİLDİ          | UYUMLU   |
-| 2  | KERNELUSDT | ✅    | VİZE VERİLDİ          | UYUMLU   |
-| 3  | KITEUSDT   | ✅    | VİZE VERİLDİ          | UYUMLU   |
-| 4  | MANTAUSDT  | ✅    | VİZE VERİLDİ          | UYUMLU   |
-| 5  | ORCAUSDT   | ✅    | VİZE VERİLDİ          | UYUMLU   |
-| 6  | RESOLVUSDT | ✅    | VİZE VERİLDİ          | UYUMLU   |
-| 7  | SOLVUSDT   | ✅    | VİZE VERİLDİ          | UYUMLU   |
-| 8  | ZKCUSDT    | ✅    | VİZE VERİLDİ          | UYUMLU   |
-
----
-> [!IMPORTANT]
-> Yukarıdaki semboller 28 Ocak 2026 tarihinde yapılan Faz A derin denetiminden başarıyla geçmiş ve Ayaş Tüneli'nden vize almıştır.
+## 📅 28 Ocak 2026 (Geçen: 8 Kalan: 5)
+| NO | SYM        | MAX    | CLOSE | TIME  | SIG | TREND | POS | ANG      | VAL | P     | P-21   | BAR | NEXT       | R-Rib | Vrsi     | V100     | V21      | V-Mom    | VBoy    | V-Ch     | V-Avg    |
+|----|------------|--------|-------|-------|-----|-------|-----|----------|-----|-------|--------|-----|------------|-------|----------|----------|----------|----------|---------|----------|----------|
+| 1  | KITEUSDT   | <font color='green'>+22.3%</font> | +8.5% | 04:00 |     | 🟢🟢    | 🟡   | <font color='green'>+1.3</font>     | ❤️  | +1.3% | <font color='green'>+18.6%</font> | 9   | <font color='red'>**-12.5%**</font> | 🟢     | 5.8      | 4.0      | 3.9      | 0.8x     | <font color='green'>**8.9**</font> | +-23.7%  | +191.8%  |
+| 2  | MANTAUSDT  | +5.7%  | +0.6% | 11:15 | 🚀   | 🟢🟢    | 🟡   | <font color='green'>**+5.3**</font> | 💚   | +2.5% | <font color='green'>+2.5%</font>  | 4   | <font color='red'>-1.5%</font>      | 🟢     | <font color='#00FF00'>**15.0**</font> | <font color='#00FF00'>**10.0**</font> | <font color='green'>**10.0**</font> | <font color='green'>**2.9x**</font> | 5.0     | <font color='green'>+1647.2%</font> | <font color='green'>+2981.1%</font> |
+| 3  | ZKCUSDT    | +5.7%  | <font color='red'>-1.3%</font> | 03:15 |     | 🔴🟢    | 🟡   | <font color='green'>+3.6</font>     | 💚   | +1.9% | <font color='green'>+2.4%</font>  | <font color='blue'>1</font>   | <font color='red'>-3.9%</font>      | 🟢     | <font color='green'>8.8</font>      | 6.1      | 4.4      | 1.2x     | <font color='green'>**7.1**</font> | +-51.9%  | +-42.8%  |
+|    |            |        |       | 07:30 |     | 🟢🟢    | 🟡   | <font color='green'>+2.3</font>     | 💚   | +1.8% | <font color='green'>+0.8%</font>  | 5   | <font color='red'>-1.4%</font>      | 🟢     | <font color='#00FF00'>**11.8**</font> | <font color='green'>8.1</font>      | 5.5      | 1.2x     | 5.1     | +82.8%   | +194.5%  |
+| 4  | KERNELUSDT | +4.4%  | +0.5% | 07:15 | 🚀   | 🟢🟢    | 🟡   | <font color='green'>+4.1</font>     | 💚   | +1.2% | <font color='green'>+3.3%</font>  | <font color='blue'>10</font>  | <font color='red'>-1.1%</font>      | 🟢     | <font color='#00FF00'>**10.8**</font> | 7.3      | <font color='green'>**10.0**</font> | <font color='green'>**5.0x**</font> | <font color='green'>**9.0**</font> | <font color='green'>+4573.8%</font> | <font color='orange'>+918.1%</font>  |
+|    |            |        |       | 09:45 | 🚀   | 🟢🟢    | 🟡   | <font color='green'>+4.4</font>     | 💚   | +2.5% | <font color='green'>+0.4%</font>  | <font color='blue'>3</font>   | <font color='red'>-1.0%</font>      | 🟢     | <font color='#00FF00'>**15.0**</font> | <font color='#00FF00'>**10.0**</font> | <font color='green'>**10.0**</font> | <font color='green'>**3.2x**</font> | <font color='green'>**9.5**</font> | <font color='green'>+2026.6%</font> | <font color='orange'>+569.1%</font>  |
+|    |            |        |       | 10:30 |     | 🟢🟢    | 🟢   | <font color='green'>+3.7</font>     | 💚   | +0.5% | 0.0%   | 1   | <font color='red'>-1.5%</font>      | 🟢     | <font color='#00FF00'>**10.1**</font> | 7.1      | 5.4      | 0.9x     | 4.0     | +62.0%   | +7.3%    |
+| 5  | ORCAUSDT   | +4.2%  | +0.7% | 09:30 |     | 🟢🟢    | 🟡   | <font color='green'>+0.9</font>     | ❤️  | +0.8% | <font color='green'>+1.2%</font>  | <font color='blue'>7</font>   | <font color='green'>+0.8%</font>      | 🟢     | <font color='#00FF00'>**14.3**</font> | <font color='#00FF00'>**10.0**</font> | <font color='green'>**10.0**</font> | <font color='green'>**4.1x**</font> | <font color='green'>**7.5**</font> | +118.6%  | <font color='orange'>+540.2%</font>  |
+|    |            |        |       | 11:15 |     | 🟢🟢    | 🟡   | <font color='green'>**+5.3**</font> | 💚   | +0.8% | <font color='green'>+2.5%</font>  | 3   | <font color='red'>-1.4%</font>      | 🟢     | <font color='#00FF00'>**15.0**</font> | <font color='#00FF00'>**10.0**</font> | <font color='green'>**10.0**</font> | <font color='green'>**3.8x**</font> | <font color='green'>**7.5**</font> | +160.7%  | +270.5%  |

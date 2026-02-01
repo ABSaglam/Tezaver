@@ -1,92 +1,135 @@
-"""
-🚇 AYAŞ TÜNELİ - Günlük Koin Filtreleme Sistemi
-===============================================
-
-Tünelden geçiş kriterleri:
-- ATR% >= 15 + RSI 55-70 (TREND-V2)
-- ATR% >= 12 + RSI 60-75 (NINJA-V2)
-
-Tarihsel Performans (2 yıl, 6,608 sinyal):
-- Hit Oranı: %74 (D+G+S)
-- Diamond+Gold: %22.5
-- Ağır Kayıp Riski: %0.2
-
-Günlük Ortalama: ~3-4 koin tünelden geçiyor.
-"""
 
 import pandas as pd
 import numpy as np
-from datetime import datetime
-from tezaver.core import config, coin_cell_paths
+import os
+import json
+import re
 
-# Ayaş Tüneli Kriterleri
-TUNEL_KRITERLERI = {
-    'TREND': {'atr_min': 15.0, 'rsi_min': 55, 'rsi_max': 70},
-    'NINJA': {'atr_min': 12.0, 'rsi_min': 60, 'rsi_max': 75}
-}
+# CONFIG
+TARGET_DATE = pd.Timestamp("2026-01-28 00:00:00")
+COIN_CELLS_DIR = "/Users/alisaglam/TezaverMac/coin_cells"
+OUTPUT_FILE = "jan28_tunel_candidates.json"
 
-def tunel_tara():
-    """Bugün tünelden geçen koinleri listele."""
-    gecenler = []
+def get_profile_simple_strict(df_w, df_h1, df_d, df_h4):
+    try:
+        # STRICT FILTER: Use only data BEFORE Target Date (Yesterday's Close)
+        # Assuming DFs are already sliced to < TARGET_DATE
+        
+        # WEEKLY
+        sub_w = df_w.tail(30)
+        if sub_w.empty: return "neutral"
+        delta = sub_w['close'].diff()
+        gain = delta.where(delta > 0, 0).rolling(14).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(14).mean().replace(0, 0.001)
+        rsi_val = 100 - (100 / (1 + (gain / loss))).iloc[-1]
+        faz = "derin_dip" if rsi_val < 40 else "birikim_fazi" if rsi_val < 60 else "yukselis_fazi" if rsi_val < 75 else "asiri_alim"
+        
+        # HOURLY (Squeeze)
+        sub_h1_24 = df_h1.tail(24)
+        if sub_h1_24.empty or 'ema9' not in sub_h1_24: return "neutral"
+        comp = (sub_h1_24[['ema9','ema21','ema50']].max(axis=1) / sub_h1_24[['ema9','ema21','ema50']].min(axis=1) - 1)*100
+        min_c = comp.min()
+        acc = "micro_squeeze" if min_c < 0.4 else "tight_squeeze" if min_c < 0.8 else "coiling" if min_c < 1.5 else "loose"
+        
+        # HARMONY
+        if df_d.empty or df_h4.empty or df_h1.empty: return "neutral"
+        
+        # Ensure EMAs exist
+        if 'ema21' not in df_d or 'ema21' not in df_h4 or 'ema21' not in df_h1: return "neutral"
+
+        s = int(df_d.iloc[-1]['close']>df_d.iloc[-1]['ema21']) + \
+            int(df_h4.iloc[-1]['close']>df_h4.iloc[-1]['ema21']) + \
+            int(df_h1.iloc[-1]['close']>df_h1.iloc[-1]['ema21'])
+        harm = f"harmony_L{s}"
+        
+        # VOLUME & ENERGY
+        sub_d_tail = df_d.tail(10)
+        vol_p = df_d.iloc[-1]['volume'] / (sub_d_tail['volume'].mean()+1)
+        ritim = "ignited" if vol_p > 2.0 else "active" if vol_p > 1.0 else "sleeping"
+        
+        v_trend = sub_d_tail['volume'].tail(3).mean() > sub_d_tail['volume'].head(7).mean()
+        enerji = "building_energy" if v_trend else "depleting_energy"
+        
+        # CONTEXT
+        yr_high = df_d.tail(365)['high'].max() if len(df_d)>0 else 1
+        retr = (df_d.iloc[-1]['close']/yr_high - 1)*100
+        ctx = "recovery_high" if retr > -20 else "deep_valley" if retr < -50 else "mid_zone"
+        
+        return f"{faz}|{acc}|{harm}|{ritim}|{ctx}|{enerji}"
+    except Exception as e:
+        # print(f"DEBUG: Profile error: {e}")
+        return "neutral"
+
+def run_tunel():
+    symbols = [d for d in os.listdir(COIN_CELLS_DIR) if os.path.isdir(os.path.join(COIN_CELLS_DIR, d))]
+    candidates = []
     
-    for symbol in config.DEFAULT_COINS:
+    print(f"🚇 AYAŞ TÜNELİ AÇILIYOR... Hedef Tarih: {TARGET_DATE}")
+    print(f"⚠️  DİKKAT: Sadece {TARGET_DATE} öncesi veriler kullanılacaktır.")
+
+    cnt = 0
+    for symbol in symbols:
         try:
-            path_1d = coin_cell_paths.get_history_file(symbol, '1d')
-            path_4h = coin_cell_paths.get_history_file(symbol, '4h')
-            if not path_1d.exists() or not path_4h.exists(): continue
+            key_path = f"/Users/alisaglam/TezaverMac/data/golden_keys/{symbol}_key.json"
+            if not os.path.exists(key_path): continue
             
-            df_1d = pd.read_parquet(path_1d)
-            df_4h = pd.read_parquet(path_4h)
-            if len(df_1d) < 20 or len(df_4h) < 20: continue
+            with open(key_path, "r") as f:
+                golden_dna_list = set(json.load(f).get('golden_dna_list', []))
             
-            # ATR hesapla
-            df_1d['tr'] = np.maximum(df_1d['high'] - df_1d['low'], 
-                                    np.maximum(abs(df_1d['high'] - df_1d['close'].shift(1)), 
-                                               abs(df_1d['low'] - df_1d['close'].shift(1))))
-            atr_pct = (df_1d['tr'].rolling(14).mean().iloc[-1] / df_1d['close'].iloc[-1]) * 100
+            def load_and_slice(path):
+                if not os.path.exists(path): return pd.DataFrame()
+                df = pd.read_parquet(path)
+                df['dt'] = pd.to_datetime(df['timestamp'], unit='ms')
+                df.set_index('dt', inplace=True)
+                df = df[~df.index.duplicated(keep='last')]
+                df = df.sort_index()
+                
+                # CRITICAL STEP: Strict Time Slicing
+                # We want data strictly BEFORE the Target Date (e.g. up to Jan 27 23:59:59)
+                return df[df.index < TARGET_DATE]
+
+            df_1d = load_and_slice(f"{COIN_CELLS_DIR}/{symbol}/data/history_1d.parquet")
+            if df_1d.empty: continue
             
-            # RSI hesapla
-            delta = df_4h['close'].diff()
-            gain = (delta.where(delta > 0, 0)).rolling(14).mean()
-            loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
-            rsi = (100 - (100 / (1 + (gain / loss.replace(0, 0.001))))).iloc[-1]
+            # Additional check: Ensure the last data point is recent enough (e.g. closed yesterday)
+            # If last data is 5 days ago, data is stale.
+            if df_1d.index[-1] < TARGET_DATE - pd.Timedelta(days=2):
+                # print(f"DEBUG: {symbol} data stale. Last: {df_1d.index[-1]}")
+                continue
+
+            df_4h = load_and_slice(f"{COIN_CELLS_DIR}/{symbol}/data/history_4h.parquet")
+            df_1h = load_and_slice(f"{COIN_CELLS_DIR}/{symbol}/data/history_1h.parquet")
+            df_1w = load_and_slice(f"{COIN_CELLS_DIR}/{symbol}/data/history_1w.parquet")
+
+            # Calculate EMAs on sliced data
+            if not df_1d.empty:
+               df_1d['ema21'] = df_1d['close'].ewm(span=21, adjust=False).mean()
+
+            if not df_4h.empty:
+                df_4h['ema21'] = df_4h['close'].ewm(span=21, adjust=False).mean()
             
-            # Tünel kontrolü
-            t = TUNEL_KRITERLERI['TREND']
-            n = TUNEL_KRITERLERI['NINJA']
+            if not df_1h.empty:
+                for p in [9, 21, 50]: df_1h[f'ema{p}'] = df_1h['close'].ewm(span=p, adjust=False).mean()
             
-            is_trend = atr_pct >= t['atr_min'] and t['rsi_min'] <= rsi <= t['rsi_max']
-            is_ninja = atr_pct >= n['atr_min'] and n['rsi_min'] <= rsi <= n['rsi_max']
+            # Get Profile
+            dna = get_profile_simple_strict(df_1w, df_1h, df_1d, df_4h)
             
-            if is_trend or is_ninja:
-                tip = 'TREND' if is_trend else 'NINJA'
-                gecenler.append({
-                    'symbol': symbol,
-                    'tip': tip,
-                    'atr': round(atr_pct, 1),
-                    'rsi': round(rsi, 1)
+            if dna in golden_dna_list:
+                candidates.append({
+                    "symbol": symbol,
+                    "dna": dna
                 })
-        except:
+                cnt += 1
+                # print(f"✅ PASSED: {symbol} ({dna})")
+
+        except Exception as e:
             continue
+
+    with open(OUTPUT_FILE, "w") as f:
+        json.dump(candidates, f, indent=2)
     
-    # Sonuçları göster
-    print(f"\n🚇 AYAŞ TÜNELİ - {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-    print("=" * 55)
-    
-    if not gecenler:
-        print("📭 Bugün tünelden geçen koin yok.")
-        return []
-    
-    print(f"{'Symbol':<15} | {'Tip':<6} | {'ATR%':>6} | {'RSI':>5}")
-    print("-" * 55)
-    
-    for g in sorted(gecenler, key=lambda x: -x['atr']):
-        print(f"{g['symbol']:<15} | {g['tip']:<6} | {g['atr']:>5.1f}% | {g['rsi']:>5.1f}")
-    
-    print("=" * 55)
-    print(f"Toplam: {len(gecenler)} koin tüneli geçti 🚇")
-    
-    return gecenler
+    print(f"🏁 TÜNEL KAPANDI. {cnt} Coin geçiş izni aldı.")
+    print(f"📄 Liste kaydedildi: {OUTPUT_FILE}")
 
 if __name__ == "__main__":
-    tunel_tara()
+    run_tunel()

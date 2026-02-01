@@ -1,363 +1,327 @@
 """
-Coin DNA Analyzer - Character-Based Classification
-===================================================
-Analyzes historical behavior of each coin to assign a "character type".
-Uses metrics like: ATR%, Trend Duration, Spike Frequency, BTC Correlation.
-
-Character Types:
-- ATLAS: Stable giants, slow but steady
-- ROKET: Explosive pumps, fast crashes
-- TAKIPCI: Follows BTC closely
-- ISYANKAR: Independent movement from BTC
-- UYUYAN: Long dormancy, sudden awakening
-- HAYALET: Low liquidity, unpredictable
+🧬 SOLUSDT DNA Analyzer (Pilot)
+Strict Look-Ahead Bias Prevention
 """
-
+import os
 import pandas as pd
 import numpy as np
-from typing import Dict, List, Optional
-from dataclasses import dataclass
-from tezaver.core import config, coin_cell_paths
-import json
+import math
+from datetime import datetime
 
+COIN_CELLS_DIR = "/Users/alisaglam/TezaverMac/coin_cells"
+SYMBOL = "SOLUSDT"
+REPORT_FILE = f"{SYMBOL}_dna_report.md"
 
-@dataclass
-class CoinDNA:
-    """DNA profile for a single coin."""
-    symbol: str
-    
-    # Volatility Profile
-    avg_atr_pct: float        # Average daily ATR as % of price
-    max_daily_move: float     # Largest single-day move ever
-    spike_frequency: int      # Days with >10% move in history
-    
-    # Trend Profile
-    avg_trend_duration: float # Average days a trend lasts
-    trend_consistency: float  # % of time in clear trend vs ranging
-    
-    # Correlation Profile
-    btc_correlation: float    # Pearson correlation with BTC daily returns
-    
-    # Volume Profile
-    avg_volume_stability: float # Coefficient of variation (std/mean)
-    volume_spike_frequency: int # Days with volume > 5x average
-    
-    # Recovery Profile
-    avg_recovery_days: float  # Average days to recover from -20% drop
-    
-    # Classification
-    character: str            # Assigned character type
-    
+# Tier Thresholds
+TIER_THRESHOLDS = {'💎': 30.0, '🥇': 20.0, '🥈': 10.0, '🥉': 5.0}
 
-class CoinDNAAnalyzer:
-    """Analyzes coin behavior and assigns character types."""
+def load_clean(path):
+    try:
+        df = pd.read_parquet(path)
+        if 'timestamp' in df.columns:
+            df['dt'] = pd.to_datetime(df['timestamp'], unit='ms')
+            df.set_index('dt', inplace=True)
+            df = df[~df.index.duplicated(keep='last')]
+            return df.sort_index()
+    except Exception as e:
+        print(f"Error loading {path}: {e}")
+        return pd.DataFrame()
+
+def calculate_daily_metrics(df_1d):
+    """Calculate daily indicators for Gate 1 analysis"""
+    # EMA21
+    df_1d['ema21'] = df_1d['close'].ewm(span=21, adjust=False).mean()
     
-    def __init__(self):
-        self.coins = config.DEFAULT_COINS
-        self.btc_returns = None
-        self._load_btc_data()
-        
-    def _load_btc_data(self):
-        """Load BTC data for correlation calculation."""
-        btc_path = coin_cell_paths.get_history_file("BTCUSDT", "1d")
-        if btc_path.exists():
-            df = pd.read_parquet(btc_path)
-            df['returns'] = df['close'].pct_change()
-            self.btc_returns = df['returns'].values
-            
-    def analyze_coin(self, symbol: str) -> Optional[CoinDNA]:
-        """Analyze a single coin and return its DNA profile."""
+    # ATR14 %
+    d_tr = np.maximum(df_1d['high'] - df_1d['low'], 
+                      np.maximum(abs(df_1d['high'] - df_1d['close'].shift(1)), 
+                                 abs(df_1d['low'] - df_1d['close'].shift(1))))
+    df_1d['atr14'] = d_tr.rolling(window=14).mean()
+    df_1d['atr_pct'] = (df_1d['atr14'] / df_1d['close']) * 100
+    
+    # ADX14
+    plus_dm = df_1d['high'].diff()
+    minus_dm = -df_1d['low'].diff()
+    plus_dm = plus_dm.where((plus_dm > minus_dm) & (plus_dm > 0), 0)
+    minus_dm = minus_dm.where((minus_dm > plus_dm) & (minus_dm > 0), 0)
+    tr14 = d_tr.rolling(window=14).sum()
+    plus_di = 100 * (plus_dm.rolling(window=14).sum() / tr14)
+    minus_di = 100 * (minus_dm.rolling(window=14).sum() / tr14)
+    dx = 100 * abs(plus_di - minus_di) / (plus_di + minus_di)
+    df_1d['adx14'] = dx.rolling(window=14).mean()
+    
+    # RSI14
+    delta = df_1d['close'].diff()
+    gain = delta.where(delta > 0, 0).rolling(window=14).mean()
+    loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+    rs = gain / loss.replace(0, np.nan)
+    df_1d['rsi14'] = 100 - (100 / (1 + rs))
+    
+    # Volume Ratio (vs 20-day avg)
+    df_1d['vol_avg20'] = df_1d['volume'].rolling(window=20).mean()
+    df_1d['vol_ratio'] = df_1d['volume'] / df_1d['vol_avg20']
+    
+    # Trend: Close > EMA21?
+    df_1d['above_ema21'] = (df_1d['close'] > df_1d['ema21']).astype(int)
+    
+    return df_1d
+
+def calculate_15m_indicators(df_15m):
+    """RSI-EMA and Ribbon for trigger detection"""
+    # RSI
+    alpha_rsi = 1/11
+    delta = df_15m['close'].diff()
+    gain = delta.where(delta > 0, 0)
+    loss = (-delta.where(delta < 0, 0))
+    avg_gain = gain.ewm(alpha=alpha_rsi, adjust=False).mean()
+    avg_loss = loss.ewm(alpha=alpha_rsi, adjust=False).mean()
+    rs = avg_gain / avg_loss.replace(0, np.nan)
+    df_15m['rsi'] = 100 - (100 / (1 + rs))
+    
+    # RSI-EMA (Signal Line)
+    df_15m['rsi_ema'] = df_15m['rsi'].ewm(span=11, adjust=False).mean()
+    
+    # Ribbon (8 lines)
+    ribbon_spans = [20, 25, 30, 35, 40, 45, 50, 55]
+    for span in ribbon_spans:
+        df_15m[f'ribbon_{span}'] = df_15m['rsi_ema'].ewm(span=span, adjust=False).mean()
+    
+    ribbon_cols = [f'ribbon_{s}' for s in ribbon_spans]
+    df_15m['ribbon_max'] = df_15m[ribbon_cols].max(axis=1)
+    df_15m['ribbon_min'] = df_15m[ribbon_cols].min(axis=1)
+    df_15m['ribbon_spread'] = df_15m['ribbon_max'] - df_15m['ribbon_min']
+    
+    # Trigger Condition
+    cond_now = df_15m['rsi_ema'] >= df_15m['ribbon_max']
+    cond_prev = df_15m['rsi_ema'].shift(1) < df_15m['ribbon_max'].shift(1)
+    df_15m['trigger'] = cond_now & cond_prev
+    
+    # ATR21 %
+    tr = np.maximum(df_15m['high'] - df_15m['low'],
+                    np.maximum(abs(df_15m['high'] - df_15m['close'].shift(1)),
+                               abs(df_15m['low'] - df_15m['close'].shift(1))))
+    df_15m['atr21'] = tr.rolling(window=21).mean()
+    df_15m['atr_adj'] = (df_15m['atr21'] / df_15m['close']) * 100
+    
+    # RSI Angle
+    df_15m['rsi_angle'] = np.degrees(np.arctan(df_15m['rsi_ema'].diff()))
+    
+    # Volume metrics (simplified)
+    df_15m['vol_avg21'] = df_15m['volume'].rolling(window=21).mean()
+    df_15m['vol_ratio_15m'] = df_15m['volume'] / df_15m['vol_avg21']
+    
+    # Hour of day
+    df_15m['hour'] = df_15m.index.hour
+    
+    return df_15m
+
+def run_dna_analysis():
+    print(f"🧬 DNA Analizi Başlıyor: {SYMBOL}")
+    print(f"   Dahi Modu: AKTIF")
+    print(f"   Look-Ahead Bias Koruması: AKTIF (strict_before=True)")
+    
+    # Load Data
+    base_path = os.path.join(COIN_CELLS_DIR, SYMBOL, "data")
+    df_1d = load_clean(os.path.join(base_path, "history_1d.parquet"))
+    df_15m = load_clean(os.path.join(base_path, "history_15m.parquet"))
+    
+    if df_1d.empty or df_15m.empty:
+        print(f"❌ Veri bulunamadı: {SYMBOL}")
+        return
+    
+    # Filter to 2023-2025
+    start_date = pd.Timestamp("2023-01-01")
+    end_date = pd.Timestamp("2025-12-31")
+    df_1d = df_1d[(df_1d.index >= start_date) & (df_1d.index <= end_date)]
+    df_15m = df_15m[(df_15m.index >= start_date) & (df_15m.index <= end_date)]
+    
+    print(f"   15m Veri: {df_15m.index.min()} -> {df_15m.index.max()} ({len(df_15m):,} bar)")
+    print(f"   1D Veri: {df_1d.index.min()} -> {df_1d.index.max()} ({len(df_1d):,} gün)")
+    
+    # Calculate Indicators
+    df_1d = calculate_daily_metrics(df_1d)
+    df_15m = calculate_15m_indicators(df_15m)
+    
+    # Find Triggers
+    trigger_indices = df_15m[df_15m['trigger']].index.tolist()
+    print(f"\n📍 Bulunan Tetik Sayısı: {len(trigger_indices)}")
+    
+    # Analyze Each Trigger
+    results = []
+    for i, trig_time in enumerate(trigger_indices):
         try:
-            path = coin_cell_paths.get_history_file(symbol, "1d")
-            if not path.exists():
-                return None
+            trig_idx = df_15m.index.get_loc(trig_time)
+            if trig_idx + 21 >= len(df_15m):
+                continue  # Skip if not enough future bars
             
-            df = pd.read_parquet(path)
-            if len(df) < 100:
-                return None
-                
-            # Calculate daily returns
-            df['returns'] = df['close'].pct_change()
-            df['daily_move'] = (df['high'] - df['low']) / df['open']
+            entry_price = df_15m['close'].iloc[trig_idx]
+            future_bars = df_15m.iloc[trig_idx+1 : trig_idx+22]
+            peak_price = future_bars['high'].max()
+            peak_pct = ((peak_price / entry_price) - 1) * 100
             
-            # ATR%
-            df['tr'] = np.maximum(
-                df['high'] - df['low'],
-                np.maximum(
-                    abs(df['high'] - df['close'].shift(1)),
-                    abs(df['low'] - df['close'].shift(1))
-                )
-            )
-            df['atr'] = df['tr'].rolling(14).mean()
-            df['atr_pct'] = (df['atr'] / df['close']) * 100
-            avg_atr_pct = df['atr_pct'].mean()
+            # Tier Assignment
+            if peak_pct >= 30: tier = '💎'
+            elif peak_pct >= 20: tier = '🥇'
+            elif peak_pct >= 10: tier = '🥈'
+            elif peak_pct >= 5: tier = '🥉'
+            else: tier = '❌'
             
-            # Max daily move
-            max_daily_move = df['daily_move'].max() * 100
+            is_success = 1 if peak_pct >= 5 else 0
             
-            # Spike frequency (>10% daily move)
-            spike_frequency = (df['daily_move'] > 0.10).sum()
+            # ===== GATE 1: Daily Context (STRICT_BEFORE) =====
+            # Get PREVIOUS DAY's CLOSED data only
+            trig_date = trig_time.normalize()
+            daily_before = df_1d[df_1d.index < trig_date]
             
-            # Trend analysis (using EMA20 vs EMA50)
-            df['ema20'] = df['close'].ewm(span=20).mean()
-            df['ema50'] = df['close'].ewm(span=50).mean()
-            df['trend'] = np.where(df['ema20'] > df['ema50'], 1, -1)
-            df['trend_change'] = df['trend'] != df['trend'].shift(1)
+            if daily_before.empty:
+                d_adx, d_atr_pct, d_rsi, d_above_ema, d_vol_ratio = np.nan, np.nan, np.nan, np.nan, np.nan
+            else:
+                last_day = daily_before.iloc[-1]
+                d_adx = last_day.get('adx14', np.nan)
+                d_atr_pct = last_day.get('atr_pct', np.nan)
+                d_rsi = last_day.get('rsi14', np.nan)
+                d_above_ema = last_day.get('above_ema21', np.nan)
+                d_vol_ratio = last_day.get('vol_ratio', np.nan)
             
-            # Average trend duration
-            trend_changes = df['trend_change'].sum()
-            avg_trend_duration = len(df) / max(trend_changes, 1)
+            # ===== GATE 2: Trigger Moment =====
+            trig_row = df_15m.iloc[trig_idx]
+            t_rsi_angle = trig_row.get('rsi_angle', 0)
+            t_atr_adj = trig_row.get('atr_adj', 0)
+            t_ribbon_spread = trig_row.get('ribbon_spread', 0)
+            t_vol_ratio = trig_row.get('vol_ratio_15m', 0)
+            t_hour = trig_row.get('hour', 0)
+            t_rsi = trig_row.get('rsi', 50)
             
-            # Trend consistency (% of time in clear trend)
-            df['trend_strength'] = abs(df['ema20'] - df['ema50']) / df['close']
-            trend_consistency = (df['trend_strength'] > 0.02).mean() * 100
-            
-            # BTC Correlation
-            btc_correlation = 0.0
-            if self.btc_returns is not None:
-                min_len = min(len(df['returns'].dropna()), len(self.btc_returns))
-                if min_len > 30:
-                    coin_ret = df['returns'].dropna().values[-min_len:]
-                    btc_ret = self.btc_returns[-min_len:]
-                    # Handle NaN
-                    mask = ~(np.isnan(coin_ret) | np.isnan(btc_ret))
-                    if mask.sum() > 30:
-                        btc_correlation = np.corrcoef(coin_ret[mask], btc_ret[mask])[0, 1]
-                        
-            # Volume stability
-            vol_mean = df['volume'].mean()
-            vol_std = df['volume'].std()
-            avg_volume_stability = vol_std / vol_mean if vol_mean > 0 else 0
-            
-            # Volume spike frequency
-            df['vol_sma50'] = df['volume'].rolling(50).mean()
-            volume_spike_frequency = (df['volume'] > df['vol_sma50'] * 5).sum()
-            
-            # Recovery analysis
-            df['drawdown'] = (df['close'] - df['close'].cummax()) / df['close'].cummax()
-            big_drops = df[df['drawdown'] <= -0.20].index.tolist()
-            recovery_days = []
-            for drop_idx in big_drops[:10]:  # Sample first 10
-                drop_pos = df.index.get_loc(drop_idx)
-                drop_price = df.iloc[drop_pos]['close']
-                # Find when it recovered
-                for i in range(drop_pos + 1, min(drop_pos + 60, len(df))):
-                    if df.iloc[i]['close'] >= drop_price:
-                        recovery_days.append(i - drop_pos)
-                        break
-            avg_recovery_days = np.mean(recovery_days) if recovery_days else 60.0
-            
-            # Classify character
-            character = self._classify_character(
-                avg_atr_pct, max_daily_move, spike_frequency,
-                avg_trend_duration, trend_consistency, btc_correlation,
-                avg_volume_stability, volume_spike_frequency, avg_recovery_days
-            )
-            
-            return CoinDNA(
-                symbol=symbol,
-                avg_atr_pct=avg_atr_pct,
-                max_daily_move=max_daily_move,
-                spike_frequency=spike_frequency,
-                avg_trend_duration=avg_trend_duration,
-                trend_consistency=trend_consistency,
-                btc_correlation=btc_correlation,
-                avg_volume_stability=avg_volume_stability,
-                volume_spike_frequency=volume_spike_frequency,
-                avg_recovery_days=avg_recovery_days,
-                character=character
-            )
+            results.append({
+                'time': trig_time,
+                'entry_price': entry_price,
+                'peak_pct': peak_pct,
+                'tier': tier,
+                'success': is_success,
+                # Gate 1 (Daily - Previous Day CLOSED)
+                'd_adx': d_adx,
+                'd_atr_pct': d_atr_pct,
+                'd_rsi': d_rsi,
+                'd_above_ema': d_above_ema,
+                'd_vol_ratio': d_vol_ratio,
+                # Gate 2 (Trigger Moment)
+                't_rsi_angle': t_rsi_angle,
+                't_atr_adj': t_atr_adj,
+                't_ribbon_spread': t_ribbon_spread,
+                't_vol_ratio': t_vol_ratio,
+                't_hour': t_hour,
+                't_rsi': t_rsi
+            })
             
         except Exception as e:
-            return None
-            
-    def _classify_character(self, atr, max_move, spikes, trend_dur, trend_cons,
-                           btc_corr, vol_stab, vol_spikes, recovery):
-        """Classify coin into a character type based on metrics."""
+            continue
+    
+    df_results = pd.DataFrame(results)
+    
+    if df_results.empty:
+        print("❌ Sonuç bulunamadı.")
+        return
+    
+    # ========== ANALYSIS ==========
+    total = len(df_results)
+    successes = df_results['success'].sum()
+    success_rate = (successes / total) * 100
+    
+    tier_counts = df_results['tier'].value_counts()
+    
+    print(f"\n📊 SONUÇLAR ({SYMBOL})")
+    print(f"   Toplam Tetik: {total}")
+    print(f"   Başarılı (≥5%): {successes} ({success_rate:.1f}%)")
+    print(f"\n   Tier Dağılımı:")
+    for t in ['💎', '🥇', '🥈', '🥉', '❌']:
+        cnt = tier_counts.get(t, 0)
+        pct = (cnt / total) * 100 if total > 0 else 0
+        print(f"      {t}: {cnt} ({pct:.1f}%)")
+    
+    # Compare Winners vs Losers (Gate 1 - Daily)
+    winners = df_results[df_results['success'] == 1]
+    losers = df_results[df_results['success'] == 0]
+    
+    print(f"\n🔬 GATE 1 ANALİZİ (Günlük - Önceki Gün Kapanış)")
+    gate1_metrics = ['d_adx', 'd_atr_pct', 'd_rsi', 'd_above_ema', 'd_vol_ratio']
+    gate1_analysis = []
+    for m in gate1_metrics:
+        w_mean = winners[m].mean() if not winners.empty else 0
+        l_mean = losers[m].mean() if not losers.empty else 0
+        diff = w_mean - l_mean
+        gate1_analysis.append({'metric': m, 'winner_avg': w_mean, 'loser_avg': l_mean, 'diff': diff})
+        print(f"   {m}: Kazanan Ort={w_mean:.2f} | Kaybeden Ort={l_mean:.2f} | Fark={diff:+.2f}")
+    
+    print(f"\n⚡ GATE 2 ANALİZİ (Tetik Anı - 15m)")
+    gate2_metrics = ['t_rsi_angle', 't_atr_adj', 't_ribbon_spread', 't_vol_ratio', 't_hour', 't_rsi']
+    gate2_analysis = []
+    for m in gate2_metrics:
+        w_mean = winners[m].mean() if not winners.empty else 0
+        l_mean = losers[m].mean() if not losers.empty else 0
+        diff = w_mean - l_mean
+        gate2_analysis.append({'metric': m, 'winner_avg': w_mean, 'loser_avg': l_mean, 'diff': diff})
+        print(f"   {m}: Kazanan Ort={w_mean:.2f} | Kaybeden Ort={l_mean:.2f} | Fark={diff:+.2f}")
+    
+    # Generate Report
+    with open(REPORT_FILE, "w", encoding="utf-8") as f:
+        f.write(f"# 🧬 {SYMBOL} DNA Raporu\n")
+        f.write(f"Tarih: {datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n")
+        f.write(f"> [!IMPORTANT]\n> Look-Ahead Bias Koruması: **AKTİF** (Günlük veri sadece önceki gün kapanışından alındı)\n\n")
         
-        # Use a scoring system for more nuance
-        scores = {
-            'ATLAS': 0,      # Sakin dev (BTC-like)
-            'GRINDER': 0,    # Yavaş ama istikrarlı
-            'DALGACI': 0,    # Düzgün dalgalanma
-            'IGNECI': 0,     # Hızlı iğne atar, geri döner
-            'PATLAYICI': 0,  # Büyük patlamalar
-            'TAKIPCI': 0,    # BTC'yi takip eder
-            'ISYANKAR': 0,   # Bağımsız hareket
-            'UYUYAN': 0,     # Uzun süre sessiz
-            'HAYALET': 0,    # Düşük likidite
-        }
+        f.write(f"## 📊 Genel Başarı\n")
+        f.write(f"| Metrik | Değer |\n|---|---|\n")
+        f.write(f"| Toplam Tetik | **{total}** |\n")
+        f.write(f"| Başarılı (≥5%) | **{successes}** ({success_rate:.1f}%) |\n")
+        f.write(f"| Başarısız (<5%) | **{total - successes}** ({100-success_rate:.1f}%) |\n\n")
         
-        # --- ATR Based ---
-        if atr < 3.0:
-            scores['ATLAS'] += 3
-            scores['GRINDER'] += 2
-            scores['UYUYAN'] += 1
-        elif atr < 5.0:
-            scores['GRINDER'] += 2
-            scores['DALGACI'] += 2
-            scores['TAKIPCI'] += 1
-        elif atr < 8.0:
-            scores['DALGACI'] += 2
-            scores['PATLAYICI'] += 1
-            scores['TAKIPCI'] += 1
-        else:
-            scores['PATLAYICI'] += 3
-            scores['IGNECI'] += 2
-            
-        # --- Spike Frequency ---
-        if spikes > 50:
-            scores['IGNECI'] += 3
-            scores['PATLAYICI'] += 2
-        elif spikes > 20:
-            scores['IGNECI'] += 2
-            scores['DALGACI'] += 1
-        elif spikes > 5:
-            scores['DALGACI'] += 2
-        else:
-            scores['GRINDER'] += 2
-            scores['UYUYAN'] += 1
-            
-        # --- Max Move (Single Day) ---
-        if max_move > 50:
-            scores['IGNECI'] += 3
-            scores['PATLAYICI'] += 2
-        elif max_move > 30:
-            scores['PATLAYICI'] += 2
-            scores['IGNECI'] += 1
-        elif max_move < 15:
-            scores['GRINDER'] += 2
-            scores['ATLAS'] += 1
-            
-        # --- Trend Duration ---
-        if trend_dur > 30:
-            scores['GRINDER'] += 3
-            scores['ATLAS'] += 2
-        elif trend_dur > 15:
-            scores['DALGACI'] += 2
-        else:
-            scores['IGNECI'] += 2
-            scores['PATLAYICI'] += 1
-            
-        # --- Trend Consistency ---
-        if trend_cons > 60:
-            scores['GRINDER'] += 2
-            scores['ISYANKAR'] += 1
-        elif trend_cons < 30:
-            scores['IGNECI'] += 2
-            scores['HAYALET'] += 1
-            
-        # --- BTC Correlation ---
-        if btc_corr > 0.8:
-            scores['TAKIPCI'] += 4
-            scores['ATLAS'] += 1
-        elif btc_corr > 0.6:
-            scores['TAKIPCI'] += 2
-        elif btc_corr < 0.3:
-            scores['ISYANKAR'] += 3
-            
-        # --- Volume Stability ---
-        if vol_stab > 3.0:
-            scores['HAYALET'] += 3
-            scores['IGNECI'] += 1
-        elif vol_stab < 1.0:
-            scores['GRINDER'] += 1
-            scores['ATLAS'] += 1
-            
-        # --- Volume Spikes ---
-        if vol_spikes > 100:
-            scores['PATLAYICI'] += 2
-            scores['IGNECI'] += 1
-        elif vol_spikes < 20:
-            scores['UYUYAN'] += 2
-            
-        # --- Recovery Days ---
-        if recovery < 7:
-            scores['IGNECI'] += 2  # Fast recoveries = needle pattern
-        elif recovery > 30:
-            scores['GRINDER'] += 1
-            scores['UYUYAN'] += 1
-            
-        # Get top character
-        sorted_scores = sorted(scores.items(), key=lambda x: -x[1])
-        top_char = sorted_scores[0][0]
-        top_score = sorted_scores[0][1]
-        second_char = sorted_scores[1][0]
-        second_score = sorted_scores[1][1]
+        f.write(f"## 🏅 Tier Dağılımı\n")
+        f.write(f"| Tier | Adet | Oran |\n|---|---|---|\n")
+        for t in ['💎', '🥇', '🥈', '🥉', '❌']:
+            cnt = tier_counts.get(t, 0)
+            pct = (cnt / total) * 100 if total > 0 else 0
+            f.write(f"| {t} | {cnt} | {pct:.1f}% |\n")
+        f.write("\n")
         
-        # If close, create hybrid
-        if top_score - second_score <= 2 and top_score > 0:
-            return f"{top_char}/{second_char}"
+        f.write(f"## 🚪 GATE 1: Günlük Eleme (Önceki Gün Kapanış)\n")
+        f.write(f"| Metrik | Kazanan Ort | Kaybeden Ort | Fark |\n|---|---|---|---|\n")
+        for a in gate1_analysis:
+            sign = "🟢" if a['diff'] > 0 else "🔴" if a['diff'] < 0 else "⚪"
+            f.write(f"| {a['metric']} | {a['winner_avg']:.2f} | {a['loser_avg']:.2f} | {sign} {a['diff']:+.2f} |\n")
+        f.write("\n")
         
-        return top_char
+        f.write(f"## ⚡ GATE 2: Tetik Anı (15m)\n")
+        f.write(f"| Metrik | Kazanan Ort | Kaybeden Ort | Fark |\n|---|---|---|---|\n")
+        for a in gate2_analysis:
+            sign = "🟢" if a['diff'] > 0 else "🔴" if a['diff'] < 0 else "⚪"
+            f.write(f"| {a['metric']} | {a['winner_avg']:.2f} | {a['loser_avg']:.2f} | {sign} {a['diff']:+.2f} |\n")
+        f.write("\n")
         
-    def analyze_all(self, progress_callback=None) -> List[CoinDNA]:
-        """Analyze all coins and return their DNA profiles."""
-        results = []
-        total = len(self.coins)
+        # Insights
+        f.write(f"## 💡 Dahi Modu Yorumları\n")
         
-        for i, symbol in enumerate(self.coins):
-            if progress_callback:
-                progress_callback(i, total, symbol)
-            elif i % 10 == 0:
-                print(f"Analyzing {i}/{total}: {symbol}...", end='\r')
-                
-            dna = self.analyze_coin(symbol)
-            if dna:
-                results.append(dna)
-                
-        return results
+        # Find strongest Gate 1 signal
+        gate1_sorted = sorted(gate1_analysis, key=lambda x: abs(x['diff']), reverse=True)
+        if gate1_sorted:
+            top_g1 = gate1_sorted[0]
+            f.write(f"### Gate 1 En Güçlü Sinyal\n")
+            f.write(f"**{top_g1['metric']}**: Kazananlar ortalama **{top_g1['winner_avg']:.2f}**, kaybedenler **{top_g1['loser_avg']:.2f}**.\n")
+            if top_g1['diff'] > 0:
+                f.write(f"→ Bu metrik **yüksekse** başarı şansı artıyor.\n\n")
+            else:
+                f.write(f"→ Bu metrik **düşükse** başarı şansı artıyor.\n\n")
         
-    def save_results(self, results: List[CoinDNA], filepath: str):
-        """Save DNA results to JSON file."""
-        data = []
-        for r in results:
-            data.append({
-                'symbol': r.symbol,
-                'character': r.character,
-                'avg_atr_pct': round(float(r.avg_atr_pct), 2),
-                'max_daily_move': round(float(r.max_daily_move), 2),
-                'spike_frequency': int(r.spike_frequency),
-                'avg_trend_duration': round(float(r.avg_trend_duration), 1),
-                'trend_consistency': round(float(r.trend_consistency), 1),
-                'btc_correlation': round(float(r.btc_correlation), 3),
-                'avg_volume_stability': round(float(r.avg_volume_stability), 2),
-                'volume_spike_frequency': int(r.volume_spike_frequency),
-                'avg_recovery_days': round(float(r.avg_recovery_days), 1)
-            })
-        with open(filepath, 'w') as f:
-            json.dump(data, f, indent=2)
-        print(f"Saved {len(data)} coin DNA profiles to {filepath}")
+        # Find strongest Gate 2 signal
+        gate2_sorted = sorted(gate2_analysis, key=lambda x: abs(x['diff']), reverse=True)
+        if gate2_sorted:
+            top_g2 = gate2_sorted[0]
+            f.write(f"### Gate 2 En Güçlü Sinyal\n")
+            f.write(f"**{top_g2['metric']}**: Kazananlar ortalama **{top_g2['winner_avg']:.2f}**, kaybedenler **{top_g2['loser_avg']:.2f}**.\n")
+            if top_g2['diff'] > 0:
+                f.write(f"→ Bu metrik **yüksekse** başarı şansı artıyor.\n\n")
+            else:
+                f.write(f"→ Bu metrik **düşükse** başarı şansı artıyor.\n\n")
 
-
-def main():
-    print("=== COIN DNA ANALYZER ===")
-    print("Profiling coin behavior across history...")
-    
-    analyzer = CoinDNAAnalyzer()
-    results = analyzer.analyze_all()
-    
-    print(f"\n\nAnalyzed {len(results)} coins.\n")
-    
-    # Summary by character
-    characters = {}
-    for r in results:
-        if r.character not in characters:
-            characters[r.character] = []
-        characters[r.character].append(r.symbol)
-        
-    print("=== CHARACTER DISTRIBUTION ===")
-    for char, coins in sorted(characters.items(), key=lambda x: -len(x[1])):
-        print(f"{char}: {len(coins)} coins")
-        if len(coins) <= 10:
-            print(f"  → {', '.join(coins)}")
-        else:
-            print(f"  → {', '.join(coins[:5])} ... +{len(coins)-5} more")
-            
-    # Save results
-    output_path = "library/coin_dna_profiles.json"
-    analyzer.save_results(results, output_path)
-    
+    print(f"\n✅ Rapor oluşturuldu: {REPORT_FILE}")
 
 if __name__ == "__main__":
-    main()
+    run_dna_analysis()

@@ -1,0 +1,17 @@
+[
+  {
+    "symbol": "BANKUSDT",
+    "dna": "asiri_alim|tight_squeeze|harmony_L1|sleeping|mid_zone|depleting_energy",
+    "entry_time": "00:00"
+  },
+  {
+    "symbol": "ZKCUSDT",
+    "dna": "derin_dip|tight_squeeze|harmony_L1|sleeping|deep_valley|depleting_energy",
+    "entry_time": "00:00"
+  },
+  {
+    "symbol": "KERNELUSDT",
+    "dna": "derin_dip|coiling|harmony_L3|sleeping|deep_valley|depleting_energy",
+    "entry_time": "00:00"
+  }
+]
