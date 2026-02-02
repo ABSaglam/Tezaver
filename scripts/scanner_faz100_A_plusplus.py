@@ -8,12 +8,15 @@ from datetime import datetime
 
 warnings.filterwarnings('ignore')
 
+# FAZ-100 A++ ELITE SNIPER ARCHIVE VERSION
+# PROUDLY SEALED FOR ALI BEY
+
 # Configuration
 COIN_CELLS_DIR = "/Users/alisaglam/TezaverMac/coin_cells"
 START_DATE = "2026-01-01"
-END_DATE = "2026-02-05" # Extended to include Feb
+END_DATE = "2026-01-31"
 KEYS_FILE = "/Users/alisaglam/TezaverMac/data/faz100_dna_keys_SEALED.json"
-REPORT_FILE = "/Users/alisaglam/TezaverMac/FAZ100_LATEST_REPORT_V23_OPTIMIZED.md"
+REPORT_FILE = "/Users/alisaglam/TezaverMac/FAZ100_A_PLUSPLUS_REPORT.md"
 
 # SNIPER ELITE FILTER FOR THE LIST
 REPORT_MIN_WR = 95.0 # Only list signals in MD if the historical DNA WR is >= 95%
@@ -83,7 +86,7 @@ def get_tier(p_49_val):
     return "NOTIER"
 
 def run_elite_scan():
-    print(f"🦅 STARTING FAZ-100 ELITE V17 SCAN (2026)")
+    print(f"🦅 STARTING FAZ-100 A++ ELITE SCAN (2026)")
     
     try:
         with open(KEYS_FILE, 'r') as f:
@@ -176,66 +179,22 @@ def run_elite_scan():
                 vol_21_series = df['volume'].rolling(window=21).apply(lambda x: (x[-1]-x.min())/(x.max()-x.min()) if (x.max()-x.min())>0 else 1.0, raw=False)
                 v21_val = vol_21_series.loc[idx] * 100
 
-                # --- DEPTH ANALYSIS METRICS (REFINED) ---
-                next_raw = df.loc[idx:].iloc[1:50]
-                if not next_raw.empty:
-                    # Vol-4: Takip eden 4 barın hacim gücü
-                    vol_4_avg = next_raw['volume'].iloc[:4].mean()
-                    vol_4_score = vol_4_avg / row['vol_ma'] if row['vol_ma'] > 0 else 0
-                    
-                    # REFINED MDD: Peak noktasına (max_idx) kadar olan MAKSİMUM SARKMA
-                    entry_p = next_raw.iloc[0]['open']
-                    # Sadece tetik ile zirve arasındaki mumlara bakıyoruz
-                    peak_window = df.loc[idx:max_idx]
-                    if len(peak_window) > 1:
-                        min_low_to_peak = peak_window['low'].min()
-                        mdd_val = ((min_low_to_peak - entry_p) / entry_p) * 100
-                    else:
-                        mdd_val = 0
-                else:
-                    vol_4_score = 0
-                    mdd_val = 0
-
-                # --- FULL SPECTRUM CLASS CLASSIFICATION (V22) ---
-                klasman = "OUT" # Default
+                # --- V18 (A++) PHYSICAL DISCIPLINE GATE ---
+                is_weak_trigger = False
+                if angle < 15.0: is_weak_trigger = True
+                if row['rsi'] < 60.0: is_weak_trigger = True
+                if vboy_val < 2.0: is_weak_trigger = True
+                
+                if is_weak_trigger: continue # A++: Çer çöp temizliği
+                
+                # --- V18 (A++) DNA PERFORMANCE GATE (P-49 BASED) ---
                 dna_meta = valid_keys[symbol][dna]
+                # Calculate Elite Success Rate: (Bronze + Silver + Gold + Diamond) / Total
                 elite_success_count = dna_meta.get('BRONZE', 0) + dna_meta.get('SILVER', 0) + \
                                      dna_meta.get('GOLD', 0) + dna_meta.get('DIAMOND', 0)
                 elite_win_rate = (elite_success_count / dna_meta['TOTAL'] * 100) if dna_meta['TOTAL'] > 0 else 0
                 
-                # A Serisi (Elite)
-                if angle >= 15.0 and row['rsi'] >= 60.0 and vboy_val >= 2.0 and elite_win_rate >= 95.0:
-                    klasman = "A++"
-                elif angle >= 12.0 and row['rsi'] >= 58.0 and vboy_val >= 1.8 and elite_win_rate >= 92.0:
-                    klasman = "A+"
-                elif angle >= 10.0 and row['rsi'] >= 55.0 and vboy_val >= 1.5 and elite_win_rate >= 90.0:
-                    klasman = "A"
-                
-                # B Serisi (Trade)
-                elif angle >= 8.0 and row['rsi'] >= 53.0 and vboy_val >= 1.4 and elite_win_rate >= 85.0:
-                    klasman = "B++"
-                elif angle >= 6.0 and row['rsi'] >= 52.0 and vboy_val >= 1.3 and elite_win_rate >= 82.0:
-                    klasman = "B+"
-                elif angle >= 5.0 and row['rsi'] >= 50.0 and vboy_val >= 1.2 and elite_win_rate >= 80.0:
-                    klasman = "B"
-                
-                # C Serisi (Micro/Speculative) - Optimized (Only C++)
-                elif angle >= 3.0 and row['rsi'] >= 45.0 and vboy_val >= 1.1 and elite_win_rate >= 75.0:
-                    klasman = "C++"
-                
-                if klasman == "OUT": continue 
-
-                # --- V20 ENTRY GUARD (CONFIRMATION) ---
-                is_confirmed = "WAIT"
-                if vol_4_score >= 1.5:
-                    is_confirmed = "CONFIRMED"
-                elif vol_4_score >= 1.0:
-                    is_confirmed = "WEAK"
-                else:
-                    is_confirmed = "FAKE"
-                
-                # --- V21 FAKE CLEANING ---
-                if is_confirmed == "FAKE": continue # Ali Bey'in talebi: Fake'ler elensin.
+                if elite_win_rate < REPORT_MIN_WR: continue # A++: Sadece hızlı patlayan DNA'lar
 
                 # --- NEW TIER LOGIC: BASED ON P-49 ---
                 current_tier = get_tier(p_49_val)
@@ -264,26 +223,22 @@ def run_elite_scan():
                     'pos': "🟢" if row['rsi'] > 50 else "🟡",
                     'ang': angle,
                     'rsi': row['rsi'],
-                    'vol_factor': vboy_val,
-                    'vol_4': vol_4_score,
-                    'mdd': mdd_val,
-                    'klasman': klasman,
-                    'is_confirmed': is_confirmed
+                    'vol_factor': vboy_val
                 })
                         
         except Exception as e:
             print(f"Error {symbol}: {e}")
             
     # V17 REPORT GENERATION (HIGH-FIDELITY CLONE)
-    print("Generating High-Fidelity V17 Report...")
+    print("Generating High-Fidelity V17 A++ Report...")
     
     signals_df = pd.DataFrame(signals)
-    if signals_df.empty: return print("No Elite signals found.")
+    if signals_df.empty: return print("No A++ Elite signals found.")
     signals_df = signals_df.sort_values(['date', 'symbol'])
     
     with open(REPORT_FILE, 'w') as f:
-        f.write("# TEZAVER GLOBAL AUDIT REPORT (AYAŞ TÜNELİ + SNIPER ELITE) v17\n")
-        f.write(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} (SNIPER MODE)\n\n")
+        f.write("# TEZAVER GLOBAL AUDIT REPORT (AYAŞ TÜNELİ + SNIPER ELITE A++) v17\n")
+        f.write(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} (SNIPER A++ MODE)\n\n")
         
         signals_df['day_str'] = signals_df['date'].dt.strftime('%d %B %Y')
         days = signals_df['day_str'].unique()
@@ -292,8 +247,8 @@ def run_elite_scan():
             day_group = signals_df[signals_df['day_str'] == day]
             f.write(f"## 📅 {day} (Ayaş: {len(day_group)})\n\n")
             f.write("### 🚇 AYAŞ TÜNELİ\n\n")
-            f.write("| NO | SYM | CLASS | CONFIRM | MAX | CLOSE | TIME | SIG | CVT | TREND | POS | ANG | R-Ang | VAL | P | TIER | P-49 | BAR | V-4 | MDD | CGS | ADX | ATR% | Vrsi | VBoy | V100 | V21 | V-Mom |\n")
-            f.write("|----|-----------|-------|---------|--------|--------|-------|-----|-----------|-------|-----|------|----------|-----|-------|------|--------|-----|-------|-------|---------|--------|------|------|----------|------|-----|----------|\n")
+            f.write("| NO | SYM | MAX | CLOSE | TIME | SIG | CVT | TREND | POS | ANG | R-Ang | VAL | P | TIER | P-49 | BAR | NEXT | N-1 | CGS | ADX | ATR% | Vrsi | VBoy | V100 | V21 | V-Mom |\n")
+            f.write("|----|-----------|--------|--------|-------|-----|-----------|-------|-----|------|----------|-----|-------|------|--------|-----|-------|-------|---------|--------|------|------|----------|------|-----|----------|\n")
             
             count = 1
             last_sym = ""
@@ -332,21 +287,10 @@ def run_elite_scan():
                 v21_str = f"**{int(s['v21'])}%**" if s['v21'] > 80 else f"{int(s['v21'])}%"
                 vmom_str = vboy_str # Mapping vmom to vboy logic
                 
-                klas_color = 'gold' if s['klasman'] == 'A++' else 'silver' if s['klasman'] == 'A+' else 'brown'
-                klas_str = f"**{s['klasman']}**"
-                
-                conf_color = 'green' if s['is_confirmed'] == 'CONFIRMED' else 'orange' if s['is_confirmed'] == 'WEAK' else 'red'
-                conf_str = f"<font color='{conf_color}'>**{s['is_confirmed']}**</font>"
-                
-                v4_color = 'green' if s['vol_4'] > 1.5 else 'gray'
-                v4_str = f"<font color='{v4_color}'>{s['vol_4']:.1f}x</font>"
-                mdd_color = 'red' if s['mdd'] < -2 else 'green'
-                mdd_str = f"<font color='{mdd_color}'>{s['mdd']:.1f}%</font>"
-                
-                line = f"| {display_no:<2} | {display_sym:<9} | {klas_str:<5} | {conf_str:<7} | {max_str:<18} | {close_str:<6} | {s['date'].strftime('%H:%M')} | F100| {cvt_str:<17} | {s['trend']:<7} | {s['pos']:<3} | {ang_str:<15} | {r_ang_str:<17} | {val_emoji} | {p_str:<15} | {tier_icon:<4} | {p49_str:<15} | {bar_str:<12} | {v4_str:<12} | {mdd_str:<12} | {cgs_str:<16} | {adx_str:<16} | {atr_html} | {s['rsi']:.1f} | {vboy_str} | {v100_str} | {v21_str} | {vmom_str} |"
+                line = f"| {display_no:<2} | {display_sym:<9} | {max_str:<18} | {close_str:<6} | {s['date'].strftime('%H:%M')} | F100| {cvt_str:<17} | {s['trend']:<7} | {s['pos']:<3} | {ang_str:<15} | {r_ang_str:<17} | {val_emoji} | {p_str:<15} | {tier_icon:<4} | {p49_str:<15} | {bar_str:<12} | - | - | {cgs_str:<16} | {adx_str:<16} | {atr_html} | {s['rsi']:.1f} | {vboy_str} | {v100_str} | {v21_str} | {vmom_str} |"
                 f.write(line + "\n")
             f.write("\n")
 
-    print(f"✅ High-Fidelity V17 Report Done: {REPORT_FILE}")
+    print(f"✅ High-Fidelity V17 A++ Report Done: {REPORT_FILE}")
 
 if __name__ == "__main__": run_elite_scan()
