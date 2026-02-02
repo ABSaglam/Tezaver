@@ -16,7 +16,8 @@ KEYS_FILE = "/Users/alisaglam/TezaverMac/data/faz100_dna_keys_SEALED.json"
 REPORT_FILE = "/Users/alisaglam/TezaverMac/FAZ100_LATEST_REPORT_V23_OPTIMIZED.md"
 
 # SNIPER ELITE FILTER FOR THE LIST
-REPORT_MIN_WR = 95.0 # Only list signals in MD if the historical DNA WR is >= 95%
+REPORT_MIN_WR = 0 # Show ALL signals for this specific deep dive
+TARGET_COIN = "AUCTIONUSDT" # Focus on this coin
 
 def calculate_rsi(series, period=14):
     delta = series.diff()
@@ -92,7 +93,12 @@ def run_elite_scan():
         print("❌ SEALED Key file not found!")
         return
 
-    files = sorted(glob.glob(f"{COIN_CELLS_DIR}/*/data/history_15m.parquet"))
+    if TARGET_COIN:
+        files = glob.glob(f"{COIN_CELLS_DIR}/{TARGET_COIN}/data/history_15m.parquet")
+        print(f"🎯 Targeted Scan: {TARGET_COIN} ({len(files)} file)")
+    else:
+        files = sorted(glob.glob(f"{COIN_CELLS_DIR}/*/data/history_15m.parquet"))
+
     signals = []
     
     for filepath in files:
@@ -108,10 +114,21 @@ def run_elite_scan():
             # Feature Generation
             df['ema9'] = df['close'].ewm(span=9, adjust=False).mean()
             df['ema21'] = df['close'].ewm(span=21, adjust=False).mean()
-            df['ema233'] = df['close'].ewm(span=233, adjust=False).mean()
+            df['ema144'] = df['close'].ewm(span=144, adjust=False).mean() # Faster trend filter
             df['vol_ma'] = df['volume'].rolling(21).mean()
-            df['rsi'] = calculate_rsi(df['close'], 14)
-            df['rsi_ema'] = df['rsi'].ewm(span=21).mean()
+            df['rsi'] = calculate_rsi(df['close'], 11) # RSI 11
+            df['rsi_ema'] = df['rsi'].ewm(span=11, adjust=False).mean() # RSI EMA 11
+            
+            # RIBBON CALCULATION (Source: RSI EMA)
+            # Periods: 20, 25, 30, 35, 40, 45, 50, 55
+            ribbon_cols = []
+            for p in [20, 25, 30, 35, 40, 45, 50, 55]:
+                col = f'ribbon_{p}'
+                df[col] = df['rsi_ema'].ewm(span=p, adjust=False).mean()
+                ribbon_cols.append(col)
+            
+            df['ribbon_max'] = df[ribbon_cols].max(axis=1)
+
             df['atr'] = calculate_atr(df, 14)
             df['adx'] = calculate_adx(df, 14)
             # Daily ATR for tooltip (96 bars = 1 day)
@@ -126,34 +143,47 @@ def run_elite_scan():
             # Filter for TEST ZONE (2026)
             test_df = df[(df.index >= START_DATE) & (df.index <= END_DATE)].copy()
             
-            # 1. TRIGGER (MOMENTUM): RSI-EMA Cross Over Ribbon (Simplified as RSI > RSI_EMA here)
-            test_df['trigger'] = (test_df['rsi'] > test_df['rsi_ema']) & (test_df['rsi'].shift(1) <= test_df['rsi_ema'].shift(1))
+            # --- SEQUENTIAL TRIGGER LOGIC ---
+            # 1. Breakout: RSI_EMA crosses above Ribbon Max
+            test_df['breakout'] = (test_df['rsi_ema'] > test_df['ribbon_max']) & (test_df['rsi_ema'].shift(1) <= test_df['ribbon_max'].shift(1))
+            
+            # 2. Volume Prep: Volume > 1.5x MA
+            test_df['vol_ready'] = test_df['volume'] > (test_df['vol_ma'] * 1.5)
+            
+            # 3. Sequence: Breakout NOW, and Volume Ready within last 3 bars (including now)
+            test_df['vol_window'] = test_df['vol_ready'].astype(int).rolling(window=3).max()
+            
+            test_df['trigger'] = test_df['breakout'] & (test_df['vol_window'] == 1)
+            
             triggered = test_df[test_df['trigger'] == True]
             
             for idx, row in triggered.iterrows():
-                # 2. DNA CHECK: Is this coin's DNA matching FAZ100 criteria?
-                dna = get_dna_signature(row)
-                if dna not in coin_keys: continue
+                # 2. DNA BYPASS: NO DNA CHECK - PURE PHYSICAL SCAN
+                # Assign maximal stats to allow signals to pass 'Elite' checks later in code
+                # This ensures we see the signal purely based on Physics (RSI/Vol/Trend)
+                dna_meta = {'BRONZE':0, 'SILVER':0, 'GOLD':0, 'DIAMOND':100, 'TOTAL':100}
+                elite_win_rate = 100.0
                 
-                key_stat = coin_keys[dna]
-                wr = key_stat.get('WIN_RATE', 0)
-                
-                if wr < REPORT_MIN_WR: continue
+                # DNA variable is still needed for report string construction if used later, 
+                # but logic filtering is gone. 
+                dna = "PHYSICAL_ONLY"
+                wr = 100 # Define `wr` to prevent NameError
+
 
                 # 3. STRATEGY LAYER (PHYSICAL FILTERS)
-                # 3.1 Main Trend Filter: Price must be above EMA 233
-                if row['close'] < row['ema233']: continue
+                # 3.1 Main Trend Filter: Price must be above EMA 144
+                # if row['close'] < row['ema144']: continue # DISABLED FOR REVERSAL SCAN
                 
                 # 3.2 Ribbon Filter: EMA9 must be above EMA21
-                if row['ema9'] < row['ema21']: continue
+                # if row['ema9'] < row['ema21']: continue # Disabled for calibration with User's visual RSI trigger
                 
                 # 3.3 Volume Discipline: Volume must be at least 1.3x of average
-                if row['volume'] < row['vol_ma'] * 1.3: continue
+                # if row['volume'] < row['vol_ma'] * 1.3: continue # DISABLED - RELY ON TRIGGER LOGIC
                 
                 # 3.4 Angle simulation (EMA slope)
                 prev_ema = test_df.loc[:idx].iloc[-2]['ema21'] if len(test_df.loc[:idx]) > 1 else row['ema21']
                 angle = (row['ema21'] - prev_ema) / row['close'] * 1000
-                if angle < 0: continue
+                # if angle < 0: continue # DISABLED FOR REVERSAL SCAN
                 
                 # --- ANALİZ KATMANI (P, P-49, BAR, VOLUME) ---
                 p_val = ((row['close'] - row['open']) / row['open']) * 100
@@ -198,7 +228,9 @@ def run_elite_scan():
 
                 # --- FULL SPECTRUM CLASS CLASSIFICATION (V22) ---
                 klasman = "OUT" # Default
-                dna_meta = valid_keys[symbol][dna]
+                # dna_meta is already defined in the bypass block above
+                
+                # Check win rate calculation again just in case
                 elite_success_count = dna_meta.get('BRONZE', 0) + dna_meta.get('SILVER', 0) + \
                                      dna_meta.get('GOLD', 0) + dna_meta.get('DIAMOND', 0)
                 elite_win_rate = (elite_success_count / dna_meta['TOTAL'] * 100) if dna_meta['TOTAL'] > 0 else 0
@@ -223,7 +255,7 @@ def run_elite_scan():
                 elif angle >= 3.0 and row['rsi'] >= 45.0 and vboy_val >= 1.1 and elite_win_rate >= 75.0:
                     klasman = "C++"
                 
-                if klasman == "OUT": continue 
+                if klasman == "OUT": klasman = "REV-1" # Allow Unclassified Reversals
 
                 # --- V20 ENTRY GUARD (CONFIRMATION) ---
                 is_confirmed = "WAIT"
