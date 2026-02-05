@@ -1,0 +1,18 @@
+{
+  "SUPERNOVA": {
+    "target_rsi_angle": 1.7,
+    "target_smoothness": 0.013
+  },
+  "NINJA": {
+    "target_rsi_angle": -9.0,
+    "target_smoothness": 0.332
+  },
+  "GRIND": {
+    "target_rsi_angle": -7.4,
+    "target_smoothness": 0.358
+  },
+  "SURFER": {
+    "target_rsi_angle": -4.1,
+    "target_smoothness": 0.42
+  }
+}

@@ -1,0 +1,938 @@
+{
+  "MIRAUSDT": [
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>55",
+      "trend": "4H_EMA",
+      "vol": "VIDX_1.5",
+      "time": "NO_WEEKEND",
+      "win_rate": 62.5,
+      "total_signals": 16
+    }
+  ],
+  "CUSDT": [
+    {
+      "name": "GRIND_HUNTER",
+      "target": "GRIND",
+      "trigger": "RSI>70",
+      "trend": "4H_EMA",
+      "vol": "VIDX_1.5",
+      "time": "OFF",
+      "win_rate": 57.89,
+      "total_signals": 19
+    },
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>70",
+      "trend": "4H_EMA",
+      "vol": "VIDX_1.5",
+      "time": "OFF",
+      "win_rate": 57.89,
+      "total_signals": 19
+    }
+  ],
+  "FTTUSDT": [
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>70",
+      "trend": "4H_EMA",
+      "vol": "VIDX_2.0",
+      "time": "OFF",
+      "win_rate": 60.0,
+      "total_signals": 55
+    },
+    {
+      "name": "SUPERNOVA_HUNTER",
+      "target": "SUPERNOVA",
+      "trigger": "RSI>70",
+      "trend": "4H_EMA",
+      "vol": "VIDX_1.5",
+      "time": "OFF",
+      "win_rate": 59.09,
+      "total_signals": 66
+    },
+    {
+      "name": "GRIND_HUNTER",
+      "target": "GRIND",
+      "trigger": "RSI>70",
+      "trend": "4H_EMA",
+      "vol": "VIDX_1.5",
+      "time": "OFF",
+      "win_rate": 59.09,
+      "total_signals": 66
+    }
+  ],
+  "KITEUSDT": [
+    {
+      "name": "GRIND_HUNTER",
+      "target": "GRIND",
+      "trigger": "RSI>50",
+      "trend": "RIBBON",
+      "vol": "OFF",
+      "time": "NO_WEEKEND",
+      "win_rate": 56.67,
+      "total_signals": 30
+    },
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>50",
+      "trend": "RIBBON",
+      "vol": "OFF",
+      "time": "NO_WEEKEND",
+      "win_rate": 56.67,
+      "total_signals": 30
+    },
+    {
+      "name": "GENERIC_HUNTER",
+      "target": "GENERIC",
+      "trigger": "RSI>50",
+      "trend": "RIBBON",
+      "vol": "OFF",
+      "time": "NO_WEEKEND",
+      "win_rate": 56.67,
+      "total_signals": 30
+    }
+  ],
+  "REDUSDT": [
+    {
+      "name": "SUPERNOVA_HUNTER",
+      "target": "SUPERNOVA",
+      "trigger": "RSI>70",
+      "trend": "OFF",
+      "vol": "VIDX_2.0",
+      "time": "OFF",
+      "win_rate": 55.26,
+      "total_signals": 38
+    },
+    {
+      "name": "GRIND_HUNTER",
+      "target": "GRIND",
+      "trigger": "RSI>70",
+      "trend": "OFF",
+      "vol": "VIDX_2.0",
+      "time": "OFF",
+      "win_rate": 55.26,
+      "total_signals": 38
+    },
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>65",
+      "trend": "RIBBON",
+      "vol": "VIDX_3.0",
+      "time": "NO_WEEKEND",
+      "win_rate": 55.0,
+      "total_signals": 20
+    }
+  ],
+  "ANIMEUSDT": [
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>70",
+      "trend": "OFF",
+      "vol": "VIDX_2.0",
+      "time": "NO_WEEKEND",
+      "win_rate": 56.0,
+      "total_signals": 25
+    },
+    {
+      "name": "SUPERNOVA_HUNTER",
+      "target": "SUPERNOVA",
+      "trigger": "RSI>70",
+      "trend": "4H_EMA",
+      "vol": "VIDX_1.5",
+      "time": "NO_WEEKEND",
+      "win_rate": 55.26,
+      "total_signals": 38
+    },
+    {
+      "name": "GRIND_HUNTER",
+      "target": "GRIND",
+      "trigger": "RSI>70",
+      "trend": "4H_EMA",
+      "vol": "VIDX_1.5",
+      "time": "NO_WEEKEND",
+      "win_rate": 55.26,
+      "total_signals": 38
+    }
+  ],
+  "FUSDT": [
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>50",
+      "trend": "OFF",
+      "vol": "VIDX_3.0",
+      "time": "OFF",
+      "win_rate": 62.5,
+      "total_signals": 16
+    },
+    {
+      "name": "SUPERNOVA_HUNTER",
+      "target": "SUPERNOVA",
+      "trigger": "RSI>65",
+      "trend": "OFF",
+      "vol": "VIDX_2.0",
+      "time": "OFF",
+      "win_rate": 61.11,
+      "total_signals": 18
+    }
+  ],
+  "THEUSDT": [
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>70",
+      "trend": "4H_EMA",
+      "vol": "VIDX_3.0",
+      "time": "NO_WEEKEND",
+      "win_rate": 59.09,
+      "total_signals": 22
+    }
+  ],
+  "TIAUSDT": [
+    {
+      "name": "SUPERNOVA_HUNTER",
+      "target": "SUPERNOVA",
+      "trigger": "RSI>70",
+      "trend": "OFF",
+      "vol": "VIDX_3.0",
+      "time": "NO_WEEKEND",
+      "win_rate": 66.67,
+      "total_signals": 15
+    },
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>70",
+      "trend": "OFF",
+      "vol": "VIDX_3.0",
+      "time": "NO_WEEKEND",
+      "win_rate": 66.67,
+      "total_signals": 15
+    }
+  ],
+  "XPLUSDT": [
+    {
+      "name": "SUPERNOVA_HUNTER",
+      "target": "SUPERNOVA",
+      "trigger": "RSI>60",
+      "trend": "1H_EMA",
+      "vol": "VIDX_1.5",
+      "time": "NO_WEEKEND",
+      "win_rate": 64.52,
+      "total_signals": 31
+    },
+    {
+      "name": "GRIND_HUNTER",
+      "target": "GRIND",
+      "trigger": "RSI>60",
+      "trend": "1H_EMA",
+      "vol": "VIDX_1.5",
+      "time": "NO_WEEKEND",
+      "win_rate": 64.52,
+      "total_signals": 31
+    },
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>60",
+      "trend": "1H_EMA",
+      "vol": "VIDX_1.5",
+      "time": "NO_WEEKEND",
+      "win_rate": 64.52,
+      "total_signals": 31
+    }
+  ],
+  "WCTUSDT": [
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>65",
+      "trend": "OFF",
+      "vol": "VIDX_3.0",
+      "time": "OFF",
+      "win_rate": 60.0,
+      "total_signals": 15
+    }
+  ],
+  "PENGUUSDT": [
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>65",
+      "trend": "RIBBON",
+      "vol": "VIDX_3.0",
+      "time": "OFF",
+      "win_rate": 62.07,
+      "total_signals": 29
+    }
+  ],
+  "LISTAUSDT": [
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>70",
+      "trend": "4H_EMA",
+      "vol": "VIDX_3.0",
+      "time": "OFF",
+      "win_rate": 62.07,
+      "total_signals": 29
+    },
+    {
+      "name": "SUPERNOVA_HUNTER",
+      "target": "SUPERNOVA",
+      "trigger": "RSI>70",
+      "trend": "4H_EMA",
+      "vol": "VIDX_2.0",
+      "time": "OFF",
+      "win_rate": 55.56,
+      "total_signals": 54
+    }
+  ],
+  "VIRTUALUSDT": [
+    {
+      "name": "GUILLOTINE_HUNTER",
+      "target": "GUILLOTINE",
+      "trigger": "RSI>30 (Dip)",
+      "trend": "OFF",
+      "vol": "VIDX_1.5",
+      "time": "OFF",
+      "win_rate": 60.0,
+      "total_signals": 15
+    }
+  ],
+  "LAYERUSDT": [
+    {
+      "name": "SUPERNOVA_HUNTER",
+      "target": "SUPERNOVA",
+      "trigger": "RSI>65",
+      "trend": "4H_EMA",
+      "vol": "VIDX_3.0",
+      "time": "NO_WEEKEND",
+      "win_rate": 77.78,
+      "total_signals": 18
+    },
+    {
+      "name": "GRIND_HUNTER",
+      "target": "GRIND",
+      "trigger": "RSI>65",
+      "trend": "4H_EMA",
+      "vol": "VIDX_3.0",
+      "time": "NO_WEEKEND",
+      "win_rate": 77.78,
+      "total_signals": 18
+    },
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>65",
+      "trend": "4H_EMA",
+      "vol": "VIDX_3.0",
+      "time": "NO_WEEKEND",
+      "win_rate": 77.78,
+      "total_signals": 18
+    }
+  ],
+  "BIOUSDT": [
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>60",
+      "trend": "4H_EMA",
+      "vol": "VIDX_3.0",
+      "time": "NO_WEEKEND",
+      "win_rate": 64.71,
+      "total_signals": 34
+    }
+  ],
+  "SOPHUSDT": [
+    {
+      "name": "SUPERNOVA_HUNTER",
+      "target": "SUPERNOVA",
+      "trigger": "RSI>70",
+      "trend": "OFF",
+      "vol": "VIDX_1.5",
+      "time": "NO_WEEKEND",
+      "win_rate": 57.89,
+      "total_signals": 19
+    },
+    {
+      "name": "GRIND_HUNTER",
+      "target": "GRIND",
+      "trigger": "RSI>70",
+      "trend": "OFF",
+      "vol": "VIDX_1.5",
+      "time": "NO_WEEKEND",
+      "win_rate": 57.89,
+      "total_signals": 19
+    },
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>70",
+      "trend": "OFF",
+      "vol": "VIDX_1.5",
+      "time": "NO_WEEKEND",
+      "win_rate": 57.89,
+      "total_signals": 19
+    }
+  ],
+  "PROVEUSDT": [
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>70",
+      "trend": "RIBBON",
+      "vol": "VIDX_2.0",
+      "time": "OFF",
+      "win_rate": 58.82,
+      "total_signals": 17
+    }
+  ],
+  "BROCCOLI714USDT": [
+    {
+      "name": "SUPERNOVA_HUNTER",
+      "target": "SUPERNOVA",
+      "trigger": "RSI>70",
+      "trend": "OFF",
+      "vol": "VIDX_2.0",
+      "time": "NO_WEEKEND",
+      "win_rate": 64.71,
+      "total_signals": 17
+    }
+  ],
+  "COOKIEUSDT": [
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>60",
+      "trend": "RIBBON",
+      "vol": "VIDX_3.0",
+      "time": "NO_WEEKEND",
+      "win_rate": 57.58,
+      "total_signals": 33
+    }
+  ],
+  "2ZUSDT": [
+    {
+      "name": "SUPERNOVA_HUNTER",
+      "target": "SUPERNOVA",
+      "trigger": "RSI>70",
+      "trend": "4H_EMA",
+      "vol": "OFF",
+      "time": "NO_WEEKEND",
+      "win_rate": 62.5,
+      "total_signals": 16
+    },
+    {
+      "name": "GRIND_HUNTER",
+      "target": "GRIND",
+      "trigger": "RSI>70",
+      "trend": "4H_EMA",
+      "vol": "OFF",
+      "time": "NO_WEEKEND",
+      "win_rate": 62.5,
+      "total_signals": 16
+    },
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>70",
+      "trend": "4H_EMA",
+      "vol": "OFF",
+      "time": "NO_WEEKEND",
+      "win_rate": 62.5,
+      "total_signals": 16
+    }
+  ],
+  "AVNTUSDT": [
+    {
+      "name": "GENERIC_HUNTER",
+      "target": "GENERIC",
+      "trigger": "RSI>50",
+      "trend": "4H_EMA",
+      "vol": "OFF",
+      "time": "NO_WEEKEND",
+      "win_rate": 56.86,
+      "total_signals": 51
+    }
+  ],
+  "EIGENUSDT": [
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>70",
+      "trend": "4H_EMA",
+      "vol": "VIDX_3.0",
+      "time": "NO_WEEKEND",
+      "win_rate": 56.25,
+      "total_signals": 16
+    }
+  ],
+  "SPKUSDT": [
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>60",
+      "trend": "4H_EMA",
+      "vol": "VIDX_3.0",
+      "time": "OFF",
+      "win_rate": 59.26,
+      "total_signals": 27
+    }
+  ],
+  "HEMIUSDT": [
+    {
+      "name": "GRIND_HUNTER",
+      "target": "GRIND",
+      "trigger": "RSI>60",
+      "trend": "OFF",
+      "vol": "VIDX_2.0",
+      "time": "OFF",
+      "win_rate": 63.16,
+      "total_signals": 19
+    },
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>60",
+      "trend": "OFF",
+      "vol": "VIDX_2.0",
+      "time": "OFF",
+      "win_rate": 63.16,
+      "total_signals": 19
+    }
+  ],
+  "0GUSDT": [
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>70",
+      "trend": "OFF",
+      "vol": "VIDX_1.5",
+      "time": "OFF",
+      "win_rate": 73.33,
+      "total_signals": 15
+    },
+    {
+      "name": "SUPERNOVA_HUNTER",
+      "target": "SUPERNOVA",
+      "trigger": "RSI>60",
+      "trend": "1H_EMA",
+      "vol": "VIDX_2.0",
+      "time": "NO_WEEKEND",
+      "win_rate": 65.0,
+      "total_signals": 20
+    },
+    {
+      "name": "GRIND_HUNTER",
+      "target": "GRIND",
+      "trigger": "RSI>60",
+      "trend": "1H_EMA",
+      "vol": "VIDX_2.0",
+      "time": "NO_WEEKEND",
+      "win_rate": 65.0,
+      "total_signals": 20
+    }
+  ],
+  "MITOUSDT": [
+    {
+      "name": "GRIND_HUNTER",
+      "target": "GRIND",
+      "trigger": "RSI>55",
+      "trend": "4H_EMA",
+      "vol": "VIDX_3.0",
+      "time": "OFF",
+      "win_rate": 76.47,
+      "total_signals": 17
+    },
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>55",
+      "trend": "4H_EMA",
+      "vol": "VIDX_3.0",
+      "time": "OFF",
+      "win_rate": 76.47,
+      "total_signals": 17
+    }
+  ],
+  "ZBTUSDT": [
+    {
+      "name": "GRIND_HUNTER",
+      "target": "GRIND",
+      "trigger": "RSI>55",
+      "trend": "OFF",
+      "vol": "VIDX_2.0",
+      "time": "OFF",
+      "win_rate": 63.64,
+      "total_signals": 22
+    },
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>55",
+      "trend": "OFF",
+      "vol": "VIDX_2.0",
+      "time": "OFF",
+      "win_rate": 63.64,
+      "total_signals": 22
+    },
+    {
+      "name": "GENERIC_HUNTER",
+      "target": "GENERIC",
+      "trigger": "RSI>55",
+      "trend": "OFF",
+      "vol": "VIDX_2.0",
+      "time": "OFF",
+      "win_rate": 63.64,
+      "total_signals": 22
+    }
+  ],
+  "MMTUSDT": [
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>60",
+      "trend": "OFF",
+      "vol": "VIDX_2.0",
+      "time": "OFF",
+      "win_rate": 55.56,
+      "total_signals": 18
+    }
+  ],
+  "GUNUSDT": [
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>70",
+      "trend": "4H_EMA",
+      "vol": "VIDX_3.0",
+      "time": "OFF",
+      "win_rate": 57.89,
+      "total_signals": 19
+    }
+  ],
+  "TURBOUSDT": [
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>70",
+      "trend": "4H_EMA",
+      "vol": "VIDX_3.0",
+      "time": "NO_WEEKEND",
+      "win_rate": 65.0,
+      "total_signals": 20
+    },
+    {
+      "name": "SUPERNOVA_HUNTER",
+      "target": "SUPERNOVA",
+      "trigger": "RSI>70",
+      "trend": "4H_EMA",
+      "vol": "VIDX_2.0",
+      "time": "NO_WEEKEND",
+      "win_rate": 63.89,
+      "total_signals": 36
+    },
+    {
+      "name": "GRIND_HUNTER",
+      "target": "GRIND",
+      "trigger": "RSI>70",
+      "trend": "4H_EMA",
+      "vol": "VIDX_2.0",
+      "time": "NO_WEEKEND",
+      "win_rate": 63.89,
+      "total_signals": 36
+    }
+  ],
+  "XVGUSDT": [
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>70",
+      "trend": "4H_EMA",
+      "vol": "VIDX_3.0",
+      "time": "NO_WEEKEND",
+      "win_rate": 56.25,
+      "total_signals": 32
+    }
+  ],
+  "NEIROUSDT": [
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>50",
+      "trend": "1H_EMA",
+      "vol": "VIDX_3.0",
+      "time": "NO_WEEKEND",
+      "win_rate": 64.29,
+      "total_signals": 28
+    },
+    {
+      "name": "SUPERNOVA_HUNTER",
+      "target": "SUPERNOVA",
+      "trigger": "RSI>70",
+      "trend": "OFF",
+      "vol": "VIDX_1.5",
+      "time": "NO_WEEKEND",
+      "win_rate": 58.0,
+      "total_signals": 50
+    }
+  ],
+  "YBUSDT": [
+    {
+      "name": "SUPERNOVA_HUNTER",
+      "target": "SUPERNOVA",
+      "trigger": "RSI>60",
+      "trend": "OFF",
+      "vol": "VIDX_2.0",
+      "time": "NO_WEEKEND",
+      "win_rate": 66.67,
+      "total_signals": 21
+    },
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>60",
+      "trend": "OFF",
+      "vol": "VIDX_2.0",
+      "time": "NO_WEEKEND",
+      "win_rate": 66.67,
+      "total_signals": 21
+    },
+    {
+      "name": "GENERIC_HUNTER",
+      "target": "GENERIC",
+      "trigger": "RSI>60",
+      "trend": "OFF",
+      "vol": "VIDX_2.0",
+      "time": "NO_WEEKEND",
+      "win_rate": 66.67,
+      "total_signals": 21
+    }
+  ],
+  "LAUSDT": [
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>65",
+      "trend": "OFF",
+      "vol": "VIDX_3.0",
+      "time": "NO_WEEKEND",
+      "win_rate": 58.82,
+      "total_signals": 17
+    },
+    {
+      "name": "SUPERNOVA_HUNTER",
+      "target": "SUPERNOVA",
+      "trigger": "RSI>65",
+      "trend": "OFF",
+      "vol": "VIDX_2.0",
+      "time": "OFF",
+      "win_rate": 55.81,
+      "total_signals": 43
+    },
+    {
+      "name": "GRIND_HUNTER",
+      "target": "GRIND",
+      "trigger": "RSI>65",
+      "trend": "OFF",
+      "vol": "VIDX_2.0",
+      "time": "OFF",
+      "win_rate": 55.81,
+      "total_signals": 43
+    }
+  ],
+  "ENSOUSDT": [
+    {
+      "name": "GRIND_HUNTER",
+      "target": "GRIND",
+      "trigger": "RSI>70",
+      "trend": "OFF",
+      "vol": "VIDX_2.0",
+      "time": "OFF",
+      "win_rate": 73.33,
+      "total_signals": 15
+    },
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>70",
+      "trend": "OFF",
+      "vol": "VIDX_2.0",
+      "time": "OFF",
+      "win_rate": 73.33,
+      "total_signals": 15
+    },
+    {
+      "name": "SUPERNOVA_HUNTER",
+      "target": "SUPERNOVA",
+      "trigger": "RSI>65",
+      "trend": "4H_EMA",
+      "vol": "OFF",
+      "time": "OFF",
+      "win_rate": 59.38,
+      "total_signals": 32
+    }
+  ],
+  "NOMUSDT": [
+    {
+      "name": "SUPERNOVA_HUNTER",
+      "target": "SUPERNOVA",
+      "trigger": "RSI>65",
+      "trend": "OFF",
+      "vol": "VIDX_1.5",
+      "time": "OFF",
+      "win_rate": 68.75,
+      "total_signals": 16
+    },
+    {
+      "name": "GRIND_HUNTER",
+      "target": "GRIND",
+      "trigger": "RSI>65",
+      "trend": "OFF",
+      "vol": "VIDX_1.5",
+      "time": "OFF",
+      "win_rate": 68.75,
+      "total_signals": 16
+    },
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>65",
+      "trend": "OFF",
+      "vol": "VIDX_1.5",
+      "time": "OFF",
+      "win_rate": 68.75,
+      "total_signals": 16
+    }
+  ],
+  "ATUSDT": [
+    {
+      "name": "SUPERNOVA_HUNTER",
+      "target": "SUPERNOVA",
+      "trigger": "RSI>65",
+      "trend": "4H_EMA",
+      "vol": "OFF",
+      "time": "OFF",
+      "win_rate": 68.42,
+      "total_signals": 19
+    },
+    {
+      "name": "GRIND_HUNTER",
+      "target": "GRIND",
+      "trigger": "RSI>65",
+      "trend": "4H_EMA",
+      "vol": "OFF",
+      "time": "OFF",
+      "win_rate": 68.42,
+      "total_signals": 19
+    },
+    {
+      "name": "GENERIC_HUNTER",
+      "target": "GENERIC",
+      "trigger": "RSI>65",
+      "trend": "4H_EMA",
+      "vol": "OFF",
+      "time": "OFF",
+      "win_rate": 68.42,
+      "total_signals": 19
+    }
+  ],
+  "SOMIUSDT": [
+    {
+      "name": "SUPERNOVA_HUNTER",
+      "target": "SUPERNOVA",
+      "trigger": "RSI>70",
+      "trend": "4H_EMA",
+      "vol": "OFF",
+      "time": "OFF",
+      "win_rate": 65.22,
+      "total_signals": 23
+    },
+    {
+      "name": "GRIND_HUNTER",
+      "target": "GRIND",
+      "trigger": "RSI>70",
+      "trend": "4H_EMA",
+      "vol": "OFF",
+      "time": "OFF",
+      "win_rate": 65.22,
+      "total_signals": 23
+    }
+  ],
+  "ALLOUSDT": [
+    {
+      "name": "GUILLOTINE_HUNTER",
+      "target": "GUILLOTINE",
+      "trigger": "RSI>30 (Dip)",
+      "trend": "OFF",
+      "vol": "OFF",
+      "time": "OFF",
+      "win_rate": 55.0,
+      "total_signals": 20
+    }
+  ],
+  "SAPIENUSDT": [
+    {
+      "name": "GRIND_HUNTER",
+      "target": "GRIND",
+      "trigger": "RSI>50",
+      "trend": "1H_EMA",
+      "vol": "VIDX_2.0",
+      "time": "NO_WEEKEND",
+      "win_rate": 55.56,
+      "total_signals": 18
+    },
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>50",
+      "trend": "1H_EMA",
+      "vol": "VIDX_2.0",
+      "time": "NO_WEEKEND",
+      "win_rate": 55.56,
+      "total_signals": 18
+    }
+  ],
+  "AIXBTUSDT": [
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>60",
+      "trend": "RIBBON",
+      "vol": "VIDX_3.0",
+      "time": "NO_WEEKEND",
+      "win_rate": 58.62,
+      "total_signals": 29
+    }
+  ],
+  "RESOLVUSDT": [
+    {
+      "name": "SUPERNOVA_HUNTER",
+      "target": "SUPERNOVA",
+      "trigger": "RSI>70",
+      "trend": "4H_EMA",
+      "vol": "VIDX_2.0",
+      "time": "OFF",
+      "win_rate": 68.42,
+      "total_signals": 19
+    },
+    {
+      "name": "BREAKOUT_HUNTER",
+      "target": "BREAKOUT",
+      "trigger": "RSI>50",
+      "trend": "1H_EMA",
+      "vol": "VIDX_3.0",
+      "time": "NO_WEEKEND",
+      "win_rate": 56.52,
+      "total_signals": 23
+    }
+  ]
+}

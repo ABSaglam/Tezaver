@@ -1,0 +1,63 @@
+{
+    "symbol": "BTCUSDT",
+    "timestamp": "2026-02-05T00:15:08.680921",
+    "slow_character": {
+        "15m": {
+            "avg_norm_atr": 0.0055249708418167445,
+            "std_norm_atr": 0.0027327016191992523,
+            "typical_volume": 237.52848,
+            "vola_compression_tolerance": 0.0019305688996561448
+        },
+        "1h": {
+            "avg_norm_atr": 0.006698000768696314,
+            "std_norm_atr": 0.003231480663832724,
+            "typical_volume": 497.99816,
+            "vola_compression_tolerance": 0.0020593930531920203
+        },
+        "4h": {
+            "avg_norm_atr": 0.011783178191551003,
+            "std_norm_atr": 0.003866429344636493,
+            "typical_volume": 1838.8669,
+            "vola_compression_tolerance": 0.0030675860750665807
+        },
+        "1d": {
+            "avg_norm_atr": 0.03245824031576039,
+            "std_norm_atr": 0.011357807535403126,
+            "typical_volume": 17071.82839,
+            "vola_compression_tolerance": 0.009586875235027808
+        },
+        "1w": {
+            "avg_norm_atr": 0.09324970217110168,
+            "std_norm_atr": 0.020066179829686132,
+            "typical_volume": 205198.52303,
+            "vola_compression_tolerance": 0.041926233164776235
+        }
+    },
+    "fast_drift": {
+        "15m": {
+            "recent_vola_avg": 0.008612038620409969,
+            "recent_volume_avg": 497.7261926666667,
+            "momentum_drift": -0.013208117141324527
+        },
+        "1h": {
+            "recent_vola_avg": 0.011249519791747126,
+            "recent_volume_avg": 1448.2888863333333,
+            "momentum_drift": -0.08861213586482253
+        },
+        "4h": {
+            "recent_vola_avg": 0.01464751048980491,
+            "recent_volume_avg": 3215.675072666666,
+            "momentum_drift": -0.14845405643430543
+        },
+        "1d": {
+            "recent_vola_avg": 0.027982919244218918,
+            "recent_volume_avg": 13006.729464333333,
+            "momentum_drift": -0.14967003261165002
+        },
+        "1w": {
+            "recent_vola_avg": 0.09219869495221726,
+            "recent_volume_avg": 146333.09891544998,
+            "momentum_drift": -0.15856172064651186
+        }
+    }
+}

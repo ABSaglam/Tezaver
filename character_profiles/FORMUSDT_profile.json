@@ -1,0 +1,57 @@
+{
+    "symbol": "FORMUSDT",
+    "timestamp": "2026-02-05T00:20:03.697020",
+    "slow_character": {
+        "15m": {
+            "avg_norm_atr": 0.010074294224587896,
+            "std_norm_atr": 0.004944091711116133,
+            "typical_volume": 40794.1,
+            "vola_compression_tolerance": 0.0032847457816539945
+        },
+        "1h": {
+            "avg_norm_atr": 0.015311325771081435,
+            "std_norm_atr": 0.005043617898617537,
+            "typical_volume": 161088.9,
+            "vola_compression_tolerance": 0.005852723635849632
+        },
+        "4h": {
+            "avg_norm_atr": 0.036845174535806345,
+            "std_norm_atr": 0.0159792701753329,
+            "typical_volume": 918741.5,
+            "vola_compression_tolerance": 0.01302718495309207
+        },
+        "1d": {
+            "avg_norm_atr": 0.11052832568784496,
+            "std_norm_atr": 0.07304040991028526,
+            "typical_volume": 4561507.3,
+            "vola_compression_tolerance": 0.028978287263447138
+        }
+    },
+    "fast_drift": {
+        "15m": {
+            "recent_vola_avg": 0.014353686720297907,
+            "recent_volume_avg": 126173.55500000001,
+            "momentum_drift": -0.04819749216300928
+        },
+        "1h": {
+            "recent_vola_avg": 0.021693540193876586,
+            "recent_volume_avg": 417235.44500000007,
+            "momentum_drift": -0.18843969261610427
+        },
+        "4h": {
+            "recent_vola_avg": 0.02913683596459859,
+            "recent_volume_avg": 945109.5066666666,
+            "momentum_drift": -0.2591341725514277
+        },
+        "1d": {
+            "recent_vola_avg": 0.1046749454406467,
+            "recent_volume_avg": 11223263.133333335,
+            "momentum_drift": -0.2822724568709102
+        },
+        "1w": {
+            "recent_vola_avg": 0.7190542928894186,
+            "recent_volume_avg": 79505907.10000001,
+            "momentum_drift": -0.8469453059616994
+        }
+    }
+}

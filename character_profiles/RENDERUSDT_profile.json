@@ -1,0 +1,57 @@
+{
+    "symbol": "RENDERUSDT",
+    "timestamp": "2026-02-05T00:20:03.921488",
+    "slow_character": {
+        "15m": {
+            "avg_norm_atr": 0.011732405262423246,
+            "std_norm_atr": 0.004478157614941332,
+            "typical_volume": 43006.15,
+            "vola_compression_tolerance": 0.004909998631945363
+        },
+        "1h": {
+            "avg_norm_atr": 0.018873613533363632,
+            "std_norm_atr": 0.006121699256726636,
+            "typical_volume": 154348.27,
+            "vola_compression_tolerance": 0.007429964835184691
+        },
+        "4h": {
+            "avg_norm_atr": 0.034186874190121036,
+            "std_norm_atr": 0.012363655861120301,
+            "typical_volume": 530033.54,
+            "vola_compression_tolerance": 0.013197833568574817
+        },
+        "1d": {
+            "avg_norm_atr": 0.09059945742944954,
+            "std_norm_atr": 0.029257042612209367,
+            "typical_volume": 3360707.56,
+            "vola_compression_tolerance": 0.03672325218511222
+        }
+    },
+    "fast_drift": {
+        "15m": {
+            "recent_vola_avg": 0.014873063588002151,
+            "recent_volume_avg": 57095.243166666674,
+            "momentum_drift": -0.003315649867374093
+        },
+        "1h": {
+            "recent_vola_avg": 0.02314434271884008,
+            "recent_volume_avg": 275154.3535,
+            "momentum_drift": -0.1032219570405728
+        },
+        "4h": {
+            "recent_vola_avg": 0.037130133803834675,
+            "recent_volume_avg": 859930.8114999998,
+            "momentum_drift": -0.2683519688867283
+        },
+        "1d": {
+            "recent_vola_avg": 0.08804226294227198,
+            "recent_volume_avg": 4499403.308166667,
+            "momentum_drift": -0.061720698254364215
+        },
+        "1w": {
+            "recent_vola_avg": 0.312226958475718,
+            "recent_volume_avg": 30391993.542666666,
+            "momentum_drift": -0.8031310315247695
+        }
+    }
+}

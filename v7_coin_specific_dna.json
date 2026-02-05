@@ -1,0 +1,5661 @@
+{
+  "FORMUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.23,
+      "centroid_ang": 69.0,
+      "centroid_sm": 0.43
+    },
+    "success_samples": 11,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "MDTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.18,
+      "centroid_ang": 69.5,
+      "centroid_sm": 0.38
+    },
+    "success_samples": 38,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "AUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "STORJUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.14,
+      "centroid_ang": 68.7,
+      "centroid_sm": 0.34
+    },
+    "success_samples": 26,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SAHARAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.11,
+      "centroid_ang": 67.9,
+      "centroid_sm": 0.31
+    },
+    "success_samples": 3,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "VANRYUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.27,
+      "centroid_ang": 64.9,
+      "centroid_sm": 0.47
+    },
+    "success_samples": 35,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "OPUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.13,
+      "centroid_ang": 69.1,
+      "centroid_sm": 0.33
+    },
+    "success_samples": 28,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SUNUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.25,
+      "centroid_ang": 59.1,
+      "centroid_sm": 0.45
+    },
+    "success_samples": 15,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "RENDERUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.1,
+      "centroid_ang": 63.9,
+      "centroid_sm": 0.26
+    },
+    "success_samples": 8,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "PENDLEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.19,
+      "centroid_ang": 64.9,
+      "centroid_sm": 0.39
+    },
+    "success_samples": 21,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "CRVUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.18,
+      "centroid_ang": 66.7,
+      "centroid_sm": 0.38
+    },
+    "success_samples": 19,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "OGUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.17,
+      "centroid_ang": 66.5,
+      "centroid_sm": 0.37
+    },
+    "success_samples": 51,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ETHFIUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.23,
+      "centroid_ang": 65.9,
+      "centroid_sm": 0.43
+    },
+    "success_samples": 20,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "USTCUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.16,
+      "centroid_ang": 63.6,
+      "centroid_sm": 0.36
+    },
+    "success_samples": 33,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ALCXUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.31,
+      "centroid_ang": 64.4,
+      "centroid_sm": 0.51
+    },
+    "success_samples": 31,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "BCHUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.3,
+      "centroid_ang": 67.3,
+      "centroid_sm": 0.5
+    },
+    "success_samples": 28,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "BMTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.25,
+      "centroid_ang": 63.3,
+      "centroid_sm": 0.45
+    },
+    "success_samples": 11,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "FLOKIUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.29,
+      "centroid_ang": 67.1,
+      "centroid_sm": 0.49
+    },
+    "success_samples": 26,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "HBARUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.24,
+      "centroid_ang": 63.9,
+      "centroid_sm": 0.44
+    },
+    "success_samples": 20,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "HYPERUSDT": {
+    "SUP": {
+      "angle_min": 70.0,
+      "smooth_min": 0.11,
+      "centroid_ang": 70.0,
+      "centroid_sm": 0.31
+    },
+    "success_samples": 6,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SANTOSUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.18,
+      "centroid_ang": 64.2,
+      "centroid_sm": 0.38
+    },
+    "success_samples": 22,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "IOTAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.26,
+      "centroid_ang": 65.8,
+      "centroid_sm": 0.46
+    },
+    "success_samples": 19,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "KSMUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.25,
+      "centroid_ang": 69.5,
+      "centroid_sm": 0.45
+    },
+    "success_samples": 22,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "WANUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.15,
+      "centroid_ang": 68.7,
+      "centroid_sm": 0.35
+    },
+    "success_samples": 18,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "WUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.2,
+      "centroid_ang": 66.1,
+      "centroid_sm": 0.4
+    },
+    "success_samples": 17,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ADXUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.28,
+      "centroid_ang": 66.0,
+      "centroid_sm": 0.48
+    },
+    "success_samples": 21,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SANDUSDT": {
+    "SUP": {
+      "angle_min": 70.0,
+      "smooth_min": 0.28,
+      "centroid_ang": 70.0,
+      "centroid_sm": 0.48
+    },
+    "success_samples": 15,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ARBUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.3,
+      "centroid_ang": 67.9,
+      "centroid_sm": 0.5
+    },
+    "success_samples": 17,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "KAITOUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.32,
+      "centroid_ang": 66.6,
+      "centroid_sm": 0.52
+    },
+    "success_samples": 13,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "CKBUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.15,
+      "centroid_ang": 64.0,
+      "centroid_sm": 0.35
+    },
+    "success_samples": 33,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "TKOUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.26,
+      "centroid_ang": 66.2,
+      "centroid_sm": 0.46
+    },
+    "success_samples": 30,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "CGPTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.17,
+      "centroid_ang": 66.4,
+      "centroid_sm": 0.37
+    },
+    "success_samples": 14,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "BANKUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "1000CATUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.15,
+      "centroid_ang": 68.7,
+      "centroid_sm": 0.35
+    },
+    "success_samples": 15,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "MIRAUSDT": {
+    "SUP": {
+      "angle_min": 76.6,
+      "smooth_min": 0.35,
+      "centroid_ang": 76.6,
+      "centroid_sm": 0.55
+    },
+    "success_samples": 3,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "KAVAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.12,
+      "centroid_ang": 67.0,
+      "centroid_sm": 0.32
+    },
+    "success_samples": 14,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SYNUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.26,
+      "centroid_ang": 65.1,
+      "centroid_sm": 0.46
+    },
+    "success_samples": 33,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "FOGOUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0
+  },
+  "HOTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.24,
+      "centroid_ang": 69.5,
+      "centroid_sm": 0.44
+    },
+    "success_samples": 22,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "UUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0
+  },
+  "SOLVUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.18,
+      "centroid_ang": 68.0,
+      "centroid_sm": 0.38
+    },
+    "success_samples": 10,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "OGNUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.18,
+      "centroid_ang": 66.5,
+      "centroid_sm": 0.38
+    },
+    "success_samples": 30,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "TRXUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.21,
+      "centroid_ang": 65.1,
+      "centroid_sm": 0.41
+    },
+    "success_samples": 6,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "WALUSDT": {
+    "SUP": {
+      "angle_min": 70.1,
+      "smooth_min": 0.13,
+      "centroid_ang": 70.1,
+      "centroid_sm": 0.33
+    },
+    "success_samples": 3,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "BATUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.1,
+      "centroid_ang": 68.3,
+      "centroid_sm": 0.25
+    },
+    "success_samples": 9,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SUSHIUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 63.6,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 22,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ORDIUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.24,
+      "centroid_ang": 65.5,
+      "centroid_sm": 0.44
+    },
+    "success_samples": 21,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "BANANAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.23,
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.43
+    },
+    "success_samples": 18,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "BFUSDUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "OPENUSDT": {
+    "SUP": {
+      "angle_min": 70.1,
+      "smooth_min": 0.25,
+      "centroid_ang": 70.1,
+      "centroid_sm": 0.45
+    },
+    "success_samples": 4,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "BTCUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.1,
+      "centroid_ang": 69.1,
+      "centroid_sm": 0.22
+    },
+    "success_samples": 6,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "TUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.14,
+      "centroid_ang": 67.6,
+      "centroid_sm": 0.34
+    },
+    "success_samples": 26,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "BBUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.25,
+      "centroid_ang": 66.1,
+      "centroid_sm": 0.45
+    },
+    "success_samples": 23,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "CUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.14,
+      "centroid_ang": 67.2,
+      "centroid_sm": 0.34
+    },
+    "success_samples": 7,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "CHZUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.33,
+      "centroid_ang": 64.5,
+      "centroid_sm": 0.53
+    },
+    "success_samples": 17,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ASRUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.29,
+      "centroid_ang": 68.6,
+      "centroid_sm": 0.49
+    },
+    "success_samples": 22,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "1000SATSUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 68.3,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 33,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ZKCUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.25,
+      "centroid_ang": 65.8,
+      "centroid_sm": 0.45
+    },
+    "success_samples": 6,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "MUBARAKUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.2,
+      "centroid_ang": 65.1,
+      "centroid_sm": 0.4
+    },
+    "success_samples": 12,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ZKPUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0
+  },
+  "XRPUSDT": {
+    "SUP": {
+      "angle_min": 70.8,
+      "smooth_min": 0.21,
+      "centroid_ang": 70.8,
+      "centroid_sm": 0.41
+    },
+    "success_samples": 12,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SCRUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.17,
+      "centroid_ang": 63.3,
+      "centroid_sm": 0.37
+    },
+    "success_samples": 9,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "FTTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.2,
+      "centroid_ang": 65.5,
+      "centroid_sm": 0.4
+    },
+    "success_samples": 35,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "TRUMPUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.12,
+      "centroid_ang": 59.4,
+      "centroid_sm": 0.32
+    },
+    "success_samples": 10,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "KERNELUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 63.2,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 14,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "GUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.26,
+      "centroid_ang": 67.1,
+      "centroid_sm": 0.46
+    },
+    "success_samples": 7,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "KMNOUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.13,
+      "centroid_ang": 67.8,
+      "centroid_sm": 0.33
+    },
+    "success_samples": 5,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "NEARUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.24,
+      "centroid_ang": 63.2,
+      "centroid_sm": 0.44
+    },
+    "success_samples": 18,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "RAREUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.18,
+      "centroid_ang": 69.3,
+      "centroid_sm": 0.38
+    },
+    "success_samples": 39,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "TOWNSUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.26,
+      "centroid_ang": 67.1,
+      "centroid_sm": 0.46
+    },
+    "success_samples": 8,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "KITEUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ERAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.15,
+      "centroid_ang": 60.8,
+      "centroid_sm": 0.35
+    },
+    "success_samples": 4,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "BNSOLUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.31,
+      "centroid_ang": 58.4,
+      "centroid_sm": 0.51
+    },
+    "success_samples": 3,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "RIFUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.28,
+      "centroid_ang": 65.2,
+      "centroid_sm": 0.48
+    },
+    "success_samples": 32,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "GRTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.18,
+      "centroid_ang": 68.7,
+      "centroid_sm": 0.38
+    },
+    "success_samples": 17,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "REDUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.24,
+      "centroid_ang": 64.1,
+      "centroid_sm": 0.44
+    },
+    "success_samples": 9,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "UTKUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 62.8,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 30,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "PHAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 67.3,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 41,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SYRUPUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0
+  },
+  "ANIMEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.24,
+      "centroid_ang": 61.3,
+      "centroid_sm": 0.44
+    },
+    "success_samples": 19,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "HIGHUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.25,
+      "centroid_ang": 63.9,
+      "centroid_sm": 0.45
+    },
+    "success_samples": 24,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "RONINUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.21,
+      "centroid_ang": 66.4,
+      "centroid_sm": 0.41
+    },
+    "success_samples": 8,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "FIDAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.19,
+      "centroid_ang": 63.7,
+      "centroid_sm": 0.39
+    },
+    "success_samples": 37,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SUIUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.23,
+      "centroid_ang": 66.5,
+      "centroid_sm": 0.43
+    },
+    "success_samples": 17,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "PEOPLEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.24,
+      "centroid_ang": 62.3,
+      "centroid_sm": 0.44
+    },
+    "success_samples": 39,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "VICUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.18,
+      "centroid_ang": 68.0,
+      "centroid_sm": 0.38
+    },
+    "success_samples": 17,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ASTRUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.2,
+      "centroid_ang": 63.4,
+      "centroid_sm": 0.4
+    },
+    "success_samples": 23,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "FUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.34,
+      "centroid_ang": 67.2,
+      "centroid_sm": 0.54
+    },
+    "success_samples": 4,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "VELODROMEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.15,
+      "centroid_ang": 61.8,
+      "centroid_sm": 0.35
+    },
+    "success_samples": 7,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "JTOUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.33,
+      "centroid_ang": 64.6,
+      "centroid_sm": 0.53
+    },
+    "success_samples": 19,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "RUNEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.32,
+      "centroid_ang": 65.8,
+      "centroid_sm": 0.52
+    },
+    "success_samples": 23,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "THEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.33,
+      "centroid_ang": 63.1,
+      "centroid_sm": 0.53
+    },
+    "success_samples": 9,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "TIAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.1,
+      "centroid_ang": 64.3,
+      "centroid_sm": 0.3
+    },
+    "success_samples": 20,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "JOEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.13,
+      "centroid_ang": 65.7,
+      "centroid_sm": 0.33
+    },
+    "success_samples": 28,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ZILUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.27,
+      "centroid_ang": 60.0,
+      "centroid_sm": 0.47
+    },
+    "success_samples": 9,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "XPLUSDT": {
+    "SUP": {
+      "angle_min": 75.7,
+      "smooth_min": 0.1,
+      "centroid_ang": 75.7,
+      "centroid_sm": 0.13
+    },
+    "success_samples": 5,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "BABYUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SUSDT": {
+    "SUP": {
+      "angle_min": 71.7,
+      "smooth_min": 0.12,
+      "centroid_ang": 71.7,
+      "centroid_sm": 0.32
+    },
+    "success_samples": 7,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "DUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.28,
+      "centroid_ang": 64.1,
+      "centroid_sm": 0.48
+    },
+    "success_samples": 13,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "AIUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.28,
+      "centroid_ang": 65.3,
+      "centroid_sm": 0.48
+    },
+    "success_samples": 24,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "MAGICUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.27,
+      "centroid_ang": 64.2,
+      "centroid_sm": 0.47
+    },
+    "success_samples": 38,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "STXUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.31,
+      "centroid_ang": 64.9,
+      "centroid_sm": 0.51
+    },
+    "success_samples": 32,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "QNTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.31,
+      "centroid_ang": 64.9,
+      "centroid_sm": 0.51
+    },
+    "success_samples": 10,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "STOUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.19,
+      "centroid_ang": 63.5,
+      "centroid_sm": 0.39
+    },
+    "success_samples": 14,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "NOTUSDT": {
+    "SUP": {
+      "angle_min": 71.5,
+      "smooth_min": 0.13,
+      "centroid_ang": 71.5,
+      "centroid_sm": 0.33
+    },
+    "success_samples": 14,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "STEEMUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.27,
+      "centroid_ang": 65.7,
+      "centroid_sm": 0.47
+    },
+    "success_samples": 28,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "REQUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.21,
+      "centroid_ang": 65.8,
+      "centroid_sm": 0.41
+    },
+    "success_samples": 29,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "BARUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.25,
+      "centroid_ang": 68.0,
+      "centroid_sm": 0.45
+    },
+    "success_samples": 25,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "FLOWUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.39,
+      "centroid_ang": 62.5,
+      "centroid_sm": 0.59
+    },
+    "success_samples": 15,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "MASKUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.13,
+      "centroid_ang": 64.7,
+      "centroid_sm": 0.33
+    },
+    "success_samples": 24,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "AUCTIONUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 68.8,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 53,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "FLUXUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.15,
+      "centroid_ang": 68.0,
+      "centroid_sm": 0.35
+    },
+    "success_samples": 25,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "PHBUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.14,
+      "centroid_ang": 66.6,
+      "centroid_sm": 0.34
+    },
+    "success_samples": 42,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "GHSTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.29,
+      "centroid_ang": 64.7,
+      "centroid_sm": 0.49
+    },
+    "success_samples": 35,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "WCTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.36,
+      "centroid_ang": 57.3,
+      "centroid_sm": 0.56
+    },
+    "success_samples": 6,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "VETUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.2,
+      "centroid_ang": 69.6,
+      "centroid_sm": 0.4
+    },
+    "success_samples": 14,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "A2ZUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.38,
+      "centroid_ang": 67.0,
+      "centroid_sm": 0.58
+    },
+    "success_samples": 6,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "PENGUUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.26,
+      "centroid_ang": 67.3,
+      "centroid_sm": 0.46
+    },
+    "success_samples": 23,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ZENUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.21,
+      "centroid_ang": 64.8,
+      "centroid_sm": 0.41
+    },
+    "success_samples": 30,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "METUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "MANTAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 63.8,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 14,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "1000CHEEMSUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.17,
+      "centroid_ang": 67.7,
+      "centroid_sm": 0.37
+    },
+    "success_samples": 9,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ATOMUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.32,
+      "centroid_ang": 65.9,
+      "centroid_sm": 0.52
+    },
+    "success_samples": 11,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "CELOUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.15,
+      "centroid_ang": 67.7,
+      "centroid_sm": 0.35
+    },
+    "success_samples": 20,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "PONDUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.28,
+      "centroid_ang": 67.6,
+      "centroid_sm": 0.48
+    },
+    "success_samples": 32,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "PORTALUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.15,
+      "centroid_ang": 65.3,
+      "centroid_sm": 0.35
+    },
+    "success_samples": 28,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "TWTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.1,
+      "centroid_ang": 65.3,
+      "centroid_sm": 0.28
+    },
+    "success_samples": 12,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "LISTAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.19,
+      "centroid_ang": 66.2,
+      "centroid_sm": 0.39
+    },
+    "success_samples": 25,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "FILUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.31,
+      "centroid_ang": 67.1,
+      "centroid_sm": 0.51
+    },
+    "success_samples": 13,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "IDUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.28,
+      "centroid_ang": 67.3,
+      "centroid_sm": 0.48
+    },
+    "success_samples": 26,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ONDOUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "LUNAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.2,
+      "centroid_ang": 65.4,
+      "centroid_sm": 0.4
+    },
+    "success_samples": 33,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "USUALUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.3,
+      "centroid_ang": 68.1,
+      "centroid_sm": 0.5
+    },
+    "success_samples": 18,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ANKRUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.13,
+      "centroid_ang": 66.9,
+      "centroid_sm": 0.33
+    },
+    "success_samples": 23,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "BIFIUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.12,
+      "centroid_ang": 62.3,
+      "centroid_sm": 0.32
+    },
+    "success_samples": 16,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "BERAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.1,
+      "centroid_ang": 66.9,
+      "centroid_sm": 0.27
+    },
+    "success_samples": 13,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "QUICKUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.2,
+      "centroid_ang": 62.6,
+      "centroid_sm": 0.4
+    },
+    "success_samples": 27,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "HIVEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.18,
+      "centroid_ang": 65.7,
+      "centroid_sm": 0.38
+    },
+    "success_samples": 27,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ENJUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.25,
+      "centroid_ang": 64.4,
+      "centroid_sm": 0.45
+    },
+    "success_samples": 22,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "WIFUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.32,
+      "centroid_ang": 67.1,
+      "centroid_sm": 0.52
+    },
+    "success_samples": 20,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "STRAXUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.2,
+      "centroid_ang": 68.6,
+      "centroid_sm": 0.4
+    },
+    "success_samples": 34,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "PAXGUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "MTLUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.15,
+      "centroid_ang": 63.2,
+      "centroid_sm": 0.35
+    },
+    "success_samples": 21,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ACHUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.24,
+      "centroid_ang": 67.4,
+      "centroid_sm": 0.44
+    },
+    "success_samples": 28,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "VIRTUALUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.1,
+      "centroid_ang": 68.1,
+      "centroid_sm": 0.23
+    },
+    "success_samples": 11,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "BARDUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.43,
+      "centroid_ang": 64.2,
+      "centroid_sm": 0.63
+    },
+    "success_samples": 5,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ATAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.24,
+      "centroid_ang": 65.8,
+      "centroid_sm": 0.44
+    },
+    "success_samples": 24,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "C98USDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 65.5,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 20,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "TAOUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.1,
+      "centroid_ang": 69.8,
+      "centroid_sm": 0.29
+    },
+    "success_samples": 19,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "XNOUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 63.2,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 29,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "MORPHOUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "FIOUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.23,
+      "centroid_ang": 66.9,
+      "centroid_sm": 0.43
+    },
+    "success_samples": 22,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "POWRUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.14,
+      "centroid_ang": 66.3,
+      "centroid_sm": 0.34
+    },
+    "success_samples": 28,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "GLMRUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.11,
+      "centroid_ang": 67.1,
+      "centroid_sm": 0.31
+    },
+    "success_samples": 18,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "GASUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.18,
+      "centroid_ang": 64.7,
+      "centroid_sm": 0.38
+    },
+    "success_samples": 32,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "NKNUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.16,
+      "centroid_ang": 66.1,
+      "centroid_sm": 0.36
+    },
+    "success_samples": 22,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "\u5e01\u5b89\u4eba\u751fUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0
+  },
+  "DOLOUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.18,
+      "centroid_ang": 60.3,
+      "centroid_sm": 0.38
+    },
+    "success_samples": 8,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "LSKUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.23,
+      "centroid_ang": 68.4,
+      "centroid_sm": 0.43
+    },
+    "success_samples": 22,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "LUNCUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.25,
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.45
+    },
+    "success_samples": 23,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "HOLOUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "IQUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.14,
+      "centroid_ang": 68.4,
+      "centroid_sm": 0.34
+    },
+    "success_samples": 13,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ONTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.24,
+      "centroid_ang": 65.9,
+      "centroid_sm": 0.44
+    },
+    "success_samples": 23,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "LAYERUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.17,
+      "centroid_ang": 64.1,
+      "centroid_sm": 0.37
+    },
+    "success_samples": 13,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "KAIAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.13,
+      "centroid_ang": 64.6,
+      "centroid_sm": 0.33
+    },
+    "success_samples": 8,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "WBETHUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.28,
+      "centroid_ang": 64.9,
+      "centroid_sm": 0.48
+    },
+    "success_samples": 8,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ACXUSDT": {
+    "SUP": {
+      "angle_min": 70.5,
+      "smooth_min": 0.14,
+      "centroid_ang": 70.5,
+      "centroid_sm": 0.34
+    },
+    "success_samples": 6,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ONGUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.34,
+      "centroid_ang": 68.9,
+      "centroid_sm": 0.54
+    },
+    "success_samples": 24,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "DEXEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.12,
+      "centroid_ang": 67.7,
+      "centroid_sm": 0.32
+    },
+    "success_samples": 26,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "LPTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.19,
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.39
+    },
+    "success_samples": 42,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "RAYUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.14,
+      "centroid_ang": 65.7,
+      "centroid_sm": 0.34
+    },
+    "success_samples": 45,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "KNCUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.16,
+      "centroid_ang": 64.9,
+      "centroid_sm": 0.36
+    },
+    "success_samples": 23,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "FRAXUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0
+  },
+  "BANANAS31USDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.21,
+      "centroid_ang": 63.4,
+      "centroid_sm": 0.41
+    },
+    "success_samples": 21,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "BIOUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.17,
+      "centroid_ang": 68.9,
+      "centroid_sm": 0.37
+    },
+    "success_samples": 18,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "BELUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.23,
+      "centroid_ang": 64.0,
+      "centroid_sm": 0.43
+    },
+    "success_samples": 30,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "1MBABYDOGEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.21,
+      "centroid_ang": 64.0,
+      "centroid_sm": 0.41
+    },
+    "success_samples": 13,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "GMTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.27,
+      "centroid_ang": 65.2,
+      "centroid_sm": 0.47
+    },
+    "success_samples": 26,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "GNOUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.25,
+      "centroid_ang": 67.4,
+      "centroid_sm": 0.45
+    },
+    "success_samples": 17,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ETCUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.26,
+      "centroid_ang": 65.1,
+      "centroid_sm": 0.46
+    },
+    "success_samples": 16,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "COMPUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.31,
+      "centroid_ang": 64.4,
+      "centroid_sm": 0.51
+    },
+    "success_samples": 19,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ICPUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.17,
+      "centroid_ang": 63.3,
+      "centroid_sm": 0.37
+    },
+    "success_samples": 19,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "MANAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.1,
+      "centroid_ang": 68.2,
+      "centroid_sm": 0.28
+    },
+    "success_samples": 6,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SOPHUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SKLUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.24,
+      "centroid_ang": 63.6,
+      "centroid_sm": 0.44
+    },
+    "success_samples": 40,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "AUDIOUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.21,
+      "centroid_ang": 67.4,
+      "centroid_sm": 0.41
+    },
+    "success_samples": 37,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "AXSUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.16,
+      "centroid_ang": 64.1,
+      "centroid_sm": 0.36
+    },
+    "success_samples": 13,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "DGBUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.2,
+      "centroid_ang": 56.4,
+      "centroid_sm": 0.4
+    },
+    "success_samples": 15,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "MLNUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 64.8,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 30,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "AAVEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.27,
+      "centroid_ang": 65.5,
+      "centroid_sm": 0.47
+    },
+    "success_samples": 17,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SKYUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "PROVEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.31,
+      "centroid_ang": 60.6,
+      "centroid_sm": 0.51
+    },
+    "success_samples": 5,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "BROCCOLI714USDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.1,
+      "centroid_ang": 62.4,
+      "centroid_sm": 0.25
+    },
+    "success_samples": 13,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "LQTYUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 67.1,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 34,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "DFUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.24,
+      "centroid_ang": 67.7,
+      "centroid_sm": 0.44
+    },
+    "success_samples": 27,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "CVXUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.3,
+      "centroid_ang": 63.4,
+      "centroid_sm": 0.5
+    },
+    "success_samples": 33,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "AMPUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 64.9,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 47,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ALTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.27,
+      "centroid_ang": 61.1,
+      "centroid_sm": 0.47
+    },
+    "success_samples": 28,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "EURUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "DATAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.19,
+      "centroid_ang": 68.4,
+      "centroid_sm": 0.39
+    },
+    "success_samples": 40,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "GTCUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.3,
+      "centroid_ang": 67.3,
+      "centroid_sm": 0.5
+    },
+    "success_samples": 20,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "TFUELUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.17,
+      "centroid_ang": 65.1,
+      "centroid_sm": 0.37
+    },
+    "success_samples": 32,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "TREEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.23,
+      "centroid_ang": 64.3,
+      "centroid_sm": 0.43
+    },
+    "success_samples": 7,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "NTRNUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.23,
+      "centroid_ang": 66.8,
+      "centroid_sm": 0.43
+    },
+    "success_samples": 25,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "CATIUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.42,
+      "centroid_ang": 61.5,
+      "centroid_sm": 0.62
+    },
+    "success_samples": 15,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "IOSTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.21,
+      "centroid_ang": 64.1,
+      "centroid_sm": 0.41
+    },
+    "success_samples": 16,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "YGGUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.18,
+      "centroid_ang": 63.1,
+      "centroid_sm": 0.38
+    },
+    "success_samples": 47,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "BREVUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0
+  },
+  "IMXUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.27,
+      "centroid_ang": 68.5,
+      "centroid_sm": 0.47
+    },
+    "success_samples": 34,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "JASMYUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 65.4,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 33,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ASTERUSDT": {
+    "SUP": {
+      "angle_min": 71.6,
+      "smooth_min": 0.33,
+      "centroid_ang": 71.6,
+      "centroid_sm": 0.53
+    },
+    "success_samples": 3,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ACMUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.19,
+      "centroid_ang": 65.4,
+      "centroid_sm": 0.39
+    },
+    "success_samples": 24,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ONEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.18,
+      "centroid_ang": 68.4,
+      "centroid_sm": 0.38
+    },
+    "success_samples": 23,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "DYDXUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.3,
+      "centroid_ang": 60.8,
+      "centroid_sm": 0.5
+    },
+    "success_samples": 23,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "DUSKUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.25,
+      "centroid_ang": 63.8,
+      "centroid_sm": 0.45
+    },
+    "success_samples": 36,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "TLMUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.17,
+      "centroid_ang": 67.4,
+      "centroid_sm": 0.37
+    },
+    "success_samples": 31,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "CETUSUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.12,
+      "centroid_ang": 69.3,
+      "centroid_sm": 0.32
+    },
+    "success_samples": 13,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SEIUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.23,
+      "centroid_ang": 65.7,
+      "centroid_sm": 0.43
+    },
+    "success_samples": 25,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "COOKIEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.19,
+      "centroid_ang": 61.7,
+      "centroid_sm": 0.39
+    },
+    "success_samples": 12,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "AWEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.27,
+      "centroid_ang": 66.2,
+      "centroid_sm": 0.47
+    },
+    "success_samples": 14,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SCUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.24,
+      "centroid_ang": 68.7,
+      "centroid_sm": 0.44
+    },
+    "success_samples": 26,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "AVAUSDT": {
+    "SUP": {
+      "angle_min": 73.7,
+      "smooth_min": 0.15,
+      "centroid_ang": 73.7,
+      "centroid_sm": 0.35
+    },
+    "success_samples": 18,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "2ZUSDT": {
+    "SUP": {
+      "angle_min": 71.9,
+      "smooth_min": 0.29,
+      "centroid_ang": 71.9,
+      "centroid_sm": 0.49
+    },
+    "success_samples": 4,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SUPERUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.18,
+      "centroid_ang": 68.4,
+      "centroid_sm": 0.38
+    },
+    "success_samples": 40,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "XLMUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.18,
+      "centroid_ang": 68.7,
+      "centroid_sm": 0.38
+    },
+    "success_samples": 18,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SCRTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.21,
+      "centroid_ang": 66.9,
+      "centroid_sm": 0.41
+    },
+    "success_samples": 33,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "CTKUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 64.6,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 23,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "CVCUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.28,
+      "centroid_ang": 67.7,
+      "centroid_sm": 0.48
+    },
+    "success_samples": 33,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "HEIUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.25,
+      "centroid_ang": 63.3,
+      "centroid_sm": 0.45
+    },
+    "success_samples": 8,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "NILUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 66.8,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 12,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "WINUSDT": {
+    "SUP": {
+      "angle_min": 70.1,
+      "smooth_min": 0.27,
+      "centroid_ang": 70.1,
+      "centroid_sm": 0.47
+    },
+    "success_samples": 20,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "NEOUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.13,
+      "centroid_ang": 67.5,
+      "centroid_sm": 0.33
+    },
+    "success_samples": 19,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "PYRUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.23,
+      "centroid_ang": 67.2,
+      "centroid_sm": 0.43
+    },
+    "success_samples": 29,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "BLURUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.32,
+      "centroid_ang": 61.2,
+      "centroid_sm": 0.52
+    },
+    "success_samples": 12,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "USDEUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "KGSTUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "WAXPUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.2,
+      "centroid_ang": 64.5,
+      "centroid_sm": 0.4
+    },
+    "success_samples": 20,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "TUTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.23,
+      "centroid_ang": 67.7,
+      "centroid_sm": 0.43
+    },
+    "success_samples": 14,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SAGAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 64.8,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 19,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ACAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.21,
+      "centroid_ang": 67.3,
+      "centroid_sm": 0.41
+    },
+    "success_samples": 48,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "AVNTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.3,
+      "centroid_ang": 60.8,
+      "centroid_sm": 0.5
+    },
+    "success_samples": 8,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "COWUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.34,
+      "centroid_ang": 62.9,
+      "centroid_sm": 0.54
+    },
+    "success_samples": 22,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "PUNDIXUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.17,
+      "centroid_ang": 68.0,
+      "centroid_sm": 0.37
+    },
+    "success_samples": 34,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "CELRUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.15,
+      "centroid_ang": 69.4,
+      "centroid_sm": 0.35
+    },
+    "success_samples": 20,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "EIGENUSDT": {
+    "SUP": {
+      "angle_min": 70.2,
+      "smooth_min": 0.13,
+      "centroid_ang": 70.2,
+      "centroid_sm": 0.33
+    },
+    "success_samples": 11,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "CITYUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.15,
+      "centroid_ang": 64.5,
+      "centroid_sm": 0.35
+    },
+    "success_samples": 23,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ACTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.1,
+      "centroid_ang": 64.1,
+      "centroid_sm": 0.3
+    },
+    "success_samples": 16,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SPKUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.25,
+      "centroid_ang": 65.8,
+      "centroid_sm": 0.45
+    },
+    "success_samples": 10,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "QKCUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.2,
+      "centroid_ang": 64.5,
+      "centroid_sm": 0.4
+    },
+    "success_samples": 28,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "HOOKUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.27,
+      "centroid_ang": 65.4,
+      "centroid_sm": 0.47
+    },
+    "success_samples": 25,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "XAIUSDT": {
+    "SUP": {
+      "angle_min": 70.1,
+      "smooth_min": 0.26,
+      "centroid_ang": 70.1,
+      "centroid_sm": 0.46
+    },
+    "success_samples": 28,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "CHESSUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.15,
+      "centroid_ang": 68.3,
+      "centroid_sm": 0.35
+    },
+    "success_samples": 45,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "USDPUSDT": {
+    "SUP": {
+      "angle_min": 74.7,
+      "smooth_min": 0.1,
+      "centroid_ang": 74.7,
+      "centroid_sm": 0.08
+    },
+    "success_samples": 3,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "USD1USDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "VTHOUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.21,
+      "centroid_ang": 65.7,
+      "centroid_sm": 0.41
+    },
+    "success_samples": 33,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "MOVRUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.25,
+      "centroid_ang": 65.5,
+      "centroid_sm": 0.45
+    },
+    "success_samples": 33,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "MOVEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.25,
+      "centroid_ang": 63.5,
+      "centroid_sm": 0.45
+    },
+    "success_samples": 16,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ENAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.34,
+      "centroid_ang": 64.5,
+      "centroid_sm": 0.54
+    },
+    "success_samples": 29,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "COTIUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.19,
+      "centroid_ang": 67.7,
+      "centroid_sm": 0.39
+    },
+    "success_samples": 34,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ALGOUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.34,
+      "centroid_ang": 65.2,
+      "centroid_sm": 0.54
+    },
+    "success_samples": 14,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "HEMIUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.21,
+      "centroid_ang": 61.7,
+      "centroid_sm": 0.41
+    },
+    "success_samples": 5,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "GMXUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.18,
+      "centroid_ang": 68.5,
+      "centroid_sm": 0.38
+    },
+    "success_samples": 26,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "PIVXUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.17,
+      "centroid_ang": 63.9,
+      "centroid_sm": 0.37
+    },
+    "success_samples": 16,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "PROMUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.17,
+      "centroid_ang": 65.9,
+      "centroid_sm": 0.37
+    },
+    "success_samples": 32,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "AEVOUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.14,
+      "centroid_ang": 69.6,
+      "centroid_sm": 0.34
+    },
+    "success_samples": 15,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "AVAXUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.28,
+      "centroid_ang": 64.0,
+      "centroid_sm": 0.48
+    },
+    "success_samples": 17,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "IOUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.15,
+      "centroid_ang": 63.8,
+      "centroid_sm": 0.35
+    },
+    "success_samples": 16,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "0GUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.36,
+      "centroid_ang": 62.6,
+      "centroid_sm": 0.56
+    },
+    "success_samples": 8,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "TONUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.25,
+      "centroid_ang": 64.9,
+      "centroid_sm": 0.45
+    },
+    "success_samples": 3,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "QIUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.28,
+      "centroid_ang": 66.9,
+      "centroid_sm": 0.48
+    },
+    "success_samples": 30,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "MEMEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.19,
+      "centroid_ang": 64.6,
+      "centroid_sm": 0.39
+    },
+    "success_samples": 23,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SFPUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.1,
+      "centroid_ang": 63.6,
+      "centroid_sm": 0.3
+    },
+    "success_samples": 13,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "PARTIUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.17,
+      "centroid_ang": 65.9,
+      "centroid_sm": 0.37
+    },
+    "success_samples": 14,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "PLUMEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.16,
+      "centroid_ang": 67.3,
+      "centroid_sm": 0.36
+    },
+    "success_samples": 7,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "XTZUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.25,
+      "centroid_ang": 63.6,
+      "centroid_sm": 0.45
+    },
+    "success_samples": 13,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "AXLUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.26,
+      "centroid_ang": 62.6,
+      "centroid_sm": 0.46
+    },
+    "success_samples": 19,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "OXTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.15,
+      "centroid_ang": 65.8,
+      "centroid_sm": 0.35
+    },
+    "success_samples": 16,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "DIAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.16,
+      "centroid_ang": 66.0,
+      "centroid_sm": 0.36
+    },
+    "success_samples": 34,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "HFTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.25,
+      "centroid_ang": 65.5,
+      "centroid_sm": 0.45
+    },
+    "success_samples": 28,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "BIGTIMEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.27,
+      "centroid_ang": 64.3,
+      "centroid_sm": 0.47
+    },
+    "success_samples": 6,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "RVNUSDT": {
+    "SUP": {
+      "angle_min": 71.0,
+      "smooth_min": 0.19,
+      "centroid_ang": 71.0,
+      "centroid_sm": 0.39
+    },
+    "success_samples": 12,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ICXUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.2,
+      "centroid_ang": 66.4,
+      "centroid_sm": 0.4
+    },
+    "success_samples": 19,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "LDOUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.19,
+      "centroid_ang": 64.7,
+      "centroid_sm": 0.39
+    },
+    "success_samples": 28,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ENSUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.18,
+      "centroid_ang": 64.8,
+      "centroid_sm": 0.38
+    },
+    "success_samples": 26,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "EPICUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.28,
+      "centroid_ang": 64.9,
+      "centroid_sm": 0.48
+    },
+    "success_samples": 14,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "USDCUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "YFIUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.29,
+      "centroid_ang": 64.8,
+      "centroid_sm": 0.49
+    },
+    "success_samples": 12,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SIGNUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.14,
+      "centroid_ang": 60.0,
+      "centroid_sm": 0.34
+    },
+    "success_samples": 9,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "LRCUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.24,
+      "centroid_ang": 64.8,
+      "centroid_sm": 0.44
+    },
+    "success_samples": 26,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "THETAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.18,
+      "centroid_ang": 62.6,
+      "centroid_sm": 0.38
+    },
+    "success_samples": 22,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ILVUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.1,
+      "centroid_ang": 67.8,
+      "centroid_sm": 0.28
+    },
+    "success_samples": 23,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "MINAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.13,
+      "centroid_ang": 62.0,
+      "centroid_sm": 0.33
+    },
+    "success_samples": 19,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "BEAMXUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.21,
+      "centroid_ang": 66.7,
+      "centroid_sm": 0.41
+    },
+    "success_samples": 35,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "MITOUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.26,
+      "centroid_ang": 60.5,
+      "centroid_sm": 0.46
+    },
+    "success_samples": 5,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ZBTUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "XVSUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.21,
+      "centroid_ang": 66.2,
+      "centroid_sm": 0.41
+    },
+    "success_samples": 27,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "MMTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.21,
+      "centroid_ang": 69.6,
+      "centroid_sm": 0.41
+    },
+    "success_samples": 3,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "PORTOUSDT": {
+    "SUP": {
+      "angle_min": 70.0,
+      "smooth_min": 0.18,
+      "centroid_ang": 70.0,
+      "centroid_sm": 0.38
+    },
+    "success_samples": 15,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "MBLUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.21,
+      "centroid_ang": 69.0,
+      "centroid_sm": 0.41
+    },
+    "success_samples": 30,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "COSUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.23,
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.43
+    },
+    "success_samples": 26,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ACEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.25,
+      "centroid_ang": 63.0,
+      "centroid_sm": 0.45
+    },
+    "success_samples": 32,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "PIXELUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.27,
+      "centroid_ang": 65.9,
+      "centroid_sm": 0.47
+    },
+    "success_samples": 25,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "JSTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.36,
+      "centroid_ang": 68.3,
+      "centroid_sm": 0.56
+    },
+    "success_samples": 12,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "STRKUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.1,
+      "centroid_ang": 68.5,
+      "centroid_sm": 0.28
+    },
+    "success_samples": 16,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "FETUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.23,
+      "centroid_ang": 67.0,
+      "centroid_sm": 0.43
+    },
+    "success_samples": 38,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "HOMEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.25,
+      "centroid_ang": 68.1,
+      "centroid_sm": 0.45
+    },
+    "success_samples": 8,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SSVUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.16,
+      "centroid_ang": 65.3,
+      "centroid_sm": 0.36
+    },
+    "success_samples": 32,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "AGLDUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.16,
+      "centroid_ang": 68.4,
+      "centroid_sm": 0.36
+    },
+    "success_samples": 37,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "1INCHUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.3,
+      "centroid_ang": 63.8,
+      "centroid_sm": 0.5
+    },
+    "success_samples": 17,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "METISUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.1,
+      "centroid_ang": 66.8,
+      "centroid_sm": 0.29
+    },
+    "success_samples": 15,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "GNSUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.1,
+      "centroid_ang": 62.2,
+      "centroid_sm": 0.27
+    },
+    "success_samples": 21,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "NXPCUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.18,
+      "centroid_ang": 69.4,
+      "centroid_sm": 0.38
+    },
+    "success_samples": 9,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "EULUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ETHUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.38,
+      "centroid_ang": 68.1,
+      "centroid_sm": 0.58
+    },
+    "success_samples": 6,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "RADUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.23,
+      "centroid_ang": 65.3,
+      "centroid_sm": 0.43
+    },
+    "success_samples": 31,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "RLCUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.17,
+      "centroid_ang": 65.4,
+      "centroid_sm": 0.37
+    },
+    "success_samples": 27,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "GUNUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.26,
+      "centroid_ang": 65.5,
+      "centroid_sm": 0.46
+    },
+    "success_samples": 14,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ORCAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.18,
+      "centroid_ang": 66.8,
+      "centroid_sm": 0.38
+    },
+    "success_samples": 12,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "POLUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 66.6,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 9,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "GLMUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 65.8,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 23,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "NFPUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.21,
+      "centroid_ang": 63.6,
+      "centroid_sm": 0.41
+    },
+    "success_samples": 15,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "HAEDALUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.42,
+      "centroid_ang": 68.7,
+      "centroid_sm": 0.62
+    },
+    "success_samples": 4,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "WLFIUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.1,
+      "centroid_ang": 62.8,
+      "centroid_sm": 0.28
+    },
+    "success_samples": 3,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "AEURUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "INJUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.17,
+      "centroid_ang": 63.4,
+      "centroid_sm": 0.37
+    },
+    "success_samples": 26,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "TURBOUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.13,
+      "centroid_ang": 64.7,
+      "centroid_sm": 0.33
+    },
+    "success_samples": 23,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "FFUSDT": {
+    "SUP": {
+      "angle_min": 75.2,
+      "smooth_min": 0.1,
+      "centroid_ang": 75.2,
+      "centroid_sm": 0.13
+    },
+    "success_samples": 4,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ATMUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.19,
+      "centroid_ang": 64.3,
+      "centroid_sm": 0.39
+    },
+    "success_samples": 25,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "MAVUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.1,
+      "centroid_ang": 67.3,
+      "centroid_sm": 0.25
+    },
+    "success_samples": 23,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "XVGUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.2,
+      "centroid_ang": 65.7,
+      "centroid_sm": 0.4
+    },
+    "success_samples": 40,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "DENTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.27,
+      "centroid_ang": 66.3,
+      "centroid_sm": 0.47
+    },
+    "success_samples": 24,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "INITUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.28,
+      "centroid_ang": 65.3,
+      "centroid_sm": 0.48
+    },
+    "success_samples": 15,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ZECUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.16,
+      "centroid_ang": 66.9,
+      "centroid_sm": 0.36
+    },
+    "success_samples": 32,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ARUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.24,
+      "centroid_ang": 65.1,
+      "centroid_sm": 0.44
+    },
+    "success_samples": 31,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SYSUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.24,
+      "centroid_ang": 65.9,
+      "centroid_sm": 0.44
+    },
+    "success_samples": 30,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ALICEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.2,
+      "centroid_ang": 63.6,
+      "centroid_sm": 0.4
+    },
+    "success_samples": 20,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "TURTLEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.28,
+      "centroid_ang": 68.3,
+      "centroid_sm": 0.48
+    },
+    "success_samples": 6,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "CAKEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.4,
+      "centroid_ang": 68.8,
+      "centroid_sm": 0.6
+    },
+    "success_samples": 17,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "EURIUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "BICOUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.17,
+      "centroid_ang": 64.7,
+      "centroid_sm": 0.37
+    },
+    "success_samples": 29,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "GPSUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.26,
+      "centroid_ang": 65.1,
+      "centroid_sm": 0.46
+    },
+    "success_samples": 17,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "EDUUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.33,
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.53
+    },
+    "success_samples": 27,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "NEIROUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 62.6,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 29,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "GIGGLEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.23,
+      "centroid_ang": 65.9,
+      "centroid_sm": 0.43
+    },
+    "success_samples": 6,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "QTUMUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.21,
+      "centroid_ang": 65.7,
+      "centroid_sm": 0.41
+    },
+    "success_samples": 15,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "VANAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 67.2,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 16,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "FORTHUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.2,
+      "centroid_ang": 63.8,
+      "centroid_sm": 0.4
+    },
+    "success_samples": 27,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "APTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.17,
+      "centroid_ang": 60.1,
+      "centroid_sm": 0.37
+    },
+    "success_samples": 18,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ARKUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.12,
+      "centroid_ang": 66.7,
+      "centroid_sm": 0.32
+    },
+    "success_samples": 26,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "YBUSDT": {
+    "SUP": {
+      "angle_min": 71.8,
+      "smooth_min": 0.28,
+      "centroid_ang": 71.8,
+      "centroid_sm": 0.48
+    },
+    "success_samples": 4,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "LUMIAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 66.5,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 23,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "BTTCUSDT": {
+    "SUP": {
+      "angle_min": 70.3,
+      "smooth_min": 0.1,
+      "centroid_ang": 70.3,
+      "centroid_sm": 0.26
+    },
+    "success_samples": 15,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "OSMOUSDT": {
+    "SUP": {
+      "angle_min": 70.3,
+      "smooth_min": 0.16,
+      "centroid_ang": 70.3,
+      "centroid_sm": 0.36
+    },
+    "success_samples": 18,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "CHRUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.19,
+      "centroid_ang": 62.5,
+      "centroid_sm": 0.39
+    },
+    "success_samples": 20,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SXTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.18,
+      "centroid_ang": 67.1,
+      "centroid_sm": 0.38
+    },
+    "success_samples": 8,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "OMUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.2,
+      "centroid_ang": 65.6,
+      "centroid_sm": 0.4
+    },
+    "success_samples": 44,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "LAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.3,
+      "centroid_ang": 61.6,
+      "centroid_sm": 0.5
+    },
+    "success_samples": 8,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "MEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.17,
+      "centroid_ang": 69.7,
+      "centroid_sm": 0.37
+    },
+    "success_samples": 10,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SHIBUSDT": {
+    "SUP": {
+      "angle_min": 70.8,
+      "smooth_min": 0.23,
+      "centroid_ang": 70.8,
+      "centroid_sm": 0.43
+    },
+    "success_samples": 13,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "DODOUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.1,
+      "centroid_ang": 66.7,
+      "centroid_sm": 0.28
+    },
+    "success_samples": 25,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "RDNTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.25,
+      "centroid_ang": 66.8,
+      "centroid_sm": 0.45
+    },
+    "success_samples": 24,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "LAZIOUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.3,
+      "centroid_ang": 65.1,
+      "centroid_sm": 0.5
+    },
+    "success_samples": 30,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ARDRUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.29,
+      "centroid_ang": 68.0,
+      "centroid_sm": 0.49
+    },
+    "success_samples": 34,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "PSGUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.25,
+      "centroid_ang": 68.0,
+      "centroid_sm": 0.45
+    },
+    "success_samples": 19,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "UNIUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.1,
+      "centroid_ang": 66.4,
+      "centroid_sm": 0.23
+    },
+    "success_samples": 15,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "HUMAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.19,
+      "centroid_ang": 64.2,
+      "centroid_sm": 0.39
+    },
+    "success_samples": 9,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "EGLDUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.25,
+      "centroid_ang": 68.2,
+      "centroid_sm": 0.45
+    },
+    "success_samples": 21,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "DASHUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.27,
+      "centroid_ang": 65.8,
+      "centroid_sm": 0.47
+    },
+    "success_samples": 24,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ALPINEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.32,
+      "centroid_ang": 65.5,
+      "centroid_sm": 0.52
+    },
+    "success_samples": 26,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ENSOUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "HMSTRUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 66.0,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 13,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "RSRUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.29,
+      "centroid_ang": 63.5,
+      "centroid_sm": 0.49
+    },
+    "success_samples": 26,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "WOOUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.24,
+      "centroid_ang": 68.0,
+      "centroid_sm": 0.44
+    },
+    "success_samples": 29,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "NOMUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ARPAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.28,
+      "centroid_ang": 62.0,
+      "centroid_sm": 0.48
+    },
+    "success_samples": 25,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "NMRUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.29,
+      "centroid_ang": 66.2,
+      "centroid_sm": 0.49
+    },
+    "success_samples": 34,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "XECUSDT": {
+    "SUP": {
+      "angle_min": 70.1,
+      "smooth_min": 0.13,
+      "centroid_ang": 70.1,
+      "centroid_sm": 0.33
+    },
+    "success_samples": 21,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "TSTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.34,
+      "centroid_ang": 67.9,
+      "centroid_sm": 0.54
+    },
+    "success_samples": 10,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "JUPUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0
+  },
+  "SNXUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.27,
+      "centroid_ang": 64.1,
+      "centroid_sm": 0.47
+    },
+    "success_samples": 17,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SLPUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.16,
+      "centroid_ang": 68.8,
+      "centroid_sm": 0.36
+    },
+    "success_samples": 29,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "CFXUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.18,
+      "centroid_ang": 64.0,
+      "centroid_sm": 0.38
+    },
+    "success_samples": 37,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "DCRUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.15,
+      "centroid_ang": 65.6,
+      "centroid_sm": 0.35
+    },
+    "success_samples": 31,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "FARMUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.21,
+      "centroid_ang": 66.4,
+      "centroid_sm": 0.41
+    },
+    "success_samples": 29,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "FUNUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.24,
+      "centroid_ang": 59.5,
+      "centroid_sm": 0.44
+    },
+    "success_samples": 23,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ADAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.28,
+      "centroid_ang": 67.0,
+      "centroid_sm": 0.48
+    },
+    "success_samples": 12,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ATUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.24,
+      "centroid_ang": 68.6,
+      "centroid_sm": 0.44
+    },
+    "success_samples": 5,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SOMIUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.14,
+      "centroid_ang": 67.4,
+      "centroid_sm": 0.34
+    },
+    "success_samples": 7,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "API3USDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.24,
+      "centroid_ang": 66.2,
+      "centroid_sm": 0.44
+    },
+    "success_samples": 35,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "FDUSDUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "IOTXUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.23,
+      "centroid_ang": 63.9,
+      "centroid_sm": 0.43
+    },
+    "success_samples": 17,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "PEPEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.16,
+      "centroid_ang": 67.2,
+      "centroid_sm": 0.36
+    },
+    "success_samples": 29,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ALLOUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "LINKUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.24,
+      "centroid_ang": 65.9,
+      "centroid_sm": 0.44
+    },
+    "success_samples": 18,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SPELLUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.19,
+      "centroid_ang": 67.5,
+      "centroid_sm": 0.39
+    },
+    "success_samples": 40,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "UMAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.23,
+      "centroid_ang": 66.5,
+      "centroid_sm": 0.43
+    },
+    "success_samples": 35,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "WBTCUSDT": {
+    "SUP": {
+      "angle_min": 70.5,
+      "smooth_min": 0.11,
+      "centroid_ang": 70.5,
+      "centroid_sm": 0.31
+    },
+    "success_samples": 7,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "REZUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.21,
+      "centroid_ang": 66.0,
+      "centroid_sm": 0.41
+    },
+    "success_samples": 28,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "RPLUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.38,
+      "centroid_ang": 66.4,
+      "centroid_sm": 0.58
+    },
+    "success_samples": 28,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "CYBERUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 67.6,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 33,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "PNUTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.2,
+      "centroid_ang": 66.1,
+      "centroid_sm": 0.4
+    },
+    "success_samples": 20,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SHELLUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.1,
+      "centroid_ang": 69.5,
+      "centroid_sm": 0.27
+    },
+    "success_samples": 5,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SAPIENUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.47,
+      "centroid_ang": 68.2,
+      "centroid_sm": 0.67
+    },
+    "success_samples": 7,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "TRUUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 63.8,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 26,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "TRBUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 66.0,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 27,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SXPUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 62.4,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 21,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "DOTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 69.0,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 13,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "NEXOUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.14,
+      "centroid_ang": 65.7,
+      "centroid_sm": 0.34
+    },
+    "success_samples": 12,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "BOMEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.25,
+      "centroid_ang": 63.9,
+      "centroid_sm": 0.45
+    },
+    "success_samples": 22,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "APEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.19,
+      "centroid_ang": 66.2,
+      "centroid_sm": 0.39
+    },
+    "success_samples": 17,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "BANDUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.24,
+      "centroid_ang": 65.5,
+      "centroid_sm": 0.44
+    },
+    "success_samples": 19,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "POLYXUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.3,
+      "centroid_ang": 65.8,
+      "centroid_sm": 0.5
+    },
+    "success_samples": 25,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "MBOXUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.24,
+      "centroid_ang": 64.7,
+      "centroid_sm": 0.44
+    },
+    "success_samples": 37,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "SOLUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.23,
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.43
+    },
+    "success_samples": 16,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "BONKUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.35,
+      "centroid_ang": 64.3,
+      "centroid_sm": 0.55
+    },
+    "success_samples": 30,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ZROUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.25,
+      "centroid_ang": 67.5,
+      "centroid_sm": 0.45
+    },
+    "success_samples": 20,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ZRXUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.21,
+      "centroid_ang": 69.4,
+      "centroid_sm": 0.41
+    },
+    "success_samples": 23,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "AIXBTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.2,
+      "centroid_ang": 67.8,
+      "centroid_sm": 0.4
+    },
+    "success_samples": 19,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "EDENUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 66.3,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 5,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "DOGEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.13,
+      "centroid_ang": 67.4,
+      "centroid_sm": 0.33
+    },
+    "success_samples": 28,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "CTSIUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.19,
+      "centroid_ang": 67.1,
+      "centroid_sm": 0.39
+    },
+    "success_samples": 30,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "PUMPUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.36,
+      "centroid_ang": 61.6,
+      "centroid_sm": 0.56
+    },
+    "success_samples": 8,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "LINEAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.35,
+      "centroid_ang": 66.8,
+      "centroid_sm": 0.55
+    },
+    "success_samples": 5,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "WLDUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.23,
+      "centroid_ang": 63.9,
+      "centroid_sm": 0.43
+    },
+    "success_samples": 29,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "PYTHUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.28,
+      "centroid_ang": 69.1,
+      "centroid_sm": 0.48
+    },
+    "success_samples": 10,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "TNSRUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.17,
+      "centroid_ang": 63.6,
+      "centroid_sm": 0.37
+    },
+    "success_samples": 23,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "BNTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.23,
+      "centroid_ang": 60.6,
+      "centroid_sm": 0.43
+    },
+    "success_samples": 11,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "BNBUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.43,
+      "centroid_ang": 66.9,
+      "centroid_sm": 0.63
+    },
+    "success_samples": 4,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ARKMUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.13,
+      "centroid_ang": 66.8,
+      "centroid_sm": 0.33
+    },
+    "success_samples": 35,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "GALAUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.23,
+      "centroid_ang": 67.5,
+      "centroid_sm": 0.43
+    },
+    "success_samples": 25,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ROSEUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.21,
+      "centroid_ang": 63.9,
+      "centroid_sm": 0.41
+    },
+    "success_samples": 17,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "IDEXUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.25,
+      "centroid_ang": 67.2,
+      "centroid_sm": 0.45
+    },
+    "success_samples": 28,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "RESOLVUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.16,
+      "centroid_ang": 67.5,
+      "centroid_sm": 0.36
+    },
+    "success_samples": 13,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "DOGSUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.32,
+      "centroid_ang": 65.7,
+      "centroid_sm": 0.52
+    },
+    "success_samples": 10,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "LTCUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.3,
+      "centroid_ang": 65.1,
+      "centroid_sm": 0.5
+    },
+    "success_samples": 13,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "TUSDUSDT": {
+    "SUP": {
+      "angle_min": 77.3,
+      "smooth_min": 0.18,
+      "centroid_ang": 77.3,
+      "centroid_sm": 0.38
+    },
+    "success_samples": 3,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "STGUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.29,
+      "centroid_ang": 67.3,
+      "centroid_sm": 0.49
+    },
+    "success_samples": 18,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "DYMUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.35,
+      "centroid_ang": 64.0,
+      "centroid_sm": 0.55
+    },
+    "success_samples": 23,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "XUSDUSDT": {
+    "SUP": {
+      "angle_min": 65,
+      "smooth_min": 0.0
+    },
+    "success_samples": 0,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "JUVUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.28,
+      "centroid_ang": 65.1,
+      "centroid_sm": 0.48
+    },
+    "success_samples": 28,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "DEGOUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.17,
+      "centroid_ang": 66.5,
+      "centroid_sm": 0.37
+    },
+    "success_samples": 44,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "NEWTUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.1,
+      "centroid_ang": 61.7,
+      "centroid_sm": 0.21
+    },
+    "success_samples": 4,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  },
+  "ZKUSDT": {
+    "SUP": {
+      "angle_min": 70,
+      "smooth_min": 0.22,
+      "centroid_ang": 64.6,
+      "centroid_sm": 0.42
+    },
+    "success_samples": 20,
+    "FAIL": {
+      "centroid_ang": 65.0,
+      "centroid_sm": 0.2
+    }
+  }
+}

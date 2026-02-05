@@ -1,0 +1,57 @@
+{
+    "symbol": "ETHFIUSDT",
+    "timestamp": "2026-02-05T00:20:04.011655",
+    "slow_character": {
+        "15m": {
+            "avg_norm_atr": 0.011204627459805825,
+            "std_norm_atr": 0.004384368756648713,
+            "typical_volume": 108784.3,
+            "vola_compression_tolerance": 0.003617331574802559
+        },
+        "1h": {
+            "avg_norm_atr": 0.015349318372915923,
+            "std_norm_atr": 0.005876584810128034,
+            "typical_volume": 290607.4,
+            "vola_compression_tolerance": 0.005359362530649994
+        },
+        "4h": {
+            "avg_norm_atr": 0.02800925136515566,
+            "std_norm_atr": 0.007868075764856649,
+            "typical_volume": 893999.3,
+            "vola_compression_tolerance": 0.01111544537865104
+        },
+        "1d": {
+            "avg_norm_atr": 0.10472569117732236,
+            "std_norm_atr": 0.03466762334574181,
+            "typical_volume": 15943875.7,
+            "vola_compression_tolerance": 0.041896353937841475
+        }
+    },
+    "fast_drift": {
+        "15m": {
+            "recent_vola_avg": 0.013863171261467905,
+            "recent_volume_avg": 162127.2283333333,
+            "momentum_drift": -0.006172839506172867
+        },
+        "1h": {
+            "recent_vola_avg": 0.02389313702528251,
+            "recent_volume_avg": 796864.6900000001,
+            "momentum_drift": -0.11700182815356497
+        },
+        "4h": {
+            "recent_vola_avg": 0.03343492981281631,
+            "recent_volume_avg": 1638846.8299999998,
+            "momentum_drift": -0.21069692058346845
+        },
+        "1d": {
+            "recent_vola_avg": 0.06951833072910966,
+            "recent_volume_avg": 5940728.641666667,
+            "momentum_drift": -0.3732303732303732
+        },
+        "1w": {
+            "recent_vola_avg": 0.39256397986794894,
+            "recent_volume_avg": 133345379.30833334,
+            "momentum_drift": -0.7806288398988074
+        }
+    }
+}

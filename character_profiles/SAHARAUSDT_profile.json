@@ -1,0 +1,52 @@
+{
+    "symbol": "SAHARAUSDT",
+    "timestamp": "2026-02-05T00:20:03.812463",
+    "slow_character": {
+        "15m": {
+            "avg_norm_atr": 0.010325317388163618,
+            "std_norm_atr": 0.004228014842625325,
+            "typical_volume": 672189.0,
+            "vola_compression_tolerance": 0.003489767881296095
+        },
+        "1h": {
+            "avg_norm_atr": 0.017571282310930244,
+            "std_norm_atr": 0.01035297699403108,
+            "typical_volume": 1486851.0,
+            "vola_compression_tolerance": 0.005259585782307835
+        },
+        "4h": {
+            "avg_norm_atr": 0.03115664809567962,
+            "std_norm_atr": 0.014485553537428864,
+            "typical_volume": 6370055.0,
+            "vola_compression_tolerance": 0.010968968523039422
+        },
+        "1d": {
+            "avg_norm_atr": 0.08791227492111889,
+            "std_norm_atr": 0.053005343890522034,
+            "typical_volume": 45720602.5,
+            "vola_compression_tolerance": 0.027635187228426936
+        }
+    },
+    "fast_drift": {
+        "15m": {
+            "recent_vola_avg": 0.013441034536561805,
+            "recent_volume_avg": 857222.1833333333,
+            "momentum_drift": -0.01196953210010887
+        },
+        "1h": {
+            "recent_vola_avg": 0.023854403877862057,
+            "recent_volume_avg": 4281802.983333333,
+            "momentum_drift": -0.2216030861551651
+        },
+        "4h": {
+            "recent_vola_avg": 0.04891600100676155,
+            "recent_volume_avg": 20586428.933333334,
+            "momentum_drift": -0.2471910112359551
+        },
+        "1d": {
+            "recent_vola_avg": 0.0772469054091271,
+            "recent_volume_avg": 62503968.68333333,
+            "momentum_drift": -0.52054068380599
+        }
+    }
+}

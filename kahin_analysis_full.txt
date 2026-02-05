@@ -1,0 +1,49 @@
+🏛️ KAHİN ANALİZ SONUÇLARI (2023-2025)
+Toplam Vise Alan Gün Sayısı: 75825
+Baz Başarı Oranı (Tier %): 34.88%
+------------------------------
+BTC Onaylıyken Başarı: 35.60%
+BTC Onaysızken Başarı: 33.50%
+
+🏛️ RSI (GÜNLÜK) SEVİYE ANALİZİ:
+               mean  count
+rsi_cat                   
+(0, 40]    0.351968   9552
+(40, 50]   0.301799  12399
+(50, 60]   0.318550  24420
+(60, 70]   0.380961  20926
+(70, 80]   0.420121   7574
+(80, 100]  0.429769    954
+
+🏛️ RSI-RIBBON MESAFE ANALİZİ:
+               mean  count
+diff_cat                  
+(-100, 0]  0.333459   5320
+(0, 5]     0.308109  37636
+(5, 10]    0.376264  20964
+(10, 20]   0.437944   9008
+(20, 100]  0.429410   2897
+
+🏛️ HACİM MOMENTUM (DÜN) ANALİZİ:
+                 mean  count
+vol_cat                     
+(0.0, 0.5]   0.230777   9663
+(0.5, 1.0]   0.281359  22274
+(1.0, 1.5]   0.348113  13780
+(1.5, 2.0]   0.398310   6982
+(2.0, 10.0]  0.477968  10553
+
+🏛️ VOLATİLİTE (ATR%) ANALİZİ:
+             mean  count
+atr_cat                 
+(0, 2]   0.009831   2136
+(2, 4]   0.108470   3365
+(4, 6]   0.217283  12081
+(6, 8]   0.323850  16134
+(8, 20]  0.426338  38256
+
+🏛️ DAHİ FİLTRE ÖNERİSİ:
+Kural: BTC OK + RSI(D) > 60 + VolMom > 1.0
+Örnek Sayısı: 12611
+Filtrelenmiş Başarı Oranı: 42.91%
+İyileşme: 8.04%

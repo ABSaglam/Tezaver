@@ -1,0 +1,63 @@
+{
+    "symbol": "OGUSDT",
+    "timestamp": "2026-02-05T00:20:03.992337",
+    "slow_character": {
+        "15m": {
+            "avg_norm_atr": 0.007641412802537075,
+            "std_norm_atr": 0.004468794145916824,
+            "typical_volume": 3072.0,
+            "vola_compression_tolerance": 0.0026138671565201963
+        },
+        "1h": {
+            "avg_norm_atr": 0.0134599755244859,
+            "std_norm_atr": 0.005599030352061651,
+            "typical_volume": 16178.3,
+            "vola_compression_tolerance": 0.0050364712558448295
+        },
+        "4h": {
+            "avg_norm_atr": 0.02726169433480442,
+            "std_norm_atr": 0.020246894051702442,
+            "typical_volume": 36765.8,
+            "vola_compression_tolerance": 0.007054371441677508
+        },
+        "1d": {
+            "avg_norm_atr": 0.0848516409702586,
+            "std_norm_atr": 0.039308998812764576,
+            "typical_volume": 446759.2,
+            "vola_compression_tolerance": 0.026053061947151724
+        },
+        "1w": {
+            "avg_norm_atr": 0.27800421525780167,
+            "std_norm_atr": 0.13655434444499995,
+            "typical_volume": 4263605.7,
+            "vola_compression_tolerance": 0.06225240729554036
+        }
+    },
+    "fast_drift": {
+        "15m": {
+            "recent_vola_avg": 0.01019194863232514,
+            "recent_volume_avg": 6086.870000000001,
+            "momentum_drift": 0.021021021021021102
+        },
+        "1h": {
+            "recent_vola_avg": 0.019321670829138268,
+            "recent_volume_avg": 27584.16833333333,
+            "momentum_drift": -0.0936018957345971
+        },
+        "4h": {
+            "recent_vola_avg": 0.0250530675811453,
+            "recent_volume_avg": 72455.97500000002,
+            "momentum_drift": -0.23237054384595368
+        },
+        "1d": {
+            "recent_vola_avg": 0.1024612186600466,
+            "recent_volume_avg": 673440.3416666667,
+            "momentum_drift": -0.7722886916248553
+        },
+        "1w": {
+            "recent_vola_avg": 0.2587766680811071,
+            "recent_volume_avg": 5501286.3643166665,
+            "momentum_drift": -0.3076630538125119
+        }
+    }
+}
