@@ -1,0 +1,5 @@
+{
+    "priority": "STANDARD",
+    "trigger_ft2_min": 0.0,
+    "rule_note": "ACA_PARTIAL_FIX: FT2 > 0.0 (Kills 2/3 FPs, 11-07 Remains)"
+}

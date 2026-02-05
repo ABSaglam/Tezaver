@@ -1,5 +1,5 @@
 {
     "priority": "STANDARD",
-    "trigger_ft2_min": 0.75,
-    "rule_note": "AAVE_SPECIFIC: Avg FollowThrough2 >= 0.75% (Momentum Filter)"
+    "avg_followthrough2_min": 0.0075,
+    "rule_note": "FP-KILL: momentum quality gate (AAVE class)"
 }
