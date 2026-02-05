@@ -1,0 +1,11 @@
+{
+  "symbol": "2ZUSDT",
+  "run_id": "run_001",
+  "net_aday_count": 4,
+  "hitrate_24h": 25.0,
+  "hitrate_48h": 25.0,
+  "false_pos": 3,
+  "false_neg_24h": 2,
+  "false_neg_48h": 4,
+  "top_cancel_reason": "RIBBON_TRAP"
+}
