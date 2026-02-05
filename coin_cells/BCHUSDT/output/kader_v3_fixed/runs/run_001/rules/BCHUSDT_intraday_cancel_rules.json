@@ -1,0 +1,9 @@
+{
+    "4h_ribbon_trap": {
+        "check": true,
+        "condition": "RIBBON_INSIDE and RSI < RSI_EMA"
+    },
+    "wick_ratio_4h": {
+        "threshold": 0.28
+    }
+}

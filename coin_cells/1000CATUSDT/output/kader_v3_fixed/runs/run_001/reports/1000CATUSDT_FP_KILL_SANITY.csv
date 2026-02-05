@@ -1,0 +1,5 @@
+Date,WasTP,OldDecision,NewDecision,Correct
+2025-12-02,True,NET_ADAY,NET_ADAY,True
+2025-11-07,False,NET_ADAY,NO,True
+2025-11-25,False,NET_ADAY,NO,True
+2025-12-05,False,NET_ADAY,NO,True

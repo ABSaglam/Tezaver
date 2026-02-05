@@ -1,0 +1,5 @@
+{
+    "priority": "STANDARD",
+    "trigger_count_min": 11,
+    "rule_note": "BABYDOGE_SPECIFIC: Count>=11 (Separates 12-02 TP@11 from strongest FP@10)"
+}

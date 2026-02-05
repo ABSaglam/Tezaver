@@ -1,0 +1,26 @@
+{
+    "ATR_Norm": {
+        "max_hard": 0.14575611938766528,
+        "min_hard": 0.04620706070002941
+    },
+    "Anti_Penalty": {
+        "max_hard": 1.2784902413220023,
+        "min_hard": 0.3374583175566496
+    },
+    "Drift_Factor": {
+        "max_hard": 1.5477438649133808,
+        "min_hard": 0.30277348962473205
+    },
+    "Energy_Gap": {
+        "max_hard": 21.087898164568056,
+        "min_hard": -19.94508111961977
+    },
+    "Wick_Ratio": {
+        "max_hard": 0.7135866007753111,
+        "min_hard": 0.002503685248245742
+    },
+    "suppression_veto": {
+        "active": true,
+        "desc": "RIBBON_INSIDE + RSI < RSI_EMA implies trap"
+    }
+}

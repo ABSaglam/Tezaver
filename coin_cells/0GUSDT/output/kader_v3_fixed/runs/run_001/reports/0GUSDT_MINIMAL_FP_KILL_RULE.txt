@@ -1,0 +1,9 @@
+Best Rule: IF 15M_TriggerCount < 5 THEN REJECT_TRIGGER
+TP Protected: YES (Count=9)
+FP Eliminated: 3/3 (Counts=2, 2, 0)
+Valid Layer: 15M_TRIGGER
+Details:
+- TP (2025-12-02): 9 Triggers
+- FP (2025-11-07): 2 Triggers
+- FP (2025-11-25): 2 Triggers
+- FP (2025-12-05): 0 Triggers

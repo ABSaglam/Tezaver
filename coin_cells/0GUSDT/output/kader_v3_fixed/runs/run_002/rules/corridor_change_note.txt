@@ -1,0 +1,5 @@
+Widened ATR_Norm Min to P05 (0.0492) [Val=0.0461 was lower]
+Widened Energy_Gap Max to 18.9841 to catch Missed Day.
+Skipped widening Wick_Ratio Min (Risk Col). Val=0.0167 < P10=0.0499
+Skipped widening Dist_EMA Min (Risk Col). Val=-0.1566 < P10=-0.1566
+Widened Vol_Ratio Min to 0.1583 to catch Missed Day.

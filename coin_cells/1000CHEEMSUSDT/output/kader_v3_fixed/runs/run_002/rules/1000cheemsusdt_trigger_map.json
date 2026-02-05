@@ -1,0 +1,6 @@
+{
+    "priority": "STANDARD",
+    "trigger_count_min": 9,
+    "trigger_burstiness_max_per_hour": 3,
+    "rule_note": "SECTOR_FP_KILL: meme anti-pump, copied from 1000CATUSDT"
+}

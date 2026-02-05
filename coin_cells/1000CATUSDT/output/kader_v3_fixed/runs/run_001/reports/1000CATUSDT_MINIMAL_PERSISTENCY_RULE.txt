@@ -1,0 +1,4 @@
+Best Rule: IF TriggerCount >= 9 AND Burstiness <= 3 THEN ACCEPT else REJECT
+TP Protected: YES
+FP Eliminated: 3/3
+Valid Layer: 15M_TRIGGER_PERSISTENCY

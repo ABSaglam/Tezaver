@@ -1,0 +1,6 @@
+{
+    "priority": "STANDARD",
+    "trigger_count_min": 9,
+    "trigger_burstiness_max_per_hour": 3,
+    "rule_note": "FP-KILL: sustainable accumulation, anti-pump"
+}

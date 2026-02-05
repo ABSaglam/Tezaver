@@ -1,0 +1,2 @@
+Best Rule: IF Count >= 6 THEN ACCEPT else REJECT
+FP Killed: 3/3

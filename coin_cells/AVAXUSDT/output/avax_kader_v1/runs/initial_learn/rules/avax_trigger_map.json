@@ -1,0 +1,7 @@
+{
+    "m15_vol_threshold": 2.0,
+    "whitelisted_ignitors": [
+        "BULLISH_ENGULFING",
+        "HAMMER"
+    ]
+}

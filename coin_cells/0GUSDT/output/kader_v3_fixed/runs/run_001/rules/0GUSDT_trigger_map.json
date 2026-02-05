@@ -1,0 +1,5 @@
+{
+    "priority": "STANDARD",
+    "trigger_persistence_min": 5,
+    "rule_note": "FP-KILL: Require >=5 15M triggers in day"
+}

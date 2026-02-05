@@ -1,0 +1,27 @@
+{
+    "ATR_Norm": {
+        "min": 0.047562551492323434,
+        "max": 0.0800548554570589,
+        "reason": "Elite Optimization V3"
+    },
+    "Energy_Gap": {
+        "min": -7.45141613625653,
+        "max": 16.238519437559066,
+        "reason": "Elite Optimization V3"
+    },
+    "Wick_Ratio": {
+        "min": 0.10787963619837819,
+        "max": 0.25077582542856974,
+        "reason": "Elite Optimization V3"
+    },
+    "Dist_EMA": {
+        "min": -0.1427544490580767,
+        "max": -0.02945686490102824,
+        "reason": "Elite Optimization V3"
+    },
+    "ADX": {
+        "min": 35.0,
+        "max": 100.0,
+        "reason": "Elite Optimization V3"
+    }
+}

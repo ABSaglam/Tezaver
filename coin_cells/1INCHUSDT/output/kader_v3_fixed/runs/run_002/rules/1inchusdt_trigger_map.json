@@ -1,0 +1,5 @@
+{
+    "priority": "STANDARD",
+    "trigger_count_min": 6,
+    "rule_note": "1INCH_SPECIFIC: Count>=6 (Separates 12-02 TP@8 from FPs@5)"
+}

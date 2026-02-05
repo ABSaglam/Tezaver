@@ -53,16 +53,19 @@ class DNAMatchingEngineV2:
         total_weight = sum(w for d, w in weighted_dists)
         avg_similarity = sum((1.0 / (1.0 + d)) * w for d, w in weighted_dists) / total_weight
         
-        # 2. Exponential Anti-DNA Penalty
+        # 2. Anti-DNA Similarity (Penalty Source)
         neg_dists = [self.calculate_similarity(current_snapshot, d['dna']) for d in self.anti_dna_profiles.get(symbol, [])]
         min_neg_dist = min(neg_dists) if neg_dists else 1.0
         
-        # Exponential penalty: if similarity to anti-DNA is high (dist is low), penalty is high
-        # Penalty = (1/(1+min_neg_dist)) ^ 2
+        # raw_penalty is similarity to Anti-DNA (0 to 1)
         raw_penalty = 1.0 / (1.0 + min_neg_dist)
-        exp_penalty = raw_penalty ** 2 # Harder penalty for V2
         
-        final_habitat_score = avg_similarity - (exp_penalty * 0.7)
+        # Exponential Effect (K=4): Penalty stays very low until raw_penalty > 0.7
+        # This allows HITS that look 'somewhat' like noise to survive, 
+        # but kills ones that look EXACTLY like failed breakouts.
+        exp_penalty = (raw_penalty ** 4) * 0.5
+        
+        final_habitat_score = avg_similarity - exp_penalty
         
         return {
             "symbol": symbol,

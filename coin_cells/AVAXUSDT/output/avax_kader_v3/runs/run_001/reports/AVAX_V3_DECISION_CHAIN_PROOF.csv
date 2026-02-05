@@ -1,0 +1,4 @@
+Date,DailyGatePass,RealCancelCheck,SimOutput,Anomaly
+2025-11-24,TRUE,FAIL,NET_ADAY,Simulation Missed Cancel
+2025-11-30,TRUE,FAIL,NET_ADAY,Simulation Missed Cancel
+2025-12-02,TRUE,PASS,NET_ADAY,OK

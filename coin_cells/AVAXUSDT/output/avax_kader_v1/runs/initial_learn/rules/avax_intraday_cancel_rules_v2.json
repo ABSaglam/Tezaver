@@ -1,0 +1,14 @@
+{
+    "cancel_conditions": [
+        {
+            "threshold": 2.0,
+            "type": "4H_VMom_Spike_Fade",
+            "note": "Tightened by 20% for Elite Mode"
+        },
+        {
+            "threshold": 0.04000000000000001,
+            "type": "1H_Wick_Expansion",
+            "note": "Tightened by 20% for Elite Mode"
+        }
+    ]
+}

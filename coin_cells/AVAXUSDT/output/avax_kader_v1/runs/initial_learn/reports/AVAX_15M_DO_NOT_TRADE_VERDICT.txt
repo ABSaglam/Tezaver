@@ -1,0 +1,5 @@
+NATURAL_FILTER = FALSE. 2 triggers held structure.
+
+Valid Triggers on Fail Day:
+{'Date': '2025-11-30', 'Timestamp': datetime.time(8, 30), 'Ignition_Type': 'STANDARD', 'M15_Vol': 1.97, 'M15_RSI': 52.6, 'Follow_Through_2bar': 0.57}
+{'Date': '2025-11-30', 'Timestamp': datetime.time(8, 45), 'Ignition_Type': 'STANDARD', 'M15_Vol': 1.58, 'M15_RSI': 64.9, 'Follow_Through_2bar': 0.07}

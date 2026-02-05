@@ -1,0 +1,5 @@
+{
+    "priority": "STANDARD",
+    "trigger_count_min": 11,
+    "rule_note": "FP-KILL: ignition density filter (coin-specific)"
+}

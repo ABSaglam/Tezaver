@@ -1,0 +1,2 @@
+Wick_Ratio Min: 0.0623 -> 0.0167
+Dist_EMA Min: -0.1323 -> -0.1566 (Limit: -0.1587, Needed: -0.1566)

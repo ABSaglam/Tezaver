@@ -1,0 +1,6 @@
+{
+    "priority": "STANDARD",
+    "trigger_count_min": 8,
+    "trigger_vol_peak_min": 3.5,
+    "rule_note": "CHEEMS_SPECIFIC: Count>=8 + VolPeak>=3.5 (Separates 12-05 FP)"
+}

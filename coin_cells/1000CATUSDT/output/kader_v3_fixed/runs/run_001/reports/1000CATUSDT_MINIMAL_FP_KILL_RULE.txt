@@ -1,0 +1,4 @@
+Best Rule: IF 15M_TriggerCount < 10 THEN REJECT_TRIGGER
+TP Protected: YES
+FP Eliminated: 3/3
+Valid Layer: 15M_TRIGGER

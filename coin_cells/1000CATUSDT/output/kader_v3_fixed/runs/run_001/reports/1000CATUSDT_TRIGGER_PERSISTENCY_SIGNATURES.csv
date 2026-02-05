@@ -1,0 +1,5 @@
+Date,WasTP,Role,TriggerCount,TriggerSpanHours,ActiveQuarters,Burstiness
+2025-12-02,True,TP,10,16.25,3,3
+2025-11-07,False,FP,9,18.25,4,4
+2025-11-25,False,FP,4,5.75,2,2
+2025-12-05,False,FP,3,7.5,2,2

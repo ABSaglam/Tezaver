@@ -1,0 +1,1 @@
+IF Wick_Ratio_4h_avg > 0.28 THEN CANCEL

@@ -1,0 +1,12 @@
+{
+    "m15_vol_threshold": 2.0,
+    "whitelisted_ignitors": [
+        "BULLISH_ENGULFING",
+        "HAMMER"
+    ],
+    "elite_mode_logic": {
+        "boundary_proximity_threshold": 0.1,
+        "strict_vol_multiplier": 1.2,
+        "force_micro_trig": true
+    }
+}
